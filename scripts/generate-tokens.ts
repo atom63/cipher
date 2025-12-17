@@ -46,76 +46,93 @@ const collectionNames = Object.keys(collections).sort((a, b) => {
 })
 
 /**
- * Get opacity from styles.json for a semantic token
- * Handles all semantic tokens by navigating the paint structure
- * Examples:
- *   - "background-secondary-rest" -> paint.bg.secondary.rest
- *   - "shadcn-muted-foreground" -> paint.semantics.shadcn["muted-foreground"]
+ * Build a dynamic lookup map from variable names to opacity values
+ * This is computed once and cached, making it future-proof for any new styles
  */
-function getOpacityFromStyles(tokenPath: string): number | null {
+let opacityLookupCache: Record<string, number> | null = null
+
+function buildOpacityLookup(): Record<string, number> {
+  if (opacityLookupCache) {
+    return opacityLookupCache
+  }
+  
+  const lookup: Record<string, number> = {}
   const paintStyles = stylesData?.styles?.paint
+  
   if (!paintStyles) {
-    return null
+    opacityLookupCache = lookup
+    return lookup
   }
   
-  // Map token paths to styles.json structure
-  // Token paths use full names, styles.json uses abbreviations
-  const pathMappings: Record<string, string[]> = {
-    'background-': ['bg'],
-    'foreground-': ['fg'],
-    'backplate-': ['backplate'],
-    'stroke-': ['stroke'],
-    'highlight-': ['highlight'],
-    'shadow-': ['shadow'],
-    'shadcn-': ['semantics', 'shadcn']
-  }
-  
-  // Find matching prefix and build path
-  let stylePath: string[] = []
-  let remainingPath = tokenPath
-  
-  for (const [prefix, mapping] of Object.entries(pathMappings)) {
-    if (tokenPath.startsWith(prefix)) {
-      stylePath = mapping
-      remainingPath = tokenPath.substring(prefix.length)
-      break
+  /**
+   * Recursively traverse styles structure to find all styles with boundVariable
+   */
+  function traverseStyles(obj: any): void {
+    if (!obj || typeof obj !== 'object') {
+      return
     }
-  }
-  
-  // If no mapping found, try direct lookup under semantics
-  if (stylePath.length === 0) {
-    stylePath = ['semantics']
-    remainingPath = tokenPath
-  }
-  
-  // Navigate through the styles structure
-  let current: any = paintStyles
-  for (const part of stylePath) {
-    if (!current[part]) {
-      return null
+    
+    // Check if this is a style definition with boundVariable and opacity
+    if (obj.fills && Array.isArray(obj.fills)) {
+      for (const fill of obj.fills) {
+        // Check for opacity < 1
+        if (fill.opacity !== undefined && fill.opacity < 1) {
+          // Check for boundVariable to get the semantic token name
+          if (fill.boundVariable && fill.boundVariable.variableName) {
+            const variableName = fill.boundVariable.variableName as string
+            const collectionName = fill.boundVariable.collectionName as string
+            
+            // Only process semantic tokens
+            if (collectionName === 'semantics') {
+              // Convert "background/secondary/rest" to "background-secondary-rest"
+              const tokenKey = variableName.replace(/\//g, '-')
+              lookup[tokenKey] = fill.opacity
+              break // Only need first fill with opacity
+            }
+          }
+        }
+        
+        // Also check gradient stops for boundVariable
+        if (fill.gradientStops && Array.isArray(fill.gradientStops)) {
+          for (const stop of fill.gradientStops) {
+            if (stop.boundVariable && stop.boundVariable.variableName) {
+              const variableName = stop.boundVariable.variableName as string
+              const collectionName = stop.boundVariable.collectionName as string
+              
+              if (collectionName === 'semantics' && fill.opacity !== undefined && fill.opacity < 1) {
+                const tokenKey = variableName.replace(/\//g, '-')
+                lookup[tokenKey] = fill.opacity
+                break
+              }
+            }
+          }
+        }
+      }
     }
-    current = current[part]
-  }
-  
-  // Navigate remaining path (e.g., "secondary-rest" -> secondary.rest)
-  const remainingParts = remainingPath.split('-')
-  for (const part of remainingParts) {
-    if (!current[part]) {
-      return null
-    }
-    current = current[part]
-  }
-  
-  // Extract opacity from fills
-  if (current && current.fills) {
-    for (const fill of current.fills) {
-      if (fill.opacity !== undefined && fill.opacity < 1) {
-        return fill.opacity
+    
+    // Recurse into nested objects
+    for (const value of Object.values(obj)) {
+      if (typeof value === 'object' && value !== null) {
+        traverseStyles(value)
       }
     }
   }
   
-  return null
+  traverseStyles(paintStyles)
+  opacityLookupCache = lookup
+  return lookup
+}
+
+/**
+ * Get opacity from styles.json for a semantic token
+ * Now completely dynamic - automatically handles any token with opacity in Figma
+ * Examples:
+ *   - "background-secondary-rest" -> finds via boundVariable "background/secondary/rest"
+ *   - "shadcn-muted-foreground" -> finds via boundVariable "shadcn/muted-foreground"
+ */
+function getOpacityFromStyles(tokenPath: string): number | null {
+  const lookup = buildOpacityLookup()
+  return lookup[tokenPath] ?? null
 }
 
 /**
@@ -449,4 +466,5 @@ for (const { filename, tokenCount, modeInfo } of generatedFiles) {
   console.log(`   - ${filename} (${tokenCount} tokens${modeInfo})`)
 }
 console.log(`   📁 ${themePath}`)
+
 
