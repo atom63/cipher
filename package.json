@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "node build.js --watch",
     "build": "node build.js",
+    "tokens": "node scripts/generate-tokens.js",
+    "tokens:watch": "node scripts/generate-tokens.js --watch",
     "format": "npx ultracite format",
     "lint": "npx ultracite lint"
   },

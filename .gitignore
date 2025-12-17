@@ -1,6 +1,9 @@
 # Build output
 dist/
 
+# Generated token files (auto-generated from tokens/base)
+tokens/styles/*.css
+
 # Dependencies
 node_modules/
 .pnp
