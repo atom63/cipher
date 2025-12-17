@@ -47,31 +47,70 @@ const collectionNames = Object.keys(collections).sort((a, b) => {
 
 /**
  * Get opacity from styles.json for a semantic token
- * Handles nested paths like shadcn-muted-foreground
- * Looks under paint.semantics.shadcn structure
+ * Handles all semantic tokens by navigating the paint structure
+ * Examples:
+ *   - "background-secondary-rest" -> paint.bg.secondary.rest
+ *   - "shadcn-muted-foreground" -> paint.semantics.shadcn["muted-foreground"]
  */
 function getOpacityFromStyles(tokenPath: string): number | null {
-  // Convert token path to styles.json path
-  // e.g., "shadcn-muted-foreground" -> look in paint.semantics.shadcn["muted-foreground"]
-  
-  const semanticsStyles = stylesData?.styles?.paint?.semantics
-  if (!semanticsStyles) {
+  const paintStyles = stylesData?.styles?.paint
+  if (!paintStyles) {
     return null
   }
   
-  // Check if this is a shadcn token
-  if (tokenPath.startsWith('shadcn-')) {
-    const shadcnKey = tokenPath.replace('shadcn-', '').replace(/-/g, '-')
-    const shadcnStyles = semanticsStyles.shadcn
-    
-    if (shadcnStyles && shadcnStyles[shadcnKey]) {
-      const style = shadcnStyles[shadcnKey]
-      if (style.fills) {
-        for (const fill of style.fills) {
-          if (fill.opacity !== undefined && fill.opacity < 1) {
-            return fill.opacity
-          }
-        }
+  // Map token paths to styles.json structure
+  // Token paths use full names, styles.json uses abbreviations
+  const pathMappings: Record<string, string[]> = {
+    'background-': ['bg'],
+    'foreground-': ['fg'],
+    'backplate-': ['backplate'],
+    'stroke-': ['stroke'],
+    'highlight-': ['highlight'],
+    'shadow-': ['shadow'],
+    'shadcn-': ['semantics', 'shadcn']
+  }
+  
+  // Find matching prefix and build path
+  let stylePath: string[] = []
+  let remainingPath = tokenPath
+  
+  for (const [prefix, mapping] of Object.entries(pathMappings)) {
+    if (tokenPath.startsWith(prefix)) {
+      stylePath = mapping
+      remainingPath = tokenPath.substring(prefix.length)
+      break
+    }
+  }
+  
+  // If no mapping found, try direct lookup under semantics
+  if (stylePath.length === 0) {
+    stylePath = ['semantics']
+    remainingPath = tokenPath
+  }
+  
+  // Navigate through the styles structure
+  let current: any = paintStyles
+  for (const part of stylePath) {
+    if (!current[part]) {
+      return null
+    }
+    current = current[part]
+  }
+  
+  // Navigate remaining path (e.g., "secondary-rest" -> secondary.rest)
+  const remainingParts = remainingPath.split('-')
+  for (const part of remainingParts) {
+    if (!current[part]) {
+      return null
+    }
+    current = current[part]
+  }
+  
+  // Extract opacity from fills
+  if (current && current.fills) {
+    for (const fill of current.fills) {
+      if (fill.opacity !== undefined && fill.opacity < 1) {
+        return fill.opacity
       }
     }
   }
