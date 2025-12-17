@@ -1,0 +1,119 @@
+/* Base card - shadcn style */
+.card {
+  border-radius: var(--radius-md);
+  transition: all var(--transition);
+  color: var(--card-foreground);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+/* Variants - shadcn style */
+.default {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+}
+
+.muted {
+  background-color: var(--muted);
+  border: 1px solid transparent;
+}
+
+.bordered {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+}
+
+.outline {
+  background-color: transparent;
+  border: 1px solid var(--border);
+}
+
+.elevated {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 
+    0 1px 2px 0 rgba(0, 0, 0, 0.05),
+    0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Padding variants - using aligned spacing tokens */
+.padding-none {
+  padding: 0;
+}
+
+.padding-sm {
+  padding: var(--spacing-lg); /* 12px */
+}
+
+.padding-md {
+  padding: var(--spacing-xl); /* 16px */
+}
+
+.padding-lg {
+  padding: var(--spacing-2xl); /* 24px */
+}
+
+.padding-xl {
+  padding: var(--spacing-3xl); /* 32px */
+}
+
+/* Interactive states - shadcn style */
+.hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 4px 0 rgba(0, 0, 0, 0.04),
+    0 2px 2px 0 rgba(0, 0, 0, 0.02);
+}
+
+.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.clickable:hover {
+  border-color: var(--ring);
+}
+
+.clickable:active {
+  transform: scale(0.98);
+}
+
+.clickable:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Subcomponents - shadcn style */
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  /* padding: var(--spacing-xl) var(--spacing-xl) 0; */
+}
+
+.cardTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  line-height: 1.4;
+  color: var(--card-foreground);
+  margin: 0;
+}
+
+.cardDescription {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.cardContent {
+  /* padding: var(--spacing-xl); */
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  /* padding: 0 var(--spacing-xl) var(--spacing-xl); */
+}

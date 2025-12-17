@@ -1,0 +1,68 @@
+/* === RadioGroup Component Styles === */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.wrapper > label {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Only add gap when description exists */
+.wrapper > label:has(.description) {
+  gap: var(--spacing-2xs);
+}
+
+.label {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--foreground);
+  line-height: 1.5;
+}
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+/* === Card Variant === */
+.vertical {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+/* Card styles now use RadioCard component for consistency */
+
+/* === Inline Variant - Flowbite style === */
+.inline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.inline-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+input[type="radio"].inline-input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+.inline-label {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--foreground);
+  cursor: pointer;
+  line-height: 1.5;
+}
+

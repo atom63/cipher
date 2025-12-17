@@ -1,0 +1,41 @@
+/* Import Page Styles - using design tokens from ui.scss */
+
+.reviewContent {
+  padding: var(--spacing-2xl);
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.reviewHeader {
+  margin-bottom: var(--spacing-xl);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+}
+
+.alertContainer {
+  margin-bottom: var(--spacing-xl);
+}
+
+.selectAllSection {
+  margin-bottom: var(--spacing-xl);
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--border);
+}
+
+.actions > * {
+  flex: 1;
+}
+
+/* Style categories container - category styles reused from ExportPage.module.css */
+.styleCategoriesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+

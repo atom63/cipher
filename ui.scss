@@ -1,0 +1,571 @@
+/* ============================================
+   Design Tokens
+   ============================================
+   
+   These tokens match the primitives in sample-tokens.json
+   to ensure consistency between the plugin UI and the
+   design system it manages. We "eat our own dog food"! 🐕
+   
+   ============================================ */
+
+:root {
+  /* ============================================
+     Color Primitives (matches sample-tokens.json)
+     ============================================ */
+
+  /* Zinc (surface/neutral colors) */
+  --color-zinc-50: oklch(0.985 0 0);
+  --color-zinc-100: oklch(0.967 0.001 286.375);
+  --color-zinc-200: oklch(0.92 0.004 286.32);
+  --color-zinc-300: oklch(0.871 0.006 286.286);
+  --color-zinc-400: oklch(0.705 0.015 286.067);
+  --color-zinc-500: oklch(0.552 0.016 285.938);
+  --color-zinc-600: oklch(0.442 0.017 285.786);
+  --color-zinc-700: oklch(0.37 0.013 285.805);
+  --color-zinc-800: oklch(0.274 0.006 286.033);
+  --color-zinc-900: oklch(0.21 0.006 285.885);
+  --color-zinc-950: oklch(0.141 0.005 285.823);
+
+  /* Emerald (primary/success colors) */
+  --color-emerald-50: oklch(0.979 0.021 166.113);
+  --color-emerald-100: oklch(0.95 0.052 163.051);
+  --color-emerald-200: oklch(0.905 0.093 164.15);
+  --color-emerald-300: oklch(0.845 0.143 164.978);
+  --color-emerald-400: oklch(0.765 0.177 163.223);
+  --color-emerald-500: oklch(0.696 0.17 162.48);
+  --color-emerald-600: oklch(0.596 0.145 163.225);
+  --color-emerald-700: oklch(0.508 0.118 165.612);
+  --color-emerald-800: oklch(0.432 0.095 166.913);
+  --color-emerald-900: oklch(0.378 0.077 168.94);
+  --color-emerald-950: oklch(0.262 0.051 172.552);
+
+  /* Rose (destructive/error colors) */
+  --color-rose-500: oklch(0.645 0.246 16.439);
+
+  /* Amber (warning colors) */
+  --color-amber-500: oklch(0.769 0.188 70.08);
+
+  /* Blue (info colors) */
+  --color-blue-500: oklch(0.623 0.214 259.815);
+
+  /* ============================================
+     Semantic Colors (shadcn-style)
+     ============================================ */
+
+  /* Base colors */
+  --background: var(--color-zinc-50);
+  --foreground: var(--color-zinc-950);
+
+  /* Card colors */
+  --card: var(--color-zinc-50);
+  --card-foreground: var(--color-zinc-950);
+
+  /* Popover colors */
+  --popover: var(--color-zinc-50);
+  --popover-foreground: var(--color-zinc-950);
+
+  /* Primary brand colors */
+  --primary: var(--color-emerald-600);
+  --primary-foreground: var(--color-zinc-50);
+
+  /* Secondary colors */
+  --secondary: var(--color-zinc-200);
+  --secondary-foreground: var(--color-zinc-700);
+
+  /* Muted/subtle colors */
+  --muted: var(--color-zinc-100);
+  --muted-foreground: var(--color-zinc-500);
+
+  /* Accent colors */
+  --accent: color-mix(in srgb, var(--color-emerald-500), transparent 90%);
+  --accent-foreground: var(--color-zinc-900);
+
+  /* Status colors */
+  --destructive: var(--color-rose-500);
+  --destructive-foreground: var(--color-zinc-50);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-zinc-50);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-zinc-950);
+  --info: var(--color-blue-500);
+  --info-foreground: var(--color-zinc-50);
+
+  /* Border and input colors */
+  --border: var(--color-zinc-200);
+  --input: var(--color-zinc-400);
+  --ring: var(--color-emerald-500);
+
+  /* Legacy aliases for gradual migration */
+  --muted-foreground-light: var(--color-zinc-400);
+  --border-light: var(--color-zinc-100);
+  --success-light: var(--color-emerald-50);
+  --error: var(--destructive);
+  --error-light: var(--color-rose-500);
+
+  /* Spacing scale (matches primitives.spacing tokens) */
+  --spacing-0: 0px;
+  --spacing-2xs: 2px;
+  --spacing-xs: 4px;
+  --spacing-sm: 6px;
+  --spacing-md: 8px;
+  --spacing-lg: 12px;
+  --spacing-xl: 16px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+  --spacing-4xl: 48px;
+  --spacing-5xl: 64px;
+  --spacing-6xl: 96px;
+  --spacing-7xl: 128px;
+
+  /* Border radius (matches primitives.radius tokens) */
+  --radius-0: 0px;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius: 6px; /* Default/base radius */
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+  --radius-full: 9999px;
+
+  /* Sizes - Tailwind numeric scale (matches primitives.sizes tokens) */
+  --size-0: 0px;
+  --size-1: 4px;
+  --size-2: 8px;
+  --size-3: 12px;
+  --size-4: 16px;
+  --size-5: 20px;
+  --size-6: 24px;
+  --size-8: 32px;
+  --size-10: 40px;
+  --size-12: 48px;
+  --size-16: 64px;
+  --size-20: 80px;
+  --size-24: 96px;
+  --size-32: 128px;
+  --size-40: 160px;
+  --size-48: 192px;
+  --size-64: 256px;
+  --size-80: 320px;
+  --size-96: 384px;
+
+  /* Sizes - Container T-shirt scale (matches primitives.sizes tokens) */
+  --size-3xs: 256px;
+  --size-2xs: 288px;
+  --size-xs: 320px;
+  --size-sm: 384px;
+  --size-md: 448px;
+  --size-lg: 512px;
+  --size-xl: 576px;
+  --size-2xl: 672px;
+  --size-3xl: 768px;
+  --size-4xl: 896px;
+  --size-5xl: 1024px;
+  --size-6xl: 1152px;
+  --size-7xl: 1280px;
+
+  /* Transitions */
+  --transition: 0.2s;
+
+  /* Font sizes - optimized for Figma plugin UI */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 20px;
+  --text-3xl: 24px;
+  --text-4xl: 32px;
+  --text-5xl: 48px;
+
+  /* Font weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Component-specific */
+  --sidebar-width: 180px;
+  --sidebar-collapsed: 60px;
+}
+
+/* ============================================
+   Dark Mode (Future-ready)
+   ============================================ */
+.dark {
+  /* Base colors */
+  --background: var(--color-zinc-950);
+  --foreground: var(--color-zinc-50);
+
+  /* Card colors */
+  --card: var(--color-zinc-900);
+  --card-foreground: var(--color-zinc-50);
+
+  /* Popover colors */
+  --popover: var(--color-zinc-900);
+  --popover-foreground: var(--color-zinc-50);
+
+  /* Primary brand colors */
+  --primary: var(--color-emerald-500);
+  --primary-foreground: var(--color-zinc-50);
+
+  /* Secondary colors */
+  --secondary: var(--color-zinc-700);
+  --secondary-foreground: var(--color-zinc-300);
+
+  /* Muted/subtle colors */
+  --muted: var(--color-zinc-800);
+  --muted-foreground: var(--color-zinc-400);
+
+  /* Accent colors */
+  --accent: color-mix(in srgb, var(--color-emerald-500), transparent 20%);
+  --accent-foreground: var(--color-zinc-50);
+
+  /* Status colors */
+  --destructive: var(--color-rose-500);
+  --destructive-foreground: var(--color-zinc-50);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-zinc-50);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-zinc-950);
+  --info: var(--color-blue-500);
+  --info-foreground: var(--color-zinc-50);
+
+  /* Border and input colors */
+  --border: var(--color-zinc-800);
+  --input: var(--color-zinc-700);
+  --ring: var(--color-emerald-500);
+
+  /* Legacy aliases */
+  --muted-foreground-light: var(--color-zinc-500);
+  --border-light: var(--color-zinc-900);
+  --success-light: var(--color-emerald-950);
+  --error: var(--destructive);
+  --error-light: var(--color-rose-500);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* === Form Input Reset - Remove Outline & Prevent Color Change === */
+input[type="radio"],
+input[type="checkbox"] {
+  /* Keep native appearance, just remove outline */
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-offset: 0 !important;
+}
+
+input[type="radio"]:focus,
+input[type="checkbox"]:focus,
+input[type="radio"]:focus-visible,
+input[type="checkbox"]:focus-visible {
+  /* Remove ALL outline variants */
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+input[type="radio"]:active,
+input[type="checkbox"]:active {
+  /* Prevent color change on press/mousedown */
+  filter: brightness(1) !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  font-size: var(--text-base);
+  color: var(--foreground);
+  background: var(--background);
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+.plugin-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* === View Mode Toggle === */
+.view-mode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, var(--accent) 0%, #764ba2 100%);
+  color: var(--accent-foreground);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+
+  h1 {
+    font-size: var(--text-md);
+    font-weight: var(--font-semibold);
+    margin: 0;
+  }
+}
+
+.view-mode-toggle {
+  padding: 6px var(--spacing-md);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius);
+  color: var(--accent-foreground);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* === Layout with Sidebar === */
+.plugin-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* === Sidebar Navigation - moved to Sidebar.module.css === */
+
+/* === Page Content === */
+.page-content {
+  width: 100%;
+  /* height: 100%; - Removed to allow natural content height for proper scrolling */
+  min-height: 100%; /* Ensures full height for short content */
+}
+
+/* === Coming Soon Pages === */
+.coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-4xl) var(--spacing-3xl);
+  text-align: center;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.coming-soon-icon {
+  font-size: var(--text-5xl);
+  margin-bottom: var(--spacing-xl);
+  opacity: 0.3;
+}
+
+.coming-soon h2 {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-md);
+  color: var(--foreground);
+}
+
+.coming-soon > p {
+  font-size: var(--text-lg);
+  color: var(--muted-foreground);
+  margin-bottom: var(--spacing-4xl);
+  line-height: 1.6;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-4xl);
+  width: 100%;
+}
+
+.feature-item {
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: var(--muted);
+  border-radius: var(--radius-md);
+  font-size: var(--text-md);
+  color: var(--muted-foreground);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.coming-soon-badge {
+  display: inline-block;
+  padding: var(--spacing-sm) var(--spacing-xl);
+  background: linear-gradient(135deg, var(--accent) 0%, #764ba2 100%);
+  color: var(--primary-foreground);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* === Settings Page === */
+.settings-page {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  margin-bottom: var(--spacing-2xl);
+
+  h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--spacing-sm);
+    color: var(--foreground);
+  }
+
+  p {
+    font-size: var(--text-md);
+    color: var(--muted-foreground);
+  }
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.settings-section {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2xl);
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border);
+    color: var(--foreground);
+  }
+}
+
+/* Input, RadioGroup, and Checkbox setting styles moved to respective component modules */
+
+/* Radio group styles moved to RadioGroup.module.css */
+
+/* Checkbox styles moved to Checkbox.module.css */
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border);
+}
+
+/* === Collection Selector Styles - moved to CollectionSelector.module.css === */
+
+.plugin-header {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.plugin-header h1 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-xs);
+}
+
+.plugin-header p {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+.plugin-main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  min-height: 0;
+  background: var(--background);
+}
+
+.section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.section h2 {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-md);
+  color: var(--foreground);
+}
+
+/* === Button Styles === */
+/* Moved to Button.module.css */
+
+/* === Section Header === */
+/* Moved to SectionHeader.module.css */
+
+.btn-text {
+  border: none;
+  color: var(--muted-foreground);
+
+  &:hover {
+    color: var(--foreground);
+    background: transparent;
+  }
+}
+
+.selection-list {
+  list-style: none;
+  padding: 0;
+
+  li {
+    padding: var(--spacing-sm);
+    background: var(--muted);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-xs);
+    font-size: var(--text-sm);
+
+    strong {
+      font-weight: var(--font-semibold);
+      color: var(--foreground);
+    }
+  }
+}
+
+.plugin-footer {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--border);
+}
+
+/* === File Import Styles - moved to FileImport.module.css === */
+
+/* === Token Table Styles - moved to TokenTable.module.css === */
+
+/* === Progress View & Success View Styles - moved to ProgressView.module.css === */
+
+/* === Dialog & BatchRename Styles - moved to respective component modules === */

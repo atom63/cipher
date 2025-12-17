@@ -1,0 +1,80 @@
+/* Alert Component */
+.alert {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  transition: all var(--transition);
+}
+
+/* Alert Icon */
+.alertIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 2px;
+}
+
+/* Alert Content */
+.alertContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.alertTitle {
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.alertDescription {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+/* Variants - Compatible with OKLCH colors */
+.info {
+  background-color: color-mix(in srgb, var(--info), transparent 90%);
+  border-color: color-mix(in srgb, var(--info), transparent 70%);
+  color: var(--foreground);
+}
+
+.info .alertIcon {
+  color: var(--info);
+}
+
+.success {
+  background-color: color-mix(in srgb, var(--success), transparent 90%);
+  border-color: color-mix(in srgb, var(--success), transparent 70%);
+  color: var(--foreground);
+}
+
+.success .alertIcon {
+  color: var(--success);
+}
+
+.warning {
+  background-color: color-mix(in srgb, var(--warning), transparent 90%);
+  border-color: color-mix(in srgb, var(--warning), transparent 70%);
+  color: var(--foreground);
+}
+
+.warning .alertIcon {
+  color: var(--warning);
+}
+
+.error {
+  background-color: color-mix(in srgb, var(--destructive), transparent 90%);
+  border-color: color-mix(in srgb, var(--destructive), transparent 70%);
+  color: var(--foreground);
+}
+
+.error .alertIcon {
+  color: var(--destructive);
+}
+

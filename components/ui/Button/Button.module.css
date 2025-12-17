@@ -1,0 +1,142 @@
+/* Button Component - shadcn style */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  border-radius: var(--radius);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  user-select: none;
+  border: 1px solid transparent;
+  outline: none;
+}
+
+.button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Variants - shadcn semantic colors */
+.default {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.default:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  border-color: var(--border);
+}
+
+.secondary:hover:not(:disabled) {
+  background-color: var(--secondary);
+  opacity: 0.8;
+}
+
+.ghost {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.ghost:hover:not(:disabled) {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.destructive {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+.destructive:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.outline {
+  background-color: transparent;
+  border-color: var(--input);
+  color: var(--foreground);
+}
+
+.outline:hover:not(:disabled) {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.link {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.link:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+/* Size variants - aligned with spacing tokens */
+.sm {
+  height: var(--size-6);
+  padding: 0 var(--spacing-md);
+  font-size: var(--text-sm);
+}
+
+.md {
+  height: var(--size-8);
+  padding: 0 var(--spacing-lg);
+  font-size: var(--text-sm);
+}
+
+.lg {
+  height: var(--size-10);
+  padding: 0 var(--spacing-xl);
+  font-size: var(--text-base);
+}
+
+.icon {
+  height: var(--size-8);
+  width: var(--size-8);
+  padding: 0;
+}
+
+.icon.sm {
+  height: var(--size-6);
+  width: var(--size-6);
+}
+
+.icon.lg {
+  height: var(--size-10);
+  width: var(--size-10);
+}
+

@@ -1,0 +1,203 @@
+/* Token Table Component Styles */
+
+.tokenTableContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-x: auto;
+}
+
+.tableHeader {
+  margin-bottom: var(--spacing-lg);
+}
+
+.tableHeader h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-xs);
+}
+
+.statsBar {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.statChip {
+  padding: 6px var(--spacing-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--background);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.statChip:hover {
+  border-color: var(--primary);
+}
+
+.statChip.active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.tableControls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.controlActions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.tokenList {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: var(--spacing-lg);
+  max-height: 400px;
+}
+
+.tokenRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-light);
+  transition: background var(--transition);
+}
+
+.tokenRow:last-child {
+  border-bottom: none;
+}
+
+.tokenRow:hover {
+  background: var(--muted);
+}
+
+.tokenRow.skipped {
+  opacity: 0.5;
+}
+
+.tokenCheckbox {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.tokenCheckbox input {
+  cursor: pointer;
+}
+
+.tokenInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.tokenNames {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.originalName {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--muted-foreground);
+}
+
+.arrow {
+  color: var(--muted-foreground-light);
+  font-size: var(--text-base);
+}
+
+.figmaName {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--primary);
+}
+
+.figmaName.editable {
+  cursor: pointer;
+  padding: 2px var(--spacing-xs);
+  border-radius: var(--radius-xs);
+  transition: background var(--transition);
+}
+
+.figmaName.editable:hover {
+  background: #eff6ff;
+}
+
+.inlineEdit {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
+  font-family: inherit;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(24, 160, 251, 0.1);
+}
+
+.colorPreviewWrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.colorPreview {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.value {
+  font-family: "Monaco", "Courier New", monospace;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+.tokenUnit {
+  margin-left: 2px;
+  color: var(--muted-foreground-light);
+  font-size: var(--text-xs);
+}
+
+.tokenReference {
+  color: #06b6d4;
+  font-weight: var(--font-medium);
+}
+
+.tokenString {
+  color: #14b8a6;
+}
+
+.tokenActions {
+  flex-shrink: 0;
+}
+
+.tableActions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border);
+}
+
+.emptyState {
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  text-align: center;
+  color: var(--muted-foreground-light);
+  font-size: var(--text-base);
+}
+

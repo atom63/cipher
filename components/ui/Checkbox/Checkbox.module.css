@@ -1,0 +1,72 @@
+/* === Primitive Checkbox Input === */
+
+/* Wrapper for positioning */
+.checkboxWrapper {
+  display: inline-flex;
+  position: relative;
+  flex-shrink: 0;
+  padding-top: 2px; /* Optical alignment with text baseline */
+}
+
+/* Native input - visually hidden but accessible */
+.checkboxInput {
+  position: absolute;
+  opacity: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.checkboxInput:disabled {
+  cursor: not-allowed;
+}
+
+/* Custom checkbox box */
+.checkboxBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: var(--background);
+  transition: all 150ms ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Hover state */
+.checkboxInput:hover + .checkboxBox {
+  border-color: var(--primary);
+}
+
+/* Checked state */
+.checkboxBox.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Disabled state */
+.checkboxBox.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--muted);
+}
+
+.checkboxInput:disabled:hover + .checkboxBox {
+  border-color: var(--border);
+}
+
+/* Focus-visible state for accessibility */
+.checkboxInput:focus-visible + .checkboxBox {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Check icon */
+.checkIcon {
+  color: white;
+  flex-shrink: 0;
+}

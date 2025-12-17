@@ -1,0 +1,799 @@
+// Export handler - exports Figma variables and styles as design tokens
+// Supports nested structures and multiple color formats
+
+/// <reference types="@figma/plugin-typings" />
+
+import { convertColor } from '../libraries/color-converters'
+
+// Helper function to get bound variable reference
+function getBoundVariableReference(paint: any): any {
+  try {
+    // Check if boundVariables exists and has a color binding
+    if (!paint || typeof paint !== 'object') return null
+    if (!paint.boundVariables || typeof paint.boundVariables !== 'object') return null
+    if (!paint.boundVariables.color || !paint.boundVariables.color.id) return null
+    
+    const variableId = paint.boundVariables.color.id
+    const variable = figma.variables.getVariableById(variableId)
+    if (!variable) return null
+    
+    const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+    
+    return {
+      type: 'variable',
+      variableId: variable.id,
+      variableName: variable.name,
+      collectionName: collection ? collection.name : 'Unknown',
+      collectionId: collection ? collection.id : undefined
+    }
+  } catch (error) {
+    // Silently fail - boundVariables may not be available in all contexts
+    console.warn('Could not read bound variable:', error)
+    return null
+  }
+}
+
+// Helper function to convert paint to structured value
+function paintToValue(paint: Paint, colorFormat: string = 'oklch'): any {
+  
+  if (paint.type === 'SOLID') {
+    const solidPaint = paint as SolidPaint
+    const result: any = {
+      type: 'solid',
+      color: convertColor(solidPaint.color, colorFormat),
+      opacity: paint.opacity
+    }
+    
+    // Check if this paint is bound to a variable
+    const boundVariable = getBoundVariableReference(paint)
+    if (boundVariable) {
+      result.boundVariable = boundVariable
+    }
+    
+    return result
+  }
+  
+  if (paint.type === 'GRADIENT_LINEAR' || paint.type === 'GRADIENT_RADIAL' || 
+      paint.type === 'GRADIENT_ANGULAR' || paint.type === 'GRADIENT_DIAMOND') {
+    const gradientPaint = paint as GradientPaint
+    console.log('🌈 Converting gradient with format:', colorFormat, 'stops:', gradientPaint.gradientStops.length)
+    
+    // Check if gradient stops have variable bindings
+    const stopsWithBindings = gradientPaint.gradientStops.map((stop, index) => {
+      const stopData: any = {
+        position: Math.round(stop.position * 1000) / 1000,
+        color: convertColor(stop.color, colorFormat)
+      }
+      
+      // Check if this gradient stop color is bound to a variable
+      // Try multiple possible API structures
+      try {
+        const stopAny = stop as any
+        let boundVar = null
+        
+        // Check if stop itself has boundVariables (this is where Figma stores them)
+        if (stopAny.boundVariables && stopAny.boundVariables.color) {
+          boundVar = stopAny.boundVariables.color
+        }
+        
+        if (boundVar && boundVar.id) {
+          const variable = figma.variables.getVariableById(boundVar.id)
+          if (variable) {
+            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+            stopData.boundVariable = {
+              type: 'variable',
+              variableId: variable.id,
+              variableName: variable.name,
+              collectionName: collection ? collection.name : 'Unknown',
+              collectionId: collection ? collection.id : undefined
+            }
+            console.log(`🔗 Gradient stop ${index} → variable: ${variable.name}`)
+          }
+        }
+      } catch (error) {
+        console.warn(`Could not read bound variable for gradient stop ${index}:`, error)
+      }
+      
+      return stopData
+    })
+    
+    return {
+      type: paint.type.toLowerCase().replace('gradient_', ''),
+      gradientStops: stopsWithBindings,
+      gradientTransform: gradientPaint.gradientTransform.map(row => 
+        row.map(val => Math.round(val * 1000) / 1000)
+      ),
+      opacity: paint.opacity
+    }
+  }
+  
+  if (paint.type === 'IMAGE') {
+    const imagePaint = paint as ImagePaint
+    return {
+      type: 'image',
+      scaleMode: imagePaint.scaleMode,
+      imageTransform: imagePaint.imageTransform,
+      scalingFactor: imagePaint.scalingFactor,
+      rotation: imagePaint.rotation,
+      filters: imagePaint.filters,
+      opacity: paint.opacity
+    }
+  }
+  
+  return { type: 'unknown' }
+}
+
+// Helper function to convert effect to token value
+function effectToToken(effect: Effect): any {
+  const effectData: any = {}
+  
+  if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
+    effectData.type = effect.type.toLowerCase().replace('_', '-')
+    effectData.offsetX = `${effect.offset.x}px`
+    effectData.offsetY = `${effect.offset.y}px`
+    effectData.radius = `${effect.radius}px`
+    effectData.spread = effect.spread !== undefined ? `${effect.spread}px` : undefined
+    effectData.color = effect.color ? `rgba(${Math.round(effect.color.r * 255)}, ${Math.round(effect.color.g * 255)}, ${Math.round(effect.color.b * 255)}, ${effect.color.a})` : undefined
+    effectData.visible = effect.visible
+    
+    // Check for variable bindings on effect properties
+    try {
+      const effectAny = effect as any
+      
+      // Check for radius binding
+      if (effectAny.boundVariables?.radius?.id) {
+        const variable = figma.variables.getVariableById(effectAny.boundVariables.radius.id)
+        if (variable) {
+          const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+          effectData.radiusBoundVariable = {
+            type: 'variable',
+            variableId: variable.id,
+            variableName: variable.name,
+            collectionName: collection ? collection.name : 'Unknown',
+            collectionId: collection ? collection.id : undefined
+          }
+          console.log(`🔗 Effect radius → variable: ${variable.name}`)
+        }
+      }
+      
+      // Check for spread binding (drop shadow only)
+      if (effect.type === 'DROP_SHADOW' && effectAny.boundVariables?.spread?.id) {
+        const variable = figma.variables.getVariableById(effectAny.boundVariables.spread.id)
+        if (variable) {
+          const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+          effectData.spreadBoundVariable = {
+            type: 'variable',
+            variableId: variable.id,
+            variableName: variable.name,
+            collectionName: collection ? collection.name : 'Unknown',
+            collectionId: collection ? collection.id : undefined
+          }
+          console.log(`🔗 Effect spread → variable: ${variable.name}`)
+        }
+      }
+      
+      // Check for color binding
+      if (effectAny.boundVariables?.color?.id) {
+        const variable = figma.variables.getVariableById(effectAny.boundVariables.color.id)
+        if (variable) {
+          const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+          effectData.colorBoundVariable = {
+            type: 'variable',
+            variableId: variable.id,
+            variableName: variable.name,
+            collectionName: collection ? collection.name : 'Unknown',
+            collectionId: collection ? collection.id : undefined
+          }
+          console.log(`🔗 Effect color → variable: ${variable.name}`)
+        }
+      }
+    } catch (error) {
+      console.warn('Could not read bound variables for effect:', error)
+    }
+    
+    return effectData
+  }
+  
+  if (effect.type === 'LAYER_BLUR' || effect.type === 'BACKGROUND_BLUR') {
+    effectData.type = effect.type.toLowerCase().replace('_', '-')
+    effectData.radius = `${effect.radius}px`
+    effectData.visible = effect.visible
+    
+    // Check for variable bindings on radius
+    try {
+      const effectAny = effect as any
+      if (effectAny.boundVariables?.radius?.id) {
+        const variable = figma.variables.getVariableById(effectAny.boundVariables.radius.id)
+        if (variable) {
+          const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+          effectData.radiusBoundVariable = {
+            type: 'variable',
+            variableId: variable.id,
+            variableName: variable.name,
+            collectionName: collection ? collection.name : 'Unknown',
+            collectionId: collection ? collection.id : undefined
+          }
+          console.log(`🔗 Blur radius → variable: ${variable.name}`)
+        }
+      }
+    } catch (error) {
+      console.warn('Could not read bound variable for blur radius:', error)
+    }
+    
+    return effectData
+  }
+  
+  return { type: effect.type, visible: effect.visible }
+}
+
+// Convert Figma variable value to token value
+export function convertVariableValue(value: any, variable: Variable, colorFormat: string = 'oklch'): string {
+  if (typeof value === 'object' && 'type' in value && value.type === 'VARIABLE_ALIAS') {
+    // It's a reference to another variable
+    const refVar = figma.variables.getVariableById(value.id)
+    if (refVar) {
+      // Get the collection name for the referenced variable
+      const refCollection = figma.variables.getVariableCollectionById(refVar.variableCollectionId)
+      const collectionName = refCollection ? refCollection.name : 'unknown'
+      // Build reference with collection prefix: {collection.path}
+      return `{${collectionName}.${refVar.name.replace(/\//g, '.')}}`
+    }
+    return 'unknown-reference'
+  }
+
+  // Direct value
+  switch (variable.resolvedType) {
+    case 'COLOR':
+      if (typeof value === 'object' && 'r' in value) {
+        return convertColor(value as RGB, colorFormat)
+      }
+      return String(value)
+    
+    case 'FLOAT':
+      // Add 'px' unit for dimension values
+      return `${value}px`
+    
+    case 'STRING':
+      return String(value)
+    
+    case 'BOOLEAN':
+      return String(value)
+    
+    default:
+      return String(value)
+  }
+}
+
+// Convert Figma type to token type with semantic inference
+export function figmaTypeToTokenType(figmaType: string, variableName: string): string {
+  switch (figmaType) {
+    case 'COLOR':
+      return 'color'
+    case 'FLOAT': {
+      // Infer semantic type from variable name/path
+      const nameLower = variableName.toLowerCase()
+      
+      // Check for radius tokens
+      if (nameLower.includes('/radius/') || nameLower.startsWith('radius/')) {
+        return 'borderRadius'
+      }
+      
+      // Check for spacing tokens
+      if (nameLower.includes('/spacing/') || nameLower.startsWith('spacing/')) {
+        return 'spacing'
+      }
+      
+      // Check for size/sizing tokens
+      if (nameLower.includes('/sizes/') || nameLower.startsWith('sizes/') || 
+          nameLower.includes('/size/') || nameLower.startsWith('size/')) {
+        return 'sizing'
+      }
+      
+      // Default to number for other FLOAT types
+      return 'number'
+    }
+    case 'STRING':
+      return 'string'
+    case 'BOOLEAN':
+      return 'boolean'
+    default:
+      return 'unknown'
+  }
+}
+
+// Export Figma variables as design tokens
+// Supports nested structures - example output:
+// {
+//   "tokens": {
+//     "semantics": {
+//       "background": {
+//         "primary": { "type": "color", "modes": { "Light": "...", "Dark": "..." } }
+//       },
+//       "data": {
+//         "calories": { "type": "color", "modes": { "Light": "...", "Dark": "..." } }
+//       }
+//     }
+//   }
+// }
+export async function exportVariablesAsTokens(collectionIds: string[], colorFormat: string = 'oklch') {
+  try {
+    const collections = figma.variables.getLocalVariableCollections()
+    const selectedCollections = collectionIds.length > 0
+      ? collections.filter(c => collectionIds.includes(c.id))
+      : collections
+
+    if (selectedCollections.length === 0) {
+      figma.ui.postMessage({
+        type: 'export-error',
+        data: { message: 'No collections selected or found' }
+      })
+      return
+    }
+
+    // Build token structure
+    const tokenData: any = {
+      $schema: 'design-tokens-with-collections',
+      $version: '1.0',
+      $collections: {},
+      tokens: {}
+    }
+
+    // Process each collection
+    for (const collection of selectedCollections) {
+      const collectionKey = collection.name
+      const modeCount = collection.modes.length
+      const variableCount = collection.variableIds.length
+
+      console.log(`📦 Exporting collection: "${collectionKey}" (${variableCount} variables, ${modeCount} mode${modeCount !== 1 ? 's' : ''})`)
+      if (modeCount > 1) {
+        console.log(`  🎨 Modes: ${collection.modes.map(m => m.name).join(', ')}`)
+      }
+
+      // Add collection metadata
+      tokenData.$collections[collectionKey] = {
+        name: collection.name,
+        description: `Exported from Figma on ${new Date().toISOString()}`,
+        order: selectedCollections.indexOf(collection) + 1,
+        modes: collection.modes.map(m => m.name)
+      }
+
+      // Get all variables in this collection
+      const variables = collection.variableIds.map(id => figma.variables.getVariableById(id)).filter(v => v !== null) as Variable[]
+
+      // Initialize tokens object for this collection
+      tokenData.tokens[collectionKey] = {}
+
+      // Group variables by path and build nested structure
+      for (const variable of variables) {
+        // Parse variable name - supports nested paths:
+        // - "zinc/50" -> ["zinc", "50"]
+        // - "background/primary" -> ["background", "primary"] 
+        // - "data/calories" -> ["data", "calories"]
+        const parts = variable.name.split('/')
+        const tokenName = parts[parts.length - 1]
+        const parentPath = parts.slice(0, -1) // All parts except the last (the token name)
+
+        // Build nested structure by traversing/creating parent objects
+        // Example: "background/primary" creates tokens[collection].background.primary
+        let current = tokenData.tokens[collectionKey]
+        for (const part of parentPath) {
+          if (!current[part]) {
+            current[part] = {}
+          }
+          current = current[part]
+        }
+
+        // Check if multi-mode
+        const hasModes = collection.modes.length > 1
+
+        if (hasModes) {
+          // Multi-mode token (like semantic tokens with Light/Dark or responsive tokens with mobile/tablet/desktop)
+          const modes: any = {}
+          for (const mode of collection.modes) {
+            const value = variable.valuesByMode[mode.modeId]
+            modes[mode.name] = convertVariableValue(value, variable, colorFormat)
+          }
+
+          current[tokenName] = {
+            type: figmaTypeToTokenType(variable.resolvedType, variable.name),
+            collection: collectionKey,
+            modes
+          }
+          
+          // Add description if present
+          if (variable.description) {
+            current[tokenName].description = variable.description
+          }
+        } else {
+          // Single mode token
+          const mode = collection.modes[0]
+          const value = variable.valuesByMode[mode.modeId]
+          const tokenValue = convertVariableValue(value, variable, colorFormat)
+
+          current[tokenName] = {
+            value: tokenValue,
+            type: figmaTypeToTokenType(variable.resolvedType, variable.name),
+            collection: collectionKey
+          }
+          
+          // Add description if present
+          if (variable.description) {
+            current[tokenName].description = variable.description
+          }
+        }
+      }
+    }
+
+    // Send to UI with the format that was used
+    figma.ui.postMessage({
+      type: 'export-complete',
+      data: {
+        tokens: tokenData,
+        collectionCount: selectedCollections.length,
+        variableCount: selectedCollections.reduce((sum, c) => sum + c.variableIds.length, 0),
+        format: colorFormat
+      }
+    })
+
+  } catch (error) {
+    console.error('Export error:', error)
+    figma.ui.postMessage({
+      type: 'export-error',
+      data: { message: error instanceof Error ? error.message : 'Unknown error during export' }
+    })
+  }
+}
+
+// Export Figma Styles (Paint, Text, Effect, Grid) as structured data
+export async function exportStylesAsTokens(selectedGroups: { category: string; group: string }[], colorFormat: string = 'oklch') {
+  try {
+    console.log('✨ exportStylesAsTokens called with colorFormat:', colorFormat)
+    
+    // Get all local styles
+    let paintStyles = figma.getLocalPaintStyles()
+    let textStyles = figma.getLocalTextStyles()
+    let effectStyles = figma.getLocalEffectStyles()
+    let gridStyles = figma.getLocalGridStyles()
+
+    // Filter styles based on selected groups
+    if (selectedGroups.length > 0) {
+      const matchesSelection = (styleName: string, category: 'paint' | 'text' | 'effect' | 'grid') => {
+        const parts = styleName.split('/')
+        const rootFolder = parts.length > 1 ? parts[0] : 'Root'
+        return selectedGroups.some(sel => sel.category === category && sel.group === rootFolder)
+      }
+
+      paintStyles = paintStyles.filter(s => matchesSelection(s.name, 'paint'))
+      textStyles = textStyles.filter(s => matchesSelection(s.name, 'text'))
+      effectStyles = effectStyles.filter(s => matchesSelection(s.name, 'effect'))
+      gridStyles = gridStyles.filter(s => matchesSelection(s.name, 'grid'))
+    }
+
+    console.log('📊 Styles to export:', {
+      paint: paintStyles.length,
+      text: textStyles.length,
+      effect: effectStyles.length,
+      grid: gridStyles.length
+    })
+
+    const totalStyles = paintStyles.length + textStyles.length + effectStyles.length + gridStyles.length
+
+    if (totalStyles === 0) {
+      console.warn('⚠️ No styles found matching selection')
+      figma.ui.postMessage({
+        type: 'export-error',
+        data: { message: 'No styles found matching your selection.' }
+      })
+      return
+    }
+
+    // Build styles structure
+    const stylesData: any = {
+      $schema: 'figma-styles-export',
+      $version: '1.0',
+      $exportedAt: new Date().toISOString(),
+      $counts: {
+        paint: paintStyles.length,
+        text: textStyles.length,
+        effect: effectStyles.length,
+        grid: gridStyles.length,
+        total: totalStyles
+      },
+      styles: {
+        paint: {},
+        text: {},
+        effect: {},
+        grid: {}
+      }
+    }
+
+    // Process Color Styles (colors, gradients, images)
+    for (const style of paintStyles) {
+      const parts = style.name.split('/')
+      const styleName = parts[parts.length - 1]
+      const parentPath = parts.slice(0, -1)
+
+      let current = stylesData.styles.paint
+      for (const part of parentPath) {
+        if (!current[part]) {
+          current[part] = {}
+        }
+        current = current[part]
+      }
+
+      const paints = style.paints
+      const paintValues = paints.map(paint => paintToValue(paint, colorFormat))
+
+      current[styleName] = {
+        id: style.id,
+        key: style.key,
+        type: 'color',
+        fills: paintValues,
+        description: style.description || undefined,
+        // Legacy format for backwards compatibility
+        value: paintValues.length === 1 && paintValues[0].type === 'solid' 
+          ? paintValues[0].color 
+          : paintValues
+      }
+    }
+
+    // Process Text Styles (typography)
+    for (const style of textStyles) {
+      const parts = style.name.split('/')
+      const styleName = parts[parts.length - 1]
+      const parentPath = parts.slice(0, -1)
+
+      let current = stylesData.styles.text
+      for (const part of parentPath) {
+        if (!current[part]) {
+          current[part] = {}
+        }
+        current = current[part]
+      }
+
+      const textStyleData: any = {
+        id: style.id,
+        key: style.key,
+        type: 'text',
+        fontFamily: style.fontName.family,
+        fontStyle: style.fontName.style,
+        fontWeight: (style as any).fontWeight,
+        fontSize: `${style.fontSize}px`,
+        lineHeight: typeof style.lineHeight === 'object' && 'value' in style.lineHeight 
+          ? `${style.lineHeight.value}${style.lineHeight.unit === 'PIXELS' ? 'px' : style.lineHeight.unit === 'PERCENT' ? '%' : ''}` 
+          : style.lineHeight,
+        letterSpacing: typeof style.letterSpacing === 'object' && 'value' in style.letterSpacing
+          ? `${style.letterSpacing.value}${style.letterSpacing.unit === 'PIXELS' ? 'px' : style.letterSpacing.unit === 'PERCENT' ? '%' : ''}`
+          : style.letterSpacing,
+        paragraphSpacing: `${style.paragraphSpacing}px`,
+        paragraphIndent: `${style.paragraphIndent}px`,
+        textCase: style.textCase,
+        textDecoration: style.textDecoration,
+        description: style.description || undefined
+      }
+      
+      // Check for variable bindings on fontSize
+      try {
+        const styleAny = style as any
+        if (styleAny.boundVariables?.fontSize?.id) {
+          const variable = figma.variables.getVariableById(styleAny.boundVariables.fontSize.id)
+          if (variable) {
+            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+            textStyleData.fontSizeBoundVariable = {
+              type: 'variable',
+              variableId: variable.id,
+              variableName: variable.name,
+              collectionName: collection ? collection.name : 'Unknown',
+              collectionId: collection ? collection.id : undefined
+            }
+            console.log(`🔗 Text style "${style.name}" fontSize → variable: ${variable.name}`)
+          }
+        }
+      } catch (error) {
+        console.warn(`Could not read fontSize bound variable for style "${style.name}":`, error)
+      }
+      
+      // Check for variable bindings on lineHeight
+      try {
+        const styleAny = style as any
+        if (styleAny.boundVariables?.lineHeight?.id) {
+          const variable = figma.variables.getVariableById(styleAny.boundVariables.lineHeight.id)
+          if (variable) {
+            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+            textStyleData.lineHeightBoundVariable = {
+              type: 'variable',
+              variableId: variable.id,
+              variableName: variable.name,
+              collectionName: collection ? collection.name : 'Unknown',
+              collectionId: collection ? collection.id : undefined
+            }
+            console.log(`🔗 Text style "${style.name}" lineHeight → variable: ${variable.name}`)
+          }
+        }
+      } catch (error) {
+        console.warn(`Could not read lineHeight bound variable for style "${style.name}":`, error)
+      }
+      
+      // Check for variable bindings on fontFamily
+      try {
+        const styleAny = style as any
+        if (styleAny.boundVariables?.fontFamily?.id) {
+          const variable = figma.variables.getVariableById(styleAny.boundVariables.fontFamily.id)
+          if (variable) {
+            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+            textStyleData.fontFamilyBoundVariable = {
+              type: 'variable',
+              variableId: variable.id,
+              variableName: variable.name,
+              collectionName: collection ? collection.name : 'Unknown',
+              collectionId: collection ? collection.id : undefined
+            }
+            console.log(`🔗 Text style "${style.name}" fontFamily → variable: ${variable.name}`)
+          }
+        }
+      } catch (error) {
+        console.warn(`Could not read fontFamily bound variable for style "${style.name}":`, error)
+      }
+      
+      // Check for variable bindings on fontWeight
+      try {
+        const styleAny = style as any
+        if (styleAny.boundVariables?.fontWeight?.id) {
+          const variable = figma.variables.getVariableById(styleAny.boundVariables.fontWeight.id)
+          if (variable) {
+            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+            textStyleData.fontWeightBoundVariable = {
+              type: 'variable',
+              variableId: variable.id,
+              variableName: variable.name,
+              collectionName: collection ? collection.name : 'Unknown',
+              collectionId: collection ? collection.id : undefined
+            }
+            console.log(`🔗 Text style "${style.name}" fontWeight → variable: ${variable.name}`)
+          }
+        }
+      } catch (error) {
+        console.warn(`Could not read fontWeight bound variable for style "${style.name}":`, error)
+      }
+      
+      // Check for variable bindings on letterSpacing
+      try {
+        const styleAny = style as any
+        if (styleAny.boundVariables?.letterSpacing?.id) {
+          const variable = figma.variables.getVariableById(styleAny.boundVariables.letterSpacing.id)
+          if (variable) {
+            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+            textStyleData.letterSpacingBoundVariable = {
+              type: 'variable',
+              variableId: variable.id,
+              variableName: variable.name,
+              collectionName: collection ? collection.name : 'Unknown',
+              collectionId: collection ? collection.id : undefined
+            }
+            console.log(`🔗 Text style "${style.name}" letterSpacing → variable: ${variable.name}`)
+          }
+        }
+      } catch (error) {
+        console.warn(`Could not read letterSpacing bound variable for style "${style.name}":`, error)
+      }
+      
+      // Check for variable bindings on paragraphSpacing
+      try {
+        const styleAny = style as any
+        if (styleAny.boundVariables?.paragraphSpacing?.id) {
+          const variable = figma.variables.getVariableById(styleAny.boundVariables.paragraphSpacing.id)
+          if (variable) {
+            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+            textStyleData.paragraphSpacingBoundVariable = {
+              type: 'variable',
+              variableId: variable.id,
+              variableName: variable.name,
+              collectionName: collection ? collection.name : 'Unknown',
+              collectionId: collection ? collection.id : undefined
+            }
+            console.log(`🔗 Text style "${style.name}" paragraphSpacing → variable: ${variable.name}`)
+          }
+        }
+      } catch (error) {
+        console.warn(`Could not read paragraphSpacing bound variable for style "${style.name}":`, error)
+      }
+      
+      // Check for variable bindings on paragraphIndent
+      try {
+        const styleAny = style as any
+        if (styleAny.boundVariables?.paragraphIndent?.id) {
+          const variable = figma.variables.getVariableById(styleAny.boundVariables.paragraphIndent.id)
+          if (variable) {
+            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+            textStyleData.paragraphIndentBoundVariable = {
+              type: 'variable',
+              variableId: variable.id,
+              variableName: variable.name,
+              collectionName: collection ? collection.name : 'Unknown',
+              collectionId: collection ? collection.id : undefined
+            }
+            console.log(`🔗 Text style "${style.name}" paragraphIndent → variable: ${variable.name}`)
+          }
+        }
+      } catch (error) {
+        console.warn(`Could not read paragraphIndent bound variable for style "${style.name}":`, error)
+      }
+
+      current[styleName] = textStyleData
+    }
+
+    // Process Effect Styles (shadows, blurs)
+    for (const style of effectStyles) {
+      const parts = style.name.split('/')
+      const styleName = parts[parts.length - 1]
+      const parentPath = parts.slice(0, -1)
+
+      let current = stylesData.styles.effect
+      for (const part of parentPath) {
+        if (!current[part]) {
+          current[part] = {}
+        }
+        current = current[part]
+      }
+
+      current[styleName] = {
+        id: style.id,
+        key: style.key,
+        type: 'effect',
+        effects: style.effects.map(effect => effectToToken(effect)),
+        description: style.description || undefined
+      }
+    }
+
+    // Process Layout grid styles
+    for (const style of gridStyles) {
+      const parts = style.name.split('/')
+      const styleName = parts[parts.length - 1]
+      const parentPath = parts.slice(0, -1)
+
+      let current = stylesData.styles.grid
+      for (const part of parentPath) {
+        if (!current[part]) {
+          current[part] = {}
+        }
+        current = current[part]
+      }
+
+      current[styleName] = {
+        id: style.id,
+        key: style.key,
+        type: 'grid',
+        layoutGrids: style.layoutGrids.map(grid => ({
+          pattern: grid.pattern,
+          sectionSize: grid.sectionSize,
+          visible: grid.visible,
+          color: grid.color ? `rgba(${Math.round(grid.color.r * 255)}, ${Math.round(grid.color.g * 255)}, ${Math.round(grid.color.b * 255)}, ${grid.color.a})` : undefined,
+          alignment: 'alignment' in grid ? grid.alignment : undefined,
+          count: 'count' in grid ? grid.count : undefined,
+          offset: 'offset' in grid ? grid.offset : undefined,
+          gutterSize: 'gutterSize' in grid ? grid.gutterSize : undefined
+        })),
+        description: style.description || undefined
+      }
+    }
+
+    // Send to UI
+    console.log('✅ Styles export complete:', stylesData.$counts)
+    figma.ui.postMessage({
+      type: 'styles-export-complete',
+      data: {
+        styles: stylesData,
+        counts: stylesData.$counts,
+        format: colorFormat
+      }
+    })
+
+  } catch (error) {
+    console.error('❌ Style export error:', error)
+    figma.ui.postMessage({
+      type: 'export-error',
+      data: { message: error instanceof Error ? error.message : 'Unknown error during style export' }
+    })
+  }
+}
+

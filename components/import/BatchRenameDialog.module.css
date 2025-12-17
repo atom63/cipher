@@ -1,0 +1,226 @@
+/* Batch Rename Dialog Specific Styles */
+
+.dialogLayout {
+  display: flex;
+  gap: 0; /* No gap needed since we have border divider */
+  height: 500px; /* Fixed height for better scroll control */
+  max-height: calc(100vh - 200px); /* Responsive to viewport */
+}
+
+.dialogForm {
+  flex: 0 0 320px; /* Fixed width, no grow/shrink */
+  min-width: 280px;
+  padding: var(--spacing-xl);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  overflow-y: auto; /* Allow scroll if form gets too long */
+}
+
+.dialogReference {
+  flex: 1; /* Take remaining space */
+  min-width: 280px;
+  padding: var(--spacing-xl);
+  background: var(--muted);
+  overflow-y: auto; /* Scrollable content area */
+}
+
+/* Smooth scrollbar styling */
+.dialogReference::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dialogReference::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dialogReference::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.dialogReference::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground-light);
+}
+
+/* Responsive: Stack on narrow windows */
+@media (max-width: 700px) {
+  .dialogLayout {
+    flex-direction: column;
+    height: auto; /* Allow natural height on mobile */
+    max-height: calc(100vh - 150px);
+  }
+
+  .dialogForm {
+    flex: 0 0 auto; /* Natural height on mobile */
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 200px; /* Limit form height on mobile */
+  }
+
+  .dialogReference {
+    flex: 1;
+    min-height: 300px; /* Ensure enough space for preview */
+  }
+}
+
+.affectedCount {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius);
+  font-size: var(--text-base);
+  color: #1e40af;
+  text-align: center;
+}
+
+.affectedCount strong {
+  font-weight: var(--font-semibold);
+  color: #1e3a8a;
+}
+
+/* Reference Section */
+.referenceSection h4,
+.previewSection h4 {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-md);
+  color: var(--foreground);
+}
+
+.tokenCategories {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.tokenCategories details {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.tokenCategories summary {
+  padding: 10px var(--spacing-md);
+  cursor: pointer;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  background: var(--background);
+  transition: background var(--transition);
+  user-select: none;
+}
+
+.tokenCategories summary:hover {
+  background: var(--muted);
+}
+
+.tokenReferenceList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tokenReferenceItem {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.refName {
+  color: var(--muted-foreground);
+  font-family: "Monaco", "Courier New", monospace;
+}
+
+.refArrow {
+  color: var(--muted-foreground-light);
+  font-size: var(--text-xs);
+}
+
+.refPath {
+  color: var(--primary);
+  font-family: "Monaco", "Courier New", monospace;
+  flex: 1;
+}
+
+.tokenMore {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  font-style: italic;
+  border-top: 1px solid var(--border-light);
+}
+
+/* Preview Section */
+.previewSection {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.previewEmpty {
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  text-align: center;
+  color: var(--muted-foreground-light);
+  font-size: var(--text-base);
+}
+
+.previewList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.previewItem {
+  padding: 10px var(--spacing-md);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-family: "Monaco", "Courier New", monospace;
+}
+
+.previewItem.changed {
+  border-color: var(--success);
+  background: var(--success-light);
+}
+
+.previewItem.unchanged {
+  opacity: 0.5;
+}
+
+.previewBefore {
+  color: var(--muted-foreground);
+  margin-bottom: var(--spacing-xs);
+}
+
+.previewArrow {
+  color: var(--success);
+  font-size: var(--text-xs);
+  margin: var(--spacing-xs) 0;
+  text-align: center;
+}
+
+.previewAfter {
+  color: var(--success);
+  font-weight: var(--font-semibold);
+  margin-top: var(--spacing-xs);
+}
+
+.previewUnchanged {
+  color: var(--muted-foreground-light);
+}
+
+.previewMore {
+  padding: var(--spacing-sm);
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+

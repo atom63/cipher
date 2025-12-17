@@ -1,0 +1,138 @@
+/* Radix Selector Styles */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.backButton {
+  flex-shrink: 0;
+  margin-top: var(--spacing-2xs);
+}
+
+.title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  margin: 0 0 var(--spacing-xs);
+  color: var(--foreground);
+}
+
+.subtitle {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+.options {
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionActions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Text buttons now use Button component with ghost variant */
+
+.paletteGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* Selected state - add accent border using existing UI tokens */
+.selected {
+  border-color: var(--ring) !important;
+}
+
+/* Color swatches preview - full 12 shades */
+.colorSwatches {
+  display: flex;
+  gap: 1px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-top: var(--spacing-xs);
+}
+
+.colorSwatch {
+  flex: 1;
+  cursor: default;
+  transition: all var(--transition) ease;
+  min-width: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.colorSwatch:last-child {
+  border-right: none;
+}
+
+.colorSwatch:hover {
+  transform: scaleY(1.2);
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+
+.tokenInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-sm);
+}
+
+.tokenCount {
+  font-weight: var(--font-semibold);
+  color: var(--foreground);
+}
+
+.selectedCount {
+  color: var(--muted-foreground);
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+}
+

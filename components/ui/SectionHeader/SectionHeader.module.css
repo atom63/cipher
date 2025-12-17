@@ -1,0 +1,108 @@
+/* === SectionHeader Component Styles === */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.content {
+  flex: 1;
+}
+
+.title {
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.description {
+  margin: 0;
+}
+
+.action {
+  flex-shrink: 0;
+}
+
+/* === Variant: Display === */
+/* Largest, for major page headers */
+.variant-display {
+  margin-bottom: var(--spacing-3xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.variant-display .title {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+.variant-display .description {
+  font-size: var(--text-lg);
+  color: var(--muted-foreground);
+  margin-top: var(--spacing-sm);
+  line-height: 1.4;
+}
+
+/* === Variant: Primary === */
+/* Default, large and prominent */
+.variant-primary {
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+}
+
+.variant-primary .title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.variant-primary .description {
+  font-size: var(--text-md);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+/* === Variant: Secondary === */
+/* Medium, for subsections */
+.variant-secondary {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-sm);
+}
+
+.variant-secondary .title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--foreground);
+  line-height: 1.4;
+}
+
+.variant-secondary .description {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+/* === Variant: Muted === */
+/* Smallest, subtle, for minor sections */
+.variant-muted {
+  margin-bottom: var(--spacing-md);
+}
+
+.variant-muted .title {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.variant-muted .description {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  opacity: 0.8;
+  line-height: 1.5;
+}
+

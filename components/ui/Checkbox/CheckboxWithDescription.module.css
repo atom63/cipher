@@ -1,0 +1,47 @@
+/* === Checkbox with Description Component Styles - Flowbite style === */
+.wrapper {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Checkbox container with fixed alignment */
+.checkboxContainer {
+  display: flex;
+  align-items: center;
+  height: 20px; /* Match first line height */
+  flex-shrink: 0;
+}
+
+/* Content container for label and description */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+  flex: 1;
+}
+
+.label {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--foreground);
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Disabled state */
+.wrapper:has(input:disabled) .label {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.wrapper:has(input:disabled) .description {
+  opacity: 0.5;
+}
+

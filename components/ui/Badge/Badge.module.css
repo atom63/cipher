@@ -1,0 +1,106 @@
+/* Base badge styles - Flowbite subtle style */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  user-select: none;
+  white-space: nowrap;
+  line-height: 1;
+  transition: all var(--transition);
+  border: 1px solid transparent;
+}
+
+/* Size variants - Flowbite style */
+.sm {
+  padding: 1px 8px;
+  font-size: 10px;
+  height: auto;
+  min-height: 16px;
+}
+
+.md {
+  padding: 2px 10px;
+  font-size: var(--text-xs);
+  height: auto;
+  min-height: 20px;
+}
+
+.lg {
+  padding: 3px 12px;
+  font-size: var(--text-sm);
+  height: auto;
+  min-height: 24px;
+}
+
+/* Color variants - Flowbite subtle style (light bg, dark text) */
+.default {
+  background-color: var(--color-emerald-100);
+  color: var(--color-emerald-800);
+  border-color: transparent;
+}
+
+.default:hover {
+  background-color: var(--color-emerald-200);
+}
+
+.secondary {
+  background-color: var(--color-zinc-100);
+  color: var(--color-zinc-800);
+  border-color: transparent;
+}
+
+.secondary:hover {
+  background-color: var(--color-zinc-200);
+}
+
+.destructive {
+  background-color: oklch(0.967 0.053 16.439);  /* Rose-100 */
+  color: oklch(0.487 0.197 16.439);  /* Rose-800 */
+  border-color: transparent;
+}
+
+.destructive:hover {
+  background-color: oklch(0.943 0.092 16.439);  /* Rose-200 */
+}
+
+.success {
+  background-color: var(--color-emerald-100);
+  color: var(--color-emerald-800);
+  border-color: transparent;
+}
+
+.success:hover {
+  background-color: var(--color-emerald-200);
+}
+
+.warning {
+  background-color: oklch(0.957 0.075 85.87);  /* Amber-100 */
+  color: oklch(0.572 0.15 70.08);  /* Amber-800 */
+  border-color: transparent;
+}
+
+.warning:hover {
+  background-color: oklch(0.933 0.128 85.87);  /* Amber-200 */
+}
+
+.info {
+  background-color: oklch(0.951 0.043 259.815);  /* Blue-100 */
+  color: oklch(0.462 0.171 259.815);  /* Blue-800 */
+  border-color: transparent;
+}
+
+.info:hover {
+  background-color: oklch(0.908 0.085 259.815);  /* Blue-200 */
+}
+
+.outline {
+  background-color: transparent;
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.outline:hover {
+  background-color: var(--muted);
+}

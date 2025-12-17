@@ -1,0 +1,222 @@
+/* Export Page Styles */
+
+.formatSection {
+  margin-top: var(--spacing-2xl);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border);
+}
+
+.selectAllSection {
+  margin-top: var(--spacing-2xl);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border);
+}
+
+.collectionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.collectionCard {
+  padding: var(--spacing-lg);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.collectionCard[data-selected="true"] {
+  background: var(--accent);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.collectionCard:hover {
+  border-color: var(--primary);
+  opacity: 0.9;
+}
+
+.collectionCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.collectionMeta {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-left: var(--spacing-3xl); /* Indent to align with checkbox label */
+}
+
+.styleCategoriesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.categorySection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.categoryHeader svg {
+  color: var(--muted-foreground);
+}
+
+.categoryHeader h3 {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  margin: 0;
+}
+
+.categoryCount {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin-left: auto;
+}
+
+.categoryGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.styleGroupItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.styleGroupItem:hover {
+  border-color: var(--primary);
+  opacity: 0.9;
+}
+
+.styleGroupItem[data-selected="true"] {
+  background: var(--accent);
+  border-color: var(--primary);
+}
+
+.styleGroupCount {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  margin-left: var(--spacing-md);
+}
+
+.exportActions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border);
+  margin-bottom: var(--spacing-2xl);
+}
+
+/* Success View */
+.successView {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-4xl);
+  text-align: center;
+  gap: var(--spacing-2xl);
+}
+
+.successIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--success-foreground);
+}
+
+.successContent h2 {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-sm);
+  color: var(--foreground);
+}
+
+.successContent p {
+  font-size: var(--text-lg);
+  color: var(--muted-foreground);
+}
+
+.successStats {
+  padding: var(--spacing-xl);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: 400px;
+}
+
+.successStatsContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  font-size: var(--text-md);
+}
+
+.successStatRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.successStatLabel {
+  color: var(--muted-foreground);
+}
+
+.successStatValue {
+  color: var(--foreground);
+  font-weight: var(--font-semibold);
+}
+
+.successActions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+}
+
+.stylesInfo {
+  padding: var(--spacing-lg);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: var(--spacing-lg);
+}
+
+.stylesInfo p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+}
+

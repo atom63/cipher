@@ -1,0 +1,83 @@
+/* === Radio Card === */
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+/* When description exists, align to top */
+.card.has-description {
+  align-items: flex-start;
+}
+
+.card:hover:not(.disabled) {
+  border-color: var(--primary);
+  background: var(--muted);
+}
+
+.card.checked {
+  border-color: var(--primary);
+  background: var(--muted);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.card.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.radio-align {
+  margin-top: 2px; /* Align with first line of text when description exists */
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Only add gap when description exists */
+.has-description .content {
+  gap: var(--spacing-2xs);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.title {
+  flex: 1;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--foreground);
+  line-height: 1.5;
+}
+
+.badge {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
