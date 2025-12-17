@@ -67,17 +67,31 @@ cipher/
 
 ## Token Generation
 
-The project includes a dynamic token generation system:
+The project includes a TypeScript-based token generation system with utilities for parsing and generating CSS:
+
+### Usage
 
 1. **Edit tokens**: Modify `tokens/base/tokens.json` to add/change design tokens
 2. **Generate CSS**: Run `bun run tokens` to compile tokens into CSS files
-3. **Output**: CSS files are generated in `tokens/styles/` directory
+3. **Watch mode**: Run `bun run tokens:watch` for automatic regeneration
+4. **Output**: CSS files are generated in `tokens/styles/` directory
+
+### Features
 
 The generator automatically:
-- Creates separate CSS files for each token collection (primitives, abstractions, semantics)
-- Handles multiple modes (Light/Dark themes)
-- Resolves token references and generates CSS variables
-- Creates Tailwind-compatible `@theme` blocks
+- Creates separate CSS files for each token collection (primitives, abstractions, semantics, responsive)
+- Handles multiple modes (Light/Dark themes, responsive breakpoints)
+- Resolves token references (`{primitives.zinc.50}` → `var(--color-zinc-50)`)
+- Generates CSS variables with proper prefixes
+- Creates Tailwind-compatible `@theme inline` blocks
+- Supports opacity mixing from Figma styles
+
+### Token Utilities
+
+The `tokens/` directory includes TypeScript utilities:
+- **types/**: Type definitions for design tokens
+- **utils/**: Parser and CSS generator utilities
+- **base/**: Source token files (tokens.json, styles.json)
 
 ## Tech Stack
 

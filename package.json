@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "node build.js --watch",
     "build": "node build.js",
-    "tokens": "node scripts/generate-tokens.js",
-    "tokens:watch": "node scripts/generate-tokens.js --watch",
+    "tokens": "tsx scripts/generate-tokens.ts",
+    "tokens:watch": "tsx watch scripts/generate-tokens.ts",
     "format": "npx ultracite format",
     "lint": "npx ultracite lint"
   },
@@ -24,6 +24,7 @@
     "@types/react-dom": "^18.3.1",
     "esbuild": "^0.24.0",
     "sass": "^1.81.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
   "engines": {
