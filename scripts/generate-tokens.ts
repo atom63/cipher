@@ -47,19 +47,32 @@ const collectionNames = Object.keys(collections).sort((a, b) => {
 
 /**
  * Get opacity from styles.json for a semantic token
+ * Handles nested paths like shadcn-muted-foreground
+ * Looks under paint.semantics.shadcn structure
  */
-function getOpacityFromStyles(tokenName: string): number | null {
-  const shadcnStyles = stylesData?.styles?.paint?.shadcn
-  if (!shadcnStyles || !shadcnStyles[tokenName]) {
+function getOpacityFromStyles(tokenPath: string): number | null {
+  // Convert token path to styles.json path
+  // e.g., "shadcn-muted-foreground" -> look in paint.semantics.shadcn["muted-foreground"]
+  
+  const semanticsStyles = stylesData?.styles?.paint?.semantics
+  if (!semanticsStyles) {
     return null
   }
   
-  const style = shadcnStyles[tokenName]
-  const fills = style.fills || []
-  
-  for (const fill of fills) {
-    if (fill.opacity !== undefined && fill.opacity < 1) {
-      return fill.opacity
+  // Check if this is a shadcn token
+  if (tokenPath.startsWith('shadcn-')) {
+    const shadcnKey = tokenPath.replace('shadcn-', '').replace(/-/g, '-')
+    const shadcnStyles = semanticsStyles.shadcn
+    
+    if (shadcnStyles && shadcnStyles[shadcnKey]) {
+      const style = shadcnStyles[shadcnKey]
+      if (style.fills) {
+        for (const fill of style.fills) {
+          if (fill.opacity !== undefined && fill.opacity < 1) {
+            return fill.opacity
+          }
+        }
+      }
     }
   }
   
@@ -84,20 +97,21 @@ function tokenReferenceToCSSVar(
   
   const tokenPath = parts.slice(1).join('-')
   
-  let varReference: string
-  if (collection === 'semantics') {
-    varReference = `var(--${tokenPath})`
-  } else {
-    varReference = `var(--color-${tokenPath})`
+  // For semantic tokens, flatten shadcn- prefix in the reference
+  let finalTokenPath = tokenPath
+  if (collection === 'semantics' && tokenPath.startsWith('shadcn-')) {
+    finalTokenPath = tokenPath.replace('shadcn-', '')
   }
   
-  if (applyOpacity && tokenName) {
-    const opacity = getOpacityFromStyles(tokenName)
-    if (opacity !== null) {
-      const transparencyPercent = Math.round((1 - opacity) * 100)
-      return `color-mix(in srgb, ${varReference}, transparent ${transparencyPercent}%)`
-    }
+  let varReference: string
+  if (collection === 'semantics') {
+    varReference = `var(--${finalTokenPath})`
+  } else {
+    varReference = `var(--color-${finalTokenPath})`
   }
+  
+  // Note: Opacity is now handled in generateCSSVariables function
+  // to avoid double-application
   
   return varReference
 }
@@ -221,7 +235,22 @@ function generateCSSVariables(collection: string, mode?: string): string {
     const prefix = getPrefixForType(tokenType)
     
     if (collection === 'semantics') {
-      cssVars.push(`  --${varName}: ${value};`)
+      // Flatten shadcn- prefix: shadcn-background -> background
+      const flattenedVarName = varName.startsWith('shadcn-') 
+        ? varName.replace('shadcn-', '') 
+        : varName
+      
+      // Check for opacity in styles.json
+      const opacity = getOpacityFromStyles(varName)
+      let finalValue = value
+      
+      // Apply color-mix if opacity is found and value is a CSS var reference
+      if (opacity !== null && value.includes('var(')) {
+        const transparencyPercent = Math.round((1 - opacity) * 100)
+        finalValue = `color-mix(in srgb, ${value}, transparent ${transparencyPercent}%)`
+      }
+      
+      cssVars.push(`  --${flattenedVarName}: ${finalValue};`)
     } else {
       // Remove redundant category prefix
       if (varName.startsWith('spacing-')) {
@@ -264,8 +293,12 @@ function generateTailwindThemeInline(collectionName: string): string {
     }
     
     if (collectionName === 'semantics') {
-      const cssVar = `--${varName}`
-      themeVars.push(`  --color-${varName}: var(${cssVar});`)
+      // Flatten shadcn- prefix in @theme block too
+      const flattenedVarName = varName.startsWith('shadcn-') 
+        ? varName.replace('shadcn-', '') 
+        : varName
+      const cssVar = `--${flattenedVarName}`
+      themeVars.push(`  --color-${flattenedVarName}: var(${cssVar});`)
     } else {
       if (varName.startsWith('spacing-')) {
         varName = varName.replace('spacing-', '')
