@@ -1,0 +1,224 @@
+/* ============================================
+   ANIMATION UTILITIES
+   ============================================ */
+
+/* ============================================
+   FADE IN
+   ============================================ */
+
+.fadeIn {
+  animation-name: fade-in;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fadeIn-up {
+  animation-name: fade-in-up;
+}
+
+.fadeIn-down {
+  animation-name: fade-in-down;
+}
+
+.fadeIn-left {
+  animation-name: fade-in-left;
+}
+
+.fadeIn-right {
+  animation-name: fade-in-right;
+}
+
+.fadeIn-none {
+  animation-name: fade-in;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ============================================
+   SCALE IN
+   ============================================ */
+
+.scaleIn {
+  animation-name: scale-in;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--initial-scale, 0.95));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================
+   SLIDE IN
+   ============================================ */
+
+.slideIn {
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slideIn-left {
+  animation-name: slide-in-left;
+}
+
+.slideIn-right {
+  animation-name: slide-in-right;
+}
+
+.slideIn-top {
+  animation-name: slide-in-top;
+}
+
+.slideIn-bottom {
+  animation-name: slide-in-bottom;
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--slide-distance, 20px) * -1));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(var(--slide-distance, 20px));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-top {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--slide-distance, 20px) * -1));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(var(--slide-distance, 20px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   PULSE
+   ============================================ */
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES (for direct use)
+   ============================================ */
+
+/* Can be applied directly via className */
+:global(.animate-fade-in) {
+  animation: fade-in 0.3s ease-out both;
+}
+
+:global(.animate-fade-in-up) {
+  animation: fade-in-up 0.3s ease-out both;
+}
+
+:global(.animate-scale-in) {
+  animation: scale-in 0.2s ease-out both;
+}
+
+:global(.animate-pulse) {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Stagger delays (apply to children) */
+:global(.stagger-1) { animation-delay: 50ms; }
+:global(.stagger-2) { animation-delay: 100ms; }
+:global(.stagger-3) { animation-delay: 150ms; }
+:global(.stagger-4) { animation-delay: 200ms; }
+:global(.stagger-5) { animation-delay: 250ms; }
+:global(.stagger-6) { animation-delay: 300ms; }
+:global(.stagger-7) { animation-delay: 350ms; }
+:global(.stagger-8) { animation-delay: 400ms; }

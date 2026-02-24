@@ -12,11 +12,11 @@ export { RadioGroup } from './RadioGroup';
 // Layout Components
 export { SectionHeader } from './SectionHeader';
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './Card';
-export { Dialog, DialogActions } from './Dialog';
+export { Dialog, DialogActions, ConfirmDialog } from './Dialog';
 export { Tabs, TabPanel } from './Tabs';
 
 // Feedback Components
-export { Badge } from './Badge';
+export { Badge, StatusBadge, CountBadge } from './Badge';
 export { Spinner, LoadingState, LoadingOverlay, InlineLoading, Progress } from './Spinner';
 export { EmptyState, NoResultsState, NoDataState, ErrorState } from './EmptyState';
 export { Alert } from './Alert';
@@ -33,3 +33,12 @@ export {
   SkeletonListItem,
   SkeletonTokenRow,
 } from './Skeleton';
+
+// Animation Components
+export {
+  FadeIn,
+  StaggeredList,
+  ScaleIn,
+  SlideIn,
+  Pulse,
+} from './Animation';
