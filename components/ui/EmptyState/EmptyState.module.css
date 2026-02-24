@@ -1,34 +1,135 @@
+/* ============================================
+   EMPTY STATE - Enhanced Design
+   ============================================ */
+
 .emptyState {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-4xl) var(--spacing-xl);
+  padding: var(--spacing-3xl) var(--spacing-xl);
   text-align: center;
   color: var(--muted-foreground);
+  min-height: 200px;
 }
 
+/* Icon container with gradient background */
 .icon {
-  font-size: var(--text-5xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--spacing-lg);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--primary) 10%, transparent),
+    color-mix(in oklch, var(--muted) 50%, transparent)
+  );
+  border-radius: var(--radius-full);
+  color: var(--primary);
+  font-size: 24px;
+}
+
+/* Smaller variant */
+.emptyState[data-size="sm"] .icon {
+  width: 48px;
+  height: 48px;
+  font-size: 20px;
   margin-bottom: var(--spacing-md);
-  opacity: 0.3;
+}
+
+/* Large variant */
+.emptyState[data-size="lg"] .icon {
+  width: 80px;
+  height: 80px;
+  font-size: 32px;
+  margin-bottom: var(--spacing-xl);
 }
 
 .title {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: var(--font-semibold);
   color: var(--foreground);
-  margin: 0 0 var(--spacing-sm) 0;
+  margin: 0 0 var(--spacing-xs) 0;
+  letter-spacing: -0.01em;
 }
 
 .description {
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   color: var(--muted-foreground);
-  margin: 0 0 var(--spacing-lg) 0;
-  max-width: 400px;
+  margin: 0;
+  max-width: 320px;
+  line-height: 1.5;
 }
 
 .action {
-  margin-top: var(--spacing-md);
+  margin-top: var(--spacing-lg);
 }
 
+/* ============================================
+   VARIANTS
+   ============================================ */
+
+/* Bordered variant */
+.bordered {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklch, var(--muted) 30%, transparent);
+}
+
+/* Compact variant for inline use */
+.compact {
+  padding: var(--spacing-xl);
+  min-height: auto;
+}
+
+.compact .icon {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.compact .title {
+  font-size: var(--text-sm);
+}
+
+.compact .description {
+  font-size: var(--text-xs);
+  max-width: 240px;
+}
+
+/* ============================================
+   ILLUSTRATION SUPPORT
+   ============================================ */
+
+.illustration {
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.8;
+}
+
+.illustration svg {
+  width: 120px;
+  height: auto;
+  color: var(--muted-foreground);
+}
+
+/* ============================================
+   ANIMATION
+   ============================================ */
+
+.emptyState {
+  animation: empty-state-fade-in 0.3s ease-out;
+}
+
+@keyframes empty-state-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
