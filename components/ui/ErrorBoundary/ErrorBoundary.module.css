@@ -1,0 +1,108 @@
+/* Error Container */
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  min-height: 200px;
+}
+
+.pageError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  min-height: 150px;
+}
+
+/* Icon */
+.errorIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  background: var(--figma-color-bg-danger-tertiary, #fee2e2);
+  color: var(--figma-color-icon-danger, #dc2626);
+  border-radius: 50%;
+}
+
+.pageError .errorIcon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 12px;
+}
+
+/* Title */
+.errorTitle {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--figma-color-text);
+}
+
+/* Message */
+.errorMessage {
+  margin: 0 0 16px 0;
+  font-size: 12px;
+  color: var(--figma-color-text-secondary);
+  max-width: 300px;
+  word-break: break-word;
+}
+
+/* Reset Button */
+.resetButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--figma-color-text-onbrand);
+  background: var(--figma-color-bg-brand);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.resetButton:hover {
+  background: var(--figma-color-bg-brand-hover);
+}
+
+/* Error Details */
+.errorDetails {
+  margin-top: 16px;
+  width: 100%;
+  max-width: 400px;
+  text-align: left;
+}
+
+.errorDetails summary {
+  font-size: 11px;
+  color: var(--figma-color-text-tertiary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.errorDetails summary:hover {
+  color: var(--figma-color-text-secondary);
+}
+
+.errorDetails pre {
+  margin-top: 8px;
+  padding: 12px;
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--figma-color-text-secondary);
+  background: var(--figma-color-bg-secondary);
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

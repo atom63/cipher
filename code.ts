@@ -1,7 +1,7 @@
 // This file runs in Figma's main thread (no DOM access)
 // It handles communication with the Figma API
 //
-// ATOM63 Design System Sync
+// Cipher - Figma Design System Plugin
 // Author: You Zhang (ATOM63)
 
 /// <reference types="@figma/plugin-typings" />
@@ -15,7 +15,7 @@ import { exportVariablesAsTokens, exportStylesAsTokens } from './handlers/export
 figma.showUI(__html__, {
   width: 800,
   height: 700,
-  title: 'ATOM63 Design System Sync',
+  title: 'Cipher',
   themeColors: true,
 })
 

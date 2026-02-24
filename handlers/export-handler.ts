@@ -4,38 +4,17 @@
 /// <reference types="@figma/plugin-typings" />
 
 import { convertColor } from '../libraries/color-converters'
-
-// Helper function to get bound variable reference
-function getBoundVariableReference(paint: any): any {
-  try {
-    // Check if boundVariables exists and has a color binding
-    if (!paint || typeof paint !== 'object') return null
-    if (!paint.boundVariables || typeof paint.boundVariables !== 'object') return null
-    if (!paint.boundVariables.color || !paint.boundVariables.color.id) return null
-    
-    const variableId = paint.boundVariables.color.id
-    const variable = figma.variables.getVariableById(variableId)
-    if (!variable) return null
-    
-    const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-    
-    return {
-      type: 'variable',
-      variableId: variable.id,
-      variableName: variable.name,
-      collectionName: collection ? collection.name : 'Unknown',
-      collectionId: collection ? collection.id : undefined
-    }
-  } catch (error) {
-    // Silently fail - boundVariables may not be available in all contexts
-    console.warn('Could not read bound variable:', error)
-    return null
-  }
-}
+import {
+  getBoundVariable,
+  getPaintBoundVariable,
+  logBinding,
+  isVariableAlias,
+  resolveVariableReference,
+} from '../libraries/variable-binding'
 
 // Helper function to convert paint to structured value
 function paintToValue(paint: Paint, colorFormat: string = 'oklch'): any {
-  
+
   if (paint.type === 'SOLID') {
     const solidPaint = paint as SolidPaint
     const result: any = {
@@ -43,64 +22,42 @@ function paintToValue(paint: Paint, colorFormat: string = 'oklch'): any {
       color: convertColor(solidPaint.color, colorFormat),
       opacity: paint.opacity
     }
-    
+
     // Check if this paint is bound to a variable
-    const boundVariable = getBoundVariableReference(paint)
+    const boundVariable = getPaintBoundVariable(paint)
     if (boundVariable) {
       result.boundVariable = boundVariable
     }
-    
+
     return result
   }
-  
-  if (paint.type === 'GRADIENT_LINEAR' || paint.type === 'GRADIENT_RADIAL' || 
+
+  if (paint.type === 'GRADIENT_LINEAR' || paint.type === 'GRADIENT_RADIAL' ||
       paint.type === 'GRADIENT_ANGULAR' || paint.type === 'GRADIENT_DIAMOND') {
     const gradientPaint = paint as GradientPaint
     console.log('🌈 Converting gradient with format:', colorFormat, 'stops:', gradientPaint.gradientStops.length)
-    
+
     // Check if gradient stops have variable bindings
     const stopsWithBindings = gradientPaint.gradientStops.map((stop, index) => {
       const stopData: any = {
         position: Math.round(stop.position * 1000) / 1000,
         color: convertColor(stop.color, colorFormat)
       }
-      
+
       // Check if this gradient stop color is bound to a variable
-      // Try multiple possible API structures
-      try {
-        const stopAny = stop as any
-        let boundVar = null
-        
-        // Check if stop itself has boundVariables (this is where Figma stores them)
-        if (stopAny.boundVariables && stopAny.boundVariables.color) {
-          boundVar = stopAny.boundVariables.color
-        }
-        
-        if (boundVar && boundVar.id) {
-          const variable = figma.variables.getVariableById(boundVar.id)
-          if (variable) {
-            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-            stopData.boundVariable = {
-              type: 'variable',
-              variableId: variable.id,
-              variableName: variable.name,
-              collectionName: collection ? collection.name : 'Unknown',
-              collectionId: collection ? collection.id : undefined
-            }
-            console.log(`🔗 Gradient stop ${index} → variable: ${variable.name}`)
-          }
-        }
-      } catch (error) {
-        console.warn(`Could not read bound variable for gradient stop ${index}:`, error)
+      const boundVariable = getBoundVariable(stop, 'color')
+      if (boundVariable) {
+        stopData.boundVariable = boundVariable
+        logBinding(`Gradient stop ${index}`, boundVariable)
       }
-      
+
       return stopData
     })
-    
+
     return {
       type: paint.type.toLowerCase().replace('gradient_', ''),
       gradientStops: stopsWithBindings,
-      gradientTransform: gradientPaint.gradientTransform.map(row => 
+      gradientTransform: gradientPaint.gradientTransform.map(row =>
         row.map(val => Math.round(val * 1000) / 1000)
       ),
       opacity: paint.opacity
@@ -126,7 +83,7 @@ function paintToValue(paint: Paint, colorFormat: string = 'oklch'): any {
 // Helper function to convert effect to token value
 function effectToToken(effect: Effect): any {
   const effectData: any = {}
-  
+
   if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
     effectData.type = effect.type.toLowerCase().replace('_', '-')
     effectData.offsetX = `${effect.offset.x}px`
@@ -135,110 +92,55 @@ function effectToToken(effect: Effect): any {
     effectData.spread = effect.spread !== undefined ? `${effect.spread}px` : undefined
     effectData.color = effect.color ? `rgba(${Math.round(effect.color.r * 255)}, ${Math.round(effect.color.g * 255)}, ${Math.round(effect.color.b * 255)}, ${effect.color.a})` : undefined
     effectData.visible = effect.visible
-    
+
     // Check for variable bindings on effect properties
-    try {
-      const effectAny = effect as any
-      
-      // Check for radius binding
-      if (effectAny.boundVariables?.radius?.id) {
-        const variable = figma.variables.getVariableById(effectAny.boundVariables.radius.id)
-        if (variable) {
-          const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-          effectData.radiusBoundVariable = {
-            type: 'variable',
-            variableId: variable.id,
-            variableName: variable.name,
-            collectionName: collection ? collection.name : 'Unknown',
-            collectionId: collection ? collection.id : undefined
-          }
-          console.log(`🔗 Effect radius → variable: ${variable.name}`)
-        }
-      }
-      
-      // Check for spread binding (drop shadow only)
-      if (effect.type === 'DROP_SHADOW' && effectAny.boundVariables?.spread?.id) {
-        const variable = figma.variables.getVariableById(effectAny.boundVariables.spread.id)
-        if (variable) {
-          const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-          effectData.spreadBoundVariable = {
-            type: 'variable',
-            variableId: variable.id,
-            variableName: variable.name,
-            collectionName: collection ? collection.name : 'Unknown',
-            collectionId: collection ? collection.id : undefined
-          }
-          console.log(`🔗 Effect spread → variable: ${variable.name}`)
-        }
-      }
-      
-      // Check for color binding
-      if (effectAny.boundVariables?.color?.id) {
-        const variable = figma.variables.getVariableById(effectAny.boundVariables.color.id)
-        if (variable) {
-          const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-          effectData.colorBoundVariable = {
-            type: 'variable',
-            variableId: variable.id,
-            variableName: variable.name,
-            collectionName: collection ? collection.name : 'Unknown',
-            collectionId: collection ? collection.id : undefined
-          }
-          console.log(`🔗 Effect color → variable: ${variable.name}`)
-        }
-      }
-    } catch (error) {
-      console.warn('Could not read bound variables for effect:', error)
+    const radiusBinding = getBoundVariable(effect, 'radius')
+    if (radiusBinding) {
+      effectData.radiusBoundVariable = radiusBinding
+      logBinding('Effect radius', radiusBinding)
     }
-    
+
+    if (effect.type === 'DROP_SHADOW') {
+      const spreadBinding = getBoundVariable(effect, 'spread')
+      if (spreadBinding) {
+        effectData.spreadBoundVariable = spreadBinding
+        logBinding('Effect spread', spreadBinding)
+      }
+    }
+
+    const colorBinding = getBoundVariable(effect, 'color')
+    if (colorBinding) {
+      effectData.colorBoundVariable = colorBinding
+      logBinding('Effect color', colorBinding)
+    }
+
     return effectData
   }
-  
+
   if (effect.type === 'LAYER_BLUR' || effect.type === 'BACKGROUND_BLUR') {
     effectData.type = effect.type.toLowerCase().replace('_', '-')
     effectData.radius = `${effect.radius}px`
     effectData.visible = effect.visible
-    
+
     // Check for variable bindings on radius
-    try {
-      const effectAny = effect as any
-      if (effectAny.boundVariables?.radius?.id) {
-        const variable = figma.variables.getVariableById(effectAny.boundVariables.radius.id)
-        if (variable) {
-          const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-          effectData.radiusBoundVariable = {
-            type: 'variable',
-            variableId: variable.id,
-            variableName: variable.name,
-            collectionName: collection ? collection.name : 'Unknown',
-            collectionId: collection ? collection.id : undefined
-          }
-          console.log(`🔗 Blur radius → variable: ${variable.name}`)
-        }
-      }
-    } catch (error) {
-      console.warn('Could not read bound variable for blur radius:', error)
+    const radiusBinding = getBoundVariable(effect, 'radius')
+    if (radiusBinding) {
+      effectData.radiusBoundVariable = radiusBinding
+      logBinding('Blur radius', radiusBinding)
     }
-    
+
     return effectData
   }
-  
+
   return { type: effect.type, visible: effect.visible }
 }
 
 // Convert Figma variable value to token value
 export function convertVariableValue(value: any, variable: Variable, colorFormat: string = 'oklch'): string {
-  if (typeof value === 'object' && 'type' in value && value.type === 'VARIABLE_ALIAS') {
-    // It's a reference to another variable
-    const refVar = figma.variables.getVariableById(value.id)
-    if (refVar) {
-      // Get the collection name for the referenced variable
-      const refCollection = figma.variables.getVariableCollectionById(refVar.variableCollectionId)
-      const collectionName = refCollection ? refCollection.name : 'unknown'
-      // Build reference with collection prefix: {collection.path}
-      return `{${collectionName}.${refVar.name.replace(/\//g, '.')}}`
-    }
-    return 'unknown-reference'
+  // Check if this is a reference to another variable
+  if (isVariableAlias(value)) {
+    const reference = resolveVariableReference(value.id)
+    return reference ?? 'unknown-reference'
   }
 
   // Direct value

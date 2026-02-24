@@ -1,11 +1,12 @@
 /**
- * ATOM63 Design System Sync - Figma Plugin
+ * Cipher - Figma Design System Plugin
  * Author: You Zhang (ATOM63)
  */
 
 import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { type PageId, Sidebar } from './components/layout'
+import { ToastProvider, ErrorBoundary, PageErrorBoundary } from './components/ui'
 import { ExportPage } from './pages/ExportPage'
 import { HelpPage } from './pages/HelpPage'
 import { ImportPage } from './pages/ImportPage'
@@ -27,19 +28,19 @@ function App() {
   const renderPage = () => {
     switch (activePage) {
       case 'import':
-        return <ImportPage />
+        return <PageErrorBoundary pageName="Import"><ImportPage /></PageErrorBoundary>
       case 'export':
-        return <ExportPage />
+        return <PageErrorBoundary pageName="Export"><ExportPage /></PageErrorBoundary>
       case 'sync':
-        return <SyncPage />
+        return <PageErrorBoundary pageName="Sync"><SyncPage /></PageErrorBoundary>
       case 'settings':
-        return <SettingsPage />
+        return <PageErrorBoundary pageName="Settings"><SettingsPage /></PageErrorBoundary>
       case 'styleguide':
-        return <StyleguidePage />
+        return <PageErrorBoundary pageName="Styleguide"><StyleguidePage /></PageErrorBoundary>
       case 'help':
-        return <HelpPage />
+        return <PageErrorBoundary pageName="Help"><HelpPage /></PageErrorBoundary>
       default:
-        return <ImportPage />
+        return <PageErrorBoundary pageName="Import"><ImportPage /></PageErrorBoundary>
     }
   }
 
@@ -47,7 +48,7 @@ function App() {
     <div className="plugin-container">
       {/* Header with View Mode Toggle */}
       <div className="view-mode-header">
-        <h1>TokenBridge</h1>
+        <h1>Cipher</h1>
         <button
           className="view-mode-toggle"
           onClick={toggleViewMode}
@@ -79,7 +80,12 @@ const container = document.getElementById('root')
 if (container) {
   try {
     const root = createRoot(container)
-    root.render(<App />)
+    root.render(
+      <ErrorBoundary>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </ErrorBoundary>
+    )
   } catch (_error) {}
-} else {
 }

@@ -1,8 +1,9 @@
 import type React from 'react'
 import { useRef, useState } from 'react'
-import { Button, SectionHeader, Textarea, LoadingState } from '../ui'
+import { Button, SectionHeader, Textarea, LoadingState, useToast } from '../ui'
 import { FileText, Upload } from 'lucide-react'
 import type { ParsedTokens } from '../../types/tokens'
+import { getErrorMessage } from '../../utils/error-handler'
 import styles from './FileImport.module.css'
 
 interface FileImportProps {
@@ -15,6 +16,7 @@ export function FileImport({ onTokensParsed, onFileParsed }: FileImportProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [pastedContent, setPastedContent] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { showError } = useToast()
 
   const handleFile = async (file: File) => {
     setIsLoading(true)
@@ -22,7 +24,7 @@ export function FileImport({ onTokensParsed, onFileParsed }: FileImportProps) {
       const content = await file.text()
       parseContent(content)
     } catch (error) {
-      alert(`Error reading file: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      showError(`Error reading file: ${getErrorMessage(error)}`)
     } finally {
       setIsLoading(false)
     }

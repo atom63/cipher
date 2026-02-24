@@ -58,7 +58,7 @@ export function LibrarySelector({ onSelect }: LibrarySelectorProps) {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>ATOM63 Design System Generator</h1>
+        <h1 className={styles.title}>Cipher</h1>
         <p className={styles.subtitle}>
           Generate your design system in minutes
         </p>

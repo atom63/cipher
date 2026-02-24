@@ -5,6 +5,7 @@
 
 import type { DesignToken, ImportResults } from '../libraries/shared-types'
 import { convertColor } from '../libraries/color-converters'
+import { parseColorToRGBA } from '../parsers/color-parsers'
 
 // Create Figma variables from tokens (supports multi-collection with references)
 // Note: collectionName parameter is currently unused - tokens are grouped by their category property
@@ -1117,7 +1118,7 @@ function findVariableByName(variableName: string, collectionName?: string): Vari
 // Returns both the paint and variable binding info (for styles, bindings must be set separately)
 function convertFillToPaint(fill: any, returnBindingInfo = false): any {
   if (fill.type === 'solid') {
-    const color = parseColor(fill.color)
+    const color = parseColorToRGBA(fill.color)
     const paint: SolidPaint = {
       type: 'SOLID',
       color: { r: color.r, g: color.g, b: color.b },
@@ -1149,7 +1150,7 @@ function convertFillToPaint(fill: any, returnBindingInfo = false): any {
     
     // Create gradient stops with variable bindings attached
     const gradientStops = fill.gradientStops.map((stop: any) => {
-      const color = parseColor(stop.color)
+      const color = parseColorToRGBA(stop.color)
       const gradStop: any = {
         position: stop.position,
         color: { r: color.r, g: color.g, b: color.b, a: color.a }
@@ -1201,47 +1202,6 @@ function convertFillToPaint(fill: any, returnBindingInfo = false): any {
   return defaultPaint
 }
 
-// Helper: Parse color string to RGBA (Figma requires alpha channel)
-function parseColor(colorStr: string): RGBA {
-  // Handle rgba(...) format
-  if (colorStr.startsWith('rgba(')) {
-    const match = colorStr.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/)
-    if (match) {
-      return {
-        r: Number.parseInt(match[1]) / 255,
-        g: Number.parseInt(match[2]) / 255,
-        b: Number.parseInt(match[3]) / 255,
-        a: Number.parseFloat(match[4])
-      }
-    }
-  }
-  
-  // Handle hex format
-  if (colorStr.startsWith('#')) {
-    const hex = colorStr.slice(1)
-    const r = Number.parseInt(hex.slice(0, 2), 16) / 255
-    const g = Number.parseInt(hex.slice(2, 4), 16) / 255
-    const b = Number.parseInt(hex.slice(4, 6), 16) / 255
-    const a = hex.length === 8 ? Number.parseInt(hex.slice(6, 8), 16) / 255 : 1
-    return { r, g, b, a }
-  }
-  
-  // Handle oklch format - use proper color parser
-  if (colorStr.startsWith('oklch(')) {
-    // Import the proper parser
-    const { parseOKLCHColor } = require('../parsers/color-parsers')
-    const result = parseOKLCHColor(colorStr)
-    if (result) {
-      return result
-    }
-    console.warn('Failed to parse OKLCH color:', colorStr)
-    return { r: 0.5, g: 0.5, b: 0.5, a: 1 }
-  }
-  
-  // Default fallback
-  return { r: 0, g: 0, b: 0, a: 1 }
-}
-
 // Helper: Convert effect data to Figma Effect
 function convertDataToEffect(data: any): Effect | null {
   // Helper to strip 'px' suffix and convert to number
@@ -1262,7 +1222,7 @@ function convertDataToEffect(data: any): Effect | null {
       },
       radius: parsePixelValue(data.radius),
       spread: parsePixelValue(data.spread || 0),
-      color: data.color ? parseColor(data.color) : { r: 0, g: 0, b: 0, a: 1 },
+      color: parseColorToRGBA(data.color ?? '', { r: 0, g: 0, b: 0, a: 1 }),
       visible: data.visible !== false,
       blendMode: 'NORMAL'
     } as DropShadowEffect
@@ -1276,7 +1236,7 @@ function convertDataToEffect(data: any): Effect | null {
         y: parsePixelValue(data.offsetY)
       },
       radius: parsePixelValue(data.radius),
-      color: data.color ? parseColor(data.color) : { r: 0, g: 0, b: 0, a: 1 },
+      color: parseColorToRGBA(data.color ?? '', { r: 0, g: 0, b: 0, a: 1 }),
       visible: data.visible !== false,
       blendMode: 'NORMAL'
     } as InnerShadowEffect
@@ -1301,7 +1261,7 @@ function convertDataToLayoutGrid(data: any): LayoutGrid | null {
     pattern: data.pattern || 'COLUMNS',
     sectionSize: data.sectionSize || 8,
     visible: data.visible !== false,
-    color: data.color ? parseColor(data.color) : { r: 0.8, g: 0.8, b: 0.8, a: 0.1 }
+    color: parseColorToRGBA(data.color ?? '', { r: 0.8, g: 0.8, b: 0.8, a: 0.1 })
   } as LayoutGrid
 }
 

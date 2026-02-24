@@ -1,56 +1,20 @@
-// Shared types for Figma plugin backend
-// These types are used across multiple modules
+/**
+ * Cipher - Figma Design System Plugin
+ * Shared types re-exported from types/tokens.ts
+ *
+ * This file maintains backwards compatibility for existing imports.
+ * New code should import directly from '../types/tokens' or '../types/messages'.
+ */
 
-/// <reference types="@figma/plugin-typings" />
-
-export interface ColorValue {
-  r: number
-  g: number
-  b: number
-  a?: number
-}
-
-export interface DesignToken {
-  id: string
-  name: string
-  figmaName: string
-  value: ColorValue | number | string | any
-  originalValue: string
-  type: string
-  category: string
-  description?: string
-  action: string
-  modeName?: string
-}
-
-export interface ParseError {
-  token?: string
-  message: string
-  severity: 'error' | 'warning'
-}
-
-export interface ParsedTokens {
-  tokens: DesignToken[]
-  stats: {
-    total: number
-    byCategory: Record<string, number>
-    conflicts: number
-    errors: number
-  }
-  errors: ParseError[]
-}
-
-export interface ImportResults {
-  success: number
-  failed: number
-  errors: string[]
-  skipped: number
-  changes: Array<{
-    name: string
-    type: string
-    action: 'created' | 'updated' | 'unchanged'
-    oldValue?: string
-    newValue: string
-  }>
-}
-
+// Re-export all types from the canonical source
+export type {
+  ColorValue,
+  DesignToken,
+  ImportResults,
+  ParsedTokens,
+  ParseError,
+  TokenAction,
+  TokenCategory,
+  TokenType,
+  TokenValue,
+} from '../types/tokens'

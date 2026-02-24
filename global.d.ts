@@ -1,5 +1,5 @@
 /**
- * ATOM63 Design System Sync - Figma Plugin
+ * Cipher - Figma Design System Plugin
  * Author: You Zhang (ATOM63)
  * Global TypeScript declarations
  */

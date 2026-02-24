@@ -20,4 +20,6 @@ export { Badge } from './Badge';
 export { Spinner, LoadingState } from './Spinner';
 export { EmptyState } from './EmptyState';
 export { Alert } from './Alert';
+export { ToastProvider, useToast } from './Toast';
+export { ErrorBoundary, PageErrorBoundary } from './ErrorBoundary';
 

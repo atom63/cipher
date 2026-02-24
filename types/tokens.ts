@@ -1,4 +1,4 @@
-// Token type definitions for Design System Sync Plugin
+// Token type definitions for Cipher
 
 // Extensible token types - allows any string while providing common types for autocomplete
 export type TokenType =
@@ -104,6 +104,21 @@ export interface ParseError {
   severity: 'error' | 'warning'
 }
 
+/** Results from import operations (variables or styles) */
+export interface ImportResults {
+  success: number
+  failed: number
+  errors: string[]
+  skipped: number
+  changes: Array<{
+    name: string
+    type: string
+    action: 'created' | 'updated' | 'unchanged'
+    oldValue?: string
+    newValue: string
+  }>
+}
+
 // Simple token format for MVP
 export interface SimpleTokens {
   colors?: Record<string, string>
@@ -118,7 +133,13 @@ export interface SimpleTokens {
   }
 }
 
-// Message types for communication between UI and plugin code
+// ============================================================================
+// LEGACY MESSAGE TYPES - DEPRECATED
+// Use types/messages.ts for type-safe message handling instead
+// These are kept for backwards compatibility
+// ============================================================================
+
+/** @deprecated Use UIToMainMessageType or MainToUIMessageType from types/messages.ts */
 export type MessageType =
   | 'parse-tokens'
   | 'tokens-parsed'

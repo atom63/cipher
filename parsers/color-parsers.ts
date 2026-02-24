@@ -150,3 +150,35 @@ export function parseColor(color: string): ColorValue | null {
   return null
 }
 
+/** RGBA color with required alpha channel (for Figma API) */
+export interface RGBA {
+  r: number
+  g: number
+  b: number
+  a: number
+}
+
+/**
+ * Parse color string to RGBA format (Figma requires alpha channel)
+ * Always returns a valid RGBA object, with fallback to gray if parsing fails
+ *
+ * @param colorStr - Color string in any supported format (hex, rgb, rgba, hsl, oklch)
+ * @param fallback - Optional fallback color (default: medium gray)
+ * @returns RGBA color object
+ */
+export function parseColorToRGBA(
+  colorStr: string,
+  fallback: RGBA = { r: 0.5, g: 0.5, b: 0.5, a: 1 }
+): RGBA {
+  const result = parseColor(colorStr)
+  if (result) {
+    return {
+      r: result.r,
+      g: result.g,
+      b: result.b,
+      a: result.a ?? 1,
+    }
+  }
+  return fallback
+}
+

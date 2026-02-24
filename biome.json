@@ -1,0 +1,13 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
+	"files": {
+		"includes": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**", "!**/scripts/**", "!**/dist/**", "!**/node_modules/**"],
+		"ignoreUnknown": true
+	},
+	"linter": {
+		"includes": ["**", "!**/scripts/**", "!**/dist/**", "!**/node_modules/**"]
+	},
+	"formatter": {
+		"includes": ["**", "!**/scripts/**", "!**/dist/**", "!**/node_modules/**"]
+	}
+}
