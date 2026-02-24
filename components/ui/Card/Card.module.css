@@ -1,71 +1,134 @@
-/* Base card - shadcn style */
+/* Card Component - Enhanced Design */
+
+/* ============================================
+   BASE CARD
+   ============================================ */
 .card {
-  border-radius: var(--radius-md);
-  transition: all var(--transition);
+  border-radius: var(--radius-lg);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
   color: var(--card-foreground);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-lg);
+  position: relative;
 }
 
-/* Variants - shadcn style */
+/* ============================================
+   CARD VARIANTS
+   ============================================ */
+
+/* Default - subtle border, no shadow */
 .default {
   background-color: var(--card);
   border: 1px solid var(--border);
 }
 
+/* Muted - filled background, no border */
 .muted {
   background-color: var(--muted);
   border: 1px solid transparent;
 }
 
+/* Bordered - emphasized border */
 .bordered {
   background-color: var(--card);
   border: 1px solid var(--border);
 }
 
+/* Outline - transparent with border */
 .outline {
   background-color: transparent;
   border: 1px solid var(--border);
 }
 
+/* Elevated - shadow for depth */
 .elevated {
   background-color: var(--card);
-  border: 1px solid var(--border);
-  box-shadow: 
-    0 1px 2px 0 rgba(0, 0, 0, 0.05),
-    0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+  box-shadow: var(--shadow-shadow-2);
 }
 
-/* Padding variants - using aligned spacing tokens */
+.elevated:hover {
+  box-shadow: var(--shadow-shadow-3);
+}
+
+/* Glass - frosted glass effect */
+.glass {
+  background-color: color-mix(in oklch, var(--card) 80%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+  box-shadow: var(--shadow-shadow-1);
+}
+
+/* Gradient border - subtle gradient outline */
+.gradient {
+  background-color: var(--card);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+
+.gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--primary) 30%, transparent),
+    color-mix(in oklch, var(--ring) 20%, transparent)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ============================================
+   PADDING VARIANTS
+   ============================================ */
 .padding-none {
   padding: 0;
 }
 
 .padding-sm {
-  padding: var(--spacing-lg); /* 12px */
+  padding: var(--spacing-md);
 }
 
 .padding-md {
-  padding: var(--spacing-xl); /* 16px */
+  padding: var(--spacing-lg);
 }
 
 .padding-lg {
-  padding: var(--spacing-2xl); /* 24px */
+  padding: var(--spacing-xl);
 }
 
 .padding-xl {
-  padding: var(--spacing-3xl); /* 32px */
+  padding: var(--spacing-2xl);
 }
 
-/* Interactive states - shadcn style */
+/* ============================================
+   INTERACTIVE STATES
+   ============================================ */
+
+/* Hover effect - lift with shadow */
 .hover:hover {
   transform: translateY(-2px);
-  box-shadow: 
-    0 4px 4px 0 rgba(0, 0, 0, 0.04),
-    0 2px 2px 0 rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-shadow-3);
 }
 
+/* Clickable card */
 .clickable {
   cursor: pointer;
   user-select: none;
@@ -73,31 +136,45 @@
 
 .clickable:hover {
   border-color: var(--ring);
+  box-shadow: var(--shadow-shadow-2);
 }
 
 .clickable:active {
-  transform: scale(0.98);
+  transform: scale(0.99);
+  box-shadow: var(--shadow-shadow-1);
 }
 
 .clickable:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring);
 }
 
-/* Subcomponents - shadcn style */
+/* Selected state (for selectable cards) */
+.selected {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 1px var(--primary),
+    var(--shadow-shadow-2);
+}
+
+/* ============================================
+   SUBCOMPONENTS
+   ============================================ */
 .cardHeader {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  /* padding: var(--spacing-xl) var(--spacing-xl) 0; */
 }
 
 .cardTitle {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: var(--font-semibold);
   line-height: 1.4;
   color: var(--card-foreground);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .cardDescription {
@@ -108,12 +185,69 @@
 }
 
 .cardContent {
-  /* padding: var(--spacing-xl); */
+  flex: 1;
 }
 
 .cardFooter {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  /* padding: 0 var(--spacing-xl) var(--spacing-xl); */
+  gap: var(--spacing-sm);
+  margin-top: auto;
+}
+
+/* Footer alignment variants */
+.cardFooter[data-align="start"] {
+  justify-content: flex-start;
+}
+
+.cardFooter[data-align="center"] {
+  justify-content: center;
+}
+
+.cardFooter[data-align="end"] {
+  justify-content: flex-end;
+}
+
+.cardFooter[data-align="between"] {
+  justify-content: space-between;
+}
+
+/* ============================================
+   CARD WITH MEDIA
+   ============================================ */
+.cardMedia {
+  margin: calc(var(--spacing-lg) * -1);
+  margin-bottom: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  overflow: hidden;
+}
+
+.cardMedia img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* ============================================
+   CARD DIVIDER
+   ============================================ */
+.cardDivider {
+  height: 1px;
+  background-color: var(--border);
+  margin: 0 calc(var(--spacing-lg) * -1);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 480px) {
+  .card {
+    border-radius: var(--radius-md);
+  }
+
+  .padding-lg,
+  .padding-xl {
+    padding: var(--spacing-lg);
+  }
 }

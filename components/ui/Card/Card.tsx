@@ -3,9 +3,10 @@ import styles from './Card.module.css'
 
 export interface CardProps {
   children: ReactNode
-  variant?: 'default' | 'muted' | 'bordered' | 'elevated' | 'outline'
+  variant?: 'default' | 'muted' | 'bordered' | 'elevated' | 'outline' | 'glass' | 'gradient'
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl'
   hover?: boolean
+  selected?: boolean
   className?: string
   onClick?: () => void
   asChild?: boolean
@@ -16,6 +17,7 @@ export function Card({
   variant = 'default',
   padding = 'md',
   hover = false,
+  selected = false,
   className = '',
   onClick,
 }: CardProps) {
@@ -23,10 +25,11 @@ export function Card({
   const paddingClass = styles[`padding-${padding}`]
   const hoverClass = hover ? styles.hover : ''
   const clickableClass = onClick ? styles.clickable : ''
+  const selectedClass = selected ? styles.selected : ''
 
   return (
     <div
-      className={`${styles.card} ${variantClass} ${paddingClass} ${hoverClass} ${clickableClass} ${className}`}
+      className={`${styles.card} ${variantClass} ${paddingClass} ${hoverClass} ${clickableClass} ${selectedClass} ${className}`}
       onClick={onClick}
       onKeyDown={(e) => {
         if (onClick && (e.key === 'Enter' || e.key === ' ')) {
@@ -35,6 +38,7 @@ export function Card({
       }}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
+      aria-selected={selected || undefined}
     >
       {children}
     </div>
