@@ -1,45 +1,55 @@
-/* === Primitive Checkbox Input === */
+/* ============================================
+   CHECKBOX - Enhanced Design
+   ============================================ */
 
 /* Wrapper for positioning */
 .checkboxWrapper {
   display: inline-flex;
   position: relative;
   flex-shrink: 0;
-  padding-top: 2px; /* Optical alignment with text baseline */
 }
 
 /* Native input - visually hidden but accessible */
 .checkboxInput {
   position: absolute;
   opacity: 0;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   margin: 0;
   cursor: pointer;
+  z-index: 1;
 }
 
 .checkboxInput:disabled {
   cursor: not-allowed;
 }
 
-/* Custom checkbox box */
+/* ============================================
+   CUSTOM CHECKBOX BOX
+   ============================================ */
+
 .checkboxBox {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border: 1.5px solid var(--border);
   border-radius: 4px;
   background: var(--background);
-  transition: all 150ms ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
   cursor: pointer;
   flex-shrink: 0;
 }
 
 /* Hover state */
-.checkboxInput:hover + .checkboxBox {
+.checkboxInput:not(:disabled):hover + .checkboxBox {
   border-color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 5%, var(--background));
 }
 
 /* Checked state */
@@ -48,25 +58,113 @@
   border-color: var(--primary);
 }
 
+.checkboxBox.checked:hover {
+  background: color-mix(in oklch, var(--primary) 90%, black);
+  border-color: color-mix(in oklch, var(--primary) 90%, black);
+}
+
+/* Active/pressed state */
+.checkboxInput:active:not(:disabled) + .checkboxBox {
+  transform: scale(0.95);
+}
+
+/* Focus state - polished ring */
+.checkboxInput:focus-visible + .checkboxBox {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring);
+}
+
 /* Disabled state */
 .checkboxBox.disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background: var(--muted);
+  border-color: var(--border);
+}
+
+.checkboxBox.disabled.checked {
+  background: var(--muted-foreground);
+  border-color: var(--muted-foreground);
 }
 
 .checkboxInput:disabled:hover + .checkboxBox {
   border-color: var(--border);
+  background: var(--muted);
 }
 
-/* Focus-visible state for accessibility */
-.checkboxInput:focus-visible + .checkboxBox {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
+/* ============================================
+   CHECK ICON
+   ============================================ */
 
-/* Check icon */
 .checkIcon {
   color: white;
   flex-shrink: 0;
+  animation: checkmark-pop 0.15s ease-out;
+}
+
+@keyframes checkmark-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================
+   INDETERMINATE STATE
+   ============================================ */
+
+.checkboxBox.indeterminate {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.indeterminateIcon {
+  width: 8px;
+  height: 2px;
+  background: white;
+  border-radius: 1px;
+}
+
+/* ============================================
+   SIZE VARIANTS
+   ============================================ */
+
+.checkboxWrapper.sm .checkboxBox,
+.checkboxWrapper.sm .checkboxInput {
+  width: 14px;
+  height: 14px;
+}
+
+.checkboxWrapper.sm .checkboxBox {
+  border-radius: 3px;
+}
+
+.checkboxWrapper.lg .checkboxBox,
+.checkboxWrapper.lg .checkboxInput {
+  width: 22px;
+  height: 22px;
+}
+
+.checkboxWrapper.lg .checkboxBox {
+  border-radius: 5px;
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.checkboxWrapper[data-error="true"] .checkboxBox {
+  border-color: var(--destructive);
+}
+
+.checkboxWrapper[data-error="true"] .checkboxInput:focus-visible + .checkboxBox {
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px color-mix(in oklch, var(--destructive) 50%, transparent);
 }
