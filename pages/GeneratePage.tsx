@@ -6,6 +6,7 @@ import { Button } from "../components/ui/Button";
 import { CheckboxWithLabel } from "../components/ui/Checkbox";
 import { Input } from "../components/ui/Input";
 import { SHADE_STEPS } from "../generators/color-scale";
+import { RADIX_GRAYS } from "../generators/radix-grays";
 import {
 	type BrandConfig,
 	type GeneratedSystem,
@@ -49,9 +50,16 @@ export function GeneratePage() {
 	const [primaryColor, setPrimaryColor] = useState("#3B82F6");
 	const [secondaryColor, setSecondaryColor] = useState("#10B981");
 	const [hasSecondary, setHasSecondary] = useState(false);
-	const [grayName, setGrayName] = useState("zinc");
+	const [grayName, setGrayName] = useState("slate");
 	const [layers, setLayers] = useState<LayerMode>("semantic");
 	const [darkMode, setDarkMode] = useState(true);
+	const [radiusAnchor, setRadiusAnchor] = useState(10);
+	const [radiusMultiplier, setRadiusMultiplier] = useState(1);
+	const [includeSpacing, setIncludeSpacing] = useState(true);
+	const [includeRadius, setIncludeRadius] = useState(true);
+	const [includeShadows, setIncludeShadows] = useState(true);
+	const [includeTypography, setIncludeTypography] = useState(true);
+	const [includeDurations, setIncludeDurations] = useState(true);
 
 	// Result state
 	const [result, setResult] = useState<ImportResults | null>(null);
@@ -67,10 +75,30 @@ export function GeneratePage() {
 			grayName,
 			layers,
 			darkMode,
+			radius: { anchor: radiusAnchor, multiplier: radiusMultiplier },
+			includeSpacing,
+			includeRadius,
+			includeShadows,
+			includeTypography,
+			includeDurations,
 		};
 
 		return generateDesignSystem(config);
-	}, [primaryColor, secondaryColor, hasSecondary, grayName, layers, darkMode]);
+	}, [
+		primaryColor,
+		secondaryColor,
+		hasSecondary,
+		grayName,
+		layers,
+		darkMode,
+		radiusAnchor,
+		radiusMultiplier,
+		includeSpacing,
+		includeRadius,
+		includeShadows,
+		includeTypography,
+		includeDurations,
+	]);
 
 	// Listen for import result
 	useFigmaMessage((msg: any) => {
@@ -113,7 +141,7 @@ export function GeneratePage() {
 					<>
 						<SectionHeader
 							title="Generate Design System"
-							description="Create a complete color token system from your brand colors"
+							description="Create a complete token system from your brand colors"
 						/>
 
 						<div className={styles.configSection}>
@@ -170,15 +198,31 @@ export function GeneratePage() {
 								)}
 							</div>
 
-							{/* Options row */}
-							<div className={styles.optionsRow}>
-								<div className={styles.optionGroup}>
-									<label>Gray palette name</label>
-									<Input
-										value={grayName}
-										onChange={(e) => setGrayName(e.target.value || "zinc")}
-										placeholder="zinc"
-									/>
+							{/* Gray palette selector */}
+							<div className={styles.colorInputGroup}>
+								<label>Surface palette</label>
+								<div className={styles.graySelector}>
+									{RADIX_GRAYS.map((g) => (
+										<button
+											key={g.name}
+											type="button"
+											className={styles.grayOption}
+											data-selected={grayName === g.name}
+											onClick={() => setGrayName(g.name)}
+											title={g.label}
+										>
+											<div className={styles.grayPreview}>
+												{[0, 2, 4, 7, 10, 11].map((i) => (
+													<div
+														key={i}
+														className={styles.grayDot}
+														style={{ backgroundColor: g.light[i] }}
+													/>
+												))}
+											</div>
+											<span className={styles.grayName}>{g.name}</span>
+										</button>
+									))}
 								</div>
 							</div>
 
@@ -218,6 +262,78 @@ export function GeneratePage() {
 									))}
 								</div>
 							</div>
+
+							{/* Token types */}
+							<div className={styles.colorInputGroup}>
+								<label>Token types</label>
+								<div className={styles.tokenTypeGrid}>
+									<CheckboxWithLabel
+										id="include-spacing"
+										checked={includeSpacing}
+										onChange={setIncludeSpacing}
+										label="Spacing"
+									/>
+									<CheckboxWithLabel
+										id="include-radius"
+										checked={includeRadius}
+										onChange={setIncludeRadius}
+										label="Radius"
+									/>
+									<CheckboxWithLabel
+										id="include-shadows"
+										checked={includeShadows}
+										onChange={setIncludeShadows}
+										label="Shadows"
+									/>
+									<CheckboxWithLabel
+										id="include-typography"
+										checked={includeTypography}
+										onChange={setIncludeTypography}
+										label="Typography"
+									/>
+									<CheckboxWithLabel
+										id="include-durations"
+										checked={includeDurations}
+										onChange={setIncludeDurations}
+										label="Durations"
+									/>
+								</div>
+							</div>
+
+							{/* Radius config */}
+							{includeRadius && (
+								<div className={styles.optionsRow}>
+									<div className={styles.optionGroup}>
+										<label>Radius anchor (px)</label>
+										<Input
+											type="number"
+											value={radiusAnchor}
+											onChange={(e) =>
+												setRadiusAnchor(
+													Math.max(0, Number(e.target.value) || 0),
+												)
+											}
+											min={0}
+											max={32}
+										/>
+									</div>
+									<div className={styles.optionGroup}>
+										<label>Radius multiplier</label>
+										<Input
+											type="number"
+											value={radiusMultiplier}
+											onChange={(e) =>
+												setRadiusMultiplier(
+													Math.max(0, Number(e.target.value) || 0),
+												)
+											}
+											min={0}
+											max={3}
+											step={0.1}
+										/>
+									</div>
+								</div>
+							)}
 
 							{/* Preview button */}
 							<div className={styles.actions}>
@@ -336,7 +452,7 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 	const [expanded, setExpanded] = useState(false);
 	const limit = expanded ? generated.tokens.length : 30;
 
-	// Group tokens by category
+	// Group tokens by category — deduplicate by figmaName (modes create duplicates)
 	const categories = ["primitives", "abstractions", "semantics"] as const;
 
 	return (
@@ -345,12 +461,20 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 				const catTokens = generated.tokens.filter((t) => t.category === cat);
 				if (catTokens.length === 0) return null;
 
-				const displayed = catTokens.slice(0, limit);
+				// Deduplicate by figmaName (show unique names, not per-mode entries)
+				const seen = new Set<string>();
+				const unique = catTokens.filter((t) => {
+					if (seen.has(t.figmaName)) return false;
+					seen.add(t.figmaName);
+					return true;
+				});
+
+				const displayed = unique.slice(0, limit);
 
 				return (
 					<div key={cat}>
 						<div className={styles.tokenCategoryHeader}>
-							{cat} ({catTokens.length})
+							{cat} ({unique.length})
 						</div>
 						{displayed.map((token) => (
 							<div key={token.id} className={styles.tokenRow}>
@@ -364,11 +488,22 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 											}}
 										/>
 									)}
-								{(typeof token.value === "string" ||
-									typeof token.value === "number") && (
+								{typeof token.value === "number" && (
 									<div
 										className={styles.tokenColorDot}
-										style={{ backgroundColor: "transparent", border: "none" }}
+										style={{
+											backgroundColor: "transparent",
+											border: "1px dashed var(--border)",
+										}}
+									/>
+								)}
+								{typeof token.value === "string" && (
+									<div
+										className={styles.tokenColorDot}
+										style={{
+											backgroundColor: "transparent",
+											border: "1px dashed var(--border)",
+										}}
 									/>
 								)}
 								<span className={styles.tokenName}>{token.figmaName}</span>

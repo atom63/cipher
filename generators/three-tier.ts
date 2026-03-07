@@ -6,11 +6,22 @@ import type { ColorValue, DesignToken } from "../types/tokens";
 import {
 	type ColorScale,
 	generateColorScale,
-	generateGrayScale,
 	rgbToHex,
 	SHADE_STEPS,
 	type ShadeStep,
 } from "./color-scale";
+import { getRadixGray, RADIX_GRAYS, type RadixGrayScale } from "./radix-grays";
+import {
+	computeRadiusScale,
+	DEFAULT_RADIUS,
+	DURATION_RAW,
+	DURATION_SEMANTIC,
+	type RadiusConfig,
+	SHADOW_SCALE,
+	SPACING_SCALE,
+	shadowToCss,
+	TYPE_SCALE,
+} from "./token-presets";
 
 // --- Configuration types ---
 
@@ -25,12 +36,24 @@ export interface BrandConfig {
 	primary: string;
 	/** Secondary/accent brand color (hex, optional) */
 	secondary?: string;
-	/** Neutral gray palette name (default: "zinc") */
+	/** Neutral gray palette name — matches a Radix gray preset (default: "slate") */
 	grayName?: string;
 	/** Which layers to generate (default: "semantic") */
 	layers?: LayerMode;
 	/** Whether to generate light+dark semantic modes (default: true, ignored for "primitives" mode) */
 	darkMode?: boolean;
+	/** Radius anchor config (default: { anchor: 10, multiplier: 1 }) */
+	radius?: RadiusConfig;
+	/** Whether to include spacing tokens (default: true) */
+	includeSpacing?: boolean;
+	/** Whether to include radius tokens (default: true) */
+	includeRadius?: boolean;
+	/** Whether to include shadow tokens (default: true) */
+	includeShadows?: boolean;
+	/** Whether to include typography size tokens (default: true) */
+	includeTypography?: boolean;
+	/** Whether to include duration tokens (default: true) */
+	includeDurations?: boolean;
 }
 
 export interface GeneratedSystem {
@@ -60,88 +83,280 @@ function nextId(): string {
 
 function makeToken(
 	figmaName: string,
-	value: string | ColorValue,
+	value: string | number | ColorValue,
 	category: string,
 	opts?: {
 		description?: string;
 		type?: string;
 		originalValue?: string;
+		modeName?: string;
 	},
 ): DesignToken {
-	const strValue = typeof value === "string" ? value : rgbToHex(value);
+	const strValue =
+		typeof value === "object"
+			? rgbToHex(value)
+			: typeof value === "number"
+				? `${value}`
+				: value;
 
-	return {
+	const token: DesignToken = {
 		id: nextId(),
 		name: figmaName,
 		figmaName,
-		value: typeof value === "string" ? value : value,
+		value,
 		originalValue: opts?.originalValue ?? strValue,
 		type: (opts?.type ?? "color") as DesignToken["type"],
 		category: category as DesignToken["category"],
 		action: "import",
 		description: opts?.description,
 	};
+
+	if (opts?.modeName) {
+		(token as any).modeName = opts.modeName;
+	}
+
+	return token;
+}
+
+/** Emit a token for both Light and Dark modes (same value) */
+function makeDualModeTokens(
+	figmaName: string,
+	value: string | number | ColorValue,
+	category: string,
+	darkMode: boolean,
+	opts?: {
+		description?: string;
+		type?: string;
+		originalValue?: string;
+	},
+): DesignToken[] {
+	if (!darkMode) {
+		return [makeToken(figmaName, value, category, opts)];
+	}
+	return [
+		makeToken(figmaName, value, category, { ...opts, modeName: "Light" }),
+		makeToken(figmaName, value, category, { ...opts, modeName: "Dark" }),
+	];
 }
 
 // =========================================================================
-// Primitives — raw color values
+// Primitives — raw color values + non-color tokens
 // =========================================================================
 
 function generatePrimitives(
 	config: BrandConfig,
 	grayName: string,
-): { tokens: DesignToken[]; scales: ColorScale[] } {
+	darkMode: boolean,
+): {
+	tokens: DesignToken[];
+	scales: ColorScale[];
+	radixGray: RadixGrayScale | null;
+} {
 	const tokens: DesignToken[] = [];
 
+	// --- Brand color scale (50-950, OKLCH) ---
 	const brandScale = generateColorScale("brand", config.primary);
-	const grayScale = generateGrayScale(grayName, config.primary);
-	const scales: ColorScale[] = [grayScale, brandScale];
+	const scales: ColorScale[] = [brandScale];
 
-	if (config.secondary) {
-		scales.push(generateColorScale("secondary", config.secondary));
+	for (const step of SHADE_STEPS) {
+		tokens.push(
+			...makeDualModeTokens(
+				`brand/${step}`,
+				brandScale.shades[step],
+				"primitives",
+				darkMode,
+				{
+					description: `Brand ${step}`,
+					originalValue: brandScale.hexValues[step],
+				},
+			),
+		);
 	}
 
-	for (const scale of scales) {
+	// --- Secondary color scale (50-950, OKLCH) ---
+	if (config.secondary) {
+		const secondaryScale = generateColorScale("secondary", config.secondary);
+		scales.push(secondaryScale);
+
 		for (const step of SHADE_STEPS) {
 			tokens.push(
-				makeToken(`${scale.name}/${step}`, scale.shades[step], "primitives", {
-					description: `${scale.name} ${step}`,
-					originalValue: scale.hexValues[step],
+				...makeDualModeTokens(
+					`secondary/${step}`,
+					secondaryScale.shades[step],
+					"primitives",
+					darkMode,
+					{
+						description: `Secondary ${step}`,
+						originalValue: secondaryScale.hexValues[step],
+					},
+				),
+			);
+		}
+	}
+
+	// --- Radix gray (1-12, light + dark) ---
+	const radixGray = getRadixGray(grayName) ?? RADIX_GRAYS[0];
+
+	for (let i = 0; i < 12; i++) {
+		const step = i + 1;
+		const lightHex = radixGray.light[i];
+		const darkHex = radixGray.dark[i];
+
+		if (darkMode) {
+			tokens.push(
+				makeToken(
+					`${radixGray.name}/${step}`,
+					hexToColorValue(lightHex),
+					"primitives",
+					{
+						description: `${radixGray.label} step ${step} (light)`,
+						originalValue: lightHex,
+						modeName: "Light",
+					},
+				),
+				makeToken(
+					`${radixGray.name}/${step}`,
+					hexToColorValue(darkHex),
+					"primitives",
+					{
+						description: `${radixGray.label} step ${step} (dark)`,
+						originalValue: darkHex,
+						modeName: "Dark",
+					},
+				),
+			);
+		} else {
+			tokens.push(
+				makeToken(
+					`${radixGray.name}/${step}`,
+					hexToColorValue(lightHex),
+					"primitives",
+					{
+						description: `${radixGray.label} step ${step}`,
+						originalValue: lightHex,
+					},
+				),
+			);
+		}
+	}
+
+	// --- White & Black ---
+	tokens.push(
+		...makeDualModeTokens(
+			"white",
+			{ r: 1, g: 1, b: 1 },
+			"primitives",
+			darkMode,
+			{ originalValue: "#ffffff" },
+		),
+	);
+	tokens.push(
+		...makeDualModeTokens(
+			"black",
+			{ r: 0, g: 0, b: 0 },
+			"primitives",
+			darkMode,
+			{ originalValue: "#000000" },
+		),
+	);
+
+	// --- White/Black alpha scales ---
+	const alphaSteps = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as const;
+	for (const step of alphaSteps) {
+		tokens.push(
+			...makeDualModeTokens(
+				`white-alpha/${step}`,
+				{ r: 1, g: 1, b: 1, a: step / 100 },
+				"primitives",
+				darkMode,
+				{
+					type: "color",
+					originalValue: `rgba(255, 255, 255, ${step / 100})`,
+					description: `White at ${step}% opacity`,
+				},
+			),
+		);
+		tokens.push(
+			...makeDualModeTokens(
+				`black-alpha/${step}`,
+				{ r: 0, g: 0, b: 0, a: step / 100 },
+				"primitives",
+				darkMode,
+				{
+					type: "color",
+					originalValue: `rgba(0, 0, 0, ${step / 100})`,
+					description: `Black at ${step}% opacity`,
+				},
+			),
+		);
+	}
+
+	// --- Spacing ---
+	if (config.includeSpacing !== false) {
+		for (const [key, px] of Object.entries(SPACING_SCALE)) {
+			tokens.push(
+				...makeDualModeTokens(`spacing/${key}`, px, "primitives", darkMode, {
+					type: "spacing",
+					originalValue: `${px}px`,
+					description: `Spacing ${key} (${px}px)`,
 				}),
 			);
 		}
 	}
 
-	tokens.push(
-		makeToken("white", { r: 1, g: 1, b: 1 }, "primitives", {
-			originalValue: "#ffffff",
-		}),
-	);
-	tokens.push(
-		makeToken("black", { r: 0, g: 0, b: 0 }, "primitives", {
-			originalValue: "#000000",
-		}),
-	);
+	// --- Shadows ---
+	if (config.includeShadows !== false) {
+		for (const [level, def] of Object.entries(SHADOW_SCALE)) {
+			const cssValue = shadowToCss(def);
+			tokens.push(
+				...makeDualModeTokens(
+					`shadow/${level}`,
+					cssValue,
+					"primitives",
+					darkMode,
+					{
+						type: "boxShadow",
+						originalValue: cssValue,
+						description: `Shadow elevation ${level}`,
+					},
+				),
+			);
+		}
+	}
 
-	return { tokens, scales };
+	// --- Duration raw values ---
+	if (config.includeDurations !== false) {
+		for (const [key, ms] of Object.entries(DURATION_RAW)) {
+			tokens.push(
+				...makeDualModeTokens(`duration/${key}`, ms, "primitives", darkMode, {
+					type: "duration",
+					originalValue: `${ms}ms`,
+					description: `Duration ${key}ms`,
+				}),
+			);
+		}
+	}
+
+	return { tokens, scales, radixGray };
 }
 
 // =========================================================================
-// Abstractions — indirection layer (primary -> brand, neutral -> gray)
+// Abstractions — indirection layer
 // =========================================================================
 
 function generateAbstractions(
 	config: BrandConfig,
-	grayName: string,
+	radixGray: RadixGrayScale,
+	darkMode: boolean,
 ): { tokens: DesignToken[]; mappings: AbstractionMapping[] } {
 	const tokens: DesignToken[] = [];
 	const mappings: AbstractionMapping[] = [];
 
-	// Primary -> brand
+	// Primary -> brand (50-950)
 	for (const step of SHADE_STEPS) {
 		const ref = `{primitives.brand.${step}}`;
 		tokens.push(
-			makeToken(`primary/${step}`, ref, "abstractions", {
+			...makeDualModeTokens(`primary/${step}`, ref, "abstractions", darkMode, {
 				description: `Primary color ${step} (references brand)`,
 				originalValue: ref,
 				type: "color",
@@ -154,29 +369,24 @@ function generateAbstractions(
 		});
 	}
 
-	// Neutral -> gray
-	for (const step of SHADE_STEPS) {
-		const ref = `{primitives.${grayName}.${step}}`;
+	// Neutral -> radix gray (1-12)
+	for (let i = 1; i <= 12; i++) {
+		const ref = `{primitives.${radixGray.name}.${i}}`;
 		tokens.push(
-			makeToken(`neutral/${step}`, ref, "abstractions", {
-				description: `Neutral color ${step} (references ${grayName})`,
+			...makeDualModeTokens(`neutral/${i}`, ref, "abstractions", darkMode, {
+				description: `Neutral surface ${i} (references ${radixGray.name})`,
 				originalValue: ref,
 				type: "color",
 			}),
 		);
-		mappings.push({
-			name: `neutral/${step}`,
-			step,
-			pointsTo: { collection: "primitives", path: `${grayName}/${step}` },
-		});
 	}
 
-	// Accent -> secondary
+	// Accent -> secondary (50-950)
 	if (config.secondary) {
 		for (const step of SHADE_STEPS) {
 			const ref = `{primitives.secondary.${step}}`;
 			tokens.push(
-				makeToken(`accent/${step}`, ref, "abstractions", {
+				...makeDualModeTokens(`accent/${step}`, ref, "abstractions", darkMode, {
 					description: `Accent color ${step} (references secondary)`,
 					originalValue: ref,
 					type: "color",
@@ -190,11 +400,46 @@ function generateAbstractions(
 		}
 	}
 
+	// Radius (computed from anchor)
+	if (config.includeRadius !== false) {
+		const radiusConfig = config.radius ?? DEFAULT_RADIUS;
+		const radiusScale = computeRadiusScale(radiusConfig);
+		for (const [size, px] of Object.entries(radiusScale)) {
+			tokens.push(
+				...makeDualModeTokens(`radius/${size}`, px, "abstractions", darkMode, {
+					type: "borderRadius",
+					originalValue: `${px}px`,
+					description: `Border radius ${size} (${px}px)`,
+				}),
+			);
+		}
+	}
+
+	// Duration semantic aliases
+	if (config.includeDurations !== false) {
+		for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
+			const ref = `{primitives.duration.${rawKey}}`;
+			tokens.push(
+				...makeDualModeTokens(
+					`duration/${name}`,
+					ref,
+					"abstractions",
+					darkMode,
+					{
+						type: "duration",
+						originalValue: ref,
+						description: `Duration ${name} (${DURATION_RAW[rawKey]}ms)`,
+					},
+				),
+			);
+		}
+	}
+
 	return { tokens, mappings };
 }
 
 // =========================================================================
-// Semantics — contextual tokens (background, foreground, border, surface)
+// Semantics — contextual tokens
 // =========================================================================
 
 interface SemanticDef {
@@ -207,20 +452,19 @@ interface SemanticDef {
 /**
  * Build semantic definitions.
  * `refBase` controls whether semantics reference abstractions or primitives directly.
- *   - "abstractions" -> {abstractions.primary.500}
- *   - "primitives"   -> {primitives.brand.500}
  */
 function buildSemanticDefs(
 	refBase: "abstractions" | "primitives",
 	grayName: string,
 	hasSecondary: boolean,
 ): SemanticDef[] {
-	// Map logical names to the actual token paths depending on mode
+	// For brand colors (50-950 scale)
 	const primary = (step: number) =>
 		refBase === "abstractions"
 			? `{abstractions.primary.${step}}`
 			: `{primitives.brand.${step}}`;
 
+	// For neutral/surface (Radix 1-12 scale)
 	const neutral = (step: number) =>
 		refBase === "abstractions"
 			? `{abstractions.neutral.${step}}`
@@ -229,23 +473,23 @@ function buildSemanticDefs(
 	const white = "{primitives.white}";
 
 	const defs: SemanticDef[] = [
-		// Background
+		// Background — uses Radix 1-12 steps
 		{
 			name: "background/default",
-			light: neutral(50),
-			dark: neutral(950),
+			light: neutral(1),
+			dark: neutral(1),
 			description: "Default page background",
 		},
 		{
 			name: "background/subtle",
-			light: neutral(100),
-			dark: neutral(900),
+			light: neutral(2),
+			dark: neutral(2),
 			description: "Subtle background for cards and sections",
 		},
 		{
 			name: "background/muted",
-			light: neutral(200),
-			dark: neutral(800),
+			light: neutral(3),
+			dark: neutral(3),
 			description: "Muted background for hover states",
 		},
 		{
@@ -256,28 +500,28 @@ function buildSemanticDefs(
 		},
 		{
 			name: "background/inverse",
-			light: neutral(900),
-			dark: neutral(50),
+			light: neutral(12),
+			dark: neutral(1),
 			description: "Inverted background",
 		},
 
-		// Foreground / Text
+		// Foreground / Text — uses Radix high-contrast steps
 		{
 			name: "foreground/default",
-			light: neutral(900),
-			dark: neutral(50),
+			light: neutral(12),
+			dark: neutral(12),
 			description: "Default text color",
 		},
 		{
 			name: "foreground/muted",
-			light: neutral(500),
-			dark: neutral(400),
+			light: neutral(11),
+			dark: neutral(11),
 			description: "Muted/secondary text",
 		},
 		{
 			name: "foreground/subtle",
-			light: neutral(400),
-			dark: neutral(500),
+			light: neutral(9),
+			dark: neutral(9),
 			description: "Subtle text (placeholders, disabled)",
 		},
 		{
@@ -293,17 +537,17 @@ function buildSemanticDefs(
 			description: "Primary-colored text (links, accents)",
 		},
 
-		// Border
+		// Border — uses Radix mid-range steps
 		{
 			name: "border/default",
-			light: neutral(200),
-			dark: neutral(800),
+			light: neutral(6),
+			dark: neutral(6),
 			description: "Default border",
 		},
 		{
 			name: "border/muted",
-			light: neutral(100),
-			dark: neutral(900),
+			light: neutral(4),
+			dark: neutral(4),
 			description: "Subtle border (dividers)",
 		},
 		{
@@ -313,7 +557,7 @@ function buildSemanticDefs(
 			description: "Emphasized border (focus rings)",
 		},
 
-		// Surface
+		// Surface — uses Radix component background steps
 		{
 			name: "surface/primary",
 			light: primary(50),
@@ -325,6 +569,24 @@ function buildSemanticDefs(
 			light: primary(100),
 			dark: primary(900),
 			description: "Primary surface hover state",
+		},
+		{
+			name: "surface/component",
+			light: neutral(3),
+			dark: neutral(3),
+			description: "Component background (inputs, cards)",
+		},
+		{
+			name: "surface/component-hover",
+			light: neutral(4),
+			dark: neutral(4),
+			description: "Component hover background",
+		},
+		{
+			name: "surface/component-active",
+			light: neutral(5),
+			dark: neutral(5),
+			description: "Component active/pressed background",
 		},
 	];
 
@@ -375,7 +637,6 @@ function generateSemantics(
 	const tokens: DesignToken[] = [];
 
 	if (darkMode) {
-		// Two tokens per def: Light mode + Dark mode
 		for (const def of defs) {
 			for (const [modeName, modeValue] of [
 				["Light", def.light],
@@ -384,13 +645,12 @@ function generateSemantics(
 				const token = makeToken(def.name, modeValue, "semantics", {
 					description: def.description,
 					originalValue: modeValue,
+					modeName,
 				});
-				(token as any).modeName = modeName;
 				tokens.push(token);
 			}
 		}
 	} else {
-		// Single mode — use the light value
 		for (const def of defs) {
 			tokens.push(
 				makeToken(def.name, def.light, "semantics", {
@@ -401,7 +661,210 @@ function generateSemantics(
 		}
 	}
 
+	// Typography tokens (semantics — not mode-dependent but need dual-mode for consistency)
+	if (config.includeTypography !== false) {
+		for (const step of TYPE_SCALE) {
+			// Use the "md" breakpoint as the default Figma value
+			tokens.push(
+				...makeDualModeTokens(
+					`type/${step.name}/size`,
+					step.sizes.md,
+					"semantics",
+					darkMode,
+					{
+						type: "fontSize",
+						originalValue: `${step.sizes.md}px`,
+						description: `${step.name} font size`,
+					},
+				),
+			);
+			tokens.push(
+				...makeDualModeTokens(
+					`type/${step.name}/line-height`,
+					step.lineHeights.md,
+					"semantics",
+					darkMode,
+					{
+						type: "number",
+						originalValue: `${step.lineHeights.md}px`,
+						description: `${step.name} line height`,
+					},
+				),
+			);
+		}
+	}
+
+	// Radius tokens (when not three-tier, put them in semantics directly)
+	if (
+		config.includeRadius !== false &&
+		(config.layers ?? "semantic") !== "three-tier"
+	) {
+		const radiusConfig = config.radius ?? DEFAULT_RADIUS;
+		const radiusScale = computeRadiusScale(radiusConfig);
+		for (const [size, px] of Object.entries(radiusScale)) {
+			tokens.push(
+				...makeDualModeTokens(`radius/${size}`, px, "semantics", darkMode, {
+					type: "borderRadius",
+					originalValue: `${px}px`,
+					description: `Border radius ${size} (${px}px)`,
+				}),
+			);
+		}
+	}
+
+	// Duration semantic aliases (when not three-tier)
+	if (
+		config.includeDurations !== false &&
+		(config.layers ?? "semantic") !== "three-tier"
+	) {
+		for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
+			const ref = `{primitives.duration.${rawKey}}`;
+			tokens.push(
+				...makeDualModeTokens(`duration/${name}`, ref, "semantics", darkMode, {
+					type: "duration",
+					originalValue: ref,
+					description: `Duration ${name} (${DURATION_RAW[rawKey]}ms)`,
+				}),
+			);
+		}
+	}
+
 	return tokens;
+}
+
+// =========================================================================
+// CSS Export
+// =========================================================================
+
+export function generateCss(config: BrandConfig): string {
+	const system = generateDesignSystem(config);
+	const grayName = config.grayName ?? "slate";
+	const radixGray = getRadixGray(grayName) ?? RADIX_GRAYS[0];
+	const radiusConfig = config.radius ?? DEFAULT_RADIUS;
+	const radiusScale = computeRadiusScale(radiusConfig);
+	const darkMode = config.darkMode !== false;
+
+	const lines: string[] = [];
+
+	// Primitives as @theme inline
+	lines.push("@theme inline {");
+
+	// Brand colors (50-950)
+	const brandScale = system.primitives.find((s) => s.name === "brand");
+	if (brandScale) {
+		for (const step of SHADE_STEPS) {
+			lines.push(`  --color-brand-${step}: ${brandScale.hexValues[step]};`);
+		}
+	}
+
+	// Secondary colors
+	const secondaryScale = system.primitives.find((s) => s.name === "secondary");
+	if (secondaryScale) {
+		for (const step of SHADE_STEPS) {
+			lines.push(
+				`  --color-secondary-${step}: ${secondaryScale.hexValues[step]};`,
+			);
+		}
+	}
+
+	// Spacing
+	if (config.includeSpacing !== false) {
+		for (const [key, px] of Object.entries(SPACING_SCALE)) {
+			lines.push(`  --spacing-${key}: ${px}px;`);
+		}
+	}
+
+	// Radius
+	if (config.includeRadius !== false) {
+		for (const [size, px] of Object.entries(radiusScale)) {
+			lines.push(`  --radius-${size}: ${px}px;`);
+		}
+	}
+
+	// Shadows
+	if (config.includeShadows !== false) {
+		for (const [level, def] of Object.entries(SHADOW_SCALE)) {
+			lines.push(`  --shadow-${level}: ${shadowToCss(def)};`);
+		}
+	}
+
+	// Typography
+	if (config.includeTypography !== false) {
+		for (const step of TYPE_SCALE) {
+			lines.push(`  --text-${step.name}: ${step.sizes.md}px;`);
+			lines.push(`  --leading-${step.name}: ${step.lineHeights.md}px;`);
+		}
+	}
+
+	// Durations
+	if (config.includeDurations !== false) {
+		for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
+			lines.push(`  --duration-${name}: ${DURATION_RAW[rawKey]}ms;`);
+		}
+	}
+
+	lines.push("}");
+	lines.push("");
+
+	// Radix gray + semantics as :root / .dark
+	lines.push(":root {");
+
+	// Light mode gray
+	for (let i = 0; i < 12; i++) {
+		lines.push(`  --color-${radixGray.name}-${i + 1}: ${radixGray.light[i]};`);
+	}
+
+	// Semantic color references (light mode)
+	const defs = buildSemanticDefs(
+		"primitives",
+		radixGray.name,
+		!!config.secondary,
+	);
+	for (const def of defs) {
+		const cssVarName = `--${def.name.replace(/\//g, "-")}`;
+		const cssValue = refToCssVar(def.light);
+		lines.push(`  ${cssVarName}: ${cssValue};`);
+	}
+
+	lines.push("}");
+
+	if (darkMode) {
+		lines.push("");
+		lines.push(".dark {");
+
+		for (let i = 0; i < 12; i++) {
+			lines.push(`  --color-${radixGray.name}-${i + 1}: ${radixGray.dark[i]};`);
+		}
+
+		for (const def of defs) {
+			const cssVarName = `--${def.name.replace(/\//g, "-")}`;
+			const cssValue = refToCssVar(def.dark);
+			lines.push(`  ${cssVarName}: ${cssValue};`);
+		}
+
+		lines.push("}");
+	}
+
+	return lines.join("\n");
+}
+
+/** Convert a token reference like {primitives.brand.500} to a CSS var */
+function refToCssVar(ref: string): string {
+	const match = ref.match(/^\{([^}]+)\}$/);
+	if (!match) return ref;
+	const path = match[1].replace(/\./g, "-");
+	return `var(--color-${path.replace(/^primitives-/, "").replace(/^abstractions-/, "")})`;
+}
+
+// =========================================================================
+// Helpers
+// =========================================================================
+
+function hexToColorValue(hex: string): ColorValue {
+	const r = Number.parseInt(hex.slice(1, 3), 16) / 255;
+	const g = Number.parseInt(hex.slice(3, 5), 16) / 255;
+	const b = Number.parseInt(hex.slice(5, 7), 16) / 255;
+	return { r, g, b };
 }
 
 // =========================================================================
@@ -412,20 +875,22 @@ function generateSemantics(
  * Generate a design system from brand configuration.
  *
  * Supports three layer modes:
- * - "primitives" — Just raw color scales (brand, gray, white, black)
- * - "semantic"   — Primitives + semantic tokens referencing primitives directly
+ * - "primitives" — Raw color scales + spacing + shadows + durations
+ * - "semantic"   — Primitives + semantic tokens + radius + typography + duration aliases
  * - "three-tier" — Primitives + abstractions + semantics (full indirection for rebranding)
  */
 export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 	tokenIdCounter = 0;
 
-	const grayName = config.grayName ?? "zinc";
+	const grayName = config.grayName ?? "slate";
 	const layers = config.layers ?? "semantic";
+	const darkMode = config.darkMode !== false;
 
-	const { tokens: primitiveTokens, scales } = generatePrimitives(
-		config,
-		grayName,
-	);
+	const {
+		tokens: primitiveTokens,
+		scales,
+		radixGray,
+	} = generatePrimitives(config, grayName, darkMode);
 	const tokens: DesignToken[] = [...primitiveTokens];
 	const primitiveCount = primitiveTokens.length;
 
@@ -433,8 +898,8 @@ export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 	let abstractionMappings: AbstractionMapping[] = [];
 
 	// Add abstractions only in three-tier mode
-	if (layers === "three-tier") {
-		const abs = generateAbstractions(config, grayName);
+	if (layers === "three-tier" && radixGray) {
+		const abs = generateAbstractions(config, radixGray, darkMode);
 		tokens.push(...abs.tokens);
 		abstractionCount = abs.tokens.length;
 		abstractionMappings = abs.mappings;
