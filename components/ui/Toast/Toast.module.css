@@ -87,6 +87,25 @@
   word-break: break-word;
 }
 
+/* Action Button */
+.actionButton {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--figma-color-text-brand);
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.actionButton:hover {
+  background: var(--figma-color-bg-hover);
+}
+
 /* Dismiss Button */
 .dismissButton {
   flex-shrink: 0;

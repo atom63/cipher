@@ -115,6 +115,96 @@ export interface ResizeWindowMessage {
   }
 }
 
+/** Request all variables with full details for the manage page */
+export interface GetVariablesMessage {
+  type: 'get-variables'
+  data?: {
+    collectionIds?: string[]
+  }
+}
+
+/** Variable detail for manage page display */
+export interface VariableInfo {
+  id: string
+  name: string
+  resolvedType: string
+  collectionId: string
+  collectionName: string
+  valuesByMode: Record<string, string>
+  description: string
+}
+
+/** Response with full variable details */
+export interface VariablesListMessage {
+  type: 'variables-list'
+  data: {
+    variables: VariableInfo[]
+    collections: CollectionInfo[]
+  }
+}
+
+/** Rename variables in bulk */
+export interface RenameVariablesMessage {
+  type: 'rename-variables'
+  data: {
+    renames: { id: string; newName: string }[]
+  }
+}
+
+/** Delete variables in bulk */
+export interface DeleteVariablesMessage {
+  type: 'delete-variables'
+  data: {
+    variableIds: string[]
+  }
+}
+
+/** Variables renamed result */
+export interface VariablesRenamedMessage {
+  type: 'variables-renamed'
+  data: {
+    success: number
+    failed: number
+    previousNames: { id: string; oldName: string }[]
+  }
+}
+
+/** Snapshot of a deleted variable for undo */
+export interface DeletedVariableSnapshot {
+  name: string
+  resolvedType: string
+  collectionId: string
+  description: string
+  valuesByMode: Record<string, any>
+}
+
+/** Variables deleted result */
+export interface VariablesDeletedMessage {
+  type: 'variables-deleted'
+  data: {
+    success: number
+    failed: number
+    snapshots: DeletedVariableSnapshot[]
+  }
+}
+
+/** Restore previously deleted variables */
+export interface RestoreVariablesMessage {
+  type: 'restore-variables'
+  data: {
+    snapshots: DeletedVariableSnapshot[]
+  }
+}
+
+/** Variables restored result */
+export interface VariablesRestoredMessage {
+  type: 'variables-restored'
+  data: {
+    success: number
+    failed: number
+  }
+}
+
 /** Close the plugin */
 export interface CloseMessage {
   type: 'close'
@@ -142,10 +232,14 @@ export type UIToMainMessage =
   | ParseTokensMessage
   | GetCollectionsMessage
   | GetStylesMessage
+  | GetVariablesMessage
   | CreateVariablesMessage
   | ExportVariablesMessage
   | ExportStylesMessage
   | ImportStylesMessage
+  | RenameVariablesMessage
+  | DeleteVariablesMessage
+  | RestoreVariablesMessage
   | ResizeWindowMessage
   | LoadSettingsMessage
   | SaveSettingsMessage
@@ -255,7 +349,11 @@ export type MainToUIMessage =
   | TokensParsedMessage
   | CollectionsListMessage
   | StylesListMessage
+  | VariablesListMessage
   | VariablesCreatedMessage
+  | VariablesRenamedMessage
+  | VariablesDeletedMessage
+  | VariablesRestoredMessage
   | ImportCompleteMessage
   | ExportCompleteMessage
   | StylesExportCompleteMessage
@@ -296,10 +394,14 @@ export function isUIToMainMessage(msg: unknown): msg is UIToMainMessage {
     'parse-tokens',
     'get-collections',
     'get-styles',
+    'get-variables',
     'create-variables',
     'export-variables',
     'export-styles',
     'import-styles',
+    'rename-variables',
+    'delete-variables',
+    'restore-variables',
     'resize-window',
     'load-settings',
     'save-settings',
@@ -315,7 +417,11 @@ export function isMainToUIMessage(msg: unknown): msg is MainToUIMessage {
     'tokens-parsed',
     'collections-list',
     'styles-list',
+    'variables-list',
     'variables-created',
+    'variables-renamed',
+    'variables-deleted',
+    'variables-restored',
     'import-complete',
     'export-complete',
     'styles-export-complete',

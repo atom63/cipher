@@ -8,19 +8,25 @@ import styles from './Toast.module.css'
 
 export type ToastVariant = 'info' | 'success' | 'warning' | 'error'
 
+export interface ToastAction {
+  label: string
+  onClick: () => void
+}
+
 export interface Toast {
   id: string
   message: string
   variant: ToastVariant
   duration?: number
+  action?: ToastAction
 }
 
 interface ToastContextValue {
   toasts: Toast[]
-  addToast: (message: string, variant?: ToastVariant, duration?: number) => void
+  addToast: (message: string, variant?: ToastVariant, duration?: number, action?: ToastAction) => void
   removeToast: (id: string) => void
   showError: (message: string) => void
-  showSuccess: (message: string) => void
+  showSuccess: (message: string, action?: ToastAction) => void
   showWarning: (message: string) => void
   showInfo: (message: string) => void
 }
@@ -74,15 +80,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addToast = useCallback(
-    (message: string, variant: ToastVariant = 'info', duration = DEFAULT_DURATION) => {
+    (message: string, variant: ToastVariant = 'info', duration = DEFAULT_DURATION, action?: ToastAction) => {
       const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`
-      const toast: Toast = { id, message, variant, duration }
+      const toast: Toast = { id, message, variant, duration, action }
 
       setToasts((prev) => [...prev, toast])
 
-      // Auto-remove after duration
-      if (duration > 0) {
-        setTimeout(() => removeToast(id), duration)
+      // Auto-remove after duration (longer if there's an action)
+      const timeout = action ? Math.max(duration, 8000) : duration
+      if (timeout > 0) {
+        setTimeout(() => removeToast(id), timeout)
       }
     },
     [removeToast]
@@ -94,7 +101,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   )
 
   const showSuccess = useCallback(
-    (message: string) => addToast(message, 'success'),
+    (message: string, action?: ToastAction) => addToast(message, 'success', DEFAULT_DURATION, action),
     [addToast]
   )
 
@@ -147,6 +154,18 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
     <div className={`${styles.toast} ${styles[toast.variant]}`} role="alert">
       <span className={styles.icon}>{icons[toast.variant]}</span>
       <span className={styles.message}>{toast.message}</span>
+      {toast.action && (
+        <button
+          type="button"
+          className={styles.actionButton}
+          onClick={() => {
+            toast.action?.onClick()
+            onDismiss(toast.id)
+          }}
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         type="button"
         className={styles.dismissButton}

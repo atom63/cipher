@@ -107,6 +107,167 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
       break
     }
 
+    case 'get-variables': {
+      const collections = figma.variables.getLocalVariableCollections()
+      const filterIds = msg.data?.collectionIds
+      const filteredCollections = filterIds
+        ? collections.filter(c => filterIds.includes(c.id))
+        : collections
+
+      const collectionsData = filteredCollections
+        .map(c => ({ id: c.id, name: c.name, variableCount: c.variableIds.length }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+
+      const variables: {
+        id: string
+        name: string
+        resolvedType: string
+        collectionId: string
+        collectionName: string
+        valuesByMode: Record<string, string>
+        description: string
+      }[] = []
+
+      for (const collection of filteredCollections) {
+        const modeNames = new Map(collection.modes.map(m => [m.modeId, m.name]))
+        for (const varId of collection.variableIds) {
+          const variable = figma.variables.getVariableById(varId)
+          if (!variable) continue
+
+          const valuesByMode: Record<string, string> = {}
+          for (const [modeId, value] of Object.entries(variable.valuesByMode)) {
+            const modeName = modeNames.get(modeId) || modeId
+            if (typeof value === 'object' && value !== null && 'type' in value && value.type === 'VARIABLE_ALIAS') {
+              const refVar = figma.variables.getVariableById((value as VariableAlias).id)
+              valuesByMode[modeName] = refVar ? `{${refVar.name}}` : String(value)
+            } else if (typeof value === 'object' && value !== null && 'r' in value) {
+              const c = value as RGBA
+              const r = Math.round(c.r * 255)
+              const g = Math.round(c.g * 255)
+              const b = Math.round(c.b * 255)
+              valuesByMode[modeName] = c.a < 1
+                ? `rgba(${r}, ${g}, ${b}, ${c.a.toFixed(2)})`
+                : `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+            } else {
+              valuesByMode[modeName] = String(value)
+            }
+          }
+
+          variables.push({
+            id: variable.id,
+            name: variable.name,
+            resolvedType: variable.resolvedType,
+            collectionId: collection.id,
+            collectionName: collection.name,
+            valuesByMode,
+            description: variable.description,
+          })
+        }
+      }
+
+      figma.ui.postMessage({
+        type: 'variables-list',
+        data: { variables, collections: collectionsData },
+      })
+      break
+    }
+
+    case 'rename-variables': {
+      const { renames } = msg.data
+      let success = 0
+      let failed = 0
+      const previousNames: { id: string; oldName: string }[] = []
+      for (const { id, newName } of renames) {
+        try {
+          const variable = figma.variables.getVariableById(id)
+          if (variable) {
+            previousNames.push({ id, oldName: variable.name })
+            variable.name = newName
+            success++
+          } else {
+            failed++
+          }
+        } catch {
+          failed++
+        }
+      }
+      figma.ui.postMessage({ type: 'variables-renamed', data: { success, failed, previousNames } })
+      figma.notify(`Renamed ${success} variable${success !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}`)
+      break
+    }
+
+    case 'delete-variables': {
+      const { variableIds } = msg.data
+      let success = 0
+      let failed = 0
+      const snapshots: {
+        name: string
+        resolvedType: string
+        collectionId: string
+        description: string
+        valuesByMode: Record<string, any>
+      }[] = []
+
+      for (const id of variableIds) {
+        try {
+          const variable = figma.variables.getVariableById(id)
+          if (variable) {
+            // Snapshot before deleting for undo
+            const rawValues: Record<string, any> = {}
+            for (const [modeId, value] of Object.entries(variable.valuesByMode)) {
+              rawValues[modeId] = value
+            }
+            snapshots.push({
+              name: variable.name,
+              resolvedType: variable.resolvedType,
+              collectionId: variable.variableCollectionId,
+              description: variable.description,
+              valuesByMode: rawValues,
+            })
+            variable.remove()
+            success++
+          } else {
+            failed++
+          }
+        } catch {
+          failed++
+        }
+      }
+      figma.ui.postMessage({ type: 'variables-deleted', data: { success, failed, snapshots } })
+      figma.notify(`Deleted ${success} variable${success !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}`)
+      break
+    }
+
+    case 'restore-variables': {
+      const { snapshots } = msg.data
+      let success = 0
+      let failed = 0
+      for (const snap of snapshots) {
+        try {
+          const collection = figma.variables.getVariableCollectionById(snap.collectionId)
+          if (!collection) { failed++; continue }
+
+          const figmaType = snap.resolvedType as 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
+          const variable = figma.variables.createVariable(snap.name, collection, figmaType)
+          variable.description = snap.description
+
+          for (const [modeId, value] of Object.entries(snap.valuesByMode)) {
+            try {
+              variable.setValueForMode(modeId, value)
+            } catch {
+              // Mode may no longer exist
+            }
+          }
+          success++
+        } catch {
+          failed++
+        }
+      }
+      figma.ui.postMessage({ type: 'variables-restored', data: { success, failed } })
+      figma.notify(`Restored ${success} variable${success !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}`)
+      break
+    }
+
     case 'create-variables': {
       const { tokens, collectionName, importMode = 'import' } = msg.data
       // Note: tokens are already filtered by selected collections in the UI

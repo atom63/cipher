@@ -9,14 +9,13 @@ import { type PageId, Sidebar } from './components/layout'
 import { ToastProvider, ErrorBoundary, PageErrorBoundary } from './components/ui'
 import { usePostMessage } from './hooks/useFigmaMessage'
 import { ExportPage } from './pages/ExportPage'
-import { HelpPage } from './pages/HelpPage'
 import { ImportPage } from './pages/ImportPage'
+import { ManagePage } from './pages/ManagePage'
 import { SettingsPage } from './pages/SettingsPage'
 import { StyleguidePage } from './pages/StyleguidePage'
-import { SyncPage } from './pages/SyncPage'
 
 function App() {
-  const [activePage, setActivePage] = useState<PageId>('import')
+  const [activePage, setActivePage] = useState<PageId>('manage')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [viewMode, setViewMode] = useState<'default' | 'compact'>('default')
   const postMessage = usePostMessage()
@@ -29,20 +28,18 @@ function App() {
 
   const renderPage = () => {
     switch (activePage) {
+      case 'manage':
+        return <PageErrorBoundary pageName="Manage"><ManagePage /></PageErrorBoundary>
       case 'import':
         return <PageErrorBoundary pageName="Import"><ImportPage /></PageErrorBoundary>
       case 'export':
         return <PageErrorBoundary pageName="Export"><ExportPage /></PageErrorBoundary>
-      case 'sync':
-        return <PageErrorBoundary pageName="Sync"><SyncPage /></PageErrorBoundary>
       case 'settings':
         return <PageErrorBoundary pageName="Settings"><SettingsPage /></PageErrorBoundary>
       case 'styleguide':
         return <PageErrorBoundary pageName="Styleguide"><StyleguidePage /></PageErrorBoundary>
-      case 'help':
-        return <PageErrorBoundary pageName="Help"><HelpPage /></PageErrorBoundary>
       default:
-        return <PageErrorBoundary pageName="Import"><ImportPage /></PageErrorBoundary>
+        return <PageErrorBoundary pageName="Manage"><ManagePage /></PageErrorBoundary>
     }
   }
 

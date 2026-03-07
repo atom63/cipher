@@ -1,7 +1,7 @@
-import { Download, Upload, Settings, ChevronLeft, ChevronRight, Palette } from 'lucide-react'
+import { Download, Upload, Settings, ChevronLeft, ChevronRight, Palette, LayoutGrid } from 'lucide-react'
 import styles from './Sidebar.module.css'
 
-export type PageId = 'import' | 'export' | 'sync' | 'settings' | 'styleguide' | 'help'
+export type PageId = 'manage' | 'import' | 'export' | 'settings' | 'styleguide'
 
 interface MenuItem {
   id: PageId
@@ -19,6 +19,7 @@ interface SidebarProps {
 }
 
 const menuItems: MenuItem[] = [
+  { id: 'manage', label: 'Manage', icon: LayoutGrid, enabled: true, section: 'features' },
   { id: 'import', label: 'Import', icon: Download, enabled: true, section: 'features' },
   { id: 'export', label: 'Export', icon: Upload, enabled: true, section: 'features' },
   { id: 'settings', label: 'Settings', icon: Settings, enabled: true, section: 'config' },
