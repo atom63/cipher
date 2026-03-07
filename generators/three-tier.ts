@@ -1,5 +1,5 @@
-// Three-tier design system generator
-// Generates Primitives -> Abstractions -> Semantics token layers
+// Design system token generator
+// Flexible layer generation: primitives-only, two-tier, or full three-tier
 // Output is DesignToken[] compatible with the existing import handler
 
 import type { ColorValue, DesignToken } from "../types/tokens";
@@ -14,14 +14,22 @@ import {
 
 // --- Configuration types ---
 
+/** Which layers to generate */
+export type LayerMode =
+	| "primitives" // Just raw color scales
+	| "semantic" // Primitives + semantics (semantics reference primitives directly)
+	| "three-tier"; // Primitives + abstractions + semantics (full indirection)
+
 export interface BrandConfig {
 	/** Primary brand color (hex) */
 	primary: string;
-	/** Secondary/accent brand color (hex, optional — auto-generated if omitted) */
+	/** Secondary/accent brand color (hex, optional) */
 	secondary?: string;
 	/** Neutral gray palette name (default: "zinc") */
 	grayName?: string;
-	/** Whether to generate light+dark semantic modes (default: true) */
+	/** Which layers to generate (default: "semantic") */
+	layers?: LayerMode;
+	/** Whether to generate light+dark semantic modes (default: true, ignored for "primitives" mode) */
 	darkMode?: boolean;
 }
 
@@ -75,39 +83,25 @@ function makeToken(
 	};
 }
 
-/**
- * Generate a complete three-tier design system from brand configuration.
- *
- * Layer 1 — Primitives: Raw color scales (zinc/50..950, brand/50..950)
- * Layer 2 — Abstractions: Semantic aliases (primary/500 -> {brand.500})
- * Layer 3 — Semantics: Context tokens with Light/Dark modes
- *           (background -> {zinc.50} in Light, {zinc.950} in Dark)
- */
-export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
-	tokenIdCounter = 0;
+// =========================================================================
+// Primitives — raw color values
+// =========================================================================
 
-	const grayName = config.grayName ?? "zinc";
-	const darkMode = config.darkMode !== false;
+function generatePrimitives(
+	config: BrandConfig,
+	grayName: string,
+): { tokens: DesignToken[]; scales: ColorScale[] } {
 	const tokens: DesignToken[] = [];
-
-	// =========================================================================
-	// LAYER 1: Primitives — raw color values
-	// =========================================================================
 
 	const brandScale = generateColorScale("brand", config.primary);
 	const grayScale = generateGrayScale(grayName, config.primary);
+	const scales: ColorScale[] = [grayScale, brandScale];
 
-	const primitiveScales: ColorScale[] = [grayScale, brandScale];
-
-	// Optional secondary scale
-	let secondaryScale: ColorScale | undefined;
 	if (config.secondary) {
-		secondaryScale = generateColorScale("secondary", config.secondary);
-		primitiveScales.push(secondaryScale);
+		scales.push(generateColorScale("secondary", config.secondary));
 	}
 
-	// Create primitive tokens
-	for (const scale of primitiveScales) {
+	for (const scale of scales) {
 		for (const step of SHADE_STEPS) {
 			tokens.push(
 				makeToken(`${scale.name}/${step}`, scale.shades[step], "primitives", {
@@ -118,7 +112,6 @@ export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
 		}
 	}
 
-	// White and black
 	tokens.push(
 		makeToken("white", { r: 1, g: 1, b: 1 }, "primitives", {
 			originalValue: "#ffffff",
@@ -130,15 +123,21 @@ export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
 		}),
 	);
 
-	const primitiveCount = tokens.length;
+	return { tokens, scales };
+}
 
-	// =========================================================================
-	// LAYER 2: Abstractions — semantic aliases pointing to primitives
-	// =========================================================================
+// =========================================================================
+// Abstractions — indirection layer (primary -> brand, neutral -> gray)
+// =========================================================================
 
-	const abstractionMappings: AbstractionMapping[] = [];
+function generateAbstractions(
+	config: BrandConfig,
+	grayName: string,
+): { tokens: DesignToken[]; mappings: AbstractionMapping[] } {
+	const tokens: DesignToken[] = [];
+	const mappings: AbstractionMapping[] = [];
 
-	// Primary color scale -> brand
+	// Primary -> brand
 	for (const step of SHADE_STEPS) {
 		const ref = `{primitives.brand.${step}}`;
 		tokens.push(
@@ -148,14 +147,14 @@ export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
 				type: "color",
 			}),
 		);
-		abstractionMappings.push({
+		mappings.push({
 			name: `primary/${step}`,
 			step,
 			pointsTo: { collection: "primitives", path: `brand/${step}` },
 		});
 	}
 
-	// Neutral scale -> gray
+	// Neutral -> gray
 	for (const step of SHADE_STEPS) {
 		const ref = `{primitives.${grayName}.${step}}`;
 		tokens.push(
@@ -165,14 +164,14 @@ export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
 				type: "color",
 			}),
 		);
-		abstractionMappings.push({
+		mappings.push({
 			name: `neutral/${step}`,
 			step,
 			pointsTo: { collection: "primitives", path: `${grayName}/${step}` },
 		});
 	}
 
-	// Secondary (if present)
+	// Accent -> secondary
 	if (config.secondary) {
 		for (const step of SHADE_STEPS) {
 			const ref = `{primitives.secondary.${step}}`;
@@ -183,7 +182,7 @@ export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
 					type: "color",
 				}),
 			);
-			abstractionMappings.push({
+			mappings.push({
 				name: `accent/${step}`,
 				step,
 				pointsTo: { collection: "primitives", path: `secondary/${step}` },
@@ -191,152 +190,193 @@ export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
 		}
 	}
 
-	const abstractionCount = tokens.length - primitiveCount;
+	return { tokens, mappings };
+}
 
-	// =========================================================================
-	// LAYER 3: Semantics — contextual tokens with Light/Dark modes
-	// =========================================================================
+// =========================================================================
+// Semantics — contextual tokens (background, foreground, border, surface)
+// =========================================================================
+
+interface SemanticDef {
+	name: string;
+	light: string;
+	dark: string;
+	description: string;
+}
+
+/**
+ * Build semantic definitions.
+ * `refBase` controls whether semantics reference abstractions or primitives directly.
+ *   - "abstractions" -> {abstractions.primary.500}
+ *   - "primitives"   -> {primitives.brand.500}
+ */
+function buildSemanticDefs(
+	refBase: "abstractions" | "primitives",
+	grayName: string,
+	hasSecondary: boolean,
+): SemanticDef[] {
+	// Map logical names to the actual token paths depending on mode
+	const primary = (step: number) =>
+		refBase === "abstractions"
+			? `{abstractions.primary.${step}}`
+			: `{primitives.brand.${step}}`;
+
+	const neutral = (step: number) =>
+		refBase === "abstractions"
+			? `{abstractions.neutral.${step}}`
+			: `{primitives.${grayName}.${step}}`;
+
+	const white = "{primitives.white}";
+
+	const defs: SemanticDef[] = [
+		// Background
+		{
+			name: "background/default",
+			light: neutral(50),
+			dark: neutral(950),
+			description: "Default page background",
+		},
+		{
+			name: "background/subtle",
+			light: neutral(100),
+			dark: neutral(900),
+			description: "Subtle background for cards and sections",
+		},
+		{
+			name: "background/muted",
+			light: neutral(200),
+			dark: neutral(800),
+			description: "Muted background for hover states",
+		},
+		{
+			name: "background/emphasis",
+			light: primary(500),
+			dark: primary(400),
+			description: "Emphasized background (buttons, badges)",
+		},
+		{
+			name: "background/inverse",
+			light: neutral(900),
+			dark: neutral(50),
+			description: "Inverted background",
+		},
+
+		// Foreground / Text
+		{
+			name: "foreground/default",
+			light: neutral(900),
+			dark: neutral(50),
+			description: "Default text color",
+		},
+		{
+			name: "foreground/muted",
+			light: neutral(500),
+			dark: neutral(400),
+			description: "Muted/secondary text",
+		},
+		{
+			name: "foreground/subtle",
+			light: neutral(400),
+			dark: neutral(500),
+			description: "Subtle text (placeholders, disabled)",
+		},
+		{
+			name: "foreground/on-emphasis",
+			light: white,
+			dark: white,
+			description: "Text on emphasized background",
+		},
+		{
+			name: "foreground/primary",
+			light: primary(600),
+			dark: primary(400),
+			description: "Primary-colored text (links, accents)",
+		},
+
+		// Border
+		{
+			name: "border/default",
+			light: neutral(200),
+			dark: neutral(800),
+			description: "Default border",
+		},
+		{
+			name: "border/muted",
+			light: neutral(100),
+			dark: neutral(900),
+			description: "Subtle border (dividers)",
+		},
+		{
+			name: "border/emphasis",
+			light: primary(500),
+			dark: primary(400),
+			description: "Emphasized border (focus rings)",
+		},
+
+		// Surface
+		{
+			name: "surface/primary",
+			light: primary(50),
+			dark: primary(950),
+			description: "Primary surface (light tint)",
+		},
+		{
+			name: "surface/primary-hover",
+			light: primary(100),
+			dark: primary(900),
+			description: "Primary surface hover state",
+		},
+	];
+
+	if (hasSecondary) {
+		const accent = (step: number) =>
+			refBase === "abstractions"
+				? `{abstractions.accent.${step}}`
+				: `{primitives.secondary.${step}}`;
+
+		defs.push(
+			{
+				name: "background/accent",
+				light: accent(500),
+				dark: accent(400),
+				description: "Accent background",
+			},
+			{
+				name: "foreground/accent",
+				light: accent(600),
+				dark: accent(400),
+				description: "Accent text",
+			},
+			{
+				name: "border/accent",
+				light: accent(500),
+				dark: accent(400),
+				description: "Accent border",
+			},
+			{
+				name: "surface/accent",
+				light: accent(50),
+				dark: accent(950),
+				description: "Accent surface",
+			},
+		);
+	}
+
+	return defs;
+}
+
+function generateSemantics(
+	config: BrandConfig,
+	grayName: string,
+	refBase: "abstractions" | "primitives",
+): DesignToken[] {
+	const darkMode = config.darkMode !== false;
+	const defs = buildSemanticDefs(refBase, grayName, !!config.secondary);
+	const tokens: DesignToken[] = [];
 
 	if (darkMode) {
-		// Semantic tokens reference abstractions and have Light + Dark values
-		const semanticDefs: Array<{
-			name: string;
-			light: string;
-			dark: string;
-			description: string;
-		}> = [
-			// Background
-			{
-				name: "background/default",
-				light: "{abstractions.neutral.50}",
-				dark: "{abstractions.neutral.950}",
-				description: "Default page background",
-			},
-			{
-				name: "background/subtle",
-				light: "{abstractions.neutral.100}",
-				dark: "{abstractions.neutral.900}",
-				description: "Subtle background for cards and sections",
-			},
-			{
-				name: "background/muted",
-				light: "{abstractions.neutral.200}",
-				dark: "{abstractions.neutral.800}",
-				description: "Muted background for hover states",
-			},
-			{
-				name: "background/emphasis",
-				light: "{abstractions.primary.500}",
-				dark: "{abstractions.primary.400}",
-				description: "Emphasized background (buttons, badges)",
-			},
-			{
-				name: "background/inverse",
-				light: "{abstractions.neutral.900}",
-				dark: "{abstractions.neutral.50}",
-				description: "Inverted background",
-			},
-
-			// Foreground / Text
-			{
-				name: "foreground/default",
-				light: "{abstractions.neutral.900}",
-				dark: "{abstractions.neutral.50}",
-				description: "Default text color",
-			},
-			{
-				name: "foreground/muted",
-				light: "{abstractions.neutral.500}",
-				dark: "{abstractions.neutral.400}",
-				description: "Muted/secondary text",
-			},
-			{
-				name: "foreground/subtle",
-				light: "{abstractions.neutral.400}",
-				dark: "{abstractions.neutral.500}",
-				description: "Subtle text (placeholders, disabled)",
-			},
-			{
-				name: "foreground/on-emphasis",
-				light: "{primitives.white}",
-				dark: "{primitives.white}",
-				description: "Text on emphasized background",
-			},
-			{
-				name: "foreground/primary",
-				light: "{abstractions.primary.600}",
-				dark: "{abstractions.primary.400}",
-				description: "Primary-colored text (links, accents)",
-			},
-
-			// Border
-			{
-				name: "border/default",
-				light: "{abstractions.neutral.200}",
-				dark: "{abstractions.neutral.800}",
-				description: "Default border",
-			},
-			{
-				name: "border/muted",
-				light: "{abstractions.neutral.100}",
-				dark: "{abstractions.neutral.900}",
-				description: "Subtle border (dividers)",
-			},
-			{
-				name: "border/emphasis",
-				light: "{abstractions.primary.500}",
-				dark: "{abstractions.primary.400}",
-				description: "Emphasized border (focus rings)",
-			},
-
-			// Surface
-			{
-				name: "surface/primary",
-				light: "{abstractions.primary.50}",
-				dark: "{abstractions.primary.950}",
-				description: "Primary surface (light tint)",
-			},
-			{
-				name: "surface/primary-hover",
-				light: "{abstractions.primary.100}",
-				dark: "{abstractions.primary.900}",
-				description: "Primary surface hover state",
-			},
-		];
-
-		// Add accent semantics if secondary color exists
-		if (config.secondary) {
-			semanticDefs.push(
-				{
-					name: "background/accent",
-					light: "{abstractions.accent.500}",
-					dark: "{abstractions.accent.400}",
-					description: "Accent background",
-				},
-				{
-					name: "foreground/accent",
-					light: "{abstractions.accent.600}",
-					dark: "{abstractions.accent.400}",
-					description: "Accent text",
-				},
-				{
-					name: "border/accent",
-					light: "{abstractions.accent.500}",
-					dark: "{abstractions.accent.400}",
-					description: "Accent border",
-				},
-				{
-					name: "surface/accent",
-					light: "{abstractions.accent.50}",
-					dark: "{abstractions.accent.950}",
-					description: "Accent surface",
-				},
-			);
-		}
-
-		// Emit two tokens per semantic def: one for Light mode, one for Dark mode
-		// This matches the import handler's per-token modeName pattern
-		for (const def of semanticDefs) {
+		// Two tokens per def: Light mode + Dark mode
+		for (const def of defs) {
 			for (const [modeName, modeValue] of [
 				["Light", def.light],
 				["Dark", def.dark],
@@ -350,84 +390,69 @@ export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
 			}
 		}
 	} else {
-		// Single-mode semantics (no dark mode)
-		const semanticDefs: Array<{
-			name: string;
-			value: string;
-			description: string;
-		}> = [
-			{
-				name: "background/default",
-				value: "{abstractions.neutral.50}",
-				description: "Default page background",
-			},
-			{
-				name: "background/subtle",
-				value: "{abstractions.neutral.100}",
-				description: "Subtle background",
-			},
-			{
-				name: "background/muted",
-				value: "{abstractions.neutral.200}",
-				description: "Muted background",
-			},
-			{
-				name: "background/emphasis",
-				value: "{abstractions.primary.500}",
-				description: "Emphasized background",
-			},
-			{
-				name: "foreground/default",
-				value: "{abstractions.neutral.900}",
-				description: "Default text",
-			},
-			{
-				name: "foreground/muted",
-				value: "{abstractions.neutral.500}",
-				description: "Muted text",
-			},
-			{
-				name: "foreground/on-emphasis",
-				value: "{primitives.white}",
-				description: "Text on emphasis",
-			},
-			{
-				name: "foreground/primary",
-				value: "{abstractions.primary.600}",
-				description: "Primary text",
-			},
-			{
-				name: "border/default",
-				value: "{abstractions.neutral.200}",
-				description: "Default border",
-			},
-			{
-				name: "border/emphasis",
-				value: "{abstractions.primary.500}",
-				description: "Emphasis border",
-			},
-			{
-				name: "surface/primary",
-				value: "{abstractions.primary.50}",
-				description: "Primary surface",
-			},
-		];
-
-		for (const def of semanticDefs) {
+		// Single mode — use the light value
+		for (const def of defs) {
 			tokens.push(
-				makeToken(def.name, def.value, "semantics", {
+				makeToken(def.name, def.light, "semantics", {
 					description: def.description,
-					originalValue: def.value,
+					originalValue: def.light,
 				}),
 			);
 		}
 	}
 
-	const semanticCount = tokens.length - primitiveCount - abstractionCount;
+	return tokens;
+}
+
+// =========================================================================
+// Public API
+// =========================================================================
+
+/**
+ * Generate a design system from brand configuration.
+ *
+ * Supports three layer modes:
+ * - "primitives" — Just raw color scales (brand, gray, white, black)
+ * - "semantic"   — Primitives + semantic tokens referencing primitives directly
+ * - "three-tier" — Primitives + abstractions + semantics (full indirection for rebranding)
+ */
+export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
+	tokenIdCounter = 0;
+
+	const grayName = config.grayName ?? "zinc";
+	const layers = config.layers ?? "semantic";
+
+	const { tokens: primitiveTokens, scales } = generatePrimitives(
+		config,
+		grayName,
+	);
+	const tokens: DesignToken[] = [...primitiveTokens];
+	const primitiveCount = primitiveTokens.length;
+
+	let abstractionCount = 0;
+	let abstractionMappings: AbstractionMapping[] = [];
+
+	// Add abstractions only in three-tier mode
+	if (layers === "three-tier") {
+		const abs = generateAbstractions(config, grayName);
+		tokens.push(...abs.tokens);
+		abstractionCount = abs.tokens.length;
+		abstractionMappings = abs.mappings;
+	}
+
+	let semanticCount = 0;
+
+	// Add semantics in semantic or three-tier mode
+	if (layers === "semantic" || layers === "three-tier") {
+		const refBase = layers === "three-tier" ? "abstractions" : "primitives";
+		const semanticTokens = generateSemantics(config, grayName, refBase);
+		tokens.push(...semanticTokens);
+		semanticCount = semanticTokens.length;
+	}
 
 	return {
 		tokens,
-		primitives: primitiveScales,
+		primitives: scales,
 		abstractions: abstractionMappings,
 		stats: {
 			primitiveCount,
@@ -436,4 +461,9 @@ export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
 			totalCount: tokens.length,
 		},
 	};
+}
+
+/** @deprecated Use generateDesignSystem instead */
+export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
+	return generateDesignSystem({ ...config, layers: "three-tier" });
 }
