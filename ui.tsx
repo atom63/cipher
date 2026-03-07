@@ -14,6 +14,7 @@ import {
 import { TooltipPortal } from "./components/ui/Tooltip";
 import { usePostMessage } from "./hooks/useFigmaMessage";
 import { ExportPage } from "./pages/ExportPage";
+import { GeneratePage } from "./pages/GeneratePage";
 import { ImportPage } from "./pages/ImportPage";
 import { ManagePage } from "./pages/ManagePage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -44,6 +45,12 @@ function App() {
 				return (
 					<PageErrorBoundary pageName="Styles">
 						<StylesPage />
+					</PageErrorBoundary>
+				);
+			case "generate":
+				return (
+					<PageErrorBoundary pageName="Generate">
+						<GeneratePage />
 					</PageErrorBoundary>
 				);
 			case "import":

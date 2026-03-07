@@ -6,6 +6,7 @@ import {
 	Paintbrush,
 	Palette,
 	Settings,
+	Sparkles,
 	Upload,
 } from "lucide-react";
 import styles from "./Sidebar.module.css";
@@ -13,6 +14,7 @@ import styles from "./Sidebar.module.css";
 export type PageId =
 	| "manage"
 	| "styles"
+	| "generate"
 	| "import"
 	| "export"
 	| "settings"
@@ -45,6 +47,13 @@ const menuItems: MenuItem[] = [
 		id: "styles",
 		label: "Styles",
 		icon: Paintbrush,
+		enabled: true,
+		section: "features",
+	},
+	{
+		id: "generate",
+		label: "Generate",
+		icon: Sparkles,
 		enabled: true,
 		section: "features",
 	},
