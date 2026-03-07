@@ -10,6 +10,7 @@
 import { parseJSON } from './parsers/token-parsers'
 import { createVariablesFromTokens, importStylesFromTokens } from './handlers/import-handler'
 import { exportVariablesAsTokens, exportStylesAsTokens } from './handlers/export-handler'
+import { generateCSS } from './handlers/css-generator'
 import type { UIToMainMessage, PluginSettings } from './types/messages'
 
 // Show the plugin UI (resizable by default)
@@ -466,6 +467,28 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
     case 'export-variables': {
       const { collectionIds, colorFormat } = msg.data
       await exportVariablesAsTokens(collectionIds, colorFormat || 'oklch')
+      break
+    }
+
+    case 'export-css': {
+      try {
+        const { collectionIds, colorFormat, includeThemeInline, includeColorMix } = msg.data
+        const result = generateCSS({
+          collectionIds,
+          colorFormat: colorFormat || 'oklch',
+          includeThemeInline: includeThemeInline ?? false,
+          includeColorMix: includeColorMix ?? false,
+        })
+        figma.ui.postMessage({
+          type: 'css-export-complete',
+          data: result,
+        })
+      } catch (error) {
+        figma.ui.postMessage({
+          type: 'export-error',
+          data: { message: error instanceof Error ? error.message : 'CSS export failed' },
+        })
+      }
       break
     }
 

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Button, SectionHeader, LoadingState, EmptyState, CheckboxWithLabel, RadioGroup, Alert, Tabs, TabPanel, useToast } from '../components/ui'
 import { useFigmaMessage, usePostMessage } from '../hooks/useFigmaMessage'
-import { Download, Check, FileDown, Database, Paintbrush, Palette, Type, Sparkles, Grid } from 'lucide-react'
+import { Download, Check, FileDown, Database, Paintbrush, Palette, Type, Sparkles, Grid, Code, Copy, ChevronDown, ChevronRight } from 'lucide-react'
 import styles from './ExportPage.module.css'
+import type { CSSFileInfo } from '../types/messages'
 
 interface Collection {
   id: string
@@ -23,12 +24,12 @@ interface StylesByCategory {
   grid: StyleGroup[]
 }
 
-type ExportViewState = 'selection' | 'exporting' | 'success'
+type ExportViewState = 'selection' | 'exporting' | 'success' | 'css-preview'
 type ColorFormat = 'oklch' | 'hex' | 'rgba'
 
 export function ExportPage() {
   const [view, setView] = useState<ExportViewState>('selection')
-  const [activeTab, setActiveTab] = useState<'variables' | 'styles'>('variables')
+  const [activeTab, setActiveTab] = useState<'variables' | 'css' | 'styles'>('variables')
   const [collections, setCollections] = useState<Collection[]>([])
   const [selectedCollectionIds, setSelectedCollectionIds] = useState<string[]>([])
   const [stylesByCategory, setStylesByCategory] = useState<StylesByCategory>({ paint: [], text: [], effect: [], grid: [] })
@@ -46,9 +47,13 @@ export function ExportPage() {
     counts: any
     format: ColorFormat
   } | null>(null)
+  const [cssFiles, setCssFiles] = useState<CSSFileInfo[]>([])
+  const [cssStats, setCssStats] = useState<{ totalVariables: number; totalCollections: number } | null>(null)
+  const [expandedCssFile, setExpandedCssFile] = useState<string | null>(null)
+  const [includeThemeInline, setIncludeThemeInline] = useState(false)
 
   const postMessage = usePostMessage()
-  const { showError } = useToast()
+  const { showSuccess, showError } = useToast()
 
   // Request collections, styles, and saved settings on mount
   useEffect(() => {
@@ -104,6 +109,16 @@ export function ExportPage() {
       downloadJSON(msg.data.styles, 'figma-styles')
     }
 
+    if (msg.type === 'css-export-complete') {
+      setCssFiles(msg.data.files)
+      setCssStats({ totalVariables: msg.data.totalVariables, totalCollections: msg.data.totalCollections })
+      setView('css-preview')
+      // Auto-expand first file
+      if (msg.data.files.length > 0) {
+        setExpandedCssFile(msg.data.files[0].name)
+      }
+    }
+
     if (msg.type === 'export-error') {
       showError(`Export error: ${msg.data.message}`)
       setView('selection')
@@ -117,9 +132,12 @@ export function ExportPage() {
   }
 
   const handleTabChange = (tabId: string) => {
-    const tab = tabId as 'variables' | 'styles'
+    const tab = tabId as 'variables' | 'css' | 'styles'
     setActiveTab(tab)
-    postMessage({ type: 'save-settings', data: { lastExportTab: tab } })
+    // Only persist variables/styles to settings (css is new, settings type doesn't include it yet)
+    if (tab === 'variables' || tab === 'styles') {
+      postMessage({ type: 'save-settings', data: { lastExportTab: tab } })
+    }
   }
 
   const handleToggleCollection = (collectionId: string) => {
@@ -212,10 +230,58 @@ export function ExportPage() {
     })
   }
 
+  const handleExportCSS = () => {
+    if (selectedCollectionIds.length === 0) {
+      showError('Please select at least one collection to export')
+      return
+    }
+
+    setView('exporting')
+    postMessage({
+      type: 'export-css',
+      data: {
+        collectionIds: selectedCollectionIds,
+        colorFormat,
+        includeThemeInline,
+        includeColorMix: false,
+      }
+    })
+  }
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      showSuccess(`Copied ${label}`)
+    }).catch(() => {
+      showError('Failed to copy')
+    })
+  }
+
+  const copyAllCSS = () => {
+    const all = cssFiles
+      .filter(f => f.name !== 'index.css')
+      .map(f => `/* === ${f.name} === */\n${f.content}`)
+      .join('\n\n')
+    copyToClipboard(all, 'all CSS')
+  }
+
+  const downloadCSS = (file: CSSFileInfo) => {
+    const blob = new Blob([file.content], { type: 'text/css' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = file.name
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const handleExportAgain = () => {
     setView('selection')
     setExportResult(null)
     setStylesExportResult(null)
+    setCssFiles([])
+    setCssStats(null)
   }
 
   const handleClose = () => {
@@ -242,6 +308,70 @@ export function ExportPage() {
     return (
       <div className="page-content">
         <LoadingState message={exportResult ? 'Exporting variables...' : 'Exporting styles...'} />
+      </div>
+    )
+  }
+
+  if (view === 'css-preview' && cssFiles.length > 0) {
+    return (
+      <div className="page-content">
+        <SectionHeader
+          variant="primary"
+          title="CSS Export"
+          description={`${cssStats?.totalVariables ?? 0} variables from ${cssStats?.totalCollections ?? 0} collection${(cssStats?.totalCollections ?? 0) !== 1 ? 's' : ''}`}
+        />
+
+        <div className={styles.cssPreviewActions}>
+          <Button variant="ghost" onClick={copyAllCSS}>
+            <Copy size={14} />
+            Copy All
+          </Button>
+          <Button variant="ghost" onClick={handleExportAgain}>
+            <FileDown size={14} />
+            Back
+          </Button>
+        </div>
+
+        <div className={styles.cssFileList}>
+          {cssFiles.filter(f => f.name !== 'index.css').map(file => {
+            const isExpanded = expandedCssFile === file.name
+            return (
+              <div key={file.name} className={styles.cssFileItem}>
+                <div
+                  className={styles.cssFileHeader}
+                  onClick={() => setExpandedCssFile(isExpanded ? null : file.name)}
+                >
+                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <span className={styles.cssFileName}>{file.name}</span>
+                  <span className={styles.cssFileCount}>{file.variableCount} vars</span>
+                  <Button
+                    variant="ghost"
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation()
+                      copyToClipboard(file.content, file.name)
+                    }}
+                    data-tooltip="Copy"
+                  >
+                    <Copy size={12} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation()
+                      downloadCSS(file)
+                    }}
+                    data-tooltip="Download"
+                  >
+                    <Download size={12} />
+                  </Button>
+                </div>
+                {isExpanded && (
+                  <pre className={styles.cssPreviewCode}><code>{file.content}</code></pre>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
     )
   }
@@ -331,8 +461,13 @@ export function ExportPage() {
         tabs={[
           {
             id: 'variables',
-            label: 'Variables',
+            label: 'JSON',
             icon: <Database size={16} />
+          },
+          {
+            id: 'css',
+            label: 'CSS',
+            icon: <Code size={16} />
           },
           {
             id: 'styles',
@@ -436,6 +571,102 @@ export function ExportPage() {
               <Alert variant="info" title="Variables">
                 Export Figma Variables as design tokens in the same format used for imports. 
                 Perfect for version control and team collaboration.
+              </Alert>
+            </>
+          )}
+        </TabPanel>
+
+        <TabPanel id="css" activeTab={activeTab}>
+          {collections.length === 0 ? (
+            <EmptyState
+              icon="📦"
+              title="No Variable Collections"
+              description="This file has no variable collections to generate CSS from."
+            />
+          ) : (
+            <>
+              {/* Color Format Selection */}
+              <div className={styles.formatSection}>
+                <RadioGroup
+                  label="Color Format"
+                  description="Choose how colors should be exported in CSS"
+                  name="color-format-css"
+                  variant="inline"
+                  value={colorFormat}
+                  onChange={handleColorFormatChange}
+                  options={[
+                    { value: 'oklch', label: 'OKLCH', description: 'Modern perceptual color space (recommended)' },
+                    { value: 'hex', label: 'HEX', description: 'Hexadecimal format (#RRGGBB)' },
+                    { value: 'rgba', label: 'RGBA', description: 'RGB with alpha channel' },
+                  ]}
+                />
+              </div>
+
+              {/* Options */}
+              <div className={styles.selectAllSection}>
+                <CheckboxWithLabel
+                  id="theme-inline"
+                  label="Include @theme inline (Tailwind CSS v4)"
+                  checked={includeThemeInline}
+                  onChange={() => setIncludeThemeInline(!includeThemeInline)}
+                />
+              </div>
+
+              {/* Select All / Deselect All */}
+              <div className={styles.selectAllSection}>
+                <CheckboxWithLabel
+                  id="select-all-css"
+                  label="Select All Collections"
+                  checked={selectedCollectionIds.length === collections.length}
+                  onChange={() => handleToggleAll()}
+                />
+              </div>
+
+              {/* Collection List */}
+              <div className={styles.collectionList}>
+                {collections.map(collection => {
+                  const isSelected = selectedCollectionIds.includes(collection.id)
+                  return (
+                    <div
+                      key={collection.id}
+                      className={styles.collectionCard}
+                      data-selected={isSelected}
+                      onClick={() => handleToggleCollection(collection.id)}
+                    >
+                      <div className={styles.collectionCardContent}>
+                        <CheckboxWithLabel
+                          id={`css-collection-${collection.id}`}
+                          label={collection.name}
+                          checked={isSelected}
+                          onChange={() => handleToggleCollection(collection.id)}
+                        />
+                        <div className={styles.collectionMeta}>
+                          <span>{collection.variableCount} variable{collection.variableCount !== 1 ? 's' : ''}</span>
+                          <span>•</span>
+                          <span>{collection.modes.join(', ')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Export Actions */}
+              <div className={styles.exportActions}>
+                <Button
+                  variant="primary"
+                  onClick={handleExportCSS}
+                  disabled={selectedCollectionIds.length === 0}
+                >
+                  <Code size={14} />
+                  Generate CSS {selectedCollectionIds.length > 0 && `(${selectedCollectionIds.length})`}
+                </Button>
+              </div>
+
+              <Alert variant="info" title="CSS Export">
+                Generates CSS custom properties directly from Figma Variables.
+                Multi-mode collections (Light/Dark) output separate selectors.
+                References between collections are preserved as var() references.
               </Alert>
             </>
           )}

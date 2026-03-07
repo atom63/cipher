@@ -97,6 +97,34 @@ export interface ExportStylesMessage {
   }
 }
 
+/** Export Figma variables as CSS custom properties */
+export interface ExportCSSMessage {
+  type: 'export-css'
+  data: {
+    collectionIds: string[]
+    colorFormat: 'oklch' | 'hex' | 'rgba' | 'hsl'
+    includeThemeInline: boolean
+    includeColorMix: boolean
+  }
+}
+
+/** CSS file in export result */
+export interface CSSFileInfo {
+  name: string
+  content: string
+  variableCount: number
+}
+
+/** CSS export complete */
+export interface CSSExportCompleteMessage {
+  type: 'css-export-complete'
+  data: {
+    files: CSSFileInfo[]
+    totalVariables: number
+    totalCollections: number
+  }
+}
+
 /** Import styles from token data */
 export interface ImportStylesMessage {
   type: 'import-styles'
@@ -297,6 +325,7 @@ export type UIToMainMessage =
   | CreateVariablesMessage
   | ExportVariablesMessage
   | ExportStylesMessage
+  | ExportCSSMessage
   | ImportStylesMessage
   | RenameVariablesMessage
   | DeleteVariablesMessage
@@ -424,6 +453,7 @@ export type MainToUIMessage =
   | ImportCompleteMessage
   | ExportCompleteMessage
   | StylesExportCompleteMessage
+  | CSSExportCompleteMessage
   | ExportErrorMessage
   | ProgressUpdateMessage
   | ErrorMessage
@@ -465,6 +495,7 @@ export function isUIToMainMessage(msg: unknown): msg is UIToMainMessage {
     'create-variables',
     'export-variables',
     'export-styles',
+    'export-css',
     'import-styles',
     'rename-variables',
     'delete-variables',
@@ -498,6 +529,7 @@ export function isMainToUIMessage(msg: unknown): msg is MainToUIMessage {
     'import-complete',
     'export-complete',
     'styles-export-complete',
+    'css-export-complete',
     'export-error',
     'progress-update',
     'error',
