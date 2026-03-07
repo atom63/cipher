@@ -1,0 +1,847 @@
+/**
+ * Dev Parity Tests — Integration
+ *
+ * Reads the actual dev CSS files from exports/styles/tokens/ and compares
+ * against generator output. No hardcoded values — if the dev CSS changes,
+ * these tests automatically reflect the new expectations.
+ */
+
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, test } from "vitest";
+import { generateCss, generateDesignSystem } from "../generators/three-tier";
+import type { BrandConfig } from "../generators/three-tier";
+import { RADIX_GRAYS } from "../generators/radix-grays";
+import {
+	SPACING_SCALE,
+	SHADOW_SCALE,
+	DURATION_RAW,
+	DURATION_SEMANTIC,
+	TYPE_SCALE,
+	FONT_WEIGHTS,
+	computeRadiusScale,
+} from "../generators/token-presets";
+
+// =========================================================================
+// CSS parsing helpers — extract vars and values from dev CSS files
+// =========================================================================
+
+const TOKENS_DIR = resolve(__dirname, "../exports/styles/tokens");
+
+function readDevCss(filename: string): string {
+	return readFileSync(resolve(TOKENS_DIR, filename), "utf-8");
+}
+
+/** Extract all CSS custom property declarations from a CSS string.
+ *  Returns Map<varName, rawValue> e.g. "--spacing-4" → "16px"
+ *  Handles multi-line values by joining until the next semicolon.
+ */
+function parseCssVars(css: string): Map<string, string> {
+	const vars = new Map<string, string>();
+	// Match --prop: value; across potential multi-line values
+	const regex = /(--[\w-]+)\s*:\s*([^;]+);/g;
+	let match: RegExpExecArray | null;
+	while ((match = regex.exec(css)) !== null) {
+		const name = match[1].trim();
+		const value = match[2].trim().replace(/\s+/g, " ");
+		vars.set(name, value);
+	}
+	return vars;
+}
+
+/** Extract var names from a specific CSS block (e.g. :root { ... } or .dark { ... }) */
+function parseCssBlock(css: string, selector: string): Map<string, string> {
+	// Find the block for this selector
+	// Handle both `:root {` and `.dark {`
+	const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const blockRegex = new RegExp(
+		`${escapedSelector}\\s*\\{([^}]+)\\}`,
+		"g",
+	);
+
+	const vars = new Map<string, string>();
+	let blockMatch: RegExpExecArray | null;
+	while ((blockMatch = blockRegex.exec(css)) !== null) {
+		const blockContent = blockMatch[1];
+		const innerVars = parseCssVars(blockContent + ";"); // ensure trailing ;
+		for (const [k, v] of innerVars) {
+			vars.set(k, v);
+		}
+	}
+	return vars;
+}
+
+/** Extract px value from CSS value strings like "16px", "calc(16px * ...)", etc. */
+function extractPxValue(cssValue: string): number | null {
+	// Direct "16px"
+	const directMatch = cssValue.match(/^(\d+(?:\.\d+)?)px$/);
+	if (directMatch) return Number(directMatch[1]);
+
+	// calc(16px * var(...))
+	const calcMatch = cssValue.match(/calc\((\d+(?:\.\d+)?)px/);
+	if (calcMatch) return Number(calcMatch[1]);
+
+	return null;
+}
+
+/** Extract rgba values → hex for comparison */
+function rgbaToHex(rgbaStr: string): string | null {
+	const match = rgbaStr.match(
+		/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/,
+	);
+	if (!match) return null;
+	const r = Number(match[1]);
+	const g = Number(match[2]);
+	const b = Number(match[3]);
+	return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+// =========================================================================
+// Load dev CSS files
+// =========================================================================
+
+const devPrimitivesCss = readDevCss("primitives.css");
+const devAbstractionsCss = readDevCss("abstractions.css");
+const devSemanticsCss = readDevCss("semantics.css");
+const devShadowCss = readDevCss("shadow-tokens.css");
+const devTypescalesCss = readDevCss("typescales.css");
+const devRadiusCss = readDevCss("radius.css");
+
+// =========================================================================
+// Spacing — generator matches dev primitives.css
+// =========================================================================
+
+describe("spacing parity with dev primitives.css", () => {
+	const devVars = parseCssVars(devPrimitivesCss);
+
+	test("every dev spacing token value matches generator SPACING_SCALE", () => {
+		const devSpacing = new Map<string, number>();
+		for (const [name, value] of devVars) {
+			if (name.startsWith("--spacing-")) {
+				const key = name.replace("--spacing-", "").replace("_", ".");
+				const px = extractPxValue(value);
+				if (px !== null) devSpacing.set(key, px);
+			}
+		}
+
+		expect(devSpacing.size).toBeGreaterThan(0);
+
+		for (const [key, devPx] of devSpacing) {
+			expect(
+				SPACING_SCALE[key],
+				`Dev spacing "${key}" (${devPx}px) missing from generator SPACING_SCALE`,
+			).toBeDefined();
+			expect(
+				SPACING_SCALE[key],
+				`Spacing "${key}": dev=${devPx}px, generator=${SPACING_SCALE[key]}px`,
+			).toBe(devPx);
+		}
+	});
+
+	test("generator SPACING_SCALE covers all dev spacing keys", () => {
+		const devKeys = new Set<string>();
+		for (const [name] of devVars) {
+			if (name.startsWith("--spacing-")) {
+				devKeys.add(name.replace("--spacing-", "").replace("_", "."));
+			}
+		}
+
+		for (const devKey of devKeys) {
+			expect(
+				SPACING_SCALE[devKey],
+				`Dev spacing key "${devKey}" not in generator`,
+			).toBeDefined();
+		}
+	});
+});
+
+// =========================================================================
+// Gray palette — Radix grays match dev primitives.css
+// =========================================================================
+
+describe("gray palette parity with dev primitives.css", () => {
+	const devVars = parseCssVars(devPrimitivesCss);
+
+	test("Radix gray light values match dev --color-gray-light-* hex values", () => {
+		const radixGray = RADIX_GRAYS.find((g) => g.name === "gray");
+		expect(radixGray).toBeDefined();
+
+		for (let i = 1; i <= 12; i++) {
+			const devVar = devVars.get(`--color-gray-light-${i}`);
+			expect(devVar, `Dev --color-gray-light-${i} not found`).toBeDefined();
+
+			const devHex = rgbaToHex(devVar!);
+			expect(devHex, `Could not parse hex from "${devVar}"`).not.toBeNull();
+
+			expect(
+				radixGray!.light[i - 1].toLowerCase(),
+				`Gray light step ${i}: dev=${devHex}, radix=${radixGray!.light[i - 1]}`,
+			).toBe(devHex!.toLowerCase());
+		}
+	});
+
+	test("Radix gray dark values match dev --color-gray-dark-* hex values", () => {
+		const radixGray = RADIX_GRAYS.find((g) => g.name === "gray");
+		expect(radixGray).toBeDefined();
+
+		for (let i = 1; i <= 12; i++) {
+			const devVar = devVars.get(`--color-gray-dark-${i}`);
+			expect(devVar, `Dev --color-gray-dark-${i} not found`).toBeDefined();
+
+			const devHex = rgbaToHex(devVar!);
+			expect(devHex, `Could not parse hex from "${devVar}"`).not.toBeNull();
+
+			expect(
+				radixGray!.dark[i - 1].toLowerCase(),
+				`Gray dark step ${i}: dev=${devHex}, radix=${radixGray!.dark[i - 1]}`,
+			).toBe(devHex!.toLowerCase());
+		}
+	});
+});
+
+// =========================================================================
+// Duration — generator aliases match dev abstractions.css
+// =========================================================================
+
+describe("duration parity with dev abstractions.css", () => {
+	const devVars = parseCssBlock(devAbstractionsCss, ":root");
+
+	test("every dev duration alias exists in generator DURATION_SEMANTIC", () => {
+		const devDurations = new Map<string, string>();
+		for (const [name, value] of devVars) {
+			if (name.startsWith("--duration-")) {
+				devDurations.set(name.replace("--duration-", ""), value);
+			}
+		}
+
+		expect(devDurations.size).toBeGreaterThan(0);
+
+		for (const [name] of devDurations) {
+			expect(
+				DURATION_SEMANTIC[name],
+				`Dev duration alias "${name}" missing from generator`,
+			).toBeDefined();
+		}
+	});
+
+	test("duration raw values match dev primitives.css", () => {
+		const devPrimVars = parseCssVars(devPrimitivesCss);
+
+		for (const [name, value] of devPrimVars) {
+			const match = name.match(/^--duration-motion-duration-(\w+)$/);
+			if (!match) continue;
+
+			const key = match[1];
+			const devMs = extractPxValue(value.replace("ms", "px")); // trick: reuse px parser
+			if (devMs === null) continue;
+
+			expect(
+				DURATION_RAW[key],
+				`Dev duration raw "${key}" (${devMs}ms): dev value doesn't match generator`,
+			).toBe(devMs);
+		}
+	});
+});
+
+// =========================================================================
+// Radius — generator values match dev radius.css
+// =========================================================================
+
+describe("radius parity with dev radius.css", () => {
+	test("default radius scale matches dev radius.css comment values", () => {
+		const radiusScale = computeRadiusScale({ anchor: 10, multiplier: 1 });
+
+		// Parse the dev radius.css for expected computed values from comments
+		// e.g. `--radius-lg: calc(var(--corner-radius) * var(--radius-multiplier)); /* 10px */`
+		const commentValues = new Map<string, number>();
+		const commentRegex = /--radius-([\w-]+):.*?\/\*\s*(\d+)px\s*\*\//g;
+		let match: RegExpExecArray | null;
+		while ((match = commentRegex.exec(devRadiusCss)) !== null) {
+			commentValues.set(match[1], Number(match[2]));
+		}
+
+		// Also check the rounded-* vars from abstractions which have direct values
+		const devAbsVars = parseCssBlock(devAbstractionsCss, ":root");
+		for (const [name, value] of devAbsVars) {
+			const roundedMatch = name.match(/^--rounded-([\w-]+)$/);
+			if (!roundedMatch) continue;
+			const px = extractPxValue(value);
+			if (px !== null) {
+				commentValues.set(roundedMatch[1], px);
+			}
+		}
+
+		expect(commentValues.size).toBeGreaterThan(0);
+
+		for (const [size, devPx] of commentValues) {
+			if (radiusScale[size] !== undefined) {
+				expect(
+					radiusScale[size],
+					`Radius "${size}": dev=${devPx}px, generator=${radiusScale[size]}px`,
+				).toBe(devPx);
+			}
+		}
+	});
+});
+
+// =========================================================================
+// Shadows — generator levels match dev shadow-tokens.css
+// =========================================================================
+
+describe("shadow parity with dev shadow-tokens.css", () => {
+	const devVars = parseCssVars(devShadowCss);
+
+	test("every dev shadow level exists in generator SHADOW_SCALE", () => {
+		const devShadowLevels: string[] = [];
+		for (const [name] of devVars) {
+			const match = name.match(/^--shadow-(\d+)$/);
+			if (match) devShadowLevels.push(match[1]);
+		}
+
+		expect(devShadowLevels.length).toBeGreaterThan(0);
+
+		for (const level of devShadowLevels) {
+			expect(
+				SHADOW_SCALE[level],
+				`Dev shadow level ${level} missing from generator SHADOW_SCALE`,
+			).toBeDefined();
+		}
+	});
+
+	test("shadow 0 is no-shadow in both dev and generator", () => {
+		const devShadow0 = devVars.get("--shadow-0");
+		expect(devShadow0).toBeDefined();
+		// Both should have 0 opacity / 0 blur
+		expect(devShadow0).toContain("0, 0, 0, 0");
+
+		const genShadow0 = SHADOW_SCALE["0"];
+		expect(genShadow0[0].opacity).toBe(0);
+		expect(genShadow0[0].blur).toBe(0);
+	});
+
+	test("shadow level count matches dev", () => {
+		const devCount = [...devVars.keys()].filter((k) =>
+			/^--shadow-\d+$/.test(k),
+		).length;
+		const genCount = Object.keys(SHADOW_SCALE).length;
+
+		expect(genCount).toBe(devCount);
+	});
+});
+
+// =========================================================================
+// Typography — generator TYPE_SCALE matches dev typescales.css
+// =========================================================================
+
+describe("typography parity with dev typescales.css", () => {
+	test("every dev typography var name has a matching TYPE_SCALE entry", () => {
+		// Extract typescale names from :root block
+		const rootVars = parseCssBlock(devTypescalesCss, ":root");
+
+		const devTypeNames = new Set<string>();
+		for (const [name] of rootVars) {
+			const match = name.match(
+				/^--typography-([\w-]+)-(font-size|line-height)$/,
+			);
+			if (match) devTypeNames.add(match[1]);
+		}
+
+		expect(devTypeNames.size).toBeGreaterThan(0);
+
+		const genNames = new Set(TYPE_SCALE.map((s) => s.name));
+		for (const devName of devTypeNames) {
+			expect(
+				genNames.has(devName),
+				`Dev typescale "${devName}" missing from generator TYPE_SCALE`,
+			).toBe(true);
+		}
+	});
+
+	test("base (:root) typography px values match TYPE_SCALE min breakpoint", () => {
+		// Only parse the first :root block (top-level, not inside @media)
+		// The dev CSS has :root blocks inside @media too, which have larger values
+		const firstRootMatch = devTypescalesCss.match(/:root\s*\{([^}]+)\}/);
+		const firstRootContent = firstRootMatch ? firstRootMatch[1] + ";" : "";
+		const rootVars = parseCssVars(firstRootContent);
+
+		for (const step of TYPE_SCALE) {
+			const devSize = rootVars.get(
+				`--typography-${step.name}-font-size`,
+			);
+			const devLh = rootVars.get(
+				`--typography-${step.name}-line-height`,
+			);
+
+			if (devSize) {
+				const devPx = extractPxValue(devSize);
+				expect(
+					devPx,
+					`${step.name} font-size: dev=${devPx}px, generator min=${step.sizes.min}px`,
+				).toBe(step.sizes.min);
+			}
+
+			if (devLh) {
+				const devPx = extractPxValue(devLh);
+				expect(
+					devPx,
+					`${step.name} line-height: dev=${devPx}px, generator min=${step.lineHeights.min}px`,
+				).toBe(step.lineHeights.min);
+			}
+		}
+	});
+
+	test("sm breakpoint typography values match TYPE_SCALE sm", () => {
+		// Parse the [data-window-size="sm"] block
+		const smVars = parseCssBlock(
+			devTypescalesCss,
+			'\\[data-window-size="sm"\\]',
+		);
+
+		for (const step of TYPE_SCALE) {
+			const devSize = smVars.get(`--typography-${step.name}-font-size`);
+			if (devSize) {
+				const devPx = extractPxValue(devSize);
+				expect(
+					devPx,
+					`${step.name} sm font-size: dev=${devPx}px, generator=${step.sizes.sm}px`,
+				).toBe(step.sizes.sm);
+			}
+
+			const devLh = smVars.get(`--typography-${step.name}-line-height`);
+			if (devLh) {
+				const devPx = extractPxValue(devLh);
+				expect(
+					devPx,
+					`${step.name} sm line-height: dev=${devPx}px, generator=${step.lineHeights.sm}px`,
+				).toBe(step.lineHeights.sm);
+			}
+		}
+	});
+
+	test("md breakpoint typography values match TYPE_SCALE md", () => {
+		const mdVars = parseCssBlock(
+			devTypescalesCss,
+			'\\[data-window-size="md"\\]',
+		);
+
+		for (const step of TYPE_SCALE) {
+			const devSize = mdVars.get(`--typography-${step.name}-font-size`);
+			if (devSize) {
+				const devPx = extractPxValue(devSize);
+				expect(
+					devPx,
+					`${step.name} md font-size: dev=${devPx}px, generator=${step.sizes.md}px`,
+				).toBe(step.sizes.md);
+			}
+
+			const devLh = mdVars.get(`--typography-${step.name}-line-height`);
+			if (devLh) {
+				const devPx = extractPxValue(devLh);
+				expect(
+					devPx,
+					`${step.name} md line-height: dev=${devPx}px, generator=${step.lineHeights.md}px`,
+				).toBe(step.lineHeights.md);
+			}
+		}
+	});
+});
+
+// =========================================================================
+// Semantics — generator covers all dev semantic token names
+// =========================================================================
+
+describe("semantic token coverage vs dev semantics.css", () => {
+	test("generator produces tokens for every core dev semantic var", () => {
+		// Parse dev :root block for semantic var names
+		const rootVars = parseCssBlock(devSemanticsCss, ":root");
+
+		// Core semantic names from dev (excluding utility/theme-specific ones)
+		const coreDevNames: string[] = [];
+		for (const [name] of rootVars) {
+			// Skip utility/theme tokens, chart tokens, sidebar aliases, backplate
+			if (
+				name.startsWith("--util-") ||
+				name.startsWith("--theme-") ||
+				name.startsWith("--chart-") ||
+				name.startsWith("--sidebar-") ||
+				name.startsWith("--backplate-") ||
+				name === "--light" ||
+				name === "--dark"
+			)
+				continue;
+			coreDevNames.push(name.replace(/^--/, ""));
+		}
+
+		expect(coreDevNames.length).toBeGreaterThan(0);
+
+		// Map dev names to generator naming convention
+		const nameMapping: Record<string, string> = {
+			background: "background/default",
+			foreground: "foreground/default",
+			card: "card/default",
+			"card-foreground": "card/foreground",
+			popover: "popover/default",
+			"popover-foreground": "popover/foreground",
+			primary: "background/emphasis",
+			"primary-foreground": "foreground/on-emphasis",
+			secondary: "background/muted",
+			"secondary-foreground": "foreground/muted",
+			muted: "background/muted",
+			"muted-foreground": "foreground/muted",
+			accent: "background/accent",
+			"accent-foreground": "foreground/accent",
+			destructive: "destructive/default",
+			border: "border/default",
+			input: "input/default",
+			ring: "ring/default",
+			success: null as any, // not yet in generator
+			warning: null as any, // not yet in generator
+			info: null as any, // not yet in generator
+		};
+
+		const result = generateDesignSystem({
+			primary: "#0090FF",
+			secondary: "#10B981",
+			grayName: "gray",
+			layers: "semantic",
+			darkMode: true,
+			includeSpacing: false,
+			includeRadius: false,
+			includeShadows: false,
+			includeTypography: false,
+			includeDurations: false,
+			includeFonts: false,
+		});
+		const genNames = new Set(
+			result.tokens
+				.filter((t) => t.category === "semantics")
+				.map((t) => t.figmaName),
+		);
+
+		const missing: string[] = [];
+		for (const devName of coreDevNames) {
+			const genName = nameMapping[devName];
+			if (genName === null) continue; // known gap (status colors)
+			if (genName === undefined) continue; // unmapped
+			if (!genNames.has(genName)) {
+				missing.push(`${devName} → ${genName}`);
+			}
+		}
+
+		expect(
+			missing,
+			`Missing semantic tokens:\n${missing.join("\n")}`,
+		).toHaveLength(0);
+	});
+
+	test("dev semantic gray step references match generator", () => {
+		const rootVars = parseCssBlock(devSemanticsCss, ":root");
+		const darkVars = parseCssBlock(devSemanticsCss, ".dark");
+
+		// Extract which gray step each dev semantic uses
+		// e.g. "--card: var(--color-surface-light-1)" → step 1
+		function extractGrayStep(value: string): number | null {
+			const match = value.match(/surface-(?:light|dark)-(\d+)/);
+			return match ? Number(match[1]) : null;
+		}
+
+		const result = generateDesignSystem({
+			primary: "#0090FF",
+			grayName: "gray",
+			layers: "semantic",
+			darkMode: true,
+			includeSpacing: false,
+			includeRadius: false,
+			includeShadows: false,
+			includeTypography: false,
+			includeDurations: false,
+			includeFonts: false,
+		});
+
+		// Map of dev name → generator name → check gray step
+		const checks: { devName: string; genName: string; mode: "light" | "dark" }[] = [
+			{ devName: "--card", genName: "card/default", mode: "light" },
+			{ devName: "--card", genName: "card/default", mode: "dark" },
+			{ devName: "--popover", genName: "popover/default", mode: "light" },
+			{ devName: "--popover", genName: "popover/default", mode: "dark" },
+			{ devName: "--input", genName: "input/default", mode: "light" },
+			{ devName: "--input", genName: "input/default", mode: "dark" },
+			{ devName: "--ring", genName: "ring/default", mode: "light" },
+			{ devName: "--ring", genName: "ring/default", mode: "dark" },
+		];
+
+		for (const check of checks) {
+			const devValue = check.mode === "light"
+				? rootVars.get(check.devName)
+				: darkVars.get(check.devName);
+			if (!devValue) continue;
+
+			const devStep = extractGrayStep(devValue);
+			if (devStep === null) continue;
+
+			const modeName = check.mode === "light" ? "Light" : "Dark";
+			const genToken = result.tokens.find(
+				(t) =>
+					t.figmaName === check.genName &&
+					t.category === "semantics" &&
+					(t as any).modeName === modeName,
+			);
+
+			if (!genToken) continue;
+
+			const genRef = String(genToken.originalValue);
+			const genStep = genRef.match(/\.(\d+)\}$/);
+			if (!genStep) continue;
+
+			expect(
+				Number(genStep[1]),
+				`${check.genName} ${check.mode}: dev uses gray step ${devStep}, generator uses step ${genStep[1]}`,
+			).toBe(devStep);
+		}
+	});
+});
+
+// =========================================================================
+// Abstraction layer — generator structure matches dev abstractions.css
+// =========================================================================
+
+describe("abstraction layer parity with dev abstractions.css", () => {
+	const devAbsVars = parseCssBlock(devAbstractionsCss, ":root");
+
+	test("surface abstractions cover same 1-12 range as dev", () => {
+		// Dev has --color-surface-light-1 through -12
+		const devSurfaceSteps = new Set<number>();
+		for (const [name] of devAbsVars) {
+			const match = name.match(/--color-surface-light-(\d+)/);
+			if (match) devSurfaceSteps.add(Number(match[1]));
+		}
+
+		expect(devSurfaceSteps.size).toBe(12);
+
+		// Generator produces neutral/1 through neutral/12 in three-tier mode
+		const result = generateDesignSystem({
+			primary: "#0090FF",
+			grayName: "gray",
+			layers: "three-tier",
+			darkMode: true,
+			includeSpacing: false,
+			includeRadius: false,
+			includeShadows: false,
+			includeTypography: false,
+			includeDurations: false,
+			includeFonts: false,
+		});
+
+		const genNeutralSteps = new Set<number>();
+		for (const token of result.tokens) {
+			if (token.category === "abstractions") {
+				const match = token.figmaName.match(/^neutral\/(\d+)$/);
+				if (match) genNeutralSteps.add(Number(match[1]));
+			}
+		}
+
+		for (const step of devSurfaceSteps) {
+			expect(
+				genNeutralSteps.has(step),
+				`Dev surface step ${step} missing from generator neutral abstractions`,
+			).toBe(true);
+		}
+	});
+
+	test("typography values from dev abstractions match TYPE_SCALE", () => {
+		for (const step of TYPE_SCALE) {
+			// Dev: --size-font-typescale-body-size-min: 14px
+			for (const bp of ["min", "sm", "md"] as const) {
+				const sizeVar = devAbsVars.get(
+					`--size-font-typescale-${step.name}-size-${bp}`,
+				);
+				if (sizeVar) {
+					const devPx = extractPxValue(sizeVar);
+					expect(
+						devPx,
+						`${step.name} size ${bp}: dev=${devPx}px, generator=${step.sizes[bp]}px`,
+					).toBe(step.sizes[bp]);
+				}
+
+				// Dev: --color-font-typescale-body-line-height-min: 20px
+				const lhVar = devAbsVars.get(
+					`--color-font-typescale-${step.name}-line-height-${bp}`,
+				);
+				if (lhVar) {
+					const devPx = extractPxValue(lhVar);
+					expect(
+						devPx,
+						`${step.name} line-height ${bp}: dev=${devPx}px, generator=${step.lineHeights[bp]}px`,
+					).toBe(step.lineHeights[bp]);
+				}
+			}
+		}
+	});
+
+	test("radius t-shirt sizes from dev abstractions match generator", () => {
+		const radiusScale = computeRadiusScale({ anchor: 10, multiplier: 1 });
+
+		for (const [name, value] of devAbsVars) {
+			const match = name.match(/^--rounded-([\w-]+)$/);
+			if (!match) continue;
+			const size = match[1];
+			const devPx = extractPxValue(value);
+			if (devPx === null) continue;
+
+			if (radiusScale[size] !== undefined) {
+				expect(
+					radiusScale[size],
+					`Radius "${size}": dev=${devPx}px, generator=${radiusScale[size]}px`,
+				).toBe(devPx);
+			}
+		}
+	});
+
+	test("duration semantic aliases from dev abstractions resolve correctly", () => {
+		for (const [name, value] of devAbsVars) {
+			const match = name.match(/^--duration-([\w-]+)$/);
+			if (!match) continue;
+
+			const aliasName = match[1];
+			if (!DURATION_SEMANTIC[aliasName]) continue;
+
+			// Dev value is a var reference like `var(--duration-motion-duration-250)`
+			// Extract the raw key
+			const refMatch = value.match(/duration-motion-duration-(\w+)/);
+			if (!refMatch) continue;
+
+			const devRawKey = refMatch[1];
+			const genRawKey = DURATION_SEMANTIC[aliasName];
+
+			expect(
+				genRawKey,
+				`Duration "${aliasName}": dev references "${devRawKey}", generator references "${genRawKey}"`,
+			).toBe(devRawKey);
+		}
+	});
+});
+
+// =========================================================================
+// Font weights — generator matches dev primitives.css
+// =========================================================================
+
+describe("font weight parity with dev primitives.css", () => {
+	const devVars = parseCssVars(devPrimitivesCss);
+
+	test("dev font weight numeric values (100-900) are in generator", () => {
+		// Dev uses --color-font-weight-variable-* with px values like "400px"
+		// which map to weight numbers
+		const devWeights = new Map<string, number>();
+		for (const [name, value] of devVars) {
+			const match = name.match(
+				/^--color-font-weight-variable-([\w-]+)$/,
+			);
+			if (!match) continue;
+			const px = extractPxValue(value);
+			if (px !== null) {
+				// normalize name: "semi-bold" → "semibold", "extra-light" → "extralight"
+				const normalized = match[1].replace(/-/g, "");
+				devWeights.set(normalized, px);
+			}
+		}
+
+		expect(devWeights.size).toBeGreaterThan(0);
+
+		for (const [name, devValue] of devWeights) {
+			if (FONT_WEIGHTS[name] !== undefined) {
+				expect(
+					FONT_WEIGHTS[name],
+					`Font weight "${name}": dev=${devValue}, generator=${FONT_WEIGHTS[name]}`,
+				).toBe(devValue);
+			}
+		}
+	});
+});
+
+// =========================================================================
+// Coverage report — list tokens in dev but not in generator
+// =========================================================================
+
+describe("gap analysis", () => {
+	test("report dev semantic tokens not yet in generator (informational)", () => {
+		const rootVars = parseCssBlock(devSemanticsCss, ":root");
+
+		const result = generateDesignSystem({
+			primary: "#0090FF",
+			secondary: "#10B981",
+			grayName: "gray",
+			layers: "semantic",
+			darkMode: true,
+			includeSpacing: false,
+			includeRadius: false,
+			includeShadows: false,
+			includeTypography: false,
+			includeDurations: false,
+			includeFonts: false,
+		});
+		const genNames = new Set(
+			result.tokens
+				.filter((t) => t.category === "semantics")
+				.map((t) => t.figmaName),
+		);
+
+		// Known mapping from dev → generator names
+		const mapped = new Set([
+			"background",
+			"foreground",
+			"card",
+			"card-foreground",
+			"popover",
+			"popover-foreground",
+			"primary",
+			"primary-foreground",
+			"secondary",
+			"secondary-foreground",
+			"muted",
+			"muted-foreground",
+			"accent",
+			"accent-foreground",
+			"destructive",
+			"border",
+			"input",
+			"ring",
+		]);
+
+		// These are intentionally not in the generator (utility/decoration)
+		const excluded = new Set([
+			"util-overlay-transparent",
+			"util-mask",
+			"util-transparent",
+			"theme-theme",
+			"theme-is-dark",
+			"light",
+			"dark",
+		]);
+
+		const gaps: string[] = [];
+		for (const [name] of rootVars) {
+			const clean = name.replace(/^--/, "");
+			if (excluded.has(clean)) continue;
+			if (clean.startsWith("chart-")) continue;
+			if (clean.startsWith("sidebar-") || clean === "sidebar") continue;
+			if (clean.startsWith("backplate-")) continue;
+			if (mapped.has(clean)) continue;
+
+			gaps.push(clean);
+		}
+
+		// This test is informational — it passes but logs gaps
+		// Status colors (success, warning, info) are known gaps
+		const knownGaps = new Set([
+			"success", "warning", "info",
+			"destructive-foreground", "info-foreground",
+			"success-foreground", "warning-foreground",
+		]);
+		const unknownGaps = gaps.filter((g) => !knownGaps.has(g));
+
+		expect(
+			unknownGaps,
+			`Unknown semantic tokens in dev but not in generator:\n${unknownGaps.join("\n")}`,
+		).toHaveLength(0);
+	});
+});
