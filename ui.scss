@@ -1278,10 +1278,59 @@ body {
 }
 
 // Styles page previews
-.styles-preview-colors {
+.styles-preview-colors,
+.styles-preview-effects {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.styles-paint-layer,
+.styles-effect-layer {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.styles-gradient-swatch {
+  width: 24px !important;
+  border-radius: 3px !important;
+}
+
+.styles-gradient-layer {
+  align-items: flex-start;
+}
+
+.styles-gradient-stops {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.styles-gradient-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.styles-stop-color {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.styles-stop-pos {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  opacity: 0.6;
+}
+
+.styles-gradient-opacity {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
 }
 
 .styles-preview-text {
@@ -1290,4 +1339,84 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.styles-var-refs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 2px;
+}
+
+.styles-var-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-xs);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  padding: 0 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.styles-opacity {
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+}
+
+// Rebind panel
+.styles-rebind-loading {
+  padding: 12px;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.styles-rebind-header {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  padding: 4px 0 8px;
+}
+
+.styles-rebind-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.styles-rebind-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: var(--text-xs);
+
+  &:hover {
+    background: var(--hover);
+  }
+
+  &.styles-rebind-excluded {
+    opacity: 0.4;
+  }
+}
+
+.styles-rebind-style-name {
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.styles-rebind-field {
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
 }

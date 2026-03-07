@@ -10,8 +10,8 @@ import {
   Input,
 } from '../components/ui'
 import { useFigmaMessage, usePostMessage } from '../hooks/useFigmaMessage'
-import type { StyleInfo, StyleCounts } from '../types/messages'
-import { Search, Trash2, PenLine, RefreshCw, Check, X, ChevronDown, ChevronRight, Palette, Type, Sparkles, Grid } from 'lucide-react'
+import type { StyleInfo, StyleCounts, PaintInfo, EffectInfo, RebindSuggestion } from '../types/messages'
+import { Search, Trash2, PenLine, RefreshCw, Check, X, ChevronDown, ChevronRight, Palette, Type, Sparkles, Grid, Link, Unlink } from 'lucide-react'
 
 type CategoryFilter = 'all' | 'paint' | 'text' | 'effect' | 'grid'
 type SortField = 'name' | 'category'
@@ -48,6 +48,10 @@ export function StylesPage() {
   const [findText, setFindText] = useState('')
   const [replaceText, setReplaceText] = useState('')
   const [pendingDelete, setPendingDelete] = useState(false)
+  const [showRebind, setShowRebind] = useState(false)
+  const [rebindSuggestions, setRebindSuggestions] = useState<RebindSuggestion[]>([])
+  const [rebindLoading, setRebindLoading] = useState(false)
+  const [rebindExcluded, setRebindExcluded] = useState<Set<number>>(new Set())
 
   const postMessage = usePostMessage()
   const { showSuccess, showError } = useToast()
@@ -68,8 +72,24 @@ export function StylesPage() {
       setLoading(false)
     } else if (msg.type === 'styles-renamed') {
       const { success, failed } = msg.data
+      // Capture current rename preview for undo before clearing state
+      const undoRenames = renamePreview.map(r => ({
+        id: r.id,
+        category: r.category as 'paint' | 'text' | 'effect' | 'grid',
+        newName: r.oldName,
+      }))
       if (failed > 0) showError(`${failed} rename(s) failed`)
-      else showSuccess(`Renamed ${success} style${success !== 1 ? 's' : ''}`)
+      else showSuccess(
+        `Renamed ${success} style${success !== 1 ? 's' : ''}`,
+        undoRenames.length > 0
+          ? {
+              label: 'Undo',
+              onClick: () => {
+                postMessage({ type: 'rename-styles', data: { renames: undoRenames } })
+              },
+            }
+          : undefined
+      )
       setShowRename(false)
       setFindText('')
       setReplaceText('')
@@ -79,6 +99,36 @@ export function StylesPage() {
       if (failed > 0) showError(`${failed} deletion(s) failed`)
       else showSuccess(`Deleted ${success} style${success !== 1 ? 's' : ''}`)
       setSelectedIds(new Set())
+      loadStyles()
+    } else if (msg.type === 'rebind-suggestions') {
+      setRebindSuggestions(msg.data.suggestions)
+      setRebindLoading(false)
+      setRebindExcluded(new Set())
+      if (msg.data.suggestions.length === 0) {
+        showSuccess('No unbound colors found that match any local variables')
+        setShowRebind(false)
+      }
+    } else if (msg.type === 'rebind-applied') {
+      const { success, failed, applied } = msg.data
+      if (failed > 0) showError(`${failed} rebind(s) failed`)
+      else showSuccess(
+        `Rebound ${success} color${success !== 1 ? 's' : ''} to variables`,
+        applied.length > 0
+          ? {
+              label: 'Undo',
+              onClick: () => {
+                postMessage({ type: 'undo-rebind', data: { bindings: applied } })
+              },
+            }
+          : undefined
+      )
+      setShowRebind(false)
+      setRebindSuggestions([])
+      loadStyles()
+    } else if (msg.type === 'rebind-undone') {
+      const { success, failed } = msg.data
+      if (failed > 0) showError(`${failed} unbind(s) failed`)
+      else showSuccess(`Unbound ${success} color${success !== 1 ? 's' : ''}`)
       loadStyles()
     }
   })
@@ -208,19 +258,151 @@ export function StylesPage() {
     else { setSortField(field); setSortDir('asc') }
   }
 
+  const handleScanRebind = () => {
+    const ids = selectedIds.size > 0 ? Array.from(selectedIds) : styles.filter(s => s.category === 'paint' || s.category === 'effect').map(s => s.id)
+    setRebindLoading(true)
+    setShowRebind(true)
+    setShowRename(false)
+    postMessage({ type: 'scan-rebind', data: { styleIds: ids } })
+  }
+
+  const handleApplyRebind = () => {
+    const activeSuggestions = rebindSuggestions.filter((_, i) => !rebindExcluded.has(i))
+    if (activeSuggestions.length === 0) return
+    postMessage({
+      type: 'apply-rebind',
+      data: {
+        bindings: activeSuggestions.map(s => ({
+          styleId: s.styleId,
+          field: s.field,
+          variableId: s.suggestedVariableId,
+        })),
+      },
+    })
+  }
+
+  const toggleRebindExclude = (index: number) => {
+    setRebindExcluded(prev => {
+      const next = new Set(prev)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      return next
+    })
+  }
+
+  // Render a single paint layer
+  const renderPaintLayer = (paint: PaintInfo, i: number) => {
+    if (paint.paintType === 'SOLID') {
+      const gradientBg = paint.color || '#000'
+      return (
+        <span key={i} className="styles-paint-layer">
+          <span className="manage-color-swatch" style={{ backgroundColor: gradientBg, opacity: paint.opacity }} />
+          <span className="styles-preview-text">
+            {paint.colorVariable ? (
+              <span className="styles-var-ref" data-tooltip={`Variable: ${paint.colorVariable}`}>
+                <Link size={10} /> {paint.colorVariable.split('/').pop()}
+              </span>
+            ) : (
+              paint.color || 'empty'
+            )}
+            {paint.opacity != null && paint.opacity < 1 && (
+              <span className="styles-opacity">
+                {paint.opacityVariable ? (
+                  <span className="styles-var-ref" data-tooltip={`Opacity variable: ${paint.opacityVariable}`}>
+                    <Link size={10} /> {paint.opacityVariable.split('/').pop()}
+                  </span>
+                ) : (
+                  ` ${Math.round(paint.opacity * 100)}%`
+                )}
+              </span>
+            )}
+          </span>
+        </span>
+      )
+    }
+
+    if (paint.paintType.startsWith('GRADIENT_')) {
+      const stops = paint.stops || []
+      // Build CSS gradient for swatch
+      const gradientColors = stops.map(s => s.color).join(', ')
+      const gradientBg = `linear-gradient(90deg, ${gradientColors})`
+      return (
+        <span key={i} className="styles-paint-layer styles-gradient-layer">
+          <span className="manage-color-swatch styles-gradient-swatch" style={{ background: gradientBg, opacity: paint.opacity }} />
+          <span className="styles-gradient-stops">
+            {stops.map((s, j) => (
+              <span key={j} className="styles-gradient-stop">
+                <span className="manage-color-swatch" style={{ backgroundColor: s.color }} />
+                {s.variable ? (
+                  <span className="styles-var-ref" data-tooltip={s.variable}>
+                    <Link size={10} /> {s.variable.split('/').pop()}
+                  </span>
+                ) : (
+                  <span className="styles-stop-color">{s.color}</span>
+                )}
+                <span className="styles-stop-pos">{Math.round(s.position * 100)}%</span>
+              </span>
+            ))}
+            {paint.opacity != null && paint.opacity < 1 && (
+              <span className="styles-gradient-opacity">
+                {paint.opacityVariable ? (
+                  <span className="styles-var-ref" data-tooltip={`Opacity: ${paint.opacityVariable}`}>
+                    <Link size={10} /> {paint.opacityVariable.split('/').pop()}
+                  </span>
+                ) : (
+                  <span className="styles-stop-pos">{Math.round(paint.opacity * 100)}% opacity</span>
+                )}
+              </span>
+            )}
+          </span>
+        </span>
+      )
+    }
+
+    if (paint.paintType === 'IMAGE') {
+      return (
+        <span key={i} className="styles-paint-layer">
+          <span className="styles-preview-text">Image fill</span>
+        </span>
+      )
+    }
+
+    return <span key={i} className="styles-preview-text">{paint.paintType}</span>
+  }
+
+  // Render a single effect layer
+  const renderEffectLayer = (effect: EffectInfo, i: number) => {
+    const hasVars = effect.colorVariable || effect.radiusVariable || effect.spreadVariable
+    return (
+      <span key={i} className="styles-effect-layer">
+        {effect.color && <span className="manage-color-swatch" style={{ backgroundColor: effect.color }} />}
+        <span className="styles-preview-text">{effect.description}</span>
+        {hasVars && (
+          <span className="styles-var-refs">
+            {effect.colorVariable && (
+              <span className="styles-var-ref" data-tooltip={`Color: ${effect.colorVariable}`}>
+                <Link size={10} /> {effect.colorVariable.split('/').pop()}
+              </span>
+            )}
+            {effect.radiusVariable && (
+              <span className="styles-var-ref" data-tooltip={`Radius: ${effect.radiusVariable}`}>
+                <Link size={10} /> {effect.radiusVariable.split('/').pop()}
+              </span>
+            )}
+          </span>
+        )}
+      </span>
+    )
+  }
+
   // Render preview
   const renderPreview = (s: StyleInfo) => {
     const p = s.preview
     if (p.type === 'paint') {
       return (
         <span className="styles-preview-colors">
-          {p.colors.map((c, i) => (
-            <span key={i} className="manage-color-swatch" style={{ backgroundColor: c, opacity: p.opacity }} />
-          ))}
-          <span className="styles-preview-text">
-            {p.colors[0] || 'empty'}
-            {p.opacity < 1 ? ` ${Math.round(p.opacity * 100)}%` : ''}
-          </span>
+          {p.paints.map((paint, i) => renderPaintLayer(paint, i))}
+          {p.paints.length === 0 && <span className="styles-preview-text">empty</span>}
         </span>
       )
     }
@@ -228,11 +410,25 @@ export function StylesPage() {
       return (
         <span className="styles-preview-text">
           {p.fontFamily} {p.fontStyle} {p.fontSize}/{p.lineHeight}
+          {p.variables && Object.keys(p.variables).length > 0 && (
+            <span className="styles-var-refs">
+              {Object.entries(p.variables).map(([prop, varName]) => (
+                <span key={prop} className="styles-var-ref" data-tooltip={`${prop}: ${varName}`}>
+                  <Link size={10} /> {varName.split('/').pop()}
+                </span>
+              ))}
+            </span>
+          )}
         </span>
       )
     }
     if (p.type === 'effect') {
-      return <span className="styles-preview-text">{p.effects.join(', ') || 'none'}</span>
+      return (
+        <span className="styles-preview-effects">
+          {p.effects.map((effect, i) => renderEffectLayer(effect, i))}
+          {p.effects.length === 0 && <span className="styles-preview-text">none</span>}
+        </span>
+      )
     }
     if (p.type === 'grid') {
       return <span className="styles-preview-text">{p.patterns.join(', ') || 'none'}</span>
@@ -284,6 +480,9 @@ export function StylesPage() {
         </div>
 
         <div className="manage-toolbar-right">
+          <Button variant="ghost" onClick={handleScanRebind} data-tooltip="Rebind unbound colors to variables">
+            <Unlink size={14} />
+          </Button>
           <Button variant="ghost" onClick={loadStyles} data-tooltip="Refresh">
             <RefreshCw size={14} />
           </Button>
@@ -298,6 +497,10 @@ export function StylesPage() {
             <Button variant="ghost" onClick={() => setShowRename(!showRename)} title="Rename (find/replace)">
               <PenLine size={14} />
               Rename
+            </Button>
+            <Button variant="ghost" onClick={handleScanRebind} title="Rebind unbound colors to matching variables">
+              <Unlink size={14} />
+              Rebind
             </Button>
             <Button variant="ghost" onClick={() => setPendingDelete(true)} title="Delete">
               <Trash2 size={14} />
@@ -348,6 +551,50 @@ export function StylesPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Rebind panel */}
+      {showRebind && (
+        <div className="manage-action-panel">
+          <div className="manage-action-panel-header">
+            <span>Rebind — reconnect unbound colors to matching variables</span>
+            <button type="button" className="manage-panel-close" onClick={() => { setShowRebind(false); setRebindSuggestions([]) }} data-tooltip="Close panel"><X size={14} /></button>
+          </div>
+
+          {rebindLoading ? (
+            <div className="styles-rebind-loading">Scanning for unbound colors...</div>
+          ) : rebindSuggestions.length > 0 ? (
+            <div className="styles-rebind-list">
+              <div className="styles-rebind-header">
+                {rebindSuggestions.length - rebindExcluded.size} of {rebindSuggestions.length} suggestion{rebindSuggestions.length !== 1 ? 's' : ''} selected
+              </div>
+              <div className="styles-rebind-items">
+                {rebindSuggestions.map((s, i) => (
+                  <div key={`${s.styleId}-${s.field}-${i}`} className={`styles-rebind-item ${rebindExcluded.has(i) ? 'styles-rebind-excluded' : ''}`}>
+                    <input type="checkbox" checked={!rebindExcluded.has(i)} onChange={() => toggleRebindExclude(i)} />
+                    <span className="manage-color-swatch" style={{ backgroundColor: s.currentColor }} />
+                    <span className="styles-rebind-style-name" title={s.styleName}>
+                      {s.styleName.split('/').pop()}
+                      <span className="styles-rebind-field">{s.field.startsWith('stop:') ? ` (gradient stop)` : s.field.startsWith('effect:') ? ` (effect)` : ''}</span>
+                    </span>
+                    <span className="manage-rename-arrow">→</span>
+                    <span className="styles-var-ref">
+                      <Link size={10} /> {s.suggestedVariableName}
+                    </span>
+                    <Badge variant={s.matchType === 'exact' ? 'success' : 'warning'}>{s.matchType}</Badge>
+                  </div>
+                ))}
+              </div>
+              <div className="manage-panel-actions">
+                <Button variant="ghost" onClick={() => { setShowRebind(false); setRebindSuggestions([]) }}>Cancel</Button>
+                <Button variant="primary" onClick={handleApplyRebind} disabled={rebindExcluded.size === rebindSuggestions.length}>
+                  <Check size={14} />
+                  Apply {rebindSuggestions.length - rebindExcluded.size} Rebinding{rebindSuggestions.length - rebindExcluded.size !== 1 ? 's' : ''}
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
 

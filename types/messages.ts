@@ -140,10 +140,34 @@ export interface StyleInfo {
   preview: StylePreview
 }
 
+/** Individual paint layer info */
+export interface PaintInfo {
+  paintType: 'SOLID' | 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | 'GRADIENT_DIAMOND' | 'IMAGE' | 'VIDEO'
+  /** Hex color for solid paints */
+  color?: string
+  opacity?: number
+  /** Gradient color stops */
+  stops?: { color: string; position: number; variable?: string }[]
+  /** Variable bound to this paint's color */
+  colorVariable?: string
+  /** Variable bound to this paint's opacity */
+  opacityVariable?: string
+}
+
+/** Individual effect layer info */
+export interface EffectInfo {
+  effectType: string
+  description: string
+  color?: string
+  colorVariable?: string
+  radiusVariable?: string
+  spreadVariable?: string
+}
+
 export type StylePreview =
-  | { type: 'paint'; colors: string[]; opacity: number }
-  | { type: 'text'; fontFamily: string; fontStyle: string; fontSize: string; lineHeight: string }
-  | { type: 'effect'; effects: string[] }
+  | { type: 'paint'; paints: PaintInfo[] }
+  | { type: 'text'; fontFamily: string; fontStyle: string; fontSize: string; lineHeight: string; variables?: Record<string, string> }
+  | { type: 'effect'; effects: EffectInfo[] }
   | { type: 'grid'; patterns: string[] }
 
 /** Response with style details */
@@ -184,6 +208,77 @@ export interface RenameStylesMessage {
 /** Styles renamed result */
 export interface StylesRenamedMessage {
   type: 'styles-renamed'
+  data: {
+    success: number
+    failed: number
+  }
+}
+
+/** Scan unbound styles and suggest variable rebindings */
+export interface ScanRebindMessage {
+  type: 'scan-rebind'
+  data: {
+    styleIds: string[]
+  }
+}
+
+/** A suggested rebinding: unbound color → matching variable */
+export interface RebindSuggestion {
+  styleId: string
+  styleName: string
+  /** 'solid' for paint color, 'stop:0', 'stop:1' for gradient stops, 'effect:0' for effect colors */
+  field: string
+  currentColor: string
+  suggestedVariableId: string
+  suggestedVariableName: string
+  matchType: 'exact' | 'name'
+}
+
+/** Response with rebind suggestions */
+export interface RebindSuggestionsMessage {
+  type: 'rebind-suggestions'
+  data: {
+    suggestions: RebindSuggestion[]
+  }
+}
+
+/** Apply selected rebindings */
+export interface ApplyRebindMessage {
+  type: 'apply-rebind'
+  data: {
+    bindings: {
+      styleId: string
+      field: string
+      variableId: string
+    }[]
+  }
+}
+
+/** Undo rebindings (unbind variables from styles) */
+export interface UndoRebindMessage {
+  type: 'undo-rebind'
+  data: {
+    bindings: {
+      styleId: string
+      field: string
+    }[]
+  }
+}
+
+/** Rebind result */
+export interface RebindAppliedMessage {
+  type: 'rebind-applied'
+  data: {
+    success: number
+    failed: number
+    /** Successfully applied bindings for undo */
+    applied: { styleId: string; field: string }[]
+  }
+}
+
+/** Undo rebind result */
+export interface RebindUndoneMessage {
+  type: 'rebind-undone'
   data: {
     success: number
     failed: number
@@ -401,6 +496,9 @@ export type UIToMainMessage =
   | MoveVariablesMessage
   | DuplicateVariablesMessage
   | UpdateVariableValuesMessage
+  | ScanRebindMessage
+  | ApplyRebindMessage
+  | UndoRebindMessage
   | ResizeWindowMessage
   | LoadSettingsMessage
   | SaveSettingsMessage
@@ -525,6 +623,9 @@ export type MainToUIMessage =
   | StyleDetailsListMessage
   | StylesDeletedMessage
   | StylesRenamedMessage
+  | RebindSuggestionsMessage
+  | RebindAppliedMessage
+  | RebindUndoneMessage
   | ExportErrorMessage
   | ProgressUpdateMessage
   | ErrorMessage
@@ -577,6 +678,9 @@ export function isUIToMainMessage(msg: unknown): msg is UIToMainMessage {
     'move-variables',
     'duplicate-variables',
     'update-variable-values',
+    'scan-rebind',
+    'apply-rebind',
+    'undo-rebind',
     'resize-window',
     'load-settings',
     'save-settings',
@@ -606,6 +710,9 @@ export function isMainToUIMessage(msg: unknown): msg is MainToUIMessage {
     'css-export-complete',
     'style-details-list',
     'styles-deleted',
+    'rebind-suggestions',
+    'rebind-applied',
+    'rebind-undone',
     'styles-renamed',
     'export-error',
     'progress-update',

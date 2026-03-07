@@ -114,26 +114,75 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
       const effectStyles = figma.getLocalEffectStyles()
       const gridStyles = figma.getLocalGridStyles()
 
+      // Helper: convert Figma RGB to hex string
+      const rgbToHex = (c: RGB | RGBA) => {
+        const r = Math.round(c.r * 255)
+        const g = Math.round(c.g * 255)
+        const b = Math.round(c.b * 255)
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+      }
+
+      // Helper: resolve a VariableAlias to its variable name
+      const resolveVarName = (alias: { id: string } | undefined): string | undefined => {
+        if (!alias || !alias.id) return undefined
+        try {
+          const v = figma.variables.getVariableById(alias.id)
+          return v ? v.name : undefined
+        } catch (err) {
+          console.warn('[Cipher] resolveVarName error for id:', alias.id, err)
+          return undefined
+        }
+      }
+
       const styles: {
         id: string; name: string; category: string; description: string; preview: any
       }[] = []
 
       for (const s of paintStyles) {
-        const colors: string[] = []
-        let opacity = 1
-        for (const paint of s.paints) {
+        const paints: any[] = []
+
+        for (let pi = 0; pi < s.paints.length; pi++) {
+          const paint = s.paints[pi]
+          const bv = (paint as any).boundVariables || {}
+
           if (paint.type === 'SOLID') {
-            const c = (paint as SolidPaint).color
-            const r = Math.round(c.r * 255)
-            const g = Math.round(c.g * 255)
-            const b = Math.round(c.b * 255)
-            colors.push(`#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`)
-            if (paint.opacity !== undefined) opacity = paint.opacity
+            const solid = paint as SolidPaint
+            paints.push({
+              paintType: 'SOLID',
+              color: rgbToHex(solid.color),
+              opacity: solid.opacity ?? 1,
+              colorVariable: resolveVarName(bv.color),
+              opacityVariable: resolveVarName(bv.opacity),
+            })
+          } else if (paint.type.startsWith('GRADIENT_')) {
+            const grad = paint as GradientPaint
+            const stops = grad.gradientStops.map((stop) => {
+              // Variable bindings are directly on each stop object
+              const stopBv = (stop as any).boundVariables || {}
+              return {
+                color: rgbToHex(stop.color),
+                position: Math.round(stop.position * 100) / 100,
+                variable: resolveVarName(stopBv.color),
+              }
+            })
+            paints.push({
+              paintType: paint.type,
+              opacity: grad.opacity ?? 1,
+              stops,
+              opacityVariable: resolveVarName(bv.opacity),
+            })
+          } else if (paint.type === 'IMAGE') {
+            paints.push({
+              paintType: 'IMAGE',
+              opacity: (paint as ImagePaint).opacity ?? 1,
+            })
+          } else {
+            paints.push({ paintType: paint.type, opacity: (paint as any).opacity ?? 1 })
           }
         }
         styles.push({
           id: s.id, name: s.name, category: 'paint', description: s.description,
-          preview: { type: 'paint', colors, opacity },
+          preview: { type: 'paint', paints },
         })
       }
 
@@ -141,6 +190,12 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
         const lh = typeof s.lineHeight === 'object' && 'value' in s.lineHeight
           ? `${s.lineHeight.value}${s.lineHeight.unit === 'PIXELS' ? 'px' : s.lineHeight.unit === 'PERCENT' ? '%' : ''}`
           : 'auto'
+        const bv = (s as any).boundVariables || {}
+        const variables: Record<string, string> = {}
+        if (bv.fontSize) { const n = resolveVarName(bv.fontSize); if (n) variables.fontSize = n }
+        if (bv.lineHeight) { const n = resolveVarName(bv.lineHeight); if (n) variables.lineHeight = n }
+        if (bv.letterSpacing) { const n = resolveVarName(bv.letterSpacing); if (n) variables.letterSpacing = n }
+        if (bv.paragraphSpacing) { const n = resolveVarName(bv.paragraphSpacing); if (n) variables.paragraphSpacing = n }
         styles.push({
           id: s.id, name: s.name, category: 'text', description: s.description,
           preview: {
@@ -149,16 +204,37 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
             fontStyle: s.fontName.style,
             fontSize: `${s.fontSize}px`,
             lineHeight: lh,
+            variables: Object.keys(variables).length > 0 ? variables : undefined,
           },
         })
       }
 
       for (const s of effectStyles) {
-        const effects = s.effects.map(e => {
+        const styleEffectBv = ((s as any).boundVariables || {}).effects || []
+        const effects = s.effects.map((e, ei) => {
+          // Merge effect-level and style-level bindings
+          const effectBv = (e as any).boundVariables || {}
+          const styleEBv = styleEffectBv[ei] || {}
+          const bv = { ...effectBv, ...styleEBv }
           if (e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW') {
-            return `${e.type === 'INNER_SHADOW' ? 'inset ' : ''}${e.offset.x}px ${e.offset.y}px ${e.radius}px`
+            const shadow = e as DropShadowEffect
+            return {
+              effectType: e.type,
+              description: `${e.type === 'INNER_SHADOW' ? 'inset ' : ''}${shadow.offset.x}px ${shadow.offset.y}px ${shadow.radius}px${shadow.spread ? ` ${shadow.spread}px` : ''}`,
+              color: rgbToHex(shadow.color),
+              colorVariable: resolveVarName(bv.color),
+              radiusVariable: resolveVarName(bv.radius),
+              spreadVariable: resolveVarName(bv.spread),
+            }
           }
-          return e.type.toLowerCase().replace('_', ' ')
+          if (e.type === 'LAYER_BLUR' || e.type === 'BACKGROUND_BLUR') {
+            return {
+              effectType: e.type,
+              description: `${e.type === 'LAYER_BLUR' ? 'blur' : 'bg blur'} ${(e as BlurEffect).radius}px`,
+              radiusVariable: resolveVarName(bv.radius),
+            }
+          }
+          return { effectType: e.type, description: e.type.toLowerCase().replace(/_/g, ' ') }
         })
         styles.push({
           id: s.id, name: s.name, category: 'effect', description: s.description,
@@ -221,6 +297,257 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
       }
       figma.ui.postMessage({ type: 'styles-renamed', data: { success, failed } })
       figma.notify(`Renamed ${success} style${success !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}`)
+      break
+    }
+
+    case 'scan-rebind': {
+      const { styleIds } = msg.data
+      // Build a map of all local COLOR variables with their resolved hex values per mode
+      const allVars = figma.variables.getLocalVariables('COLOR')
+      const varColorMap: { id: string; name: string; colors: string[] }[] = []
+      for (const v of allVars) {
+        const collection = figma.variables.getVariableCollectionById(v.variableCollectionId)
+        if (!collection) continue
+        const colors: string[] = []
+        for (const modeId of collection.modes.map(m => m.modeId)) {
+          const val = v.valuesByMode[modeId]
+          if (val && typeof val === 'object' && 'r' in val) {
+            const c = val as RGBA
+            const r = Math.round(c.r * 255)
+            const g = Math.round(c.g * 255)
+            const b = Math.round(c.b * 255)
+            colors.push(`#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`)
+          }
+        }
+        varColorMap.push({ id: v.id, name: v.name, colors })
+      }
+
+      const suggestions: any[] = []
+
+      // Helper to find matching variable by hex color
+      const findByColor = (hex: string) => {
+        const lower = hex.toLowerCase()
+        return varColorMap.find(v => v.colors.some(c => c.toLowerCase() === lower))
+      }
+      // Helper to find matching variable by name similarity
+      const findByName = (styleName: string) => {
+        // Extract last segment of style name path
+        const parts = styleName.split('/')
+        const leaf = parts[parts.length - 1].toLowerCase().replace(/[\s-_]/g, '')
+        return varColorMap.find(v => {
+          const vParts = v.name.split('/')
+          const vLeaf = vParts[vParts.length - 1].toLowerCase().replace(/[\s-_]/g, '')
+          return vLeaf === leaf || v.name.toLowerCase().replace(/[\s-_/]/g, '') === styleName.toLowerCase().replace(/[\s-_/]/g, '')
+        })
+      }
+
+      const rgbToHex = (c: RGB | RGBA) => {
+        const r = Math.round(c.r * 255)
+        const g = Math.round(c.g * 255)
+        const b = Math.round(c.b * 255)
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+      }
+
+      for (const styleId of styleIds) {
+        const style = figma.getStyleById(styleId)
+        if (!style) continue
+
+        if (style.type === 'PAINT') {
+          const paintStyle = style as PaintStyle
+          paintStyle.paints.forEach((paint, pi) => {
+            if (paint.type === 'SOLID') {
+              const bv = (paint as any).boundVariables || {}
+              if (!bv.color) {
+                // Unbound solid — try to match
+                const hex = rgbToHex((paint as SolidPaint).color)
+                const match = findByColor(hex) || findByName(paintStyle.name)
+                if (match) {
+                  suggestions.push({
+                    styleId, styleName: paintStyle.name, field: `solid:${pi}`,
+                    currentColor: hex,
+                    suggestedVariableId: match.id, suggestedVariableName: match.name,
+                    matchType: findByColor(hex) ? 'exact' : 'name',
+                  })
+                }
+              }
+            } else if (paint.type.startsWith('GRADIENT_')) {
+              const grad = paint as GradientPaint
+              grad.gradientStops.forEach((stop, si) => {
+                const stopBv = (stop as any).boundVariables || {}
+                if (!stopBv.color) {
+                  const hex = rgbToHex(stop.color)
+                  const match = findByColor(hex)
+                  if (match) {
+                    suggestions.push({
+                      styleId, styleName: paintStyle.name, field: `stop:${pi}:${si}`,
+                      currentColor: hex,
+                      suggestedVariableId: match.id, suggestedVariableName: match.name,
+                      matchType: 'exact',
+                    })
+                  }
+                }
+              })
+            }
+          })
+        } else if (style.type === 'EFFECT') {
+          const effectStyle = style as EffectStyle
+          effectStyle.effects.forEach((e, ei) => {
+            if (e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW') {
+              const bv = (e as any).boundVariables || {}
+              if (!bv.color) {
+                const hex = rgbToHex((e as DropShadowEffect).color)
+                const match = findByColor(hex)
+                if (match) {
+                  suggestions.push({
+                    styleId, styleName: effectStyle.name, field: `effect:${ei}`,
+                    currentColor: hex,
+                    suggestedVariableId: match.id, suggestedVariableName: match.name,
+                    matchType: 'exact',
+                  })
+                }
+              }
+            }
+          })
+        }
+      }
+
+      figma.ui.postMessage({ type: 'rebind-suggestions', data: { suggestions } })
+      break
+    }
+
+    case 'apply-rebind': {
+      const { bindings } = msg.data
+      let success = 0
+      let failed = 0
+      const applied: { styleId: string; field: string }[] = []
+
+      for (const { styleId, field, variableId } of bindings) {
+        try {
+          const style = figma.getStyleById(styleId)
+          const variable = figma.variables.getVariableById(variableId)
+          if (!style || !variable) { failed++; continue }
+
+          if (style.type === 'PAINT') {
+            const paintStyle = style as PaintStyle
+            const paints = [...paintStyle.paints]
+
+            if (field.startsWith('solid:')) {
+              const pi = parseInt(field.split(':')[1])
+              if (paints[pi]?.type === 'SOLID') {
+                paints[pi] = figma.variables.setBoundVariableForPaint(paints[pi] as SolidPaint, 'color', variable)
+                paintStyle.paints = paints
+                success++
+                applied.push({ styleId, field })
+              } else { failed++ }
+            } else if (field.startsWith('stop:')) {
+              const [, piStr, siStr] = field.split(':')
+              const pi = parseInt(piStr)
+              const si = parseInt(siStr)
+              const paint = paints[pi]
+              if (paint?.type.startsWith('GRADIENT_')) {
+                const grad = paint as GradientPaint
+                const stops = [...grad.gradientStops]
+                const stop = stops[si]
+                if (stop) {
+                  const alias = figma.variables.createVariableAlias(variable)
+                  stops[si] = {
+                    ...stop,
+                    color: stop.color,
+                    position: stop.position,
+                    boundVariables: { color: alias },
+                  } as any
+                  paints[pi] = { ...grad, gradientStops: stops } as any
+                  paintStyle.paints = paints
+                  success++
+                  applied.push({ styleId, field })
+                } else { failed++ }
+              } else { failed++ }
+            } else { failed++ }
+          } else if (style.type === 'EFFECT') {
+            const effectStyle = style as EffectStyle
+            if (field.startsWith('effect:')) {
+              const ei = parseInt(field.split(':')[1])
+              const effects = [...effectStyle.effects]
+              if (effects[ei]) {
+                effects[ei] = figma.variables.setBoundVariableForEffect(effects[ei], 'color', variable)
+                effectStyle.effects = effects
+                success++
+                applied.push({ styleId, field })
+              } else { failed++ }
+            } else { failed++ }
+          } else { failed++ }
+        } catch (err) {
+          console.error('[Cipher] rebind error:', err)
+          failed++
+        }
+      }
+
+      figma.ui.postMessage({ type: 'rebind-applied', data: { success, failed, applied } })
+      figma.notify(`Rebound ${success} color${success !== 1 ? 's' : ''} to variables${failed > 0 ? ` (${failed} failed)` : ''}`)
+      break
+    }
+
+    case 'undo-rebind': {
+      const { bindings } = msg.data
+      let success = 0
+      let failed = 0
+
+      for (const { styleId, field } of bindings) {
+        try {
+          const style = figma.getStyleById(styleId)
+          if (!style) { failed++; continue }
+
+          if (style.type === 'PAINT') {
+            const paintStyle = style as PaintStyle
+            const paints = [...paintStyle.paints]
+
+            if (field.startsWith('solid:')) {
+              const pi = parseInt(field.split(':')[1])
+              if (paints[pi]?.type === 'SOLID') {
+                paints[pi] = figma.variables.setBoundVariableForPaint(paints[pi] as SolidPaint, 'color', null as any)
+                paintStyle.paints = paints
+                success++
+              } else { failed++ }
+            } else if (field.startsWith('stop:')) {
+              const [, piStr, siStr] = field.split(':')
+              const pi = parseInt(piStr)
+              const si = parseInt(siStr)
+              const paint = paints[pi]
+              if (paint?.type.startsWith('GRADIENT_')) {
+                const grad = paint as GradientPaint
+                const stops = [...grad.gradientStops]
+                const stop = stops[si]
+                if (stop) {
+                  stops[si] = {
+                    color: stop.color,
+                    position: stop.position,
+                  } as any
+                  paints[pi] = { ...grad, gradientStops: stops } as any
+                  paintStyle.paints = paints
+                  success++
+                } else { failed++ }
+              } else { failed++ }
+            } else { failed++ }
+          } else if (style.type === 'EFFECT') {
+            const effectStyle = style as EffectStyle
+            if (field.startsWith('effect:')) {
+              const ei = parseInt(field.split(':')[1])
+              const effects = [...effectStyle.effects]
+              if (effects[ei]) {
+                effects[ei] = figma.variables.setBoundVariableForEffect(effects[ei], 'color', null as any)
+                effectStyle.effects = effects
+                success++
+              } else { failed++ }
+            } else { failed++ }
+          } else { failed++ }
+        } catch (err) {
+          console.error('[Cipher] undo-rebind error:', err)
+          failed++
+        }
+      }
+
+      figma.ui.postMessage({ type: 'rebind-undone', data: { success, failed } })
+      figma.notify(`Unbound ${success} color${success !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}`)
       break
     }
 
