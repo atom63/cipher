@@ -125,6 +125,71 @@ export interface CSSExportCompleteMessage {
   }
 }
 
+/** Request detailed style list for the styles manager */
+export interface GetStyleDetailsMessage {
+  type: 'get-style-details'
+}
+
+/** Individual style info for the styles manager */
+export interface StyleInfo {
+  id: string
+  name: string
+  category: 'paint' | 'text' | 'effect' | 'grid'
+  description: string
+  /** Preview values — depends on category */
+  preview: StylePreview
+}
+
+export type StylePreview =
+  | { type: 'paint'; colors: string[]; opacity: number }
+  | { type: 'text'; fontFamily: string; fontStyle: string; fontSize: string; lineHeight: string }
+  | { type: 'effect'; effects: string[] }
+  | { type: 'grid'; patterns: string[] }
+
+/** Response with style details */
+export interface StyleDetailsListMessage {
+  type: 'style-details-list'
+  data: {
+    styles: StyleInfo[]
+    counts: StyleCounts
+  }
+}
+
+/** Delete styles in bulk */
+export interface DeleteStylesMessage {
+  type: 'delete-styles'
+  data: {
+    styleIds: string[]
+    category: 'paint' | 'text' | 'effect' | 'grid'
+  }
+}
+
+/** Styles deleted result */
+export interface StylesDeletedMessage {
+  type: 'styles-deleted'
+  data: {
+    success: number
+    failed: number
+  }
+}
+
+/** Rename styles in bulk */
+export interface RenameStylesMessage {
+  type: 'rename-styles'
+  data: {
+    renames: { id: string; category: 'paint' | 'text' | 'effect' | 'grid'; newName: string }[]
+  }
+}
+
+/** Styles renamed result */
+export interface StylesRenamedMessage {
+  type: 'styles-renamed'
+  data: {
+    success: number
+    failed: number
+  }
+}
+
 /** Import styles from token data */
 export interface ImportStylesMessage {
   type: 'import-styles'
@@ -326,7 +391,10 @@ export type UIToMainMessage =
   | ExportVariablesMessage
   | ExportStylesMessage
   | ExportCSSMessage
+  | GetStyleDetailsMessage
   | ImportStylesMessage
+  | DeleteStylesMessage
+  | RenameStylesMessage
   | RenameVariablesMessage
   | DeleteVariablesMessage
   | RestoreVariablesMessage
@@ -454,6 +522,9 @@ export type MainToUIMessage =
   | ExportCompleteMessage
   | StylesExportCompleteMessage
   | CSSExportCompleteMessage
+  | StyleDetailsListMessage
+  | StylesDeletedMessage
+  | StylesRenamedMessage
   | ExportErrorMessage
   | ProgressUpdateMessage
   | ErrorMessage
@@ -496,7 +567,10 @@ export function isUIToMainMessage(msg: unknown): msg is UIToMainMessage {
     'export-variables',
     'export-styles',
     'export-css',
+    'get-style-details',
     'import-styles',
+    'delete-styles',
+    'rename-styles',
     'rename-variables',
     'delete-variables',
     'restore-variables',
@@ -530,6 +604,9 @@ export function isMainToUIMessage(msg: unknown): msg is MainToUIMessage {
     'export-complete',
     'styles-export-complete',
     'css-export-complete',
+    'style-details-list',
+    'styles-deleted',
+    'styles-renamed',
     'export-error',
     'progress-update',
     'error',

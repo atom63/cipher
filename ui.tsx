@@ -13,6 +13,7 @@ import { ExportPage } from './pages/ExportPage'
 import { ImportPage } from './pages/ImportPage'
 import { ManagePage } from './pages/ManagePage'
 import { SettingsPage } from './pages/SettingsPage'
+import { StylesPage } from './pages/StylesPage'
 import { StyleguidePage } from './pages/StyleguidePage'
 
 function App() {
@@ -30,7 +31,9 @@ function App() {
   const renderPage = () => {
     switch (activePage) {
       case 'manage':
-        return <PageErrorBoundary pageName="Manage"><ManagePage /></PageErrorBoundary>
+        return <PageErrorBoundary pageName="Variables"><ManagePage /></PageErrorBoundary>
+      case 'styles':
+        return <PageErrorBoundary pageName="Styles"><StylesPage /></PageErrorBoundary>
       case 'import':
         return <PageErrorBoundary pageName="Import"><ImportPage /></PageErrorBoundary>
       case 'export':

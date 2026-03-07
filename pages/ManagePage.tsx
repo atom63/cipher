@@ -199,10 +199,13 @@ export function ManagePage() {
       )
     }
 
+    const naturalCompare = (a: string, b: string) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+
     result.sort((a, b) => {
       let cmp = 0
-      if (sortField === 'name') cmp = a.name.localeCompare(b.name)
-      else if (sortField === 'collection') cmp = a.collectionName.localeCompare(b.collectionName)
+      if (sortField === 'name') cmp = naturalCompare(a.name, b.name)
+      else if (sortField === 'collection') cmp = naturalCompare(a.collectionName, b.collectionName)
       else if (sortField === 'type') cmp = a.resolvedType.localeCompare(b.resolvedType)
       return sortDir === 'asc' ? cmp : -cmp
     })
@@ -220,7 +223,7 @@ export function ManagePage() {
     }
     // Sort groups by collection name
     const sortedEntries = Array.from(groups.entries()).sort(([a], [b]) => {
-      const cmp = a.localeCompare(b)
+      const cmp = a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
       return sortField === 'collection' ? (sortDir === 'asc' ? cmp : -cmp) : cmp
     })
     return new Map(sortedEntries)

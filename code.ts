@@ -108,6 +108,122 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
       break
     }
 
+    case 'get-style-details': {
+      const paintStyles = figma.getLocalPaintStyles()
+      const textStyles = figma.getLocalTextStyles()
+      const effectStyles = figma.getLocalEffectStyles()
+      const gridStyles = figma.getLocalGridStyles()
+
+      const styles: {
+        id: string; name: string; category: string; description: string; preview: any
+      }[] = []
+
+      for (const s of paintStyles) {
+        const colors: string[] = []
+        let opacity = 1
+        for (const paint of s.paints) {
+          if (paint.type === 'SOLID') {
+            const c = (paint as SolidPaint).color
+            const r = Math.round(c.r * 255)
+            const g = Math.round(c.g * 255)
+            const b = Math.round(c.b * 255)
+            colors.push(`#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`)
+            if (paint.opacity !== undefined) opacity = paint.opacity
+          }
+        }
+        styles.push({
+          id: s.id, name: s.name, category: 'paint', description: s.description,
+          preview: { type: 'paint', colors, opacity },
+        })
+      }
+
+      for (const s of textStyles) {
+        const lh = typeof s.lineHeight === 'object' && 'value' in s.lineHeight
+          ? `${s.lineHeight.value}${s.lineHeight.unit === 'PIXELS' ? 'px' : s.lineHeight.unit === 'PERCENT' ? '%' : ''}`
+          : 'auto'
+        styles.push({
+          id: s.id, name: s.name, category: 'text', description: s.description,
+          preview: {
+            type: 'text',
+            fontFamily: s.fontName.family,
+            fontStyle: s.fontName.style,
+            fontSize: `${s.fontSize}px`,
+            lineHeight: lh,
+          },
+        })
+      }
+
+      for (const s of effectStyles) {
+        const effects = s.effects.map(e => {
+          if (e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW') {
+            return `${e.type === 'INNER_SHADOW' ? 'inset ' : ''}${e.offset.x}px ${e.offset.y}px ${e.radius}px`
+          }
+          return e.type.toLowerCase().replace('_', ' ')
+        })
+        styles.push({
+          id: s.id, name: s.name, category: 'effect', description: s.description,
+          preview: { type: 'effect', effects },
+        })
+      }
+
+      for (const s of gridStyles) {
+        const patterns = s.layoutGrids.map(g => `${g.pattern}${g.sectionSize ? ` ${g.sectionSize}px` : ''}`)
+        styles.push({
+          id: s.id, name: s.name, category: 'grid', description: s.description,
+          preview: { type: 'grid', patterns },
+        })
+      }
+
+      figma.ui.postMessage({
+        type: 'style-details-list',
+        data: {
+          styles,
+          counts: {
+            paint: paintStyles.length,
+            text: textStyles.length,
+            effect: effectStyles.length,
+            grid: gridStyles.length,
+            total: paintStyles.length + textStyles.length + effectStyles.length + gridStyles.length,
+          },
+        },
+      })
+      break
+    }
+
+    case 'delete-styles': {
+      const { styleIds, category } = msg.data
+      let success = 0
+      let failed = 0
+      for (const id of styleIds) {
+        try {
+          let style: BaseStyle | null = null
+          if (category === 'paint') style = figma.getStyleById(id) as PaintStyle | null
+          else if (category === 'text') style = figma.getStyleById(id) as TextStyle | null
+          else if (category === 'effect') style = figma.getStyleById(id) as EffectStyle | null
+          else if (category === 'grid') style = figma.getStyleById(id) as GridStyle | null
+          if (style) { style.remove(); success++ } else { failed++ }
+        } catch { failed++ }
+      }
+      figma.ui.postMessage({ type: 'styles-deleted', data: { success, failed } })
+      figma.notify(`Deleted ${success} style${success !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}`)
+      break
+    }
+
+    case 'rename-styles': {
+      const { renames } = msg.data
+      let success = 0
+      let failed = 0
+      for (const { id, newName } of renames) {
+        try {
+          const style = figma.getStyleById(id)
+          if (style) { style.name = newName; success++ } else { failed++ }
+        } catch { failed++ }
+      }
+      figma.ui.postMessage({ type: 'styles-renamed', data: { success, failed } })
+      figma.notify(`Renamed ${success} style${success !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}`)
+      break
+    }
+
     case 'get-variables': {
       const collections = figma.variables.getLocalVariableCollections()
       const filterIds = msg.data?.collectionIds
