@@ -25,7 +25,11 @@ import { Button } from "../components/ui/Button";
 import { CheckboxWithLabel } from "../components/ui/Checkbox";
 import { TabPanel, Tabs } from "../components/ui/Tabs";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
-import type { DesignToken, ParsedTokens } from "../types/tokens";
+import type {
+	DesignToken,
+	ImportUndoEntry,
+	ParsedTokens,
+} from "../types/tokens";
 import exportStyles from "./ExportPage.module.css";
 import styles from "./ImportPage.module.css";
 
@@ -80,10 +84,11 @@ export function ImportPage() {
 			oldValue?: string;
 			newValue: string;
 		}>,
+		undoData: undefined as ImportUndoEntry[] | undefined,
 	});
 
 	const postMessage = usePostMessage();
-	const { showError, showWarning } = useToast();
+	const { showError, showWarning, showSuccess } = useToast();
 
 	// State for tab-switch confirmation dialog
 	const [pendingTabSwitch, setPendingTabSwitch] = useState<{
@@ -112,8 +117,23 @@ export function ImportPage() {
 		}
 
 		if (msg.type === "variables-created" || msg.type === "import-complete") {
-			setResult(msg.data);
+			setResult({ ...msg.data, undoData: msg.data.undoData });
 			setView("success");
+		}
+
+		if (msg.type === "import-undone") {
+			const { success, failed } = msg.data;
+			if (failed > 0) {
+				showWarning(
+					`Undo partially failed: ${success} reverted, ${failed} failed`,
+				);
+			} else {
+				showSuccess(
+					`Undo complete: ${success} variable${success !== 1 ? "s" : ""} reverted`,
+				);
+			}
+			// Clear undo data so button disappears
+			setResult((prev) => ({ ...prev, undoData: undefined }));
 		}
 
 		if (msg.type === "error") {
@@ -371,10 +391,25 @@ export function ImportPage() {
 		postMessage({ type: "close" });
 	};
 
+	const handleUndoImport = () => {
+		if (result.undoData && result.undoData.length > 0) {
+			postMessage({
+				type: "undo-import",
+				data: { entries: result.undoData },
+			});
+		}
+	};
+
 	const handleImportMore = () => {
 		setView("upload");
 		setTokens([]);
-		setResult({ success: 0, failed: 0, errors: [], changes: [] });
+		setResult({
+			success: 0,
+			failed: 0,
+			errors: [],
+			changes: [],
+			undoData: undefined,
+		});
 		setImportMode("import");
 		setSelectedCollections([]);
 	};
@@ -698,9 +733,11 @@ export function ImportPage() {
 					failed={result.failed}
 					onClose={handleClose}
 					onImportMore={handleImportMore}
+					onUndo={handleUndoImport}
 					success={result.success}
 					importMode={importMode}
 					changes={result.changes}
+					undoData={result.undoData}
 				/>
 			)}
 

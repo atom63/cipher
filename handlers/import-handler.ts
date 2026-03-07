@@ -3,7 +3,11 @@
 
 /// <reference types="@figma/plugin-typings" />
 
-import type { DesignToken, ImportResults } from "../libraries/shared-types";
+import type {
+	DesignToken,
+	ImportResults,
+	ImportUndoEntry,
+} from "../libraries/shared-types";
 import { parseColorToRGBA } from "../parsers/color-parsers";
 
 // Create Figma variables from tokens (supports multi-collection with references)
@@ -21,7 +25,9 @@ export async function createVariablesFromTokens(
 		errors: [],
 		skipped: 0,
 		changes: [],
+		undoData: [],
 	};
+	const undoEntries: ImportUndoEntry[] = [];
 
 	try {
 		// Group tokens by collection
@@ -265,6 +271,18 @@ export async function createVariablesFromTokens(
 						oldValue !== undefined ? String(oldValue) : undefined;
 					const newValueStr = String(processedValue);
 
+					// Snapshot all mode values before mutation (for undo)
+					const preUpdateSnapshot =
+						!isNewVariable &&
+						!undoEntries.some(
+							(e) => e.variableId === variable.id && e.action === "updated",
+						)
+							? { ...variable.valuesByMode }
+							: null;
+					const preUpdateDescription = !isNewVariable
+						? variable.description
+						: undefined;
+
 					variable.setValueForMode(modeId, processedValue);
 
 					// Set description after setting value
@@ -273,13 +291,17 @@ export async function createVariablesFromTokens(
 					}
 					results.success++;
 
-					// Track change
+					// Track change + undo data
 					if (isNewVariable) {
 						results.changes.push({
 							name: token.figmaName,
 							type: token.type,
 							action: "created",
 							newValue: newValueStr,
+						});
+						undoEntries.push({
+							variableId: variable.id,
+							action: "created",
 						});
 					} else if (oldValueStr !== newValueStr) {
 						results.changes.push({
@@ -289,6 +311,15 @@ export async function createVariablesFromTokens(
 							oldValue: oldValueStr,
 							newValue: newValueStr,
 						});
+						// Use pre-mutation snapshot for undo
+						if (preUpdateSnapshot) {
+							undoEntries.push({
+								variableId: variable.id,
+								action: "updated",
+								previousValues: preUpdateSnapshot,
+								previousDescription: preUpdateDescription,
+							});
+						}
 					} else {
 						results.changes.push({
 							name: token.figmaName,
@@ -434,6 +465,18 @@ export async function createVariablesFromTokens(
 							: undefined;
 					const newRefId = referencedVariable.id;
 
+					// Snapshot before mutation for undo
+					const preRefSnapshot =
+						!isNewVariable &&
+						!undoEntries.some(
+							(e) => e.variableId === variable.id && e.action === "updated",
+						)
+							? { ...variable.valuesByMode }
+							: null;
+					const preRefDescription = !isNewVariable
+						? variable.description
+						: undefined;
+
 					// Set as alias for this mode
 					variable.setValueForMode(modeId, {
 						type: "VARIABLE_ALIAS",
@@ -461,6 +504,10 @@ export async function createVariablesFromTokens(
 							action: "created",
 							newValue: `→ ${newRefName}`,
 						});
+						undoEntries.push({
+							variableId: variable.id,
+							action: "created",
+						});
 					} else if (oldRefId !== newRefId) {
 						results.changes.push({
 							name: token.figmaName,
@@ -469,6 +516,14 @@ export async function createVariablesFromTokens(
 							oldValue: oldRefName ? `→ ${oldRefName}` : "unknown",
 							newValue: `→ ${newRefName}`,
 						});
+						if (preRefSnapshot) {
+							undoEntries.push({
+								variableId: variable.id,
+								action: "updated",
+								previousValues: preRefSnapshot,
+								previousDescription: preRefDescription,
+							});
+						}
 					} else {
 						results.changes.push({
 							name: token.figmaName,
@@ -488,12 +543,16 @@ export async function createVariablesFromTokens(
 			}
 		}
 
+		// Attach undo data
+		results.undoData = undoEntries;
+
 		// Log results for debugging
 		console.log(`${isOverrideMode ? "Override" : "Import"} completed:`, {
 			success: results.success,
 			failed: results.failed,
 			skipped: results.skipped,
 			totalErrors: results.errors.length,
+			undoEntries: undoEntries.length,
 		});
 
 		if (results.errors.length > 0) {
