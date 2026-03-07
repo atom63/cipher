@@ -43,16 +43,7 @@ const LAYER_OPTIONS: {
 ];
 
 /** Map token types to readable group labels */
-function getTokenTypeGroup(
-	type: string,
-):
-	| "Colors"
-	| "Spacing"
-	| "Radius"
-	| "Shadows"
-	| "Typography"
-	| "Durations"
-	| "Other" {
+function getTokenTypeGroup(type: string): string {
 	switch (type) {
 		case "color":
 			return "Colors";
@@ -65,10 +56,13 @@ function getTokenTypeGroup(
 		case "fontSize":
 		case "lineHeight":
 			return "Typography";
+		case "fontFamily":
+		case "fontWeight":
+			return "Fonts";
 		case "duration":
 			return "Durations";
 		default:
-			if (type === "number") return "Typography"; // line-height uses "number"
+			if (type === "number") return "Typography";
 			return "Other";
 	}
 }
@@ -92,6 +86,7 @@ export function GeneratePage() {
 	const [includeShadows, setIncludeShadows] = useState(true);
 	const [includeTypography, setIncludeTypography] = useState(true);
 	const [includeDurations, setIncludeDurations] = useState(true);
+	const [includeFonts, setIncludeFonts] = useState(true);
 	const [collectionName, setCollectionName] = useState("generated");
 
 	// Result state
@@ -114,6 +109,7 @@ export function GeneratePage() {
 			includeShadows,
 			includeTypography,
 			includeDurations,
+			includeFonts,
 		};
 	}, [
 		primaryColor,
@@ -129,6 +125,7 @@ export function GeneratePage() {
 		includeShadows,
 		includeTypography,
 		includeDurations,
+		includeFonts,
 	]);
 
 	// Generate preview
@@ -342,6 +339,12 @@ export function GeneratePage() {
 										checked={includeDurations}
 										onChange={setIncludeDurations}
 										label="Durations"
+									/>
+									<CheckboxWithLabel
+										id="include-fonts"
+										checked={includeFonts}
+										onChange={setIncludeFonts}
+										label="Fonts"
 									/>
 								</div>
 							</div>
@@ -586,6 +589,7 @@ const TOKEN_TYPE_ORDER = [
 	"Radius",
 	"Shadows",
 	"Typography",
+	"Fonts",
 	"Durations",
 	"Other",
 ] as const;

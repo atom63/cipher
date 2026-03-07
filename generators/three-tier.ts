@@ -16,6 +16,9 @@ import {
 	DEFAULT_RADIUS,
 	DURATION_RAW,
 	DURATION_SEMANTIC,
+	FONT_FAMILIES,
+	FONT_WEIGHTS,
+	generateResponsiveTypographyCss,
 	type RadiusConfig,
 	SHADOW_SCALE,
 	SPACING_SCALE,
@@ -54,6 +57,8 @@ export interface BrandConfig {
 	includeTypography?: boolean;
 	/** Whether to include duration tokens (default: true) */
 	includeDurations?: boolean;
+	/** Whether to include font family/weight tokens (default: true) */
+	includeFonts?: boolean;
 }
 
 export interface GeneratedSystem {
@@ -308,10 +313,10 @@ function generatePrimitives(
 		}
 	}
 
-	// --- Shadows ---
+	// --- Shadows (multi-layer) ---
 	if (config.includeShadows !== false) {
-		for (const [level, def] of Object.entries(SHADOW_SCALE)) {
-			const cssValue = shadowToCss(def);
+		for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
+			const cssValue = shadowToCss(layers);
 			tokens.push(
 				...makeDualModeTokens(
 					`shadow/${level}`,
@@ -337,6 +342,36 @@ function generatePrimitives(
 					originalValue: `${ms}ms`,
 					description: `Duration ${key}ms`,
 				}),
+			);
+		}
+	}
+
+	// --- Font families ---
+	if (config.includeFonts !== false) {
+		for (const [name, stack] of Object.entries(FONT_FAMILIES)) {
+			tokens.push(
+				...makeDualModeTokens(`font/${name}`, stack, "primitives", darkMode, {
+					type: "fontFamily",
+					originalValue: stack,
+					description: `Font family ${name}`,
+				}),
+			);
+		}
+
+		// --- Font weights ---
+		for (const [name, weight] of Object.entries(FONT_WEIGHTS)) {
+			tokens.push(
+				...makeDualModeTokens(
+					`font-weight/${name}`,
+					String(weight),
+					"primitives",
+					darkMode,
+					{
+						type: "fontWeight",
+						originalValue: String(weight),
+						description: `Font weight ${name} (${weight})`,
+					},
+				),
 			);
 		}
 	}
@@ -787,16 +822,18 @@ export function generateCss(config: BrandConfig): string {
 
 	// Shadows
 	if (config.includeShadows !== false) {
-		for (const [level, def] of Object.entries(SHADOW_SCALE)) {
-			lines.push(`  --shadow-${level}: ${shadowToCss(def)};`);
+		for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
+			lines.push(`  --shadow-${level}: ${shadowToCss(layers)};`);
 		}
 	}
 
-	// Typography
-	if (config.includeTypography !== false) {
-		for (const step of TYPE_SCALE) {
-			lines.push(`  --text-${step.name}: ${step.sizes.md}px;`);
-			lines.push(`  --leading-${step.name}: ${step.lineHeights.md}px;`);
+	// Font families
+	if (config.includeFonts !== false) {
+		for (const [name, stack] of Object.entries(FONT_FAMILIES)) {
+			lines.push(`  --font-${name}: ${stack};`);
+		}
+		for (const [name, weight] of Object.entries(FONT_WEIGHTS)) {
+			lines.push(`  --font-weight-${name}: ${weight};`);
 		}
 	}
 
@@ -847,6 +884,13 @@ export function generateCss(config: BrandConfig): string {
 		}
 
 		lines.push("}");
+	}
+
+	// Responsive typography (media queries + data-window-size)
+	if (config.includeTypography !== false) {
+		lines.push("");
+		lines.push("/* Responsive Typography */");
+		lines.push(generateResponsiveTypographyCss());
 	}
 
 	return lines.join("\n");

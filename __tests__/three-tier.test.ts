@@ -19,6 +19,7 @@ const minimalConfig: BrandConfig = {
 	includeShadows: false,
 	includeTypography: false,
 	includeDurations: false,
+	includeFonts: false,
 };
 
 describe("generateDesignSystem", () => {
@@ -287,6 +288,29 @@ describe("non-color tokens", () => {
 		expect(names).toContain("type/body/line-height");
 	});
 
+	test("generates font family and weight tokens", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			layers: "primitives",
+			darkMode: false,
+			includeSpacing: false,
+			includeRadius: false,
+			includeShadows: false,
+			includeTypography: false,
+			includeDurations: false,
+			includeFonts: true,
+		});
+		const fontTokens = result.tokens.filter(
+			(t) => t.type === "fontFamily" || t.type === "fontWeight",
+		);
+		expect(fontTokens.length).toBeGreaterThan(0);
+		const names = fontTokens.map((t) => t.figmaName);
+		expect(names).toContain("font/sans");
+		expect(names).toContain("font/mono");
+		expect(names).toContain("font-weight/bold");
+		expect(names).toContain("font-weight/normal");
+	});
+
 	test("can disable all non-color token types", () => {
 		const result = generateDesignSystem({
 			...minimalConfig,
@@ -480,7 +504,7 @@ describe("generateCss", () => {
 		expect(css).not.toContain(".dark {");
 	});
 
-	test("includes spacing, radius, shadows, typography, durations", () => {
+	test("includes spacing, radius, shadows, typography, fonts, durations", () => {
 		const css = generateCss({
 			primary: "#3B82F6",
 			darkMode: false,
@@ -488,8 +512,13 @@ describe("generateCss", () => {
 		expect(css).toContain("--spacing-4:");
 		expect(css).toContain("--radius-lg:");
 		expect(css).toContain("--shadow-3:");
-		expect(css).toContain("--text-body:");
+		expect(css).toContain("--typography-body-font-size:");
+		expect(css).toContain("--font-sans:");
+		expect(css).toContain("--font-weight-bold:");
 		expect(css).toContain("--duration-short:");
+		// Responsive typography
+		expect(css).toContain("@media (min-width: 40rem)");
+		expect(css).toContain('[data-window-size="md"]');
 	});
 });
 

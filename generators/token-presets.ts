@@ -69,7 +69,9 @@ const RADIUS_OFFSETS: Record<string, number> = {
 	full: Infinity, // special: always 9999
 };
 
-export function computeRadiusScale(config: RadiusConfig): Record<string, number> {
+export function computeRadiusScale(
+	config: RadiusConfig,
+): Record<string, number> {
 	const scale: Record<string, number> = {};
 	for (const [name, offset] of Object.entries(RADIUS_OFFSETS)) {
 		if (name === "none") {
@@ -86,10 +88,11 @@ export function computeRadiusScale(config: RadiusConfig): Record<string, number>
 export const DEFAULT_RADIUS: RadiusConfig = { anchor: 10, multiplier: 1 };
 
 // =========================================================================
-// Shadows — Elevation levels 0-6
+// Shadows — Multi-layer elevation levels 0-6
+// Each level uses layered shadows for realistic depth
 // =========================================================================
 
-export interface ShadowDef {
+export interface ShadowLayer {
 	offsetX: number;
 	offsetY: number;
 	blur: number;
@@ -97,18 +100,44 @@ export interface ShadowDef {
 	opacity: number;
 }
 
-export const SHADOW_SCALE: Record<string, ShadowDef> = {
-	"0": { offsetX: 0, offsetY: 0, blur: 0, spread: 0, opacity: 0 },
-	"1": { offsetX: 0, offsetY: 4, blur: 4, spread: -2, opacity: 0.06 },
-	"2": { offsetX: 0, offsetY: 6, blur: 6, spread: -2, opacity: 0.06 },
-	"3": { offsetX: 0, offsetY: 8, blur: 12, spread: -4, opacity: 0.08 },
-	"4": { offsetX: 0, offsetY: 12, blur: 16, spread: -4, opacity: 0.06 },
-	"5": { offsetX: 0, offsetY: 25, blur: 50, spread: -12, opacity: 0.08 },
-	"6": { offsetX: 0, offsetY: 30, blur: 60, spread: -18, opacity: 0.12 },
+/** @deprecated Use ShadowLayer instead */
+export type ShadowDef = ShadowLayer;
+
+export const SHADOW_SCALE: Record<string, ShadowLayer[]> = {
+	"0": [{ offsetX: 0, offsetY: 0, blur: 0, spread: 0, opacity: 0 }],
+	"1": [
+		{ offsetX: 0, offsetY: 1, blur: 2, spread: 0, opacity: 0.05 },
+		{ offsetX: 0, offsetY: 1, blur: 3, spread: 0, opacity: 0.1 },
+	],
+	"2": [
+		{ offsetX: 0, offsetY: 1, blur: 3, spread: 0, opacity: 0.04 },
+		{ offsetX: 0, offsetY: 4, blur: 6, spread: -1, opacity: 0.1 },
+	],
+	"3": [
+		{ offsetX: 0, offsetY: 4, blur: 6, spread: -2, opacity: 0.05 },
+		{ offsetX: 0, offsetY: 10, blur: 15, spread: -3, opacity: 0.1 },
+	],
+	"4": [
+		{ offsetX: 0, offsetY: 8, blur: 10, spread: -3, opacity: 0.04 },
+		{ offsetX: 0, offsetY: 20, blur: 25, spread: -5, opacity: 0.1 },
+	],
+	"5": [
+		{ offsetX: 0, offsetY: 10, blur: 15, spread: -3, opacity: 0.04 },
+		{ offsetX: 0, offsetY: 25, blur: 50, spread: -12, opacity: 0.1 },
+	],
+	"6": [
+		{ offsetX: 0, offsetY: 12, blur: 20, spread: -4, opacity: 0.04 },
+		{ offsetX: 0, offsetY: 30, blur: 60, spread: -18, opacity: 0.12 },
+	],
 };
 
-export function shadowToCss(def: ShadowDef): string {
-	return `${def.offsetX}px ${def.offsetY}px ${def.blur}px ${def.spread}px rgba(0, 0, 0, ${def.opacity})`;
+function shadowLayerToCss(layer: ShadowLayer): string {
+	return `${layer.offsetX}px ${layer.offsetY}px ${layer.blur}px ${layer.spread}px rgba(0, 0, 0, ${layer.opacity})`;
+}
+
+export function shadowToCss(defOrLayers: ShadowLayer | ShadowLayer[]): string {
+	const layers = Array.isArray(defOrLayers) ? defOrLayers : [defOrLayers];
+	return layers.map(shadowLayerToCss).join(", ");
 }
 
 // =========================================================================
@@ -184,7 +213,7 @@ export const TYPE_SCALE: TypeStep[] = [
 // =========================================================================
 
 export const DURATION_RAW: Record<string, number> = {
-	"none": 0,
+	none: 0,
 	"83": 83,
 	"167": 167,
 	"250": 250,
@@ -206,3 +235,101 @@ export const DURATION_SEMANTIC: Record<string, string> = {
 	long: "1000",
 	xlong: "1500",
 };
+
+// =========================================================================
+// Font families — Semantic font stack tokens
+// =========================================================================
+
+export const FONT_FAMILIES: Record<string, string> = {
+	sans: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+	serif: "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif",
+	mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+};
+
+// =========================================================================
+// Font weights — Named weight scale
+// =========================================================================
+
+export const FONT_WEIGHTS: Record<string, number> = {
+	thin: 100,
+	extralight: 200,
+	light: 300,
+	normal: 400,
+	medium: 500,
+	semibold: 600,
+	bold: 700,
+	extrabold: 800,
+	black: 900,
+};
+
+// =========================================================================
+// Responsive typography CSS generator
+// =========================================================================
+
+const BREAKPOINTS = [
+	{ name: "sm", minWidth: "40rem" },
+	{ name: "md", minWidth: "48rem" },
+] as const;
+
+type BreakpointKey = "min" | "sm" | "md";
+
+/** Generate responsive typography CSS with media queries + data-window-size attributes */
+export function generateResponsiveTypographyCss(): string {
+	const lines: string[] = [];
+
+	// :root — base (min) values
+	lines.push(":root {");
+	for (const step of TYPE_SCALE) {
+		lines.push(`  --typography-${step.name}-font-size: ${step.sizes.min}px;`);
+		lines.push(
+			`  --typography-${step.name}-line-height: ${step.lineHeights.min}px;`,
+		);
+	}
+	lines.push("}");
+
+	// data-window-size="xs" mirrors :root (mobile baseline)
+	lines.push("");
+	lines.push('[data-window-size="xs"] {');
+	for (const step of TYPE_SCALE) {
+		lines.push(`  --typography-${step.name}-font-size: ${step.sizes.min}px;`);
+		lines.push(
+			`  --typography-${step.name}-line-height: ${step.lineHeights.min}px;`,
+		);
+	}
+	lines.push("}");
+
+	// Responsive breakpoints
+	for (const bp of BREAKPOINTS) {
+		const key = bp.name as BreakpointKey;
+
+		// Media query
+		lines.push("");
+		lines.push(`@media (min-width: ${bp.minWidth}) {`);
+		lines.push("  :root {");
+		for (const step of TYPE_SCALE) {
+			lines.push(
+				`    --typography-${step.name}-font-size: ${step.sizes[key]}px;`,
+			);
+			lines.push(
+				`    --typography-${step.name}-line-height: ${step.lineHeights[key]}px;`,
+			);
+		}
+		lines.push("  }");
+		lines.push("}");
+
+		// data-window-size attribute
+		lines.push("");
+		lines.push(`[data-window-size="${bp.name}"] {`);
+		for (const step of TYPE_SCALE) {
+			lines.push(
+				`  --typography-${step.name}-font-size: ${step.sizes[key]}px;`,
+			);
+			lines.push(
+				`  --typography-${step.name}-line-height: ${step.lineHeights[key]}px;`,
+			);
+		}
+		lines.push("}");
+	}
+
+	return lines.join("\n");
+}
