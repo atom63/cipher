@@ -1,4 +1,4 @@
-import { ArrowLeft, Sparkles, Wand2 } from "lucide-react";
+import { ArrowLeft, ClipboardCopy, Sparkles, Wand2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
 import { SectionHeader, useToast } from "../components/ui";
@@ -10,6 +10,7 @@ import { RADIX_GRAYS } from "../generators/radix-grays";
 import {
 	type BrandConfig,
 	type GeneratedSystem,
+	generateCss,
 	generateDesignSystem,
 	type LayerMode,
 } from "../generators/three-tier";
@@ -41,10 +42,41 @@ const LAYER_OPTIONS: {
 	},
 ];
 
+/** Map token types to readable group labels */
+function getTokenTypeGroup(
+	type: string,
+):
+	| "Colors"
+	| "Spacing"
+	| "Radius"
+	| "Shadows"
+	| "Typography"
+	| "Durations"
+	| "Other" {
+	switch (type) {
+		case "color":
+			return "Colors";
+		case "spacing":
+			return "Spacing";
+		case "borderRadius":
+			return "Radius";
+		case "boxShadow":
+			return "Shadows";
+		case "fontSize":
+		case "lineHeight":
+			return "Typography";
+		case "duration":
+			return "Durations";
+		default:
+			if (type === "number") return "Typography"; // line-height uses "number"
+			return "Other";
+	}
+}
+
 export function GeneratePage() {
 	const [view, setView] = useState<ViewState>("config");
 	const postMessage = usePostMessage();
-	const { showError } = useToast();
+	const { showError, showSuccess } = useToast();
 
 	// Config state
 	const [primaryColor, setPrimaryColor] = useState("#3B82F6");
@@ -60,16 +92,17 @@ export function GeneratePage() {
 	const [includeShadows, setIncludeShadows] = useState(true);
 	const [includeTypography, setIncludeTypography] = useState(true);
 	const [includeDurations, setIncludeDurations] = useState(true);
+	const [collectionName, setCollectionName] = useState("generated");
 
 	// Result state
 	const [result, setResult] = useState<ImportResults | null>(null);
 
-	// Generate preview
-	const generated: GeneratedSystem | null = useMemo(() => {
+	// Build config object (shared between preview and CSS export)
+	const brandConfig: BrandConfig | null = useMemo(() => {
 		if (!/^#[0-9a-fA-F]{6}$/.test(primaryColor)) return null;
 		if (hasSecondary && !/^#[0-9a-fA-F]{6}$/.test(secondaryColor)) return null;
 
-		const config: BrandConfig = {
+		return {
 			primary: primaryColor,
 			secondary: hasSecondary ? secondaryColor : undefined,
 			grayName,
@@ -82,8 +115,6 @@ export function GeneratePage() {
 			includeTypography,
 			includeDurations,
 		};
-
-		return generateDesignSystem(config);
 	}, [
 		primaryColor,
 		secondaryColor,
@@ -99,6 +130,12 @@ export function GeneratePage() {
 		includeTypography,
 		includeDurations,
 	]);
+
+	// Generate preview
+	const generated: GeneratedSystem | null = useMemo(() => {
+		if (!brandConfig) return null;
+		return generateDesignSystem(brandConfig);
+	}, [brandConfig]);
 
 	// Listen for import result
 	useFigmaMessage((msg: any) => {
@@ -122,10 +159,19 @@ export function GeneratePage() {
 			type: "create-variables",
 			data: {
 				tokens: generated.tokens,
-				collectionName: "generated",
+				collectionName,
 				importMode: "import",
 			},
 		});
+	};
+
+	const handleCopyCss = () => {
+		if (!brandConfig) return;
+		const css = generateCss(brandConfig);
+		navigator.clipboard.writeText(css).then(
+			() => showSuccess("CSS copied to clipboard"),
+			() => showError("Failed to copy CSS"),
+		);
 	};
 
 	const handleReset = () => {
@@ -302,38 +348,57 @@ export function GeneratePage() {
 
 							{/* Radius config */}
 							{includeRadius && (
-								<div className={styles.optionsRow}>
-									<div className={styles.optionGroup}>
-										<label>Radius anchor (px)</label>
-										<Input
-											type="number"
-											value={radiusAnchor}
-											onChange={(e) =>
-												setRadiusAnchor(
-													Math.max(0, Number(e.target.value) || 0),
-												)
-											}
-											min={0}
-											max={32}
-										/>
+								<div className={styles.colorInputGroup}>
+									<label>Radius</label>
+									<div className={styles.optionsRow}>
+										<div className={styles.optionGroup}>
+											<label>Anchor (px)</label>
+											<Input
+												type="number"
+												value={radiusAnchor}
+												onChange={(e) =>
+													setRadiusAnchor(
+														Math.max(0, Number(e.target.value) || 0),
+													)
+												}
+												min={0}
+												max={32}
+											/>
+										</div>
+										<div className={styles.optionGroup}>
+											<label>Multiplier</label>
+											<Input
+												type="number"
+												value={radiusMultiplier}
+												onChange={(e) =>
+													setRadiusMultiplier(
+														Math.max(0, Number(e.target.value) || 0),
+													)
+												}
+												min={0}
+												max={3}
+												step={0.1}
+											/>
+										</div>
 									</div>
-									<div className={styles.optionGroup}>
-										<label>Radius multiplier</label>
-										<Input
-											type="number"
-											value={radiusMultiplier}
-											onChange={(e) =>
-												setRadiusMultiplier(
-													Math.max(0, Number(e.target.value) || 0),
-												)
-											}
-											min={0}
-											max={3}
-											step={0.1}
-										/>
-									</div>
+									{/* Radius live preview */}
+									{generated?.radiusScale && (
+										<RadiusPreview scale={generated.radiusScale} />
+									)}
 								</div>
 							)}
+
+							{/* Collection name */}
+							<div className={styles.colorInputGroup}>
+								<label>Collection name</label>
+								<Input
+									value={collectionName}
+									onChange={(e) =>
+										setCollectionName(e.target.value || "generated")
+									}
+									placeholder="generated"
+								/>
+							</div>
 
 							{/* Preview button */}
 							<div className={styles.actions}>
@@ -354,7 +419,7 @@ export function GeneratePage() {
 					<>
 						<SectionHeader
 							title="Preview"
-							description={`${generated.stats.totalCount} tokens across ${generated.primitives.length} color scales`}
+							description={`${generated.stats.totalCount} tokens in "${collectionName}"`}
 						/>
 
 						<div className={styles.previewSection}>
@@ -378,6 +443,7 @@ export function GeneratePage() {
 
 							{/* Color scale previews */}
 							<div className={styles.scalePreview}>
+								{/* Brand/secondary scales (50-950) */}
 								{generated.primitives.map((scale) => (
 									<div key={scale.name} className={styles.scaleRow}>
 										<span className={styles.scaleLabel}>{scale.name}</span>
@@ -395,7 +461,43 @@ export function GeneratePage() {
 										</div>
 									</div>
 								))}
+
+								{/* Radix gray scale (1-12) */}
+								{generated.radixGray && (
+									<div className={styles.scaleRow}>
+										<span className={styles.scaleLabel}>
+											{generated.radixGray.name} (surface)
+										</span>
+										<div className={styles.scaleSwatches}>
+											{generated.radixGray.light.map((hex, i) => (
+												<div
+													key={i}
+													className={styles.scaleSwatch}
+													style={{ backgroundColor: hex }}
+													title={`${i + 1}: ${hex}`}
+												/>
+											))}
+										</div>
+										{darkMode && (
+											<div className={styles.scaleSwatches}>
+												{generated.radixGray.dark.map((hex, i) => (
+													<div
+														key={i}
+														className={styles.scaleSwatch}
+														style={{ backgroundColor: hex }}
+														title={`${i + 1}: ${hex} (dark)`}
+													/>
+												))}
+											</div>
+										)}
+									</div>
+								)}
 							</div>
+
+							{/* Radius preview in preview step */}
+							{generated.radiusScale && (
+								<RadiusPreview scale={generated.radiusScale} />
+							)}
 
 							{/* Token list */}
 							<TokenPreviewList generated={generated} />
@@ -405,6 +507,10 @@ export function GeneratePage() {
 								<Button variant="ghost" onClick={() => setView("config")}>
 									<ArrowLeft size={14} />
 									Back
+								</Button>
+								<Button variant="ghost" onClick={handleCopyCss}>
+									<ClipboardCopy size={14} />
+									Copy CSS
 								</Button>
 								<Button variant="primary" onClick={handleGenerate}>
 									<Wand2 size={14} />
@@ -446,13 +552,48 @@ export function GeneratePage() {
 	return null;
 }
 
+// --- Radius visual preview ---
+
+function RadiusPreview({ scale }: { scale: Record<string, number> }) {
+	// Filter out 'none' and 'full' for the visual
+	const entries = Object.entries(scale).filter(
+		([name]) => name !== "none" && name !== "full",
+	);
+
+	return (
+		<div className={styles.radiusPreview}>
+			{entries.map(([name, px]) => (
+				<div key={name} className={styles.radiusItem}>
+					<div
+						className={styles.radiusSample}
+						style={{ borderRadius: `${Math.min(px, 20)}px` }}
+					/>
+					<span className={styles.radiusLabel}>
+						{name}
+						<span className={styles.radiusValue}>{px}px</span>
+					</span>
+				</div>
+			))}
+		</div>
+	);
+}
+
 // --- Token preview list component ---
+
+const TOKEN_TYPE_ORDER = [
+	"Colors",
+	"Spacing",
+	"Radius",
+	"Shadows",
+	"Typography",
+	"Durations",
+	"Other",
+] as const;
 
 function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 	const [expanded, setExpanded] = useState(false);
-	const limit = expanded ? generated.tokens.length : 30;
+	const limit = expanded ? generated.tokens.length : 20;
 
-	// Group tokens by category — deduplicate by figmaName (modes create duplicates)
 	const categories = ["primitives", "abstractions", "semantics"] as const;
 
 	return (
@@ -461,7 +602,7 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 				const catTokens = generated.tokens.filter((t) => t.category === cat);
 				if (catTokens.length === 0) return null;
 
-				// Deduplicate by figmaName (show unique names, not per-mode entries)
+				// Deduplicate by figmaName (modes create duplicates)
 				const seen = new Set<string>();
 				const unique = catTokens.filter((t) => {
 					if (seen.has(t.figmaName)) return false;
@@ -469,52 +610,53 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 					return true;
 				});
 
-				const displayed = unique.slice(0, limit);
+				// Sub-group by token type
+				const grouped = new Map<string, typeof unique>();
+				for (const token of unique) {
+					const group = getTokenTypeGroup(token.type);
+					const arr = grouped.get(group) ?? [];
+					if (!grouped.has(group)) grouped.set(group, arr);
+					arr.push(token);
+				}
+
+				// Sort groups by defined order
+				const sortedGroups = TOKEN_TYPE_ORDER.filter((g) => grouped.has(g)).map(
+					(g) => ({ group: g, tokens: grouped.get(g) ?? [] }),
+				);
 
 				return (
 					<div key={cat}>
 						<div className={styles.tokenCategoryHeader}>
 							{cat} ({unique.length})
 						</div>
-						{displayed.map((token) => (
-							<div key={token.id} className={styles.tokenRow}>
-								{token.type === "color" &&
-									typeof token.value === "object" &&
-									"r" in token.value && (
-										<div
-											className={styles.tokenColorDot}
-											style={{
-												backgroundColor: `rgb(${Math.round(token.value.r * 255)}, ${Math.round(token.value.g * 255)}, ${Math.round(token.value.b * 255)})`,
-											}}
-										/>
+						{sortedGroups.map(({ group, tokens: groupTokens }) => {
+							const displayed = groupTokens.slice(0, limit);
+							return (
+								<div key={group}>
+									{sortedGroups.length > 1 && (
+										<div className={styles.tokenSubgroupHeader}>
+											{group} ({groupTokens.length})
+										</div>
 									)}
-								{typeof token.value === "number" && (
-									<div
-										className={styles.tokenColorDot}
-										style={{
-											backgroundColor: "transparent",
-											border: "1px dashed var(--border)",
-										}}
-									/>
-								)}
-								{typeof token.value === "string" && (
-									<div
-										className={styles.tokenColorDot}
-										style={{
-											backgroundColor: "transparent",
-											border: "1px dashed var(--border)",
-										}}
-									/>
-								)}
-								<span className={styles.tokenName}>{token.figmaName}</span>
-								<span className={styles.tokenValue}>{token.originalValue}</span>
-							</div>
-						))}
+									{displayed.map((token) => (
+										<div key={token.id} className={styles.tokenRow}>
+											<TokenIndicator token={token} />
+											<span className={styles.tokenName}>
+												{token.figmaName}
+											</span>
+											<span className={styles.tokenValue}>
+												{token.originalValue}
+											</span>
+										</div>
+									))}
+								</div>
+							);
+						})}
 					</div>
 				);
 			})}
 
-			{generated.tokens.length > 30 && (
+			{generated.tokens.length > 40 && (
 				<Button
 					variant="ghost"
 					size="sm"
@@ -526,5 +668,33 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 				</Button>
 			)}
 		</div>
+	);
+}
+
+// --- Token indicator dot ---
+
+function TokenIndicator({ token }: { token: { type: string; value: any } }) {
+	if (
+		token.type === "color" &&
+		typeof token.value === "object" &&
+		"r" in token.value
+	) {
+		return (
+			<div
+				className={styles.tokenColorDot}
+				style={{
+					backgroundColor: `rgb(${Math.round(token.value.r * 255)}, ${Math.round(token.value.g * 255)}, ${Math.round(token.value.b * 255)})`,
+				}}
+			/>
+		);
+	}
+	return (
+		<div
+			className={styles.tokenColorDot}
+			style={{
+				backgroundColor: "transparent",
+				border: "1px dashed var(--border)",
+			}}
+		/>
 	);
 }

@@ -60,6 +60,10 @@ export interface GeneratedSystem {
 	tokens: DesignToken[];
 	primitives: ColorScale[];
 	abstractions: AbstractionMapping[];
+	/** The selected Radix gray palette (null if name didn't match) */
+	radixGray: RadixGrayScale | null;
+	/** Computed radius scale (t-shirt sizes -> px) */
+	radiusScale: Record<string, number> | null;
 	stats: {
 		primitiveCount: number;
 		abstractionCount: number;
@@ -915,10 +919,15 @@ export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 		semanticCount = semanticTokens.length;
 	}
 
+	const radiusConfig = config.radius ?? DEFAULT_RADIUS;
+
 	return {
 		tokens,
 		primitives: scales,
 		abstractions: abstractionMappings,
+		radixGray: radixGray ?? null,
+		radiusScale:
+			config.includeRadius !== false ? computeRadiusScale(radiusConfig) : null,
 		stats: {
 			primitiveCount,
 			abstractionCount,
