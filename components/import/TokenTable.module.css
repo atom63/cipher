@@ -201,3 +201,10 @@
   font-size: var(--text-base);
 }
 
+.validationList {
+  margin: var(--spacing-xs) 0 0;
+  padding-left: var(--spacing-lg);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+

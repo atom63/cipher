@@ -87,9 +87,23 @@ export function ManagePage() {
 
 	useFigmaMessage((msg) => {
 		if (msg.type === "variables-list") {
-			setVariables(msg.data.variables);
+			const vars: VariableInfo[] = msg.data.variables;
+			setVariables(vars);
 			setCollections(msg.data.collections);
 			setLoading(false);
+
+			// Auto-collapse large groups (50+ variables) on initial load
+			if (loading) {
+				const counts = new Map<string, number>();
+				for (const v of vars) {
+					counts.set(v.collectionName, (counts.get(v.collectionName) || 0) + 1);
+				}
+				const largeGroups = new Set<string>();
+				for (const [name, count] of counts) {
+					if (count >= 50) largeGroups.add(name);
+				}
+				if (largeGroups.size > 0) setCollapsedGroups(largeGroups);
+			}
 		} else if (msg.type === "variables-renamed") {
 			const { success, failed, previousNames } = msg.data;
 			if (failed > 0) {
