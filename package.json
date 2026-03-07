@@ -10,8 +10,13 @@
 		"build": "node build.js",
 		"tokens": "tsx exports/scripts/generate-tokens.ts",
 		"tokens:watch": "tsx watch exports/scripts/generate-tokens.ts",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"typecheck": "tsc --noEmit",
 		"format": "npx ultracite fix",
-		"lint": "npx ultracite check"
+		"lint": "npx ultracite check",
+		"check": "pnpm typecheck && pnpm lint && pnpm test"
 	},
 	"dependencies": {
 		"lucide-react": "^0.562.0",
@@ -27,7 +32,8 @@
 		"esbuild": "^0.24.0",
 		"sass": "^1.81.0",
 		"tsx": "^4.19.2",
-		"typescript": "^5.7.2"
+		"typescript": "^5.7.2",
+		"vitest": "^4.0.18"
 	},
 	"engines": {
 		"node": ">=18.0.0"

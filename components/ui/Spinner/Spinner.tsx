@@ -1,23 +1,22 @@
-import type { ReactNode } from 'react'
-import styles from './Spinner.module.css'
+import type { ReactNode } from "react";
+import styles from "./Spinner.module.css";
 
 // ============================================================================
 // SPINNER
 // ============================================================================
 
 export interface SpinnerProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl'
-  className?: string
+	size?: "sm" | "md" | "lg" | "xl";
+	className?: string;
 }
 
-export function Spinner({ size = 'md', className = '' }: SpinnerProps) {
-  return (
-    <div
-      className={`${styles.spinner} ${styles[size]} ${className}`}
-      role="status"
-      aria-label="Loading"
-    />
-  )
+export function Spinner({ size = "md", className = "" }: SpinnerProps) {
+	return (
+		<output
+			className={`${styles.spinner} ${styles[size]} ${className}`}
+			aria-label="Loading"
+		/>
+	);
 }
 
 // ============================================================================
@@ -25,25 +24,25 @@ export function Spinner({ size = 'md', className = '' }: SpinnerProps) {
 // ============================================================================
 
 export interface LoadingStateProps {
-  message?: string
-  hint?: string
-  size?: 'sm' | 'md' | 'lg'
-  children?: ReactNode
+	message?: string;
+	hint?: string;
+	size?: "sm" | "md" | "lg";
+	children?: ReactNode;
 }
 
 export function LoadingState({
-  message,
-  hint,
-  size = 'md',
-  children,
+	message,
+	hint,
+	size = "md",
+	children,
 }: LoadingStateProps) {
-  return (
-    <div className={styles.loadingState}>
-      {children || <Spinner size={size} />}
-      {message && <p className={styles.message}>{message}</p>}
-      {hint && <p className={styles.hint}>{hint}</p>}
-    </div>
-  )
+	return (
+		<div className={styles.loadingState}>
+			{children || <Spinner size={size} />}
+			{message && <p className={styles.message}>{message}</p>}
+			{hint && <p className={styles.hint}>{hint}</p>}
+		</div>
+	);
 }
 
 // ============================================================================
@@ -51,22 +50,25 @@ export function LoadingState({
 // ============================================================================
 
 export interface LoadingOverlayProps {
-  message?: string
-  visible?: boolean
+	message?: string;
+	visible?: boolean;
 }
 
 /**
  * Overlay that covers parent element with loading indicator
  * Parent must have position: relative
  */
-export function LoadingOverlay({ message, visible = true }: LoadingOverlayProps) {
-  if (!visible) return null
+export function LoadingOverlay({
+	message,
+	visible = true,
+}: LoadingOverlayProps) {
+	if (!visible) return null;
 
-  return (
-    <div className={styles.overlay}>
-      <LoadingState message={message} size="md" />
-    </div>
-  )
+	return (
+		<div className={styles.overlay}>
+			<LoadingState message={message} size="md" />
+		</div>
+	);
 }
 
 // ============================================================================
@@ -74,20 +76,20 @@ export function LoadingOverlay({ message, visible = true }: LoadingOverlayProps)
 // ============================================================================
 
 export interface InlineLoadingProps {
-  message?: string
-  className?: string
+	message?: string;
+	className?: string;
 }
 
 /**
  * Inline loading indicator for use within text or buttons
  */
-export function InlineLoading({ message, className = '' }: InlineLoadingProps) {
-  return (
-    <span className={`${styles.inline} ${className}`}>
-      <Spinner size="sm" />
-      {message && <span>{message}</span>}
-    </span>
-  )
+export function InlineLoading({ message, className = "" }: InlineLoadingProps) {
+	return (
+		<span className={`${styles.inline} ${className}`}>
+			<Spinner size="sm" />
+			{message && <span>{message}</span>}
+		</span>
+	);
 }
 
 // ============================================================================
@@ -95,39 +97,39 @@ export function InlineLoading({ message, className = '' }: InlineLoadingProps) {
 // ============================================================================
 
 export interface ProgressProps {
-  /** Progress value 0-100 */
-  value: number
-  /** Show percentage text */
-  showText?: boolean
-  /** Custom label */
-  label?: string
-  className?: string
+	/** Progress value 0-100 */
+	value: number;
+	/** Show percentage text */
+	showText?: boolean;
+	/** Custom label */
+	label?: string;
+	className?: string;
 }
 
 /**
  * Progress bar with optional percentage display
  */
 export function Progress({
-  value,
-  showText = true,
-  label,
-  className = '',
+	value,
+	showText = true,
+	label,
+	className = "",
 }: ProgressProps) {
-  const clampedValue = Math.max(0, Math.min(100, value))
+	const clampedValue = Math.max(0, Math.min(100, value));
 
-  return (
-    <div className={`${styles.progress} ${className}`}>
-      <div className={styles.progressBar}>
-        <div
-          className={styles.progressFill}
-          style={{ width: `${clampedValue}%` }}
-        />
-      </div>
-      {showText && (
-        <span className={styles.progressText}>
-          {label || `${Math.round(clampedValue)}%`}
-        </span>
-      )}
-    </div>
-  )
+	return (
+		<div className={`${styles.progress} ${className}`}>
+			<div className={styles.progressBar}>
+				<div
+					className={styles.progressFill}
+					style={{ width: `${clampedValue}%` }}
+				/>
+			</div>
+			{showText && (
+				<span className={styles.progressText}>
+					{label || `${Math.round(clampedValue)}%`}
+				</span>
+			)}
+		</div>
+	);
 }

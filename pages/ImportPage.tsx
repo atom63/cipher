@@ -14,7 +14,12 @@ import {
 	SuccessView,
 	TokenTable,
 } from "../components/import";
-import { RadioGroup, SectionHeader, useToast, ConfirmDialog } from "../components/ui";
+import {
+	ConfirmDialog,
+	RadioGroup,
+	SectionHeader,
+	useToast,
+} from "../components/ui";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 import { CheckboxWithLabel } from "../components/ui/Checkbox";
@@ -59,7 +64,7 @@ export function ImportPage() {
 		grid: [],
 	});
 	const [selectedStyleGroups, setSelectedStyleGroups] = useState<
-		{ category: string; group: string }[]
+		{ category: "paint" | "text" | "effect" | "grid"; group: string }[]
 	>([]);
 	const [collectionName, setCollectionName] = useState("Design Tokens");
 	const [importMode, setImportMode] = useState<"import" | "override">("import");
@@ -167,7 +172,8 @@ export function ImportPage() {
 		if (activeTab !== "variables") {
 			setPendingTabSwitch({
 				targetTab: "variables",
-				message: "This is a Variables file, but you're in the Styles tab. Switch to Variables tab?",
+				message:
+					"This is a Variables file, but you're in the Styles tab. Switch to Variables tab?",
 				callback: () => {
 					setActiveTab("variables");
 					applyTokens();
@@ -188,12 +194,15 @@ export function ImportPage() {
 				const groups = parseStyleGroups(data.styles);
 				setStylesByCategory(groups);
 
-				const allGroups: { category: string; group: string }[] = [];
-				Object.entries(groups).forEach(([category, styleGroups]) => {
-					styleGroups.forEach((group: StyleGroup) => {
+				const allGroups: {
+					category: "paint" | "text" | "effect" | "grid";
+					group: string;
+				}[] = [];
+				for (const category of ["paint", "text", "effect", "grid"] as const) {
+					for (const group of groups[category] || []) {
 						allGroups.push({ category, group: group.name });
-					});
-				});
+					}
+				}
 				setSelectedStyleGroups(allGroups);
 			}
 
@@ -204,7 +213,8 @@ export function ImportPage() {
 			if (activeTab !== "styles") {
 				setPendingTabSwitch({
 					targetTab: "styles",
-					message: "This is a Styles export file, but you're in the Variables tab. Switch to Styles tab?",
+					message:
+						"This is a Styles export file, but you're in the Variables tab. Switch to Styles tab?",
 					callback: () => {
 						setActiveTab("styles");
 						applyStylesData();
@@ -220,7 +230,8 @@ export function ImportPage() {
 			if (activeTab !== "variables") {
 				setPendingTabSwitch({
 					targetTab: "variables",
-					message: "This is a Variables export file, but you're in the Styles tab. Switch to Variables tab?",
+					message:
+						"This is a Variables export file, but you're in the Styles tab. Switch to Variables tab?",
 					callback: () => {
 						setActiveTab("variables");
 					},
@@ -238,7 +249,7 @@ export function ImportPage() {
 	};
 
 	const handleCollectionSelected = (
-		mode: "new" | "existing",
+		_mode: "new" | "existing",
 		name: string,
 		impMode?: "import" | "override",
 		collections?: string[],
@@ -253,7 +264,10 @@ export function ImportPage() {
 		setView("review");
 	};
 
-	const handleToggleStyleGroup = (category: string, group: string) => {
+	const handleToggleStyleGroup = (
+		category: "paint" | "text" | "effect" | "grid",
+		group: string,
+	) => {
 		setSelectedStyleGroups((prev) => {
 			const exists = prev.some(
 				(g) => g.category === category && g.group === group,
@@ -278,17 +292,23 @@ export function ImportPage() {
 			setSelectedStyleGroups([]);
 		} else {
 			// Select all
-			const allGroups: { category: string; group: string }[] = [];
-			Object.entries(stylesByCategory).forEach(([category, groups]) => {
-				groups.forEach((group: StyleGroup) => {
+			const allGroups: {
+				category: "paint" | "text" | "effect" | "grid";
+				group: string;
+			}[] = [];
+			for (const category of ["paint", "text", "effect", "grid"] as const) {
+				for (const group of stylesByCategory[category] || []) {
 					allGroups.push({ category, group: group.name });
-				});
-			});
+				}
+			}
 			setSelectedStyleGroups(allGroups);
 		}
 	};
 
-	const isStyleGroupSelected = (category: string, group: string) => {
+	const isStyleGroupSelected = (
+		category: "paint" | "text" | "effect" | "grid",
+		group: string,
+	) => {
 		return selectedStyleGroups.some(
 			(g) => g.category === category && g.group === group,
 		);

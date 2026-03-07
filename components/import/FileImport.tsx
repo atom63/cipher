@@ -1,156 +1,163 @@
-import type React from 'react'
-import { useRef, useState } from 'react'
-import { Button, SectionHeader, Textarea, LoadingState, useToast } from '../ui'
-import { usePostMessage } from '../../hooks/useFigmaMessage'
-import { FileText, Upload } from 'lucide-react'
-import type { ParsedTokens } from '../../types/tokens'
-import { getErrorMessage } from '../../utils/error-handler'
-import styles from './FileImport.module.css'
+import { FileText } from "lucide-react";
+import type React from "react";
+import { useRef, useState } from "react";
+import { usePostMessage } from "../../hooks/useFigmaMessage";
+import type { ParsedTokens } from "../../types/tokens";
+import { getErrorMessage } from "../../utils/error-handler";
+import { Button, LoadingState, SectionHeader, Textarea, useToast } from "../ui";
+import styles from "./FileImport.module.css";
 
 interface FileImportProps {
-  onTokensParsed: (tokens: ParsedTokens) => void
-  onFileParsed?: (data: any) => void
+	onTokensParsed: (tokens: ParsedTokens) => void;
+	onFileParsed?: (data: any) => void;
 }
 
-export function FileImport({ onTokensParsed, onFileParsed }: FileImportProps) {
-  const [isDragging, setIsDragging] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [pastedContent, setPastedContent] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const { showError } = useToast()
-  const postMessage = usePostMessage()
+export function FileImport({
+	onTokensParsed: _onTokensParsed,
+	onFileParsed,
+}: FileImportProps) {
+	const [isDragging, setIsDragging] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const [pastedContent, setPastedContent] = useState("");
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const { showError } = useToast();
+	const postMessage = usePostMessage();
 
-  const handleFile = async (file: File) => {
-    setIsLoading(true)
-    try {
-      const content = await file.text()
-      parseContent(content)
-    } catch (error) {
-      showError(`Error reading file: ${getErrorMessage(error)}`)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+	const handleFile = async (file: File) => {
+		setIsLoading(true);
+		try {
+			const content = await file.text();
+			parseContent(content);
+		} catch (error) {
+			showError(`Error reading file: ${getErrorMessage(error)}`);
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
-  const parseContent = (content: string) => {
-    // Try to parse as JSON first to detect file type
-    try {
-      const data = JSON.parse(content)
-      
-      // Check if it's a styles export file
-      if (data.$schema === 'figma-styles-export' && onFileParsed) {
-        onFileParsed(data)
-        return
-      }
-    } catch (e) {
-      // If JSON parse fails, fall back to backend parser
-    }
-    
-    // Send to plugin backend for parsing (for variable tokens)
-    postMessage({
-      type: 'parse-tokens',
-      data: { content },
-    })
-  }
+	const parseContent = (content: string) => {
+		// Try to parse as JSON first to detect file type
+		try {
+			const data = JSON.parse(content);
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
+			// Check if it's a styles export file
+			if (data.$schema === "figma-styles-export" && onFileParsed) {
+				onFileParsed(data);
+				return;
+			}
+		} catch (_e) {
+			// If JSON parse fails, fall back to backend parser
+		}
 
-    const file = e.dataTransfer.files[0]
-    if (file) {
-      handleFile(file)
-    }
-  }
+		// Send to plugin backend for parsing (for variable tokens)
+		postMessage({
+			type: "parse-tokens",
+			data: { content },
+		});
+	};
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
+	const handleDrop = (e: React.DragEvent) => {
+		e.preventDefault();
+		setIsDragging(false);
 
-  const handleDragLeave = () => {
-    setIsDragging(false)
-  }
+		const file = e.dataTransfer.files[0];
+		if (file) {
+			handleFile(file);
+		}
+	};
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      handleFile(file)
-    }
-  }
+	const handleDragOver = (e: React.DragEvent) => {
+		e.preventDefault();
+		setIsDragging(true);
+	};
 
-  const handlePaste = () => {
-    if (pastedContent.trim()) {
-      parseContent(pastedContent)
-    }
-  }
+	const handleDragLeave = () => {
+		setIsDragging(false);
+	};
 
-  return (
-    <div className={styles.fileImport}>
-      <SectionHeader
-        variant="secondary"
-        title="Import Design Tokens"
-        description="Upload or paste your design tokens to sync with Figma"
-      />
+	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			handleFile(file);
+		}
+	};
 
-      {/* File Drop Zone */}
-      <div
-        className={`${styles.dropZone} ${isDragging ? styles.dragging : ''}`}
-        onClick={() => fileInputRef.current?.click()}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
-        <input
-          accept=".json"
-          onChange={handleFileSelect}
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          type="file"
-        />
+	const handlePaste = () => {
+		if (pastedContent.trim()) {
+			parseContent(pastedContent);
+		}
+	};
 
-        {isLoading ? (
-          <LoadingState message="Reading file..." />
-        ) : (
-          <>
-            <div className={styles.uploadIcon}>📁</div>
-            <p className={styles.dropZonePrimary}>Drop a file here or click to browse</p>
-            <p className={styles.dropZoneSecondary}>Supports JSON files with design tokens</p>
-          </>
-        )}
-      </div>
+	return (
+		<div className={styles.fileImport}>
+			<SectionHeader
+				variant="secondary"
+				title="Import Design Tokens"
+				description="Upload or paste your design tokens to sync with Figma"
+			/>
 
-      {/* Or Divider */}
-      <div className={styles.divider}>
-        <span>OR</span>
-      </div>
+			{/* File Drop Zone */}
+			<div
+				className={`${styles.dropZone} ${isDragging ? styles.dragging : ""}`}
+				onClick={() => fileInputRef.current?.click()}
+				onDragLeave={handleDragLeave}
+				onDragOver={handleDragOver}
+				onDrop={handleDrop}
+			>
+				<input
+					accept=".json"
+					onChange={handleFileSelect}
+					ref={fileInputRef}
+					style={{ display: "none" }}
+					type="file"
+				/>
 
-      {/* Paste Area */}
-      <div className={styles.pasteArea}>
-        <Textarea
-          label="Paste JSON"
-          onChange={e => setPastedContent(e.target.value)}
-          placeholder={`{\n  "$collections": {...},\n  "tokens": {...}\n}`}
-          rows={8}
-          value={pastedContent}
-        />
-        <Button
-          variant="primary"
-          disabled={!pastedContent.trim() || isLoading}
-          onClick={handlePaste}
-        >
-          <FileText size={14} />
-          Parse Tokens
-        </Button>
-      </div>
+				{isLoading ? (
+					<LoadingState message="Reading file..." />
+				) : (
+					<>
+						<div className={styles.uploadIcon}>📁</div>
+						<p className={styles.dropZonePrimary}>
+							Drop a file here or click to browse
+						</p>
+						<p className={styles.dropZoneSecondary}>
+							Supports JSON files with design tokens
+						</p>
+					</>
+				)}
+			</div>
 
-      {/* Example */}
-      <div className={styles.example}>
-        <details>
-          <summary>View example formats</summary>
-          <div className={styles.exampleSection}>
-            <h4>Multi-Collection Format:</h4>
-            <pre>{`{
+			{/* Or Divider */}
+			<div className={styles.divider}>
+				<span>OR</span>
+			</div>
+
+			{/* Paste Area */}
+			<div className={styles.pasteArea}>
+				<Textarea
+					label="Paste JSON"
+					onChange={(e) => setPastedContent(e.target.value)}
+					placeholder={`{\n  "$collections": {...},\n  "tokens": {...}\n}`}
+					rows={8}
+					value={pastedContent}
+				/>
+				<Button
+					variant="primary"
+					disabled={!pastedContent.trim() || isLoading}
+					onClick={handlePaste}
+				>
+					<FileText size={14} />
+					Parse Tokens
+				</Button>
+			</div>
+
+			{/* Example */}
+			<div className={styles.example}>
+				<details>
+					<summary>View example formats</summary>
+					<div className={styles.exampleSection}>
+						<h4>Multi-Collection Format:</h4>
+						<pre>{`{
   "$collections": {
     "primitives": { "name": "Primitives", "modes": ["Default"] },
     "semantic": { "name": "Semantic", "modes": ["Light", "Dark"] }
@@ -170,10 +177,10 @@ export function FileImport({ onTokensParsed, onFileParsed }: FileImportProps) {
     }
   }
 }`}</pre>
-          </div>
-          <div className={styles.exampleSection}>
-            <h4>Simple Format (Legacy):</h4>
-            <pre>{`{
+					</div>
+					<div className={styles.exampleSection}>
+						<h4>Simple Format (Legacy):</h4>
+						<pre>{`{
   "colors": {
     "primary": "#3B82F6",
     "gray-100": "#F3F4F6"
@@ -183,9 +190,9 @@ export function FileImport({ onTokensParsed, onFileParsed }: FileImportProps) {
     "md": 16
   }
 }`}</pre>
-          </div>
-        </details>
-      </div>
-    </div>
-  )
+					</div>
+				</details>
+			</div>
+		</div>
+	);
 }

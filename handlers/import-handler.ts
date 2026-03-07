@@ -3,1265 +3,1582 @@
 
 /// <reference types="@figma/plugin-typings" />
 
-import type { DesignToken, ImportResults } from '../libraries/shared-types'
-import { convertColor } from '../libraries/color-converters'
-import { parseColorToRGBA } from '../parsers/color-parsers'
+import type { DesignToken, ImportResults } from "../libraries/shared-types";
+import { parseColorToRGBA } from "../parsers/color-parsers";
 
 // Create Figma variables from tokens (supports multi-collection with references)
 // Note: collectionName parameter is currently unused - tokens are grouped by their category property
 // This allows multi-collection imports (primitives, abstractions, semantic) in a single operation
 export async function createVariablesFromTokens(
-  tokens: DesignToken[],
-  _collectionName: string,
-  importMode: 'import' | 'override' = 'import'
+	tokens: DesignToken[],
+	_collectionName: string,
+	importMode: "import" | "override" = "import",
 ): Promise<ImportResults> {
-  const isOverrideMode = importMode === 'override'
-  const results: ImportResults = {
-    success: 0,
-    failed: 0,
-    errors: [],
-    skipped: 0,
-    changes: [],
-  }
+	const isOverrideMode = importMode === "override";
+	const results: ImportResults = {
+		success: 0,
+		failed: 0,
+		errors: [],
+		skipped: 0,
+		changes: [],
+	};
 
-  try {
-    // Group tokens by collection
-    const tokensByCollection: Record<string, DesignToken[]> = {}
-    for (const token of tokens) {
-      if (token.action !== 'import') continue
-      
-      const collectionKey = token.category
-      if (!tokensByCollection[collectionKey]) {
-        tokensByCollection[collectionKey] = []
-      }
-      tokensByCollection[collectionKey].push(token)
-    }
+	try {
+		// Group tokens by collection
+		const tokensByCollection: Record<string, DesignToken[]> = {};
+		for (const token of tokens) {
+			if (token.action !== "import") continue;
 
-    // Process collections in dependency order
-    // Responsive collection is processed last as it may reference other collections
-    const collectionOrder = ['primitives', 'abstractions', 'semantics', 'responsive']
-    const collectionsToProcess = collectionOrder.filter(key => tokensByCollection[key])
-    
-    // Add any other collections not in the predefined order
-    for (const key of Object.keys(tokensByCollection)) {
-      if (!collectionsToProcess.includes(key)) {
-        collectionsToProcess.push(key)
-      }
-    }
+			const collectionKey = token.category;
+			if (!tokensByCollection[collectionKey]) {
+				tokensByCollection[collectionKey] = [];
+			}
+			tokensByCollection[collectionKey].push(token);
+		}
 
-    // Map to store created variables for reference resolution
-    const variableMap = new Map<string, Variable>()
+		// Process collections in dependency order
+		// Responsive collection is processed last as it may reference other collections
+		const collectionOrder = [
+			"primitives",
+			"abstractions",
+			"semantics",
+			"responsive",
+		];
+		const collectionsToProcess = collectionOrder.filter(
+			(key) => tokensByCollection[key],
+		);
 
-    // Process each collection
-    for (const collectionKey of collectionsToProcess) {
-      const collectionTokens = tokensByCollection[collectionKey]
-      if (!collectionTokens || collectionTokens.length === 0) continue
+		// Add any other collections not in the predefined order
+		for (const key of Object.keys(tokensByCollection)) {
+			if (!collectionsToProcess.includes(key)) {
+				collectionsToProcess.push(key);
+			}
+		}
 
-      console.log(`📦 Processing collection: "${collectionKey}" with ${collectionTokens.length} tokens`)
+		// Map to store created variables for reference resolution
+		const variableMap = new Map<string, Variable>();
 
-      // Create or get Figma collection
-      let collection: VariableCollection
-      const existingCollections = figma.variables.getLocalVariableCollections()
-      const existing = existingCollections.find(c => c.name === collectionKey)
+		// Process each collection
+		for (const collectionKey of collectionsToProcess) {
+			const collectionTokens = tokensByCollection[collectionKey];
+			if (!collectionTokens || collectionTokens.length === 0) continue;
 
-      if (existing) {
-        collection = existing
-        console.log(`✅ Found existing collection: "${collectionKey}"`)
-      } else {
-        collection = figma.variables.createVariableCollection(collectionKey)
-        console.log(`✨ Created new collection: "${collectionKey}"`)
-      }
+			console.log(
+				`📦 Processing collection: "${collectionKey}" with ${collectionTokens.length} tokens`,
+			);
 
-      // Detect and create modes if tokens have modeName property
-      const modeNames = new Set<string>()
-      for (const token of collectionTokens) {
-        if ((token as any).modeName) {
-          modeNames.add((token as any).modeName)
-        }
-      }
+			// Create or get Figma collection
+			let collection: VariableCollection;
+			const existingCollections = figma.variables.getLocalVariableCollections();
+			const existing = existingCollections.find(
+				(c) => c.name === collectionKey,
+			);
 
-      // Create modes if needed
-      const modeMap = new Map<string, string>() // modeName -> modeId
-      if (modeNames.size > 0) {
-        const modeNamesArray = Array.from(modeNames)
-        console.log(`🎨 Collection "${collectionKey}" has ${modeNamesArray.length} modes: ${modeNamesArray.join(', ')}`)
-        
-        // Rename the first (default) mode using renameMode()
-        const firstModeName = modeNamesArray[0]
-        const firstModeId = collection.modes[0].modeId
-        collection.renameMode(firstModeId, firstModeName)
-        modeMap.set(firstModeName, firstModeId)
-        console.log(`  ✓ Mode 1: "${firstModeName}" (default mode renamed)`)
-        
-        // Add remaining modes
-        for (let i = 1; i < modeNamesArray.length; i++) {
-          const modeName = modeNamesArray[i]
-          const existingMode = collection.modes.find(m => m.name === modeName)
-          if (existingMode) {
-            modeMap.set(modeName, existingMode.modeId)
-            console.log(`  ✓ Mode ${i + 1}: "${modeName}" (already exists)`)
-          } else {
-            const newMode = collection.addMode(modeName)
-            modeMap.set(modeName, newMode)
-            console.log(`  ✨ Mode ${i + 1}: "${modeName}" (created)`)
-          }
-        }
-      } else {
-        console.log(`📝 Collection "${collectionKey}" has single mode (default)`)
-      }
+			if (existing) {
+				collection = existing;
+				console.log(`✅ Found existing collection: "${collectionKey}"`);
+			} else {
+				collection = figma.variables.createVariableCollection(collectionKey);
+				console.log(`✨ Created new collection: "${collectionKey}"`);
+			}
 
-      const defaultMode = collection.modes[0].modeId
+			// Detect and create modes if tokens have modeName property
+			const modeNames = new Set<string>();
+			for (const token of collectionTokens) {
+				if ((token as any).modeName) {
+					modeNames.add((token as any).modeName);
+				}
+			}
 
-      // First pass: Create variables with direct values
-      for (const token of collectionTokens) {
-        if (token.type === 'reference') continue
+			// Create modes if needed
+			const modeMap = new Map<string, string>(); // modeName -> modeId
+			if (modeNames.size > 0) {
+				const modeNamesArray = Array.from(modeNames);
+				console.log(
+					`🎨 Collection "${collectionKey}" has ${modeNamesArray.length} modes: ${modeNamesArray.join(", ")}`,
+				);
 
-        try {
-          const modeName = (token as any).modeName
-          let modeId = modeName && modeMap.has(modeName) ? modeMap.get(modeName)! : defaultMode
-          
-          // Validate that the mode exists in the current collection
-          if (!collection.modes.some(m => m.modeId === modeId)) {
-            console.warn(`⚠️ Mode "${modeName}" (${modeId}) not found in collection "${collectionKey}", using default mode`)
-            modeId = defaultMode
-          }
+				// Rename the first (default) mode using renameMode()
+				const firstModeName = modeNamesArray[0];
+				const firstModeId = collection.modes[0].modeId;
+				collection.renameMode(firstModeId, firstModeName);
+				modeMap.set(firstModeName, firstModeId);
+				console.log(`  ✓ Mode 1: "${firstModeName}" (default mode renamed)`);
 
-          // Determine Figma variable type based on token type
-          let figmaType: 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN' | null = null
-          let processedValue: any = token.value
+				// Add remaining modes
+				for (let i = 1; i < modeNamesArray.length; i++) {
+					const modeName = modeNamesArray[i];
+					const existingMode = collection.modes.find(
+						(m) => m.name === modeName,
+					);
+					if (existingMode) {
+						modeMap.set(modeName, existingMode.modeId);
+						console.log(`  ✓ Mode ${i + 1}: "${modeName}" (already exists)`);
+					} else {
+						const newMode = collection.addMode(modeName);
+						modeMap.set(modeName, newMode);
+						console.log(`  ✨ Mode ${i + 1}: "${modeName}" (created)`);
+					}
+				}
+			} else {
+				console.log(
+					`📝 Collection "${collectionKey}" has single mode (default)`,
+				);
+			}
 
-          if (token.type === 'color' && typeof token.value === 'object' && 'r' in token.value) {
-            figmaType = 'COLOR'
-          } else if (
-            token.type === 'spacing' ||
-            token.type === 'sizing' ||
-            token.type === 'borderRadius' ||
-            token.type === 'borderWidth' ||
-            token.type === 'number' ||
-            token.type === 'dimension' ||
-            token.type === 'duration'
-          ) {
-            figmaType = 'FLOAT'
-            processedValue = Number(token.value)
-          } else if (
-            token.type === 'string' ||
-            token.type === 'fontFamily' ||
-            token.type === 'fontWeight' ||
-            token.type === 'text' ||
-            token.type === 'cubicBezier' ||
-            token.type === 'boxShadow'
-          ) {
-            figmaType = 'STRING'
-            processedValue = String(token.value)
-          } else if (token.type === 'boolean') {
-            figmaType = 'BOOLEAN'
-            processedValue = Boolean(token.value)
-          }
+			const defaultMode = collection.modes[0].modeId;
 
-          // Skip if we can't determine the Figma type
-          if (!figmaType) {
-            results.failed++
-            results.errors.push(
-              `❌ "${token.figmaName}" - Unsupported type: "${token.type}". Supported types: color, spacing, sizing, borderRadius, borderWidth, duration, fontFamily, fontWeight, string, cubicBezier, boxShadow, number, dimension, boolean, and text.`
-            )
-            continue
-          }
+			// First pass: Create variables with direct values
+			for (const token of collectionTokens) {
+				if (token.type === "reference") continue;
 
-          // Get or create variable
-          let variable: Variable
-          let isNewVariable = false
-          // Look up with composite key first, then fallback to path only
-          const existingVar = variableMap.get(`${collectionKey}:${token.figmaName}`) || variableMap.get(token.figmaName)
-          
-          if (existingVar) {
-            // Verify the variable belongs to the current collection and has the correct modes
-            if (existingVar.variableCollectionId === collection.id) {
-              variable = existingVar
-            } else {
-              // Variable exists but in a different collection - Figma doesn't allow duplicate names
-              const existingCollection = figma.variables.getVariableCollectionById(existingVar.variableCollectionId)
-              results.failed++
-              results.errors.push(
-                `⚠️ "${token.figmaName}" - Duplicate variable name: A variable with this name already exists in collection "${existingCollection?.name}". Figma requires unique variable names across all collections. Solution: Rename this token to "${collectionKey}/${token.figmaName}" or use a different naming scheme.`
-              )
-              continue
-            }
-          } else {
-            const existing = figma.variables.getLocalVariables().find(v => v.name === token.figmaName)
-            if (existing && existing.variableCollectionId === collection.id) {
-              if (existing.resolvedType === figmaType) {
-                variable = existing
-              } else {
-                // Type mismatch: skip this token and report error
-                results.failed++
-                results.errors.push(
-                  `⚠️ "${token.figmaName}" - Type conflict: A variable with this name already exists as ${existing.resolvedType}, but the token is trying to import as ${figmaType}. Solution: Rename the token or delete the existing variable in Figma.`
-                )
-                continue
-              }
-            } else if (existing) {
-              // Variable exists in a different collection - Figma doesn't allow duplicate names
-              const existingCollection = figma.variables.getVariableCollectionById(existing.variableCollectionId)
-              results.failed++
-              results.errors.push(
-                `⚠️ "${token.figmaName}" - Duplicate variable name: A variable with this name already exists in collection "${existingCollection?.name}". Figma requires unique variable names across all collections. Solution: Rename this token to "${collectionKey}/${token.figmaName}" or use a different naming scheme.`
-              )
-              continue
-            } else {
-              // Create new variable (allowed in both import and override modes)
-              variable = figma.variables.createVariable(token.figmaName, collection, figmaType)
-              isNewVariable = true
-            }
-            // Store with composite key: collection:path for cross-collection reference resolution
-            variableMap.set(`${collectionKey}:${token.figmaName}`, variable)
-            // Also store with just the path for backwards compatibility
-            variableMap.set(token.figmaName, variable)
-          }
-          
-          // Track old value for change detection
-          const oldValue = !isNewVariable ? variable.valuesByMode[modeId] : undefined
-          const oldValueStr = oldValue !== undefined ? String(oldValue) : undefined
-          const newValueStr = String(processedValue)
-          
-          variable.setValueForMode(modeId, processedValue)
-          
-          // Set description after setting value
-          if (token.description) {
-            variable.description = token.description
-          }
-          results.success++
-          
-          // Track change
-          if (isNewVariable) {
-            results.changes.push({
-              name: token.figmaName,
-              type: token.type,
-              action: 'created',
-              newValue: newValueStr,
-            })
-          } else if (oldValueStr !== newValueStr) {
-            results.changes.push({
-              name: token.figmaName,
-              type: token.type,
-              action: 'updated',
-              oldValue: oldValueStr,
-              newValue: newValueStr,
-            })
-          } else {
-            results.changes.push({
-              name: token.figmaName,
-              type: token.type,
-              action: 'unchanged',
-              newValue: newValueStr,
-            })
-          }
-        } catch (error) {
-          results.failed++
-          const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-          results.errors.push(
-            `❌ "${token.figmaName}" - Failed to create variable: ${errorMsg}`
-          )
-        }
-      }
+				try {
+					const modeName = (token as any).modeName;
+					let modeId =
+						modeName && modeMap.has(modeName)
+							? (modeMap.get(modeName) ?? defaultMode)
+							: defaultMode;
 
-      // Second pass: Create variable aliases (references)
-      for (const token of collectionTokens) {
-        if (token.type !== 'reference') continue
+					// Validate that the mode exists in the current collection
+					if (!collection.modes.some((m) => m.modeId === modeId)) {
+						console.warn(
+							`⚠️ Mode "${modeName}" (${modeId}) not found in collection "${collectionKey}", using default mode`,
+						);
+						modeId = defaultMode;
+					}
 
-        try {
-          const modeName = (token as any).modeName
-          let modeId = modeName && modeMap.has(modeName) ? modeMap.get(modeName)! : defaultMode
-          
-          // Validate that the mode exists in the current collection
-          if (!collection.modes.some(m => m.modeId === modeId)) {
-            console.warn(`⚠️ Mode "${modeName}" (${modeId}) not found in collection "${collectionKey}", using default mode`)
-            modeId = defaultMode
-          }
+					// Determine Figma variable type based on token type
+					let figmaType: "COLOR" | "FLOAT" | "STRING" | "BOOLEAN" | null = null;
+					let processedValue: any = token.value;
 
-          // Parse reference: {primitives.zinc.50} -> primitives/zinc/50
-          const refMatch = token.originalValue.match(/\{([^}]+)\}/)
-          if (!refMatch) {
-            results.failed++
-            results.errors.push(
-              `❌ "${token.figmaName}" - Invalid reference format: "${token.originalValue}". References should be in format {collection.token.path}`
-            )
-            continue
-          }
+					if (
+						token.type === "color" &&
+						typeof token.value === "object" &&
+						"r" in token.value
+					) {
+						figmaType = "COLOR";
+					} else if (
+						token.type === "spacing" ||
+						token.type === "sizing" ||
+						token.type === "borderRadius" ||
+						token.type === "borderWidth" ||
+						token.type === "number" ||
+						token.type === "dimension" ||
+						token.type === "duration"
+					) {
+						figmaType = "FLOAT";
+						processedValue = Number(token.value);
+					} else if (
+						token.type === "string" ||
+						token.type === "fontFamily" ||
+						token.type === "fontWeight" ||
+						token.type === "text" ||
+						token.type === "cubicBezier" ||
+						token.type === "boxShadow"
+					) {
+						figmaType = "STRING";
+						processedValue = String(token.value);
+					} else if (token.type === "boolean") {
+						figmaType = "BOOLEAN";
+						processedValue = Boolean(token.value);
+					}
 
-          const refPath = refMatch[1].replace(/\./g, '/')
-          // Split to get collection and path (e.g., "primitives/zinc/50" -> ["primitives", "zinc/50"])
-          const refParts = refPath.split('/')
-          const refCollection = refParts[0]
-          const refTokenPath = refParts.slice(1).join('/')
-          
-          // Look up by composite key: collection:path
-          const compositeKey = `${refCollection}:${refTokenPath}`
-          let referencedVariable = variableMap.get(compositeKey)
-          
-          // Fallback: try without collection prefix (for backwards compatibility)
-          if (!referencedVariable) {
-            referencedVariable = variableMap.get(refTokenPath)
-          }
+					// Skip if we can't determine the Figma type
+					if (!figmaType) {
+						results.failed++;
+						results.errors.push(
+							`❌ "${token.figmaName}" - Unsupported type: "${token.type}". Supported types: color, spacing, sizing, borderRadius, borderWidth, duration, fontFamily, fontWeight, string, cubicBezier, boxShadow, number, dimension, boolean, and text.`,
+						);
+						continue;
+					}
 
-          if (!referencedVariable) {
-            results.failed++
-            results.errors.push(
-              `❌ "${token.figmaName}" - Referenced token not found: "${refPath}". Make sure the referenced token exists and was imported first.`
-            )
-            continue
-          }
+					// Get or create variable
+					let variable: Variable;
+					let isNewVariable = false;
+					// Look up with composite key first, then fallback to path only
+					const existingVar =
+						variableMap.get(`${collectionKey}:${token.figmaName}`) ||
+						variableMap.get(token.figmaName);
 
-          // Get or create alias variable
-          let variable: Variable
-          let isNewVariable = false
-          // Look up with composite key first, then fallback to path only
-          const existingVar = variableMap.get(`${collectionKey}:${token.figmaName}`) || variableMap.get(token.figmaName)
-          
-          if (existingVar) {
-            // Verify the variable belongs to the current collection and has the correct modes
-            if (existingVar.variableCollectionId === collection.id) {
-              variable = existingVar
-            } else {
-              // Variable exists but in a different collection - Figma doesn't allow duplicate names
-              const existingCollection = figma.variables.getVariableCollectionById(existingVar.variableCollectionId)
-              results.failed++
-              results.errors.push(
-                `⚠️ "${token.figmaName}" - Duplicate variable name: A variable with this name already exists in collection "${existingCollection?.name}". Figma requires unique variable names across all collections. Solution: Rename this token to "${collectionKey}/${token.figmaName}" or use a different naming scheme.`
-              )
-              continue
-            }
-          } else {
-            const existing = figma.variables.getLocalVariables().find(v => v.name === token.figmaName)
-            if (existing && existing.variableCollectionId === collection.id) {
-              if (existing.resolvedType === referencedVariable.resolvedType) {
-                variable = existing
-              } else {
-                // Type mismatch: skip this token and report error
-                results.failed++
-                results.errors.push(
-                  `⚠️ "${token.figmaName}" - Type conflict for reference: A variable with this name already exists as ${existing.resolvedType}, but the referenced token is ${referencedVariable.resolvedType}. Solution: Rename the token or delete the existing variable.`
-                )
-                continue
-              }
-            } else if (existing) {
-              // Variable exists in a different collection - Figma doesn't allow duplicate names
-              const existingCollection = figma.variables.getVariableCollectionById(existing.variableCollectionId)
-              results.failed++
-              results.errors.push(
-                `⚠️ "${token.figmaName}" - Duplicate variable name: A variable with this name already exists in collection "${existingCollection?.name}". Figma requires unique variable names across all collections. Solution: Rename this token to "${collectionKey}/${token.figmaName}" or use a different naming scheme.`
-              )
-              continue
-            } else {
-              // Create new variable (allowed in both import and override modes)
-              variable = figma.variables.createVariable(
-                token.figmaName,
-                collection,
-                referencedVariable.resolvedType
-              )
-              isNewVariable = true
-            }
-            // Store with composite key: collection:path for cross-collection reference resolution
-            variableMap.set(`${collectionKey}:${token.figmaName}`, variable)
-            // Also store with just the path for backwards compatibility
-            variableMap.set(token.figmaName, variable)
-          }
-          
-          // Track old value for change detection
-          const oldValue = !isNewVariable ? variable.valuesByMode[modeId] : undefined
-          const oldRefId = oldValue && typeof oldValue === 'object' && 'id' in oldValue ? oldValue.id : undefined
-          const newRefId = referencedVariable.id
-          
-          // Set as alias for this mode
-          variable.setValueForMode(modeId, {
-            type: 'VARIABLE_ALIAS',
-            id: newRefId,
-          })
+					if (existingVar) {
+						// Verify the variable belongs to the current collection and has the correct modes
+						if (existingVar.variableCollectionId === collection.id) {
+							variable = existingVar;
+						} else {
+							// Variable exists but in a different collection - Figma doesn't allow duplicate names
+							const existingCollection =
+								figma.variables.getVariableCollectionById(
+									existingVar.variableCollectionId,
+								);
+							results.failed++;
+							results.errors.push(
+								`⚠️ "${token.figmaName}" - Duplicate variable name: A variable with this name already exists in collection "${existingCollection?.name}". Figma requires unique variable names across all collections. Solution: Rename this token to "${collectionKey}/${token.figmaName}" or use a different naming scheme.`,
+							);
+							continue;
+						}
+					} else {
+						const existing = figma.variables
+							.getLocalVariables()
+							.find((v) => v.name === token.figmaName);
+						if (existing && existing.variableCollectionId === collection.id) {
+							if (existing.resolvedType === figmaType) {
+								variable = existing;
+							} else {
+								// Type mismatch: skip this token and report error
+								results.failed++;
+								results.errors.push(
+									`⚠️ "${token.figmaName}" - Type conflict: A variable with this name already exists as ${existing.resolvedType}, but the token is trying to import as ${figmaType}. Solution: Rename the token or delete the existing variable in Figma.`,
+								);
+								continue;
+							}
+						} else if (existing) {
+							// Variable exists in a different collection - Figma doesn't allow duplicate names
+							const existingCollection =
+								figma.variables.getVariableCollectionById(
+									existing.variableCollectionId,
+								);
+							results.failed++;
+							results.errors.push(
+								`⚠️ "${token.figmaName}" - Duplicate variable name: A variable with this name already exists in collection "${existingCollection?.name}". Figma requires unique variable names across all collections. Solution: Rename this token to "${collectionKey}/${token.figmaName}" or use a different naming scheme.`,
+							);
+							continue;
+						} else {
+							// Create new variable (allowed in both import and override modes)
+							variable = figma.variables.createVariable(
+								token.figmaName,
+								collection,
+								figmaType,
+							);
+							isNewVariable = true;
+						}
+						// Store with composite key: collection:path for cross-collection reference resolution
+						variableMap.set(`${collectionKey}:${token.figmaName}`, variable);
+						// Also store with just the path for backwards compatibility
+						variableMap.set(token.figmaName, variable);
+					}
 
-          // Set description after setting value (for references)
-          if (token.description) {
-            variable.description = token.description
-          }
+					// Track old value for change detection
+					const oldValue = !isNewVariable
+						? variable.valuesByMode[modeId]
+						: undefined;
+					const oldValueStr =
+						oldValue !== undefined ? String(oldValue) : undefined;
+					const newValueStr = String(processedValue);
 
-          results.success++
-          
-          // Track change (for references, we track the referenced variable name)
-          const newRefName = referencedVariable.name
-          const oldRefVariable = oldRefId ? figma.variables.getVariableById(oldRefId as string) : null
-          const oldRefName = oldRefVariable ? oldRefVariable.name : undefined
-          
-          if (isNewVariable) {
-            results.changes.push({
-              name: token.figmaName,
-              type: 'reference',
-              action: 'created',
-              newValue: `→ ${newRefName}`,
-            })
-          } else if (oldRefId !== newRefId) {
-            results.changes.push({
-              name: token.figmaName,
-              type: 'reference',
-              action: 'updated',
-              oldValue: oldRefName ? `→ ${oldRefName}` : 'unknown',
-              newValue: `→ ${newRefName}`,
-            })
-          } else {
-            results.changes.push({
-              name: token.figmaName,
-              type: 'reference',
-              action: 'unchanged',
-              newValue: `→ ${newRefName}`,
-            })
-          }
-        } catch (error) {
-          results.failed++
-          const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-          results.errors.push(
-            `❌ "${token.figmaName}" - Failed to create reference: ${errorMsg}`
-          )
-        }
-      }
-    }
+					variable.setValueForMode(modeId, processedValue);
 
-    // Log results for debugging
-    console.log(`${isOverrideMode ? 'Override' : 'Import'} completed:`, {
-      success: results.success,
-      failed: results.failed,
-      skipped: results.skipped,
-      totalErrors: results.errors.length
-    })
-    
-    if (results.errors.length > 0) {
-      console.log(`${isOverrideMode ? 'Override' : 'Import'} errors:`, results.errors)
-    }
+					// Set description after setting value
+					if (token.description) {
+						variable.description = token.description;
+					}
+					results.success++;
 
-    return results
-  } catch (error) {
-    results.failed++
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-    results.errors.push(
-      `🚨 Critical error during import: ${errorMsg}. Please check your token format and try again.`
-    )
-    return results
-  }
+					// Track change
+					if (isNewVariable) {
+						results.changes.push({
+							name: token.figmaName,
+							type: token.type,
+							action: "created",
+							newValue: newValueStr,
+						});
+					} else if (oldValueStr !== newValueStr) {
+						results.changes.push({
+							name: token.figmaName,
+							type: token.type,
+							action: "updated",
+							oldValue: oldValueStr,
+							newValue: newValueStr,
+						});
+					} else {
+						results.changes.push({
+							name: token.figmaName,
+							type: token.type,
+							action: "unchanged",
+							newValue: newValueStr,
+						});
+					}
+				} catch (error) {
+					results.failed++;
+					const errorMsg =
+						error instanceof Error ? error.message : "Unknown error";
+					results.errors.push(
+						`❌ "${token.figmaName}" - Failed to create variable: ${errorMsg}`,
+					);
+				}
+			}
+
+			// Second pass: Create variable aliases (references)
+			for (const token of collectionTokens) {
+				if (token.type !== "reference") continue;
+
+				try {
+					const modeName = (token as any).modeName;
+					let modeId =
+						modeName && modeMap.has(modeName)
+							? (modeMap.get(modeName) ?? defaultMode)
+							: defaultMode;
+
+					// Validate that the mode exists in the current collection
+					if (!collection.modes.some((m) => m.modeId === modeId)) {
+						console.warn(
+							`⚠️ Mode "${modeName}" (${modeId}) not found in collection "${collectionKey}", using default mode`,
+						);
+						modeId = defaultMode;
+					}
+
+					// Parse reference: {primitives.zinc.50} -> primitives/zinc/50
+					const refMatch = token.originalValue.match(/\{([^}]+)\}/);
+					if (!refMatch) {
+						results.failed++;
+						results.errors.push(
+							`❌ "${token.figmaName}" - Invalid reference format: "${token.originalValue}". References should be in format {collection.token.path}`,
+						);
+						continue;
+					}
+
+					const refPath = refMatch[1].replace(/\./g, "/");
+					// Split to get collection and path (e.g., "primitives/zinc/50" -> ["primitives", "zinc/50"])
+					const refParts = refPath.split("/");
+					const refCollection = refParts[0];
+					const refTokenPath = refParts.slice(1).join("/");
+
+					// Look up by composite key: collection:path
+					const compositeKey = `${refCollection}:${refTokenPath}`;
+					let referencedVariable = variableMap.get(compositeKey);
+
+					// Fallback: try without collection prefix (for backwards compatibility)
+					if (!referencedVariable) {
+						referencedVariable = variableMap.get(refTokenPath);
+					}
+
+					if (!referencedVariable) {
+						results.failed++;
+						results.errors.push(
+							`❌ "${token.figmaName}" - Referenced token not found: "${refPath}". Make sure the referenced token exists and was imported first.`,
+						);
+						continue;
+					}
+
+					// Get or create alias variable
+					let variable: Variable;
+					let isNewVariable = false;
+					// Look up with composite key first, then fallback to path only
+					const existingVar =
+						variableMap.get(`${collectionKey}:${token.figmaName}`) ||
+						variableMap.get(token.figmaName);
+
+					if (existingVar) {
+						// Verify the variable belongs to the current collection and has the correct modes
+						if (existingVar.variableCollectionId === collection.id) {
+							variable = existingVar;
+						} else {
+							// Variable exists but in a different collection - Figma doesn't allow duplicate names
+							const existingCollection =
+								figma.variables.getVariableCollectionById(
+									existingVar.variableCollectionId,
+								);
+							results.failed++;
+							results.errors.push(
+								`⚠️ "${token.figmaName}" - Duplicate variable name: A variable with this name already exists in collection "${existingCollection?.name}". Figma requires unique variable names across all collections. Solution: Rename this token to "${collectionKey}/${token.figmaName}" or use a different naming scheme.`,
+							);
+							continue;
+						}
+					} else {
+						const existing = figma.variables
+							.getLocalVariables()
+							.find((v) => v.name === token.figmaName);
+						if (existing && existing.variableCollectionId === collection.id) {
+							if (existing.resolvedType === referencedVariable.resolvedType) {
+								variable = existing;
+							} else {
+								// Type mismatch: skip this token and report error
+								results.failed++;
+								results.errors.push(
+									`⚠️ "${token.figmaName}" - Type conflict for reference: A variable with this name already exists as ${existing.resolvedType}, but the referenced token is ${referencedVariable.resolvedType}. Solution: Rename the token or delete the existing variable.`,
+								);
+								continue;
+							}
+						} else if (existing) {
+							// Variable exists in a different collection - Figma doesn't allow duplicate names
+							const existingCollection =
+								figma.variables.getVariableCollectionById(
+									existing.variableCollectionId,
+								);
+							results.failed++;
+							results.errors.push(
+								`⚠️ "${token.figmaName}" - Duplicate variable name: A variable with this name already exists in collection "${existingCollection?.name}". Figma requires unique variable names across all collections. Solution: Rename this token to "${collectionKey}/${token.figmaName}" or use a different naming scheme.`,
+							);
+							continue;
+						} else {
+							// Create new variable (allowed in both import and override modes)
+							variable = figma.variables.createVariable(
+								token.figmaName,
+								collection,
+								referencedVariable.resolvedType,
+							);
+							isNewVariable = true;
+						}
+						// Store with composite key: collection:path for cross-collection reference resolution
+						variableMap.set(`${collectionKey}:${token.figmaName}`, variable);
+						// Also store with just the path for backwards compatibility
+						variableMap.set(token.figmaName, variable);
+					}
+
+					// Track old value for change detection
+					const oldValue = !isNewVariable
+						? variable.valuesByMode[modeId]
+						: undefined;
+					const oldRefId =
+						oldValue && typeof oldValue === "object" && "id" in oldValue
+							? oldValue.id
+							: undefined;
+					const newRefId = referencedVariable.id;
+
+					// Set as alias for this mode
+					variable.setValueForMode(modeId, {
+						type: "VARIABLE_ALIAS",
+						id: newRefId,
+					});
+
+					// Set description after setting value (for references)
+					if (token.description) {
+						variable.description = token.description;
+					}
+
+					results.success++;
+
+					// Track change (for references, we track the referenced variable name)
+					const newRefName = referencedVariable.name;
+					const oldRefVariable = oldRefId
+						? figma.variables.getVariableById(oldRefId as string)
+						: null;
+					const oldRefName = oldRefVariable ? oldRefVariable.name : undefined;
+
+					if (isNewVariable) {
+						results.changes.push({
+							name: token.figmaName,
+							type: "reference",
+							action: "created",
+							newValue: `→ ${newRefName}`,
+						});
+					} else if (oldRefId !== newRefId) {
+						results.changes.push({
+							name: token.figmaName,
+							type: "reference",
+							action: "updated",
+							oldValue: oldRefName ? `→ ${oldRefName}` : "unknown",
+							newValue: `→ ${newRefName}`,
+						});
+					} else {
+						results.changes.push({
+							name: token.figmaName,
+							type: "reference",
+							action: "unchanged",
+							newValue: `→ ${newRefName}`,
+						});
+					}
+				} catch (error) {
+					results.failed++;
+					const errorMsg =
+						error instanceof Error ? error.message : "Unknown error";
+					results.errors.push(
+						`❌ "${token.figmaName}" - Failed to create reference: ${errorMsg}`,
+					);
+				}
+			}
+		}
+
+		// Log results for debugging
+		console.log(`${isOverrideMode ? "Override" : "Import"} completed:`, {
+			success: results.success,
+			failed: results.failed,
+			skipped: results.skipped,
+			totalErrors: results.errors.length,
+		});
+
+		if (results.errors.length > 0) {
+			console.log(
+				`${isOverrideMode ? "Override" : "Import"} errors:`,
+				results.errors,
+			);
+		}
+
+		return results;
+	} catch (error) {
+		results.failed++;
+		const errorMsg = error instanceof Error ? error.message : "Unknown error";
+		results.errors.push(
+			`🚨 Critical error during import: ${errorMsg}. Please check your token format and try again.`,
+		);
+		return results;
+	}
 }
 
 // Import Figma Styles from style export JSON
 export async function importStylesFromTokens(
-  stylesData: any,
-  selectedGroups: { category: string; group: string }[],
-  importMode: 'import' | 'override' = 'import'
+	stylesData: any,
+	selectedGroups: { category: string; group: string }[],
+	importMode: "import" | "override" = "import",
 ): Promise<ImportResults> {
-  const isOverrideMode = importMode === 'override'
-  const results: ImportResults = {
-    success: 0,
-    failed: 0,
-    errors: [],
-    skipped: 0,
-    changes: [],
-  }
+	const isOverrideMode = importMode === "override";
+	const results: ImportResults = {
+		success: 0,
+		failed: 0,
+		errors: [],
+		skipped: 0,
+		changes: [],
+	};
 
-  try {
-    console.log('📥 Starting style import...', {
-      selectedGroups: selectedGroups.length,
-      mode: importMode
-    })
+	try {
+		console.log("📥 Starting style import...", {
+			selectedGroups: selectedGroups.length,
+			mode: importMode,
+		});
 
-    // Validate input
-    if (!stylesData || !stylesData.styles) {
-      throw new Error('Invalid style data format')
-    }
+		// Validate input
+		if (!stylesData || !stylesData.styles) {
+			throw new Error("Invalid style data format");
+		}
 
-    const { paint, text, effect, grid } = stylesData.styles
+		const { paint, text, effect, grid } = stylesData.styles;
 
-    // Helper to check if a style should be imported based on selection
-    const shouldImportStyle = (styleName: string, category: string): boolean => {
-      if (selectedGroups.length === 0) return true
-      
-      const parts = styleName.split('/')
-      const rootFolder = parts.length > 1 ? parts[0] : 'Root'
-      
-      return selectedGroups.some(sel => 
-        sel.category === category && sel.group === rootFolder
-      )
-    }
+		// Helper to check if a style should be imported based on selection
+		const shouldImportStyle = (
+			styleName: string,
+			category: string,
+		): boolean => {
+			if (selectedGroups.length === 0) return true;
 
-    // Helper to process nested style objects recursively
-    const processStyleGroup = (
-      obj: any,
-      parentPath: string,
-      category: string,
-      processor: (styleName: string, styleData: any) => Promise<void>
-    ) => {
-      for (const [key, value] of Object.entries(obj)) {
-        const fullPath = parentPath ? `${parentPath}/${key}` : key
-        
-        // Check if this is a style definition (has 'id' and 'type')
-        if (value && typeof value === 'object' && 'id' in value && 'type' in value) {
-          if (shouldImportStyle(fullPath, category)) {
-            processor(fullPath, value).catch(err => {
-              console.error(`Failed to process style ${fullPath}:`, err)
-              results.failed++
-              results.errors.push(`Failed to import ${fullPath}: ${err.message}`)
-            })
-          } else {
-            results.skipped++
-          }
-        } else if (value && typeof value === 'object') {
-          // Recurse into nested groups
-          processStyleGroup(value, fullPath, category, processor)
-        }
-      }
-    }
+			const parts = styleName.split("/");
+			const rootFolder = parts.length > 1 ? parts[0] : "Root";
 
-    // Import Paint Styles (Color, Gradients, Images)
-    if (paint) {
-      await processStyleGroup(paint, '', 'paint', async (name, data) => {
-        try {
-          const existingStyles = figma.getLocalPaintStyles()
-          let style = existingStyles.find(s => s.name === name)
-          
-          if (!style) {
-            style = figma.createPaintStyle()
-            style.name = name
-            results.changes.push({
-              name,
-              type: 'Paint Style',
-              action: 'created',
-              newValue: 'Created new paint style'
-            })
-          } else if (isOverrideMode) {
-            results.changes.push({
-              name,
-              type: 'Paint Style',
-              action: 'updated',
-              oldValue: 'Existing style',
-              newValue: 'Updated'
-            })
-          } else {
-            results.skipped++
-            return
-          }
+			return selectedGroups.some(
+				(sel) => sel.category === category && sel.group === rootFolder,
+			);
+		};
 
-          if (data.description) {
-            style.description = data.description
-          }
+		// Helper to process nested style objects recursively
+		const processStyleGroup = (
+			obj: any,
+			parentPath: string,
+			category: string,
+			processor: (styleName: string, styleData: any) => Promise<void>,
+		) => {
+			for (const [key, value] of Object.entries(obj)) {
+				const fullPath = parentPath ? `${parentPath}/${key}` : key;
 
-          // Convert fills back to Figma Paint objects
-          if (data.fills && Array.isArray(data.fills)) {
-            const paintsWithBindings: Array<{ paint: Paint; variableBinding: any; variableName?: string }> = data.fills.map((fill: any) => convertFillToPaint(fill, true))
-            
-            // Clone paints array and bind variables using the correct API
-            const boundPaints = paintsWithBindings.map(({ paint, variableBinding, variableName }: any) => {
-              if (variableBinding && variableBinding.id) {
-                try {
-                  // Use figma.variables.setBoundVariableForPaint to bind the variable (solid fills)
-                  const variable = figma.variables.getVariableById(variableBinding.id)
-                  if (variable) {
-                    console.log(`🔗 Bound variable "${variableName}" to style "${name}"`)
-                    return figma.variables.setBoundVariableForPaint(paint, 'color', variable)
-                  }
-                } catch (e) {
-                  console.warn(`Could not bind variable to paint:`, e)
-                }
-              }
-              
-              return paint
-            })
-            
-            style.paints = boundPaints
-          }
+				// Check if this is a style definition (has 'id' and 'type')
+				if (
+					value &&
+					typeof value === "object" &&
+					"id" in value &&
+					"type" in value
+				) {
+					if (shouldImportStyle(fullPath, category)) {
+						processor(fullPath, value).catch((err) => {
+							console.error(`Failed to process style ${fullPath}:`, err);
+							results.failed++;
+							results.errors.push(
+								`Failed to import ${fullPath}: ${err.message}`,
+							);
+						});
+					} else {
+						results.skipped++;
+					}
+				} else if (value && typeof value === "object") {
+					// Recurse into nested groups
+					processStyleGroup(value, fullPath, category, processor);
+				}
+			}
+		};
 
-          results.success++
-        } catch (error) {
-          throw error
-        }
-      })
-    }
+		// Import Paint Styles (Color, Gradients, Images)
+		if (paint) {
+			await processStyleGroup(paint, "", "paint", async (name, data) => {
+				const existingStyles = figma.getLocalPaintStyles();
+				let style = existingStyles.find((s) => s.name === name);
 
-    // Import Text Styles (Typography)
-    if (text) {
-      await processStyleGroup(text, '', 'text', async (name, data) => {
-        try {
-          const existingStyles = figma.getLocalTextStyles()
-          let style = existingStyles.find(s => s.name === name)
-          
-          if (!style) {
-            style = figma.createTextStyle()
-            style.name = name
-            results.changes.push({
-              name,
-              type: 'Text Style',
-              action: 'created',
-              newValue: 'Created new text style'
-            })
-          } else if (isOverrideMode) {
-            results.changes.push({
-              name,
-              type: 'Text Style',
-              action: 'updated',
-              oldValue: 'Existing style',
-              newValue: 'Updated'
-            })
-          } else {
-            results.skipped++
-            return
-          }
+				if (!style) {
+					style = figma.createPaintStyle();
+					style.name = name;
+					results.changes.push({
+						name,
+						type: "Paint Style",
+						action: "created",
+						newValue: "Created new paint style",
+					});
+				} else if (isOverrideMode) {
+					results.changes.push({
+						name,
+						type: "Paint Style",
+						action: "updated",
+						oldValue: "Existing style",
+						newValue: "Updated",
+					});
+				} else {
+					results.skipped++;
+					return;
+				}
 
-          if (data.description) {
-            style.description = data.description
-          }
+				if (data.description) {
+					style.description = data.description;
+				}
 
-          // Set font properties - check for variable binding first
-          if (data.fontFamilyBoundVariable && data.fontFamilyBoundVariable.variableName) {
-            const collectionName = data.fontFamilyBoundVariable.collectionName
-            const variable = findVariableByName(data.fontFamilyBoundVariable.variableName, collectionName)
-            if (variable) {
-              try {
-                // Use the correct API to bind variables to text style properties
-                style.setBoundVariable('fontFamily', variable)
-                console.log(`🔗 Bound fontFamily variable "${variable.name}" to style "${name}"`)
-                
-                // Still need to load and set the font for immediate display
-                if (data.fontFamily && data.fontStyle) {
-                  try {
-                    await figma.loadFontAsync({ family: data.fontFamily, style: data.fontStyle })
-                    style.fontName = { family: data.fontFamily, style: data.fontStyle }
-                  } catch (fontError) {
-                    console.warn(`Could not load font ${data.fontFamily} ${data.fontStyle} for variable-bound style`)
-                  }
-                }
-              } catch (error) {
-                console.warn(`Could not bind fontFamily variable to style "${name}":`, error)
-                // Fallback to direct value
-                if (data.fontFamily && data.fontStyle) {
-                  try {
-                    await figma.loadFontAsync({ family: data.fontFamily, style: data.fontStyle })
-                    style.fontName = { family: data.fontFamily, style: data.fontStyle }
-                  } catch (fontError) {
-                    console.warn(`Could not load font ${data.fontFamily} ${data.fontStyle}, skipping font change`)
-                    throw new Error(`Font not available: ${data.fontFamily} ${data.fontStyle}`)
-                  }
-                }
-              }
-            } else {
-              console.warn(`⚠️ Could not find fontFamily variable "${data.fontFamilyBoundVariable.variableName}"`)
-              // Fallback to direct value
-              if (data.fontFamily && data.fontStyle) {
-                try {
-                  await figma.loadFontAsync({ family: data.fontFamily, style: data.fontStyle })
-                  style.fontName = { family: data.fontFamily, style: data.fontStyle }
-                } catch (fontError) {
-                  console.warn(`Could not load font ${data.fontFamily} ${data.fontStyle}, skipping font change`)
-                  throw new Error(`Font not available: ${data.fontFamily} ${data.fontStyle}`)
-                }
-              }
-            }
-          } else if (data.fontFamily && data.fontStyle) {
-            // No variable binding, set directly
-            try {
-              await figma.loadFontAsync({ family: data.fontFamily, style: data.fontStyle })
-              style.fontName = { family: data.fontFamily, style: data.fontStyle }
-            } catch (fontError) {
-              console.warn(`Could not load font ${data.fontFamily} ${data.fontStyle}, skipping font change`)
-              throw new Error(`Font not available: ${data.fontFamily} ${data.fontStyle}`)
-            }
-          }
-          
-          // Set fontSize - check for variable binding first
-          if (data.fontSizeBoundVariable && data.fontSizeBoundVariable.variableName) {
-            const collectionName = data.fontSizeBoundVariable.collectionName
-            const variable = findVariableByName(data.fontSizeBoundVariable.variableName, collectionName)
-            if (variable) {
-              try {
-                // Use the correct API to bind variables to text style properties
-                style.setBoundVariable('fontSize', variable)
-                console.log(`🔗 Bound fontSize variable "${variable.name}" to style "${name}"`)
-              } catch (error) {
-                console.warn(`Could not bind fontSize variable to style "${name}":`, error)
-                // Fallback to direct value
-                if (data.fontSize) {
-                  style.fontSize = Number.parseFloat(data.fontSize)
-                }
-              }
-            } else {
-              console.warn(`⚠️ Could not find fontSize variable "${data.fontSizeBoundVariable.variableName}"`)
-              // Fallback to direct value
-              if (data.fontSize) {
-                style.fontSize = Number.parseFloat(data.fontSize)
-              }
-            }
-          } else if (data.fontSize) {
-            style.fontSize = Number.parseFloat(data.fontSize)
-          }
+				// Convert fills back to Figma Paint objects
+				if (data.fills && Array.isArray(data.fills)) {
+					const paintsWithBindings: Array<{
+						paint: Paint;
+						variableBinding: any;
+						variableName?: string;
+					}> = data.fills.map((fill: any) => convertFillToPaint(fill, true));
 
-          // Set lineHeight - check for variable binding first
-          if (data.lineHeightBoundVariable && data.lineHeightBoundVariable.variableName) {
-            const collectionName = data.lineHeightBoundVariable.collectionName
-            const variable = findVariableByName(data.lineHeightBoundVariable.variableName, collectionName)
-            if (variable) {
-              try {
-                // Figma requires lineHeight variables to be in PERCENT format
-                // If the variable stores a multiplier (e.g., 1.4), it should be stored as 140 in the variable
-                style.setBoundVariable('lineHeight', variable)
-                console.log(`🔗 Bound lineHeight variable "${variable.name}" to style "${name}"`)
-              } catch (error) {
-                console.warn(`Could not bind lineHeight variable to style "${name}":`, error)
-                // Fallback to direct value
-                if (data.lineHeight) {
-                  const lineHeightStr = String(data.lineHeight)
-                  if (lineHeightStr.endsWith('%')) {
-                    style.lineHeight = { value: Number.parseFloat(lineHeightStr), unit: 'PERCENT' }
-                  } else if (lineHeightStr.endsWith('px')) {
-                    style.lineHeight = { value: Number.parseFloat(lineHeightStr), unit: 'PIXELS' }
-                  } else {
-                    style.lineHeight = { unit: 'AUTO' }
-                  }
-                }
-              }
-            } else {
-              console.warn(`⚠️ Could not find lineHeight variable "${data.lineHeightBoundVariable.variableName}"`)
-              // Fallback to direct value
-              if (data.lineHeight) {
-                const lineHeightStr = String(data.lineHeight)
-                if (lineHeightStr.endsWith('%')) {
-                  style.lineHeight = { value: Number.parseFloat(lineHeightStr), unit: 'PERCENT' }
-                } else if (lineHeightStr.endsWith('px')) {
-                  style.lineHeight = { value: Number.parseFloat(lineHeightStr), unit: 'PIXELS' }
-                } else {
-                  style.lineHeight = { unit: 'AUTO' }
-                }
-              }
-            }
-          } else if (data.lineHeight) {
-            const lineHeightStr = String(data.lineHeight)
-            if (lineHeightStr.endsWith('%')) {
-              style.lineHeight = { value: Number.parseFloat(lineHeightStr), unit: 'PERCENT' }
-            } else if (lineHeightStr.endsWith('px')) {
-              style.lineHeight = { value: Number.parseFloat(lineHeightStr), unit: 'PIXELS' }
-            } else {
-              style.lineHeight = { unit: 'AUTO' }
-            }
-          }
+					// Clone paints array and bind variables using the correct API
+					const boundPaints = paintsWithBindings.map(
+						({ paint, variableBinding, variableName }: any) => {
+							if (variableBinding?.id) {
+								try {
+									// Use figma.variables.setBoundVariableForPaint to bind the variable (solid fills)
+									const variable = figma.variables.getVariableById(
+										variableBinding.id,
+									);
+									if (variable) {
+										console.log(
+											`🔗 Bound variable "${variableName}" to style "${name}"`,
+										);
+										return figma.variables.setBoundVariableForPaint(
+											paint,
+											"color",
+											variable,
+										);
+									}
+								} catch (e) {
+									console.warn(`Could not bind variable to paint:`, e);
+								}
+							}
 
-          // Set fontWeight - check for variable binding first
-          if (data.fontWeightBoundVariable && data.fontWeightBoundVariable.variableName) {
-            const collectionName = data.fontWeightBoundVariable.collectionName
-            const variable = findVariableByName(data.fontWeightBoundVariable.variableName, collectionName)
-            if (variable) {
-              try {
-                style.setBoundVariable('fontWeight', variable)
-                console.log(`🔗 Bound fontWeight variable "${variable.name}" to style "${name}"`)
-              } catch (error) {
-                console.warn(`Could not bind fontWeight variable to style "${name}":`, error)
-                // Fallback to direct value
-                if (data.fontWeight) {
-                  try {
-                    (style as any).fontWeight = Number(data.fontWeight)
-                  } catch (e) {
-                    console.warn(`Could not set fontWeight directly`)
-                  }
-                }
-              }
-            } else {
-              console.warn(`⚠️ Could not find fontWeight variable "${data.fontWeightBoundVariable.variableName}"`)
-              // Fallback to direct value
-              if (data.fontWeight) {
-                try {
-                  (style as any).fontWeight = Number(data.fontWeight)
-                } catch (e) {
-                  console.warn(`Could not set fontWeight directly`)
-                }
-              }
-            }
-          } else if (data.fontWeight) {
-            // No variable binding, set directly if the API supports it
-            try {
-              (style as any).fontWeight = Number(data.fontWeight)
-            } catch (e) {
-              // fontWeight might not be directly settable in all Figma API versions
-              console.warn(`Could not set fontWeight directly - property may not be supported`)
-            }
-          }
-          
-          // Set letterSpacing - check for variable binding first
-          if (data.letterSpacingBoundVariable && data.letterSpacingBoundVariable.variableName) {
-            const collectionName = data.letterSpacingBoundVariable.collectionName
-            const variable = findVariableByName(data.letterSpacingBoundVariable.variableName, collectionName)
-            if (variable) {
-              try {
-                style.setBoundVariable('letterSpacing', variable)
-                console.log(`🔗 Bound letterSpacing variable "${variable.name}" to style "${name}"`)
-              } catch (error) {
-                console.warn(`Could not bind letterSpacing variable to style "${name}":`, error)
-                // Fallback to direct value
-                if (data.letterSpacing) {
-                  const letterSpacingStr = String(data.letterSpacing)
-                  if (letterSpacingStr.endsWith('%')) {
-                    style.letterSpacing = { value: Number.parseFloat(letterSpacingStr), unit: 'PERCENT' }
-                  } else {
-                    style.letterSpacing = { value: Number.parseFloat(letterSpacingStr), unit: 'PIXELS' }
-                  }
-                }
-              }
-            } else {
-              console.warn(`⚠️ Could not find letterSpacing variable "${data.letterSpacingBoundVariable.variableName}"`)
-              // Fallback to direct value
-              if (data.letterSpacing) {
-                const letterSpacingStr = String(data.letterSpacing)
-                if (letterSpacingStr.endsWith('%')) {
-                  style.letterSpacing = { value: Number.parseFloat(letterSpacingStr), unit: 'PERCENT' }
-                } else {
-                  style.letterSpacing = { value: Number.parseFloat(letterSpacingStr), unit: 'PIXELS' }
-                }
-              }
-            }
-          } else if (data.letterSpacing) {
-            // No variable binding, set directly
-            const letterSpacingStr = String(data.letterSpacing)
-            if (letterSpacingStr.endsWith('%')) {
-              style.letterSpacing = { value: Number.parseFloat(letterSpacingStr), unit: 'PERCENT' }
-            } else {
-              style.letterSpacing = { value: Number.parseFloat(letterSpacingStr), unit: 'PIXELS' }
-            }
-          }
+							return paint;
+						},
+					);
 
-          // Set paragraphSpacing - check for variable binding first
-          if (data.paragraphSpacingBoundVariable && data.paragraphSpacingBoundVariable.variableName) {
-            const collectionName = data.paragraphSpacingBoundVariable.collectionName
-            const variable = findVariableByName(data.paragraphSpacingBoundVariable.variableName, collectionName)
-            if (variable) {
-              try {
-                style.setBoundVariable('paragraphSpacing', variable)
-                console.log(`🔗 Bound paragraphSpacing variable "${variable.name}" to style "${name}"`)
-              } catch (error) {
-                console.warn(`Could not bind paragraphSpacing variable to style "${name}":`, error)
-                // Fallback to direct value
-                if (data.paragraphSpacing) {
-                  style.paragraphSpacing = Number.parseFloat(data.paragraphSpacing)
-                }
-              }
-            } else {
-              console.warn(`⚠️ Could not find paragraphSpacing variable "${data.paragraphSpacingBoundVariable.variableName}"`)
-              // Fallback to direct value
-              if (data.paragraphSpacing) {
-                style.paragraphSpacing = Number.parseFloat(data.paragraphSpacing)
-              }
-            }
-          } else if (data.paragraphSpacing) {
-            // No variable binding, set directly
-            style.paragraphSpacing = Number.parseFloat(data.paragraphSpacing)
-          }
+					style.paints = boundPaints;
+				}
 
-          // Set paragraphIndent - check for variable binding first
-          if (data.paragraphIndentBoundVariable && data.paragraphIndentBoundVariable.variableName) {
-            const collectionName = data.paragraphIndentBoundVariable.collectionName
-            const variable = findVariableByName(data.paragraphIndentBoundVariable.variableName, collectionName)
-            if (variable) {
-              try {
-                style.setBoundVariable('paragraphIndent', variable)
-                console.log(`🔗 Bound paragraphIndent variable "${variable.name}" to style "${name}"`)
-              } catch (error) {
-                console.warn(`Could not bind paragraphIndent variable to style "${name}":`, error)
-                // Fallback to direct value
-                if (data.paragraphIndent) {
-                  style.paragraphIndent = Number.parseFloat(data.paragraphIndent)
-                }
-              }
-            } else {
-              console.warn(`⚠️ Could not find paragraphIndent variable "${data.paragraphIndentBoundVariable.variableName}"`)
-              // Fallback to direct value
-              if (data.paragraphIndent) {
-                style.paragraphIndent = Number.parseFloat(data.paragraphIndent)
-              }
-            }
-          } else if (data.paragraphIndent) {
-            // No variable binding, set directly
-            style.paragraphIndent = Number.parseFloat(data.paragraphIndent)
-          }
+				results.success++;
+			});
+		}
 
-          if (data.textCase) {
-            style.textCase = data.textCase
-          }
+		// Import Text Styles (Typography)
+		if (text) {
+			await processStyleGroup(text, "", "text", async (name, data) => {
+				const existingStyles = figma.getLocalTextStyles();
+				let style = existingStyles.find((s) => s.name === name);
 
-          if (data.textDecoration) {
-            style.textDecoration = data.textDecoration
-          }
+				if (!style) {
+					style = figma.createTextStyle();
+					style.name = name;
+					results.changes.push({
+						name,
+						type: "Text Style",
+						action: "created",
+						newValue: "Created new text style",
+					});
+				} else if (isOverrideMode) {
+					results.changes.push({
+						name,
+						type: "Text Style",
+						action: "updated",
+						oldValue: "Existing style",
+						newValue: "Updated",
+					});
+				} else {
+					results.skipped++;
+					return;
+				}
 
-          results.success++
-        } catch (error) {
-          throw error
-        }
-      })
-    }
+				if (data.description) {
+					style.description = data.description;
+				}
 
-    // Import Effect Styles (Shadows, Blurs)
-    if (effect) {
-      await processStyleGroup(effect, '', 'effect', async (name, data) => {
-        try {
-          const existingStyles = figma.getLocalEffectStyles()
-          let style = existingStyles.find(s => s.name === name)
-          
-          if (!style) {
-            style = figma.createEffectStyle()
-            style.name = name
-            results.changes.push({
-              name,
-              type: 'Effect Style',
-              action: 'created',
-              newValue: 'Created new effect style'
-            })
-          } else if (isOverrideMode) {
-            results.changes.push({
-              name,
-              type: 'Effect Style',
-              action: 'updated',
-              oldValue: 'Existing style',
-              newValue: 'Updated'
-            })
-          } else {
-            results.skipped++
-            return
-          }
+				// Set font properties - check for variable binding first
+				if (data.fontFamilyBoundVariable?.variableName) {
+					const collectionName = data.fontFamilyBoundVariable.collectionName;
+					const variable = findVariableByName(
+						data.fontFamilyBoundVariable.variableName,
+						collectionName,
+					);
+					if (variable) {
+						try {
+							// Use the correct API to bind variables to text style properties
+							style.setBoundVariable("fontFamily", variable);
+							console.log(
+								`🔗 Bound fontFamily variable "${variable.name}" to style "${name}"`,
+							);
 
-          if (data.description) {
-            style.description = data.description
-          }
+							// Still need to load and set the font for immediate display
+							if (data.fontFamily && data.fontStyle) {
+								try {
+									await figma.loadFontAsync({
+										family: data.fontFamily,
+										style: data.fontStyle,
+									});
+									style.fontName = {
+										family: data.fontFamily,
+										style: data.fontStyle,
+									};
+								} catch (_fontError) {
+									console.warn(
+										`Could not load font ${data.fontFamily} ${data.fontStyle} for variable-bound style`,
+									);
+								}
+							}
+						} catch (error) {
+							console.warn(
+								`Could not bind fontFamily variable to style "${name}":`,
+								error,
+							);
+							// Fallback to direct value
+							if (data.fontFamily && data.fontStyle) {
+								try {
+									await figma.loadFontAsync({
+										family: data.fontFamily,
+										style: data.fontStyle,
+									});
+									style.fontName = {
+										family: data.fontFamily,
+										style: data.fontStyle,
+									};
+								} catch (_fontError) {
+									console.warn(
+										`Could not load font ${data.fontFamily} ${data.fontStyle}, skipping font change`,
+									);
+									throw new Error(
+										`Font not available: ${data.fontFamily} ${data.fontStyle}`,
+									);
+								}
+							}
+						}
+					} else {
+						console.warn(
+							`⚠️ Could not find fontFamily variable "${data.fontFamilyBoundVariable.variableName}"`,
+						);
+						// Fallback to direct value
+						if (data.fontFamily && data.fontStyle) {
+							try {
+								await figma.loadFontAsync({
+									family: data.fontFamily,
+									style: data.fontStyle,
+								});
+								style.fontName = {
+									family: data.fontFamily,
+									style: data.fontStyle,
+								};
+							} catch (_fontError) {
+								console.warn(
+									`Could not load font ${data.fontFamily} ${data.fontStyle}, skipping font change`,
+								);
+								throw new Error(
+									`Font not available: ${data.fontFamily} ${data.fontStyle}`,
+								);
+							}
+						}
+					}
+				} else if (data.fontFamily && data.fontStyle) {
+					// No variable binding, set directly
+					try {
+						await figma.loadFontAsync({
+							family: data.fontFamily,
+							style: data.fontStyle,
+						});
+						style.fontName = {
+							family: data.fontFamily,
+							style: data.fontStyle,
+						};
+					} catch (_fontError) {
+						console.warn(
+							`Could not load font ${data.fontFamily} ${data.fontStyle}, skipping font change`,
+						);
+						throw new Error(
+							`Font not available: ${data.fontFamily} ${data.fontStyle}`,
+						);
+					}
+				}
 
-          // Convert effects and handle variable bindings
-          if (data.effects && Array.isArray(data.effects)) {
-            const convertedEffects = data.effects.map((eff: any) => convertDataToEffect(eff)).filter(Boolean)
-            style.effects = convertedEffects
-            
-            // After setting effects, bind variables if present
-            // We need to reconstruct the effects array with bound variables
-            const newEffects = style.effects.map((effect, index) => {
-              const effectData = data.effects[index]
-              if (!effectData) return effect
-            
-              try {
-                // Clone the effect and add variable bindings
-                const boundEffect: any = { ...effect }
-                
-                // Bind radius variable
-                if (effectData.radiusBoundVariable && effectData.radiusBoundVariable.variableName) {
-                  const collectionName = effectData.radiusBoundVariable.collectionName
-                  const variable = findVariableByName(effectData.radiusBoundVariable.variableName, collectionName)
-                  if (variable) {
-                    try {
-                      const boundEffectResult = figma.variables.setBoundVariableForEffect(effect, 'radius', variable)
-                      console.log(`🔗 Bound radius variable "${variable.name}" to effect ${index} in style "${name}"`)
-                      return boundEffectResult
-                    } catch (error) {
-                      console.warn(`Could not bind radius variable to effect ${index}:`, error)
-                    }
-                  } else {
-                    console.warn(`⚠️ Could not find radius variable "${effectData.radiusBoundVariable.variableName}"`)
-                  }
-                }
-                
-                // Bind spread variable (for drop shadows)
-                if (effectData.spreadBoundVariable && effectData.spreadBoundVariable.variableName) {
-                  const collectionName = effectData.spreadBoundVariable.collectionName
-                  const variable = findVariableByName(effectData.spreadBoundVariable.variableName, collectionName)
-                  if (variable) {
-                    try {
-                      const boundEffectResult = figma.variables.setBoundVariableForEffect(effect, 'spread', variable)
-                      console.log(`🔗 Bound spread variable "${variable.name}" to effect ${index} in style "${name}"`)
-                      return boundEffectResult
-                    } catch (error) {
-                      console.warn(`Could not bind spread variable to effect ${index}:`, error)
-                    }
-                  } else {
-                    console.warn(`⚠️ Could not find spread variable "${effectData.spreadBoundVariable.variableName}"`)
-                  }
-                }
-                
-                // Bind color variable (for shadows)
-                if (effectData.colorBoundVariable && effectData.colorBoundVariable.variableName) {
-                  const collectionName = effectData.colorBoundVariable.collectionName
-                  const variable = findVariableByName(effectData.colorBoundVariable.variableName, collectionName)
-                  if (variable) {
-                    try {
-                      const boundEffectResult = figma.variables.setBoundVariableForEffect(effect, 'color', variable)
-                      console.log(`🔗 Bound color variable "${variable.name}" to effect ${index} in style "${name}"`)
-                      return boundEffectResult
-                    } catch (error) {
-                      console.warn(`Could not bind color variable to effect ${index}:`, error)
-                    }
-                  } else {
-                    console.warn(`⚠️ Could not find color variable "${effectData.colorBoundVariable.variableName}"`)
-                  }
-                }
-              } catch (error) {
-                console.warn(`Error binding variables for effect ${index}:`, error)
-              }
-              
-              return effect
-            })
-            
-            // Update the style with the newly bound effects
-            style.effects = newEffects
-          }
+				// Set fontSize - check for variable binding first
+				if (data.fontSizeBoundVariable?.variableName) {
+					const collectionName = data.fontSizeBoundVariable.collectionName;
+					const variable = findVariableByName(
+						data.fontSizeBoundVariable.variableName,
+						collectionName,
+					);
+					if (variable) {
+						try {
+							// Use the correct API to bind variables to text style properties
+							style.setBoundVariable("fontSize", variable);
+							console.log(
+								`🔗 Bound fontSize variable "${variable.name}" to style "${name}"`,
+							);
+						} catch (error) {
+							console.warn(
+								`Could not bind fontSize variable to style "${name}":`,
+								error,
+							);
+							// Fallback to direct value
+							if (data.fontSize) {
+								style.fontSize = Number.parseFloat(data.fontSize);
+							}
+						}
+					} else {
+						console.warn(
+							`⚠️ Could not find fontSize variable "${data.fontSizeBoundVariable.variableName}"`,
+						);
+						// Fallback to direct value
+						if (data.fontSize) {
+							style.fontSize = Number.parseFloat(data.fontSize);
+						}
+					}
+				} else if (data.fontSize) {
+					style.fontSize = Number.parseFloat(data.fontSize);
+				}
 
-          results.success++
-        } catch (error) {
-          throw error
-        }
-      })
-    }
+				// Set lineHeight - check for variable binding first
+				if (data.lineHeightBoundVariable?.variableName) {
+					const collectionName = data.lineHeightBoundVariable.collectionName;
+					const variable = findVariableByName(
+						data.lineHeightBoundVariable.variableName,
+						collectionName,
+					);
+					if (variable) {
+						try {
+							// Figma requires lineHeight variables to be in PERCENT format
+							// If the variable stores a multiplier (e.g., 1.4), it should be stored as 140 in the variable
+							style.setBoundVariable("lineHeight", variable);
+							console.log(
+								`🔗 Bound lineHeight variable "${variable.name}" to style "${name}"`,
+							);
+						} catch (error) {
+							console.warn(
+								`Could not bind lineHeight variable to style "${name}":`,
+								error,
+							);
+							// Fallback to direct value
+							if (data.lineHeight) {
+								const lineHeightStr = String(data.lineHeight);
+								if (lineHeightStr.endsWith("%")) {
+									style.lineHeight = {
+										value: Number.parseFloat(lineHeightStr),
+										unit: "PERCENT",
+									};
+								} else if (lineHeightStr.endsWith("px")) {
+									style.lineHeight = {
+										value: Number.parseFloat(lineHeightStr),
+										unit: "PIXELS",
+									};
+								} else {
+									style.lineHeight = { unit: "AUTO" };
+								}
+							}
+						}
+					} else {
+						console.warn(
+							`⚠️ Could not find lineHeight variable "${data.lineHeightBoundVariable.variableName}"`,
+						);
+						// Fallback to direct value
+						if (data.lineHeight) {
+							const lineHeightStr = String(data.lineHeight);
+							if (lineHeightStr.endsWith("%")) {
+								style.lineHeight = {
+									value: Number.parseFloat(lineHeightStr),
+									unit: "PERCENT",
+								};
+							} else if (lineHeightStr.endsWith("px")) {
+								style.lineHeight = {
+									value: Number.parseFloat(lineHeightStr),
+									unit: "PIXELS",
+								};
+							} else {
+								style.lineHeight = { unit: "AUTO" };
+							}
+						}
+					}
+				} else if (data.lineHeight) {
+					const lineHeightStr = String(data.lineHeight);
+					if (lineHeightStr.endsWith("%")) {
+						style.lineHeight = {
+							value: Number.parseFloat(lineHeightStr),
+							unit: "PERCENT",
+						};
+					} else if (lineHeightStr.endsWith("px")) {
+						style.lineHeight = {
+							value: Number.parseFloat(lineHeightStr),
+							unit: "PIXELS",
+						};
+					} else {
+						style.lineHeight = { unit: "AUTO" };
+					}
+				}
 
-    // Import Grid Styles
-    if (grid) {
-      await processStyleGroup(grid, '', 'grid', async (name, data) => {
-        try {
-          const existingStyles = figma.getLocalGridStyles()
-          let style = existingStyles.find(s => s.name === name)
-          
-          if (!style) {
-            style = figma.createGridStyle()
-            style.name = name
-            results.changes.push({
-              name,
-              type: 'Grid Style',
-              action: 'created',
-              newValue: 'Created new grid style'
-            })
-          } else if (isOverrideMode) {
-            results.changes.push({
-              name,
-              type: 'Grid Style',
-              action: 'updated',
-              oldValue: 'Existing style',
-              newValue: 'Updated'
-            })
-          } else {
-            results.skipped++
-            return
-          }
+				// Set fontWeight - check for variable binding first
+				if (data.fontWeightBoundVariable?.variableName) {
+					const collectionName = data.fontWeightBoundVariable.collectionName;
+					const variable = findVariableByName(
+						data.fontWeightBoundVariable.variableName,
+						collectionName,
+					);
+					if (variable) {
+						try {
+							style.setBoundVariable("fontWeight", variable);
+							console.log(
+								`🔗 Bound fontWeight variable "${variable.name}" to style "${name}"`,
+							);
+						} catch (error) {
+							console.warn(
+								`Could not bind fontWeight variable to style "${name}":`,
+								error,
+							);
+							// Fallback to direct value
+							if (data.fontWeight) {
+								try {
+									(style as any).fontWeight = Number(data.fontWeight);
+								} catch (_e) {
+									console.warn(`Could not set fontWeight directly`);
+								}
+							}
+						}
+					} else {
+						console.warn(
+							`⚠️ Could not find fontWeight variable "${data.fontWeightBoundVariable.variableName}"`,
+						);
+						// Fallback to direct value
+						if (data.fontWeight) {
+							try {
+								(style as any).fontWeight = Number(data.fontWeight);
+							} catch (_e) {
+								console.warn(`Could not set fontWeight directly`);
+							}
+						}
+					}
+				} else if (data.fontWeight) {
+					// No variable binding, set directly if the API supports it
+					try {
+						(style as any).fontWeight = Number(data.fontWeight);
+					} catch (_e) {
+						// fontWeight might not be directly settable in all Figma API versions
+						console.warn(
+							`Could not set fontWeight directly - property may not be supported`,
+						);
+					}
+				}
 
-          if (data.description) {
-            style.description = data.description
-          }
+				// Set letterSpacing - check for variable binding first
+				if (data.letterSpacingBoundVariable?.variableName) {
+					const collectionName = data.letterSpacingBoundVariable.collectionName;
+					const variable = findVariableByName(
+						data.letterSpacingBoundVariable.variableName,
+						collectionName,
+					);
+					if (variable) {
+						try {
+							style.setBoundVariable("letterSpacing", variable);
+							console.log(
+								`🔗 Bound letterSpacing variable "${variable.name}" to style "${name}"`,
+							);
+						} catch (error) {
+							console.warn(
+								`Could not bind letterSpacing variable to style "${name}":`,
+								error,
+							);
+							// Fallback to direct value
+							if (data.letterSpacing) {
+								const letterSpacingStr = String(data.letterSpacing);
+								if (letterSpacingStr.endsWith("%")) {
+									style.letterSpacing = {
+										value: Number.parseFloat(letterSpacingStr),
+										unit: "PERCENT",
+									};
+								} else {
+									style.letterSpacing = {
+										value: Number.parseFloat(letterSpacingStr),
+										unit: "PIXELS",
+									};
+								}
+							}
+						}
+					} else {
+						console.warn(
+							`⚠️ Could not find letterSpacing variable "${data.letterSpacingBoundVariable.variableName}"`,
+						);
+						// Fallback to direct value
+						if (data.letterSpacing) {
+							const letterSpacingStr = String(data.letterSpacing);
+							if (letterSpacingStr.endsWith("%")) {
+								style.letterSpacing = {
+									value: Number.parseFloat(letterSpacingStr),
+									unit: "PERCENT",
+								};
+							} else {
+								style.letterSpacing = {
+									value: Number.parseFloat(letterSpacingStr),
+									unit: "PIXELS",
+								};
+							}
+						}
+					}
+				} else if (data.letterSpacing) {
+					// No variable binding, set directly
+					const letterSpacingStr = String(data.letterSpacing);
+					if (letterSpacingStr.endsWith("%")) {
+						style.letterSpacing = {
+							value: Number.parseFloat(letterSpacingStr),
+							unit: "PERCENT",
+						};
+					} else {
+						style.letterSpacing = {
+							value: Number.parseFloat(letterSpacingStr),
+							unit: "PIXELS",
+						};
+					}
+				}
 
-          // Convert grid layouts
-          if (data.layoutGrids && Array.isArray(data.layoutGrids)) {
-            style.layoutGrids = data.layoutGrids.map((grid: any) => convertDataToLayoutGrid(grid)).filter(Boolean)
-          }
+				// Set paragraphSpacing - check for variable binding first
+				if (data.paragraphSpacingBoundVariable?.variableName) {
+					const collectionName =
+						data.paragraphSpacingBoundVariable.collectionName;
+					const variable = findVariableByName(
+						data.paragraphSpacingBoundVariable.variableName,
+						collectionName,
+					);
+					if (variable) {
+						try {
+							style.setBoundVariable("paragraphSpacing", variable);
+							console.log(
+								`🔗 Bound paragraphSpacing variable "${variable.name}" to style "${name}"`,
+							);
+						} catch (error) {
+							console.warn(
+								`Could not bind paragraphSpacing variable to style "${name}":`,
+								error,
+							);
+							// Fallback to direct value
+							if (data.paragraphSpacing) {
+								style.paragraphSpacing = Number.parseFloat(
+									data.paragraphSpacing,
+								);
+							}
+						}
+					} else {
+						console.warn(
+							`⚠️ Could not find paragraphSpacing variable "${data.paragraphSpacingBoundVariable.variableName}"`,
+						);
+						// Fallback to direct value
+						if (data.paragraphSpacing) {
+							style.paragraphSpacing = Number.parseFloat(data.paragraphSpacing);
+						}
+					}
+				} else if (data.paragraphSpacing) {
+					// No variable binding, set directly
+					style.paragraphSpacing = Number.parseFloat(data.paragraphSpacing);
+				}
 
-          results.success++
-        } catch (error) {
-          throw error
-        }
-      })
-    }
+				// Set paragraphIndent - check for variable binding first
+				if (data.paragraphIndentBoundVariable?.variableName) {
+					const collectionName =
+						data.paragraphIndentBoundVariable.collectionName;
+					const variable = findVariableByName(
+						data.paragraphIndentBoundVariable.variableName,
+						collectionName,
+					);
+					if (variable) {
+						try {
+							style.setBoundVariable("paragraphIndent", variable);
+							console.log(
+								`🔗 Bound paragraphIndent variable "${variable.name}" to style "${name}"`,
+							);
+						} catch (error) {
+							console.warn(
+								`Could not bind paragraphIndent variable to style "${name}":`,
+								error,
+							);
+							// Fallback to direct value
+							if (data.paragraphIndent) {
+								style.paragraphIndent = Number.parseFloat(data.paragraphIndent);
+							}
+						}
+					} else {
+						console.warn(
+							`⚠️ Could not find paragraphIndent variable "${data.paragraphIndentBoundVariable.variableName}"`,
+						);
+						// Fallback to direct value
+						if (data.paragraphIndent) {
+							style.paragraphIndent = Number.parseFloat(data.paragraphIndent);
+						}
+					}
+				} else if (data.paragraphIndent) {
+					// No variable binding, set directly
+					style.paragraphIndent = Number.parseFloat(data.paragraphIndent);
+				}
 
-    console.log('✅ Style import complete:', results)
-    return results
+				if (data.textCase) {
+					style.textCase = data.textCase;
+				}
 
-  } catch (error) {
-    console.error('❌ Style import error:', error)
-    results.failed++
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-    results.errors.push(
-      `🚨 Critical error during style import: ${errorMsg}`
-    )
-    return results
-  }
+				if (data.textDecoration) {
+					style.textDecoration = data.textDecoration;
+				}
+
+				results.success++;
+			});
+		}
+
+		// Import Effect Styles (Shadows, Blurs)
+		if (effect) {
+			await processStyleGroup(effect, "", "effect", async (name, data) => {
+				const existingStyles = figma.getLocalEffectStyles();
+				let style = existingStyles.find((s) => s.name === name);
+
+				if (!style) {
+					style = figma.createEffectStyle();
+					style.name = name;
+					results.changes.push({
+						name,
+						type: "Effect Style",
+						action: "created",
+						newValue: "Created new effect style",
+					});
+				} else if (isOverrideMode) {
+					results.changes.push({
+						name,
+						type: "Effect Style",
+						action: "updated",
+						oldValue: "Existing style",
+						newValue: "Updated",
+					});
+				} else {
+					results.skipped++;
+					return;
+				}
+
+				if (data.description) {
+					style.description = data.description;
+				}
+
+				// Convert effects and handle variable bindings
+				if (data.effects && Array.isArray(data.effects)) {
+					const convertedEffects = data.effects
+						.map((eff: any) => convertDataToEffect(eff))
+						.filter(Boolean);
+					style.effects = convertedEffects;
+
+					// After setting effects, bind variables if present
+					// We need to reconstruct the effects array with bound variables
+					const newEffects = style.effects.map((effect, index) => {
+						const effectData = data.effects[index];
+						if (!effectData) return effect;
+
+						try {
+							// Clone the effect and add variable bindings
+							const _boundEffect: any = { ...effect };
+
+							// Bind radius variable
+							if (effectData.radiusBoundVariable?.variableName) {
+								const collectionName =
+									effectData.radiusBoundVariable.collectionName;
+								const variable = findVariableByName(
+									effectData.radiusBoundVariable.variableName,
+									collectionName,
+								);
+								if (variable) {
+									try {
+										const boundEffectResult =
+											figma.variables.setBoundVariableForEffect(
+												effect,
+												"radius",
+												variable,
+											);
+										console.log(
+											`🔗 Bound radius variable "${variable.name}" to effect ${index} in style "${name}"`,
+										);
+										return boundEffectResult;
+									} catch (error) {
+										console.warn(
+											`Could not bind radius variable to effect ${index}:`,
+											error,
+										);
+									}
+								} else {
+									console.warn(
+										`⚠️ Could not find radius variable "${effectData.radiusBoundVariable.variableName}"`,
+									);
+								}
+							}
+
+							// Bind spread variable (for drop shadows)
+							if (effectData.spreadBoundVariable?.variableName) {
+								const collectionName =
+									effectData.spreadBoundVariable.collectionName;
+								const variable = findVariableByName(
+									effectData.spreadBoundVariable.variableName,
+									collectionName,
+								);
+								if (variable) {
+									try {
+										const boundEffectResult =
+											figma.variables.setBoundVariableForEffect(
+												effect,
+												"spread",
+												variable,
+											);
+										console.log(
+											`🔗 Bound spread variable "${variable.name}" to effect ${index} in style "${name}"`,
+										);
+										return boundEffectResult;
+									} catch (error) {
+										console.warn(
+											`Could not bind spread variable to effect ${index}:`,
+											error,
+										);
+									}
+								} else {
+									console.warn(
+										`⚠️ Could not find spread variable "${effectData.spreadBoundVariable.variableName}"`,
+									);
+								}
+							}
+
+							// Bind color variable (for shadows)
+							if (effectData.colorBoundVariable?.variableName) {
+								const collectionName =
+									effectData.colorBoundVariable.collectionName;
+								const variable = findVariableByName(
+									effectData.colorBoundVariable.variableName,
+									collectionName,
+								);
+								if (variable) {
+									try {
+										const boundEffectResult =
+											figma.variables.setBoundVariableForEffect(
+												effect,
+												"color",
+												variable,
+											);
+										console.log(
+											`🔗 Bound color variable "${variable.name}" to effect ${index} in style "${name}"`,
+										);
+										return boundEffectResult;
+									} catch (error) {
+										console.warn(
+											`Could not bind color variable to effect ${index}:`,
+											error,
+										);
+									}
+								} else {
+									console.warn(
+										`⚠️ Could not find color variable "${effectData.colorBoundVariable.variableName}"`,
+									);
+								}
+							}
+						} catch (error) {
+							console.warn(
+								`Error binding variables for effect ${index}:`,
+								error,
+							);
+						}
+
+						return effect;
+					});
+
+					// Update the style with the newly bound effects
+					style.effects = newEffects;
+				}
+
+				results.success++;
+			});
+		}
+
+		// Import Grid Styles
+		if (grid) {
+			await processStyleGroup(grid, "", "grid", async (name, data) => {
+				const existingStyles = figma.getLocalGridStyles();
+				let style = existingStyles.find((s) => s.name === name);
+
+				if (!style) {
+					style = figma.createGridStyle();
+					style.name = name;
+					results.changes.push({
+						name,
+						type: "Grid Style",
+						action: "created",
+						newValue: "Created new grid style",
+					});
+				} else if (isOverrideMode) {
+					results.changes.push({
+						name,
+						type: "Grid Style",
+						action: "updated",
+						oldValue: "Existing style",
+						newValue: "Updated",
+					});
+				} else {
+					results.skipped++;
+					return;
+				}
+
+				if (data.description) {
+					style.description = data.description;
+				}
+
+				// Convert grid layouts
+				if (data.layoutGrids && Array.isArray(data.layoutGrids)) {
+					style.layoutGrids = data.layoutGrids
+						.map((grid: any) => convertDataToLayoutGrid(grid))
+						.filter(Boolean);
+				}
+
+				results.success++;
+			});
+		}
+
+		console.log("✅ Style import complete:", results);
+		return results;
+	} catch (error) {
+		console.error("❌ Style import error:", error);
+		results.failed++;
+		const errorMsg = error instanceof Error ? error.message : "Unknown error";
+		results.errors.push(`🚨 Critical error during style import: ${errorMsg}`);
+		return results;
+	}
 }
 
 // Helper: Find variable by name (since IDs change on import)
-function findVariableByName(variableName: string, collectionName?: string): Variable | null {
-  const collections = figma.variables.getLocalVariableCollections()
-  
-  for (const collection of collections) {
-    // If collection name is specified, only search in that collection
-    if (collectionName && collection.name !== collectionName) {
-      continue
-    }
-    
-    for (const variableId of collection.variableIds) {
-      const variable = figma.variables.getVariableById(variableId)
-      if (!variable) continue
-      
-      // Try exact match first
-      if (variable.name === variableName) {
-        console.log(`✅ Found variable "${variableName}" in collection "${collection.name}"`)
-        return variable
-      }
-      
-      // Try alternative formats:
-      // 1. If variableName is "shadcn.background", also try "shadcn/background"
-      const alternativeName = variableName.replace(/\./g, '/')
-      if (variable.name === alternativeName) {
-        console.log(`✅ Found variable "${alternativeName}" (alternative format) in collection "${collection.name}"`)
-        return variable
-      }
-      
-      // 2. If variableName is "shadcn.background" and collection is "semantics", 
-      //    also try "semantics/shadcn/background" or "semantics.shadcn.background"
-      if (collectionName) {
-        const fullPathSlash = `${collectionName}/${alternativeName}`
-        const fullPathDot = `${collectionName}.${variableName}`
-        if (variable.name === fullPathSlash || variable.name === fullPathDot) {
-          console.log(`✅ Found variable "${variable.name}" (full path) in collection "${collection.name}"`)
-          return variable
-        }
-      }
-    }
-  }
-  
-  console.warn(`⚠️ Could not find variable "${variableName}"${collectionName ? ` in collection "${collectionName}"` : ''}`)
-  return null
+function findVariableByName(
+	variableName: string,
+	collectionName?: string,
+): Variable | null {
+	const collections = figma.variables.getLocalVariableCollections();
+
+	for (const collection of collections) {
+		// If collection name is specified, only search in that collection
+		if (collectionName && collection.name !== collectionName) {
+			continue;
+		}
+
+		for (const variableId of collection.variableIds) {
+			const variable = figma.variables.getVariableById(variableId);
+			if (!variable) continue;
+
+			// Try exact match first
+			if (variable.name === variableName) {
+				console.log(
+					`✅ Found variable "${variableName}" in collection "${collection.name}"`,
+				);
+				return variable;
+			}
+
+			// Try alternative formats:
+			// 1. If variableName is "shadcn.background", also try "shadcn/background"
+			const alternativeName = variableName.replace(/\./g, "/");
+			if (variable.name === alternativeName) {
+				console.log(
+					`✅ Found variable "${alternativeName}" (alternative format) in collection "${collection.name}"`,
+				);
+				return variable;
+			}
+
+			// 2. If variableName is "shadcn.background" and collection is "semantics",
+			//    also try "semantics/shadcn/background" or "semantics.shadcn.background"
+			if (collectionName) {
+				const fullPathSlash = `${collectionName}/${alternativeName}`;
+				const fullPathDot = `${collectionName}.${variableName}`;
+				if (variable.name === fullPathSlash || variable.name === fullPathDot) {
+					console.log(
+						`✅ Found variable "${variable.name}" (full path) in collection "${collection.name}"`,
+					);
+					return variable;
+				}
+			}
+		}
+	}
+
+	console.warn(
+		`⚠️ Could not find variable "${variableName}"${collectionName ? ` in collection "${collectionName}"` : ""}`,
+	);
+	return null;
 }
 
 // Helper: Convert fill data to Figma Paint object
 // Returns both the paint and variable binding info (for styles, bindings must be set separately)
 function convertFillToPaint(fill: any, returnBindingInfo = false): any {
-  if (fill.type === 'solid') {
-    const color = parseColorToRGBA(fill.color)
-    const paint: SolidPaint = {
-      type: 'SOLID',
-      color: { r: color.r, g: color.g, b: color.b },
-      opacity: fill.opacity !== undefined ? fill.opacity : 1
-    }
-    
-    // Find variable binding if present - find by name since IDs change on import
-    let variableBinding = null
-    let variableName = null
-    if (fill.boundVariable && fill.boundVariable.variableName) {
-      variableName = fill.boundVariable.variableName
-      const collectionName = fill.boundVariable.collectionName
-      const variable = findVariableByName(variableName, collectionName)
-      if (variable) {
-        variableBinding = { type: 'VARIABLE_ALIAS' as const, id: variable.id }
-      } else {
-        console.warn(`⚠️ Could not find variable "${variableName}" for binding`)
-      }
-    }
-    
-    if (returnBindingInfo) {
-      return { paint, variableBinding, variableName }
-    }
-    return paint
-  }
+	if (fill.type === "solid") {
+		const color = parseColorToRGBA(fill.color);
+		const paint: SolidPaint = {
+			type: "SOLID",
+			color: { r: color.r, g: color.g, b: color.b },
+			opacity: fill.opacity !== undefined ? fill.opacity : 1,
+		};
 
-  if (fill.type === 'linear' || fill.type === 'radial' || fill.type === 'angular' || fill.type === 'diamond') {
-    const gradientType = `GRADIENT_${fill.type.toUpperCase()}` as 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | 'GRADIENT_DIAMOND'
-    
-    // Create gradient stops with variable bindings attached
-    const gradientStops = fill.gradientStops.map((stop: any) => {
-      const color = parseColorToRGBA(stop.color)
-      const gradStop: any = {
-        position: stop.position,
-        color: { r: color.r, g: color.g, b: color.b, a: color.a }
-      }
-      
-      // Attach variable binding directly to the gradient stop if present
-      if (stop.boundVariable && stop.boundVariable.variableName) {
-        const collectionName = stop.boundVariable.collectionName
-        const variable = findVariableByName(stop.boundVariable.variableName, collectionName)
-        if (variable) {
-          // Attach boundVariables structure directly to the gradient stop
-          gradStop.boundVariables = {
-            color: {
-              type: 'VARIABLE_ALIAS',
-              id: variable.id
-            }
-          }
-          console.log(`🔗 Bound variable to gradient stop: ${stop.boundVariable.variableName}`)
-        } else {
-          console.warn(`⚠️ Could not find variable "${stop.boundVariable.variableName}" for gradient stop`)
-        }
-      }
-      
-      return gradStop
-    })
-    
-    const paint: GradientPaint = {
-      type: gradientType,
-      gradientStops: gradientStops,
-      gradientTransform: fill.gradientTransform || [[1, 0, 0], [0, 1, 0]],
-      opacity: fill.opacity !== undefined ? fill.opacity : 1
-    }
-    
-    if (returnBindingInfo) {
-      return { 
-        paint, 
-        variableBinding: null,
-        variableName: null
-      }
-    }
-    return paint
-  }
+		// Find variable binding if present - find by name since IDs change on import
+		let variableBinding = null;
+		let variableName = null;
+		if (fill.boundVariable?.variableName) {
+			variableName = fill.boundVariable.variableName;
+			const collectionName = fill.boundVariable.collectionName;
+			const variable = findVariableByName(variableName, collectionName);
+			if (variable) {
+				variableBinding = { type: "VARIABLE_ALIAS" as const, id: variable.id };
+			} else {
+				console.warn(`⚠️ Could not find variable "${variableName}" for binding`);
+			}
+		}
 
-  // Default fallback
-  const defaultPaint = { type: 'SOLID' as const, color: { r: 0, g: 0, b: 0 }, opacity: 1 }
-  if (returnBindingInfo) {
-    return { paint: defaultPaint, variableBinding: null, variableName: null }
-  }
-  return defaultPaint
+		if (returnBindingInfo) {
+			return { paint, variableBinding, variableName };
+		}
+		return paint;
+	}
+
+	if (
+		fill.type === "linear" ||
+		fill.type === "radial" ||
+		fill.type === "angular" ||
+		fill.type === "diamond"
+	) {
+		const gradientType = `GRADIENT_${fill.type.toUpperCase()}` as
+			| "GRADIENT_LINEAR"
+			| "GRADIENT_RADIAL"
+			| "GRADIENT_ANGULAR"
+			| "GRADIENT_DIAMOND";
+
+		// Create gradient stops with variable bindings attached
+		const gradientStops = fill.gradientStops.map((stop: any) => {
+			const color = parseColorToRGBA(stop.color);
+			const gradStop: any = {
+				position: stop.position,
+				color: { r: color.r, g: color.g, b: color.b, a: color.a },
+			};
+
+			// Attach variable binding directly to the gradient stop if present
+			if (stop.boundVariable?.variableName) {
+				const collectionName = stop.boundVariable.collectionName;
+				const variable = findVariableByName(
+					stop.boundVariable.variableName,
+					collectionName,
+				);
+				if (variable) {
+					// Attach boundVariables structure directly to the gradient stop
+					gradStop.boundVariables = {
+						color: {
+							type: "VARIABLE_ALIAS",
+							id: variable.id,
+						},
+					};
+					console.log(
+						`🔗 Bound variable to gradient stop: ${stop.boundVariable.variableName}`,
+					);
+				} else {
+					console.warn(
+						`⚠️ Could not find variable "${stop.boundVariable.variableName}" for gradient stop`,
+					);
+				}
+			}
+
+			return gradStop;
+		});
+
+		const paint: GradientPaint = {
+			type: gradientType,
+			gradientStops: gradientStops,
+			gradientTransform: fill.gradientTransform || [
+				[1, 0, 0],
+				[0, 1, 0],
+			],
+			opacity: fill.opacity !== undefined ? fill.opacity : 1,
+		};
+
+		if (returnBindingInfo) {
+			return {
+				paint,
+				variableBinding: null,
+				variableName: null,
+			};
+		}
+		return paint;
+	}
+
+	// Default fallback
+	const defaultPaint = {
+		type: "SOLID" as const,
+		color: { r: 0, g: 0, b: 0 },
+		opacity: 1,
+	};
+	if (returnBindingInfo) {
+		return { paint: defaultPaint, variableBinding: null, variableName: null };
+	}
+	return defaultPaint;
 }
 
 // Helper: Convert effect data to Figma Effect
 function convertDataToEffect(data: any): Effect | null {
-  // Helper to strip 'px' suffix and convert to number
-  const parsePixelValue = (value: string | number): number => {
-    if (typeof value === 'number') return value
-    if (typeof value === 'string') {
-      return Number.parseFloat(value.replace('px', ''))
-    }
-    return 0
-  }
-  
-  if (data.type === 'drop-shadow') {
-    return {
-      type: 'DROP_SHADOW',
-      offset: {
-        x: parsePixelValue(data.offsetX),
-        y: parsePixelValue(data.offsetY)
-      },
-      radius: parsePixelValue(data.radius),
-      spread: parsePixelValue(data.spread || 0),
-      color: parseColorToRGBA(data.color ?? '', { r: 0, g: 0, b: 0, a: 1 }),
-      visible: data.visible !== false,
-      blendMode: 'NORMAL'
-    } as DropShadowEffect
-  }
-  
-  if (data.type === 'inner-shadow') {
-    return {
-      type: 'INNER_SHADOW',
-      offset: {
-        x: parsePixelValue(data.offsetX),
-        y: parsePixelValue(data.offsetY)
-      },
-      radius: parsePixelValue(data.radius),
-      color: parseColorToRGBA(data.color ?? '', { r: 0, g: 0, b: 0, a: 1 }),
-      visible: data.visible !== false,
-      blendMode: 'NORMAL'
-    } as InnerShadowEffect
-  }
-  
-  if (data.type === 'layer-blur' || data.type === 'background-blur') {
-    return {
-      type: data.type === 'layer-blur' ? 'LAYER_BLUR' : 'BACKGROUND_BLUR',
-      radius: parsePixelValue(data.radius),
-      visible: data.visible !== false
-    } as BlurEffect
-  }
-  
-  return null
+	// Helper to strip 'px' suffix and convert to number
+	const parsePixelValue = (value: string | number): number => {
+		if (typeof value === "number") return value;
+		if (typeof value === "string") {
+			return Number.parseFloat(value.replace("px", ""));
+		}
+		return 0;
+	};
+
+	if (data.type === "drop-shadow") {
+		return {
+			type: "DROP_SHADOW",
+			offset: {
+				x: parsePixelValue(data.offsetX),
+				y: parsePixelValue(data.offsetY),
+			},
+			radius: parsePixelValue(data.radius),
+			spread: parsePixelValue(data.spread || 0),
+			color: parseColorToRGBA(data.color ?? "", { r: 0, g: 0, b: 0, a: 1 }),
+			visible: data.visible !== false,
+			blendMode: "NORMAL",
+		} as DropShadowEffect;
+	}
+
+	if (data.type === "inner-shadow") {
+		return {
+			type: "INNER_SHADOW",
+			offset: {
+				x: parsePixelValue(data.offsetX),
+				y: parsePixelValue(data.offsetY),
+			},
+			radius: parsePixelValue(data.radius),
+			color: parseColorToRGBA(data.color ?? "", { r: 0, g: 0, b: 0, a: 1 }),
+			visible: data.visible !== false,
+			blendMode: "NORMAL",
+		} as InnerShadowEffect;
+	}
+
+	if (data.type === "layer-blur" || data.type === "background-blur") {
+		return {
+			type: data.type === "layer-blur" ? "LAYER_BLUR" : "BACKGROUND_BLUR",
+			radius: parsePixelValue(data.radius),
+			visible: data.visible !== false,
+		} as BlurEffect;
+	}
+
+	return null;
 }
 
 // Helper: Convert grid data to Figma LayoutGrid
 function convertDataToLayoutGrid(data: any): LayoutGrid | null {
-  // Implementation depends on grid data structure
-  // This is a simplified version
-  return {
-    pattern: data.pattern || 'COLUMNS',
-    sectionSize: data.sectionSize || 8,
-    visible: data.visible !== false,
-    color: parseColorToRGBA(data.color ?? '', { r: 0.8, g: 0.8, b: 0.8, a: 0.1 })
-  } as LayoutGrid
+	// Implementation depends on grid data structure
+	// This is a simplified version
+	return {
+		pattern: data.pattern || "COLUMNS",
+		sectionSize: data.sectionSize || 8,
+		visible: data.visible !== false,
+		color: parseColorToRGBA(data.color ?? "", {
+			r: 0.8,
+			g: 0.8,
+			b: 0.8,
+			a: 0.1,
+		}),
+	} as LayoutGrid;
 }
-
