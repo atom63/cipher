@@ -14,15 +14,21 @@
 
 /** Information about a bound variable */
 export interface BoundVariableInfo {
-  type: 'variable'
-  variableId: string
-  variableName: string
-  collectionName: string
-  collectionId: string | undefined
+	type: "variable";
+	variableId: string;
+	variableName: string;
+	collectionName: string;
+	collectionId: string | undefined;
 }
 
 /** Properties that can have variable bindings */
-export type BindableProperty = 'color' | 'radius' | 'spread' | 'opacity' | 'x' | 'y'
+export type BindableProperty =
+	| "color"
+	| "radius"
+	| "spread"
+	| "opacity"
+	| "x"
+	| "y";
 
 // ============================================================================
 // CORE UTILITIES
@@ -45,37 +51,41 @@ export type BindableProperty = 'color' | 'radius' | 'spread' | 'opacity' | 'x' |
  * ```
  */
 export function getBoundVariable(
-  obj: unknown,
-  property: BindableProperty
+	obj: unknown,
+	property: BindableProperty,
 ): BoundVariableInfo | null {
-  try {
-    if (!obj || typeof obj !== 'object') return null
+	try {
+		if (!obj || typeof obj !== "object") return null;
 
-    const anyObj = obj as Record<string, unknown>
-    const boundVariables = anyObj.boundVariables as Record<string, { id?: string }> | undefined
+		const anyObj = obj as Record<string, unknown>;
+		const boundVariables = anyObj.boundVariables as
+			| Record<string, { id?: string }>
+			| undefined;
 
-    if (!boundVariables || typeof boundVariables !== 'object') return null
-    if (!boundVariables[property]?.id) return null
+		if (!boundVariables || typeof boundVariables !== "object") return null;
+		if (!boundVariables[property]?.id) return null;
 
-    const variableId = boundVariables[property].id
-    if (!variableId) return null
+		const variableId = boundVariables[property].id;
+		if (!variableId) return null;
 
-    const variable = figma.variables.getVariableById(variableId)
-    if (!variable) return null
+		const variable = figma.variables.getVariableById(variableId);
+		if (!variable) return null;
 
-    const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+		const collection = figma.variables.getVariableCollectionById(
+			variable.variableCollectionId,
+		);
 
-    return {
-      type: 'variable',
-      variableId: variable.id,
-      variableName: variable.name,
-      collectionName: collection?.name ?? 'Unknown',
-      collectionId: collection?.id,
-    }
-  } catch (error) {
-    // Silently fail - boundVariables may not be available in all contexts
-    return null
-  }
+		return {
+			type: "variable",
+			variableId: variable.id,
+			variableName: variable.name,
+			collectionName: collection?.name ?? "Unknown",
+			collectionId: collection?.id,
+		};
+	} catch (_error) {
+		// Silently fail - boundVariables may not be available in all contexts
+		return null;
+	}
 }
 
 /**
@@ -92,19 +102,19 @@ export function getBoundVariable(
  * ```
  */
 export function getAllBoundVariables(
-  obj: unknown,
-  properties: BindableProperty[]
+	obj: unknown,
+	properties: BindableProperty[],
 ): Partial<Record<BindableProperty, BoundVariableInfo>> {
-  const result: Partial<Record<BindableProperty, BoundVariableInfo>> = {}
+	const result: Partial<Record<BindableProperty, BoundVariableInfo>> = {};
 
-  for (const property of properties) {
-    const binding = getBoundVariable(obj, property)
-    if (binding) {
-      result[property] = binding
-    }
-  }
+	for (const property of properties) {
+		const binding = getBoundVariable(obj, property);
+		if (binding) {
+			result[property] = binding;
+		}
+	}
 
-  return result
+	return result;
 }
 
 /**
@@ -114,7 +124,7 @@ export function getAllBoundVariables(
  * @returns BoundVariableInfo if the paint's color is bound, null otherwise
  */
 export function getPaintBoundVariable(paint: Paint): BoundVariableInfo | null {
-  return getBoundVariable(paint, 'color')
+	return getBoundVariable(paint, "color");
 }
 
 /**
@@ -124,11 +134,11 @@ export function getPaintBoundVariable(paint: Paint): BoundVariableInfo | null {
  * @returns Object with any bound properties
  */
 export function getEffectBoundVariables(effect: Effect): {
-  color?: BoundVariableInfo
-  radius?: BoundVariableInfo
-  spread?: BoundVariableInfo
+	color?: BoundVariableInfo;
+	radius?: BoundVariableInfo;
+	spread?: BoundVariableInfo;
 } {
-  return getAllBoundVariables(effect, ['color', 'radius', 'spread'])
+	return getAllBoundVariables(effect, ["color", "radius", "spread"]);
 }
 
 /**
@@ -144,20 +154,22 @@ export function getEffectBoundVariables(effect: Effect): {
  * ```
  */
 export function resolveVariableReference(variableId: string): string | null {
-  try {
-    const variable = figma.variables.getVariableById(variableId)
-    if (!variable) return null
+	try {
+		const variable = figma.variables.getVariableById(variableId);
+		if (!variable) return null;
 
-    const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-    const collectionName = collection?.name ?? 'unknown'
+		const collection = figma.variables.getVariableCollectionById(
+			variable.variableCollectionId,
+		);
+		const collectionName = collection?.name ?? "unknown";
 
-    // Convert slashes to dots for token path format
-    const variablePath = variable.name.replace(/\//g, '.')
+		// Convert slashes to dots for token path format
+		const variablePath = variable.name.replace(/\//g, ".");
 
-    return `{${collectionName}.${variablePath}}`
-  } catch {
-    return null
-  }
+		return `{${collectionName}.${variablePath}}`;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -166,14 +178,16 @@ export function resolveVariableReference(variableId: string): string | null {
  * @param value - Any value from a Figma variable
  * @returns True if this is a variable alias
  */
-export function isVariableAlias(value: unknown): value is { type: 'VARIABLE_ALIAS'; id: string } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'type' in value &&
-    (value as { type: string }).type === 'VARIABLE_ALIAS' &&
-    'id' in value
-  )
+export function isVariableAlias(
+	value: unknown,
+): value is { type: "VARIABLE_ALIAS"; id: string } {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"type" in value &&
+		(value as { type: string }).type === "VARIABLE_ALIAS" &&
+		"id" in value
+	);
 }
 
 // ============================================================================
@@ -186,8 +200,11 @@ export function isVariableAlias(value: unknown): value is { type: 'VARIABLE_ALIA
  * @param context - Description of where this binding was found
  * @param binding - The bound variable info
  */
-export function logBinding(context: string, binding: BoundVariableInfo | null): void {
-  if (binding) {
-    console.log(`🔗 ${context} → variable: ${binding.variableName}`)
-  }
+export function logBinding(
+	context: string,
+	binding: BoundVariableInfo | null,
+): void {
+	if (binding) {
+		console.log(`🔗 ${context} → variable: ${binding.variableName}`);
+	}
 }

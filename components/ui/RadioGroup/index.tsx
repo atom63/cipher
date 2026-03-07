@@ -1,3 +1,2 @@
-export { RadioGroup } from './RadioGroup';
-export type { RadioOption } from './RadioGroup';
-
+export type { RadioOption } from "./RadioGroup";
+export { RadioGroup } from "./RadioGroup";

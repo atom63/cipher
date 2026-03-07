@@ -1,15 +1,14 @@
-export {
-  FadeIn,
-  StaggeredList,
-  ScaleIn,
-  SlideIn,
-  Pulse,
-} from './Animation'
-
 export type {
-  FadeInProps,
-  StaggeredListProps,
-  ScaleInProps,
-  SlideInProps,
-  PulseProps,
-} from './Animation'
+	FadeInProps,
+	PulseProps,
+	ScaleInProps,
+	SlideInProps,
+	StaggeredListProps,
+} from "./Animation";
+export {
+	FadeIn,
+	Pulse,
+	ScaleIn,
+	SlideIn,
+	StaggeredList,
+} from "./Animation";

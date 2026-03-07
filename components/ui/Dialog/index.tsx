@@ -1,2 +1,6 @@
-export { Dialog, DialogActions, ConfirmDialog } from './Dialog'
-export type { DialogProps, DialogActionsProps, ConfirmDialogProps } from './Dialog'
+export type {
+	ConfirmDialogProps,
+	DialogActionsProps,
+	DialogProps,
+} from "./Dialog";
+export { ConfirmDialog, Dialog, DialogActions } from "./Dialog";

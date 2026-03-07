@@ -3,204 +3,226 @@
 
 /// <reference types="@figma/plugin-typings" />
 
-import { convertColor } from '../libraries/color-converters'
+import { convertColor } from "../libraries/color-converters";
 import {
-  getBoundVariable,
-  getPaintBoundVariable,
-  logBinding,
-  isVariableAlias,
-  resolveVariableReference,
-} from '../libraries/variable-binding'
+	getBoundVariable,
+	getPaintBoundVariable,
+	isVariableAlias,
+	logBinding,
+	resolveVariableReference,
+} from "../libraries/variable-binding";
 
 // Helper function to convert paint to structured value
-function paintToValue(paint: Paint, colorFormat: string = 'oklch'): any {
+function paintToValue(paint: Paint, colorFormat: string = "oklch"): any {
+	if (paint.type === "SOLID") {
+		const solidPaint = paint as SolidPaint;
+		const result: any = {
+			type: "solid",
+			color: convertColor(solidPaint.color, colorFormat),
+			opacity: paint.opacity,
+		};
 
-  if (paint.type === 'SOLID') {
-    const solidPaint = paint as SolidPaint
-    const result: any = {
-      type: 'solid',
-      color: convertColor(solidPaint.color, colorFormat),
-      opacity: paint.opacity
-    }
+		// Check if this paint is bound to a variable
+		const boundVariable = getPaintBoundVariable(paint);
+		if (boundVariable) {
+			result.boundVariable = boundVariable;
+		}
 
-    // Check if this paint is bound to a variable
-    const boundVariable = getPaintBoundVariable(paint)
-    if (boundVariable) {
-      result.boundVariable = boundVariable
-    }
+		return result;
+	}
 
-    return result
-  }
+	if (
+		paint.type === "GRADIENT_LINEAR" ||
+		paint.type === "GRADIENT_RADIAL" ||
+		paint.type === "GRADIENT_ANGULAR" ||
+		paint.type === "GRADIENT_DIAMOND"
+	) {
+		const gradientPaint = paint as GradientPaint;
+		console.log(
+			"🌈 Converting gradient with format:",
+			colorFormat,
+			"stops:",
+			gradientPaint.gradientStops.length,
+		);
 
-  if (paint.type === 'GRADIENT_LINEAR' || paint.type === 'GRADIENT_RADIAL' ||
-      paint.type === 'GRADIENT_ANGULAR' || paint.type === 'GRADIENT_DIAMOND') {
-    const gradientPaint = paint as GradientPaint
-    console.log('🌈 Converting gradient with format:', colorFormat, 'stops:', gradientPaint.gradientStops.length)
+		// Check if gradient stops have variable bindings
+		const stopsWithBindings = gradientPaint.gradientStops.map((stop, index) => {
+			const stopData: any = {
+				position: Math.round(stop.position * 1000) / 1000,
+				color: convertColor(stop.color, colorFormat),
+			};
 
-    // Check if gradient stops have variable bindings
-    const stopsWithBindings = gradientPaint.gradientStops.map((stop, index) => {
-      const stopData: any = {
-        position: Math.round(stop.position * 1000) / 1000,
-        color: convertColor(stop.color, colorFormat)
-      }
+			// Check if this gradient stop color is bound to a variable
+			const boundVariable = getBoundVariable(stop, "color");
+			if (boundVariable) {
+				stopData.boundVariable = boundVariable;
+				logBinding(`Gradient stop ${index}`, boundVariable);
+			}
 
-      // Check if this gradient stop color is bound to a variable
-      const boundVariable = getBoundVariable(stop, 'color')
-      if (boundVariable) {
-        stopData.boundVariable = boundVariable
-        logBinding(`Gradient stop ${index}`, boundVariable)
-      }
+			return stopData;
+		});
 
-      return stopData
-    })
+		return {
+			type: paint.type.toLowerCase().replace("gradient_", ""),
+			gradientStops: stopsWithBindings,
+			gradientTransform: gradientPaint.gradientTransform.map((row) =>
+				row.map((val) => Math.round(val * 1000) / 1000),
+			),
+			opacity: paint.opacity,
+		};
+	}
 
-    return {
-      type: paint.type.toLowerCase().replace('gradient_', ''),
-      gradientStops: stopsWithBindings,
-      gradientTransform: gradientPaint.gradientTransform.map(row =>
-        row.map(val => Math.round(val * 1000) / 1000)
-      ),
-      opacity: paint.opacity
-    }
-  }
-  
-  if (paint.type === 'IMAGE') {
-    const imagePaint = paint as ImagePaint
-    return {
-      type: 'image',
-      scaleMode: imagePaint.scaleMode,
-      imageTransform: imagePaint.imageTransform,
-      scalingFactor: imagePaint.scalingFactor,
-      rotation: imagePaint.rotation,
-      filters: imagePaint.filters,
-      opacity: paint.opacity
-    }
-  }
-  
-  return { type: 'unknown' }
+	if (paint.type === "IMAGE") {
+		const imagePaint = paint as ImagePaint;
+		return {
+			type: "image",
+			scaleMode: imagePaint.scaleMode,
+			imageTransform: imagePaint.imageTransform,
+			scalingFactor: imagePaint.scalingFactor,
+			rotation: imagePaint.rotation,
+			filters: imagePaint.filters,
+			opacity: paint.opacity,
+		};
+	}
+
+	return { type: "unknown" };
 }
 
 // Helper function to convert effect to token value
 function effectToToken(effect: Effect): any {
-  const effectData: any = {}
+	const effectData: any = {};
 
-  if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
-    effectData.type = effect.type.toLowerCase().replace('_', '-')
-    effectData.offsetX = `${effect.offset.x}px`
-    effectData.offsetY = `${effect.offset.y}px`
-    effectData.radius = `${effect.radius}px`
-    effectData.spread = effect.spread !== undefined ? `${effect.spread}px` : undefined
-    effectData.color = effect.color ? `rgba(${Math.round(effect.color.r * 255)}, ${Math.round(effect.color.g * 255)}, ${Math.round(effect.color.b * 255)}, ${effect.color.a})` : undefined
-    effectData.visible = effect.visible
+	if (effect.type === "DROP_SHADOW" || effect.type === "INNER_SHADOW") {
+		effectData.type = effect.type.toLowerCase().replace("_", "-");
+		effectData.offsetX = `${effect.offset.x}px`;
+		effectData.offsetY = `${effect.offset.y}px`;
+		effectData.radius = `${effect.radius}px`;
+		effectData.spread =
+			effect.spread !== undefined ? `${effect.spread}px` : undefined;
+		effectData.color = effect.color
+			? `rgba(${Math.round(effect.color.r * 255)}, ${Math.round(effect.color.g * 255)}, ${Math.round(effect.color.b * 255)}, ${effect.color.a})`
+			: undefined;
+		effectData.visible = effect.visible;
 
-    // Check for variable bindings on effect properties
-    const radiusBinding = getBoundVariable(effect, 'radius')
-    if (radiusBinding) {
-      effectData.radiusBoundVariable = radiusBinding
-      logBinding('Effect radius', radiusBinding)
-    }
+		// Check for variable bindings on effect properties
+		const radiusBinding = getBoundVariable(effect, "radius");
+		if (radiusBinding) {
+			effectData.radiusBoundVariable = radiusBinding;
+			logBinding("Effect radius", radiusBinding);
+		}
 
-    if (effect.type === 'DROP_SHADOW') {
-      const spreadBinding = getBoundVariable(effect, 'spread')
-      if (spreadBinding) {
-        effectData.spreadBoundVariable = spreadBinding
-        logBinding('Effect spread', spreadBinding)
-      }
-    }
+		if (effect.type === "DROP_SHADOW") {
+			const spreadBinding = getBoundVariable(effect, "spread");
+			if (spreadBinding) {
+				effectData.spreadBoundVariable = spreadBinding;
+				logBinding("Effect spread", spreadBinding);
+			}
+		}
 
-    const colorBinding = getBoundVariable(effect, 'color')
-    if (colorBinding) {
-      effectData.colorBoundVariable = colorBinding
-      logBinding('Effect color', colorBinding)
-    }
+		const colorBinding = getBoundVariable(effect, "color");
+		if (colorBinding) {
+			effectData.colorBoundVariable = colorBinding;
+			logBinding("Effect color", colorBinding);
+		}
 
-    return effectData
-  }
+		return effectData;
+	}
 
-  if (effect.type === 'LAYER_BLUR' || effect.type === 'BACKGROUND_BLUR') {
-    effectData.type = effect.type.toLowerCase().replace('_', '-')
-    effectData.radius = `${effect.radius}px`
-    effectData.visible = effect.visible
+	if (effect.type === "LAYER_BLUR" || effect.type === "BACKGROUND_BLUR") {
+		effectData.type = effect.type.toLowerCase().replace("_", "-");
+		effectData.radius = `${effect.radius}px`;
+		effectData.visible = effect.visible;
 
-    // Check for variable bindings on radius
-    const radiusBinding = getBoundVariable(effect, 'radius')
-    if (radiusBinding) {
-      effectData.radiusBoundVariable = radiusBinding
-      logBinding('Blur radius', radiusBinding)
-    }
+		// Check for variable bindings on radius
+		const radiusBinding = getBoundVariable(effect, "radius");
+		if (radiusBinding) {
+			effectData.radiusBoundVariable = radiusBinding;
+			logBinding("Blur radius", radiusBinding);
+		}
 
-    return effectData
-  }
+		return effectData;
+	}
 
-  return { type: effect.type, visible: effect.visible }
+	return { type: effect.type, visible: effect.visible };
 }
 
 // Convert Figma variable value to token value
-export function convertVariableValue(value: any, variable: Variable, colorFormat: string = 'oklch'): string {
-  // Check if this is a reference to another variable
-  if (isVariableAlias(value)) {
-    const reference = resolveVariableReference(value.id)
-    return reference ?? 'unknown-reference'
-  }
+export function convertVariableValue(
+	value: any,
+	variable: Variable,
+	colorFormat: string = "oklch",
+): string {
+	// Check if this is a reference to another variable
+	if (isVariableAlias(value)) {
+		const reference = resolveVariableReference(value.id);
+		return reference ?? "unknown-reference";
+	}
 
-  // Direct value
-  switch (variable.resolvedType) {
-    case 'COLOR':
-      if (typeof value === 'object' && 'r' in value) {
-        return convertColor(value as RGB, colorFormat)
-      }
-      return String(value)
-    
-    case 'FLOAT':
-      // Add 'px' unit for dimension values
-      return `${value}px`
-    
-    case 'STRING':
-      return String(value)
-    
-    case 'BOOLEAN':
-      return String(value)
-    
-    default:
-      return String(value)
-  }
+	// Direct value
+	switch (variable.resolvedType) {
+		case "COLOR":
+			if (typeof value === "object" && "r" in value) {
+				return convertColor(value as RGB, colorFormat);
+			}
+			return String(value);
+
+		case "FLOAT":
+			// Add 'px' unit for dimension values
+			return `${value}px`;
+
+		case "STRING":
+			return String(value);
+
+		case "BOOLEAN":
+			return String(value);
+
+		default:
+			return String(value);
+	}
 }
 
 // Convert Figma type to token type with semantic inference
-export function figmaTypeToTokenType(figmaType: string, variableName: string): string {
-  switch (figmaType) {
-    case 'COLOR':
-      return 'color'
-    case 'FLOAT': {
-      // Infer semantic type from variable name/path
-      const nameLower = variableName.toLowerCase()
-      
-      // Check for radius tokens
-      if (nameLower.includes('/radius/') || nameLower.startsWith('radius/')) {
-        return 'borderRadius'
-      }
-      
-      // Check for spacing tokens
-      if (nameLower.includes('/spacing/') || nameLower.startsWith('spacing/')) {
-        return 'spacing'
-      }
-      
-      // Check for size/sizing tokens
-      if (nameLower.includes('/sizes/') || nameLower.startsWith('sizes/') || 
-          nameLower.includes('/size/') || nameLower.startsWith('size/')) {
-        return 'sizing'
-      }
-      
-      // Default to number for other FLOAT types
-      return 'number'
-    }
-    case 'STRING':
-      return 'string'
-    case 'BOOLEAN':
-      return 'boolean'
-    default:
-      return 'unknown'
-  }
+export function figmaTypeToTokenType(
+	figmaType: string,
+	variableName: string,
+): string {
+	switch (figmaType) {
+		case "COLOR":
+			return "color";
+		case "FLOAT": {
+			// Infer semantic type from variable name/path
+			const nameLower = variableName.toLowerCase();
+
+			// Check for radius tokens
+			if (nameLower.includes("/radius/") || nameLower.startsWith("radius/")) {
+				return "borderRadius";
+			}
+
+			// Check for spacing tokens
+			if (nameLower.includes("/spacing/") || nameLower.startsWith("spacing/")) {
+				return "spacing";
+			}
+
+			// Check for size/sizing tokens
+			if (
+				nameLower.includes("/sizes/") ||
+				nameLower.startsWith("sizes/") ||
+				nameLower.includes("/size/") ||
+				nameLower.startsWith("size/")
+			) {
+				return "sizing";
+			}
+
+			// Default to number for other FLOAT types
+			return "number";
+		}
+		case "STRING":
+			return "string";
+		case "BOOLEAN":
+			return "boolean";
+		default:
+			return "unknown";
+	}
 }
 
 // Export Figma variables as design tokens
@@ -217,362 +239,430 @@ export function figmaTypeToTokenType(figmaType: string, variableName: string): s
 //     }
 //   }
 // }
-export async function exportVariablesAsTokens(collectionIds: string[], colorFormat: string = 'oklch') {
-  try {
-    const collections = figma.variables.getLocalVariableCollections()
-    const selectedCollections = collectionIds.length > 0
-      ? collections.filter(c => collectionIds.includes(c.id))
-      : collections
+export async function exportVariablesAsTokens(
+	collectionIds: string[],
+	colorFormat: string = "oklch",
+) {
+	try {
+		const collections = figma.variables.getLocalVariableCollections();
+		const selectedCollections =
+			collectionIds.length > 0
+				? collections.filter((c) => collectionIds.includes(c.id))
+				: collections;
 
-    if (selectedCollections.length === 0) {
-      figma.ui.postMessage({
-        type: 'export-error',
-        data: { message: 'No collections selected or found' }
-      })
-      return
-    }
+		if (selectedCollections.length === 0) {
+			figma.ui.postMessage({
+				type: "export-error",
+				data: { message: "No collections selected or found" },
+			});
+			return;
+		}
 
-    // Build token structure
-    const tokenData: any = {
-      $schema: 'design-tokens-with-collections',
-      $version: '1.0',
-      $collections: {},
-      tokens: {}
-    }
+		// Build token structure
+		const tokenData: any = {
+			$schema: "design-tokens-with-collections",
+			$version: "1.0",
+			$collections: {},
+			tokens: {},
+		};
 
-    // Process each collection
-    for (const collection of selectedCollections) {
-      const collectionKey = collection.name
-      const modeCount = collection.modes.length
-      const variableCount = collection.variableIds.length
+		// Process each collection
+		for (const collection of selectedCollections) {
+			const collectionKey = collection.name;
+			const modeCount = collection.modes.length;
+			const variableCount = collection.variableIds.length;
 
-      console.log(`📦 Exporting collection: "${collectionKey}" (${variableCount} variables, ${modeCount} mode${modeCount !== 1 ? 's' : ''})`)
-      if (modeCount > 1) {
-        console.log(`  🎨 Modes: ${collection.modes.map(m => m.name).join(', ')}`)
-      }
+			console.log(
+				`📦 Exporting collection: "${collectionKey}" (${variableCount} variables, ${modeCount} mode${modeCount !== 1 ? "s" : ""})`,
+			);
+			if (modeCount > 1) {
+				console.log(
+					`  🎨 Modes: ${collection.modes.map((m) => m.name).join(", ")}`,
+				);
+			}
 
-      // Add collection metadata
-      tokenData.$collections[collectionKey] = {
-        name: collection.name,
-        description: `Exported from Figma on ${new Date().toISOString()}`,
-        order: selectedCollections.indexOf(collection) + 1,
-        modes: collection.modes.map(m => m.name)
-      }
+			// Add collection metadata
+			tokenData.$collections[collectionKey] = {
+				name: collection.name,
+				description: `Exported from Figma on ${new Date().toISOString()}`,
+				order: selectedCollections.indexOf(collection) + 1,
+				modes: collection.modes.map((m) => m.name),
+			};
 
-      // Get all variables in this collection
-      const variables = collection.variableIds.map(id => figma.variables.getVariableById(id)).filter(v => v !== null) as Variable[]
+			// Get all variables in this collection
+			const variables = collection.variableIds
+				.map((id) => figma.variables.getVariableById(id))
+				.filter((v) => v !== null) as Variable[];
 
-      // Initialize tokens object for this collection
-      tokenData.tokens[collectionKey] = {}
+			// Initialize tokens object for this collection
+			tokenData.tokens[collectionKey] = {};
 
-      // Group variables by path and build nested structure
-      for (const variable of variables) {
-        // Parse variable name - supports nested paths:
-        // - "zinc/50" -> ["zinc", "50"]
-        // - "background/primary" -> ["background", "primary"] 
-        // - "data/calories" -> ["data", "calories"]
-        const parts = variable.name.split('/')
-        const tokenName = parts[parts.length - 1]
-        const parentPath = parts.slice(0, -1) // All parts except the last (the token name)
+			// Group variables by path and build nested structure
+			for (const variable of variables) {
+				// Parse variable name - supports nested paths:
+				// - "zinc/50" -> ["zinc", "50"]
+				// - "background/primary" -> ["background", "primary"]
+				// - "data/calories" -> ["data", "calories"]
+				const parts = variable.name.split("/");
+				const tokenName = parts[parts.length - 1];
+				const parentPath = parts.slice(0, -1); // All parts except the last (the token name)
 
-        // Build nested structure by traversing/creating parent objects
-        // Example: "background/primary" creates tokens[collection].background.primary
-        let current = tokenData.tokens[collectionKey]
-        for (const part of parentPath) {
-          if (!current[part]) {
-            current[part] = {}
-          }
-          current = current[part]
-        }
+				// Build nested structure by traversing/creating parent objects
+				// Example: "background/primary" creates tokens[collection].background.primary
+				let current = tokenData.tokens[collectionKey];
+				for (const part of parentPath) {
+					if (!current[part]) {
+						current[part] = {};
+					}
+					current = current[part];
+				}
 
-        // Check if multi-mode
-        const hasModes = collection.modes.length > 1
+				// Check if multi-mode
+				const hasModes = collection.modes.length > 1;
 
-        if (hasModes) {
-          // Multi-mode token (like semantic tokens with Light/Dark or responsive tokens with mobile/tablet/desktop)
-          const modes: any = {}
-          for (const mode of collection.modes) {
-            const value = variable.valuesByMode[mode.modeId]
-            modes[mode.name] = convertVariableValue(value, variable, colorFormat)
-          }
+				if (hasModes) {
+					// Multi-mode token (like semantic tokens with Light/Dark or responsive tokens with mobile/tablet/desktop)
+					const modes: any = {};
+					for (const mode of collection.modes) {
+						const value = variable.valuesByMode[mode.modeId];
+						modes[mode.name] = convertVariableValue(
+							value,
+							variable,
+							colorFormat,
+						);
+					}
 
-          current[tokenName] = {
-            type: figmaTypeToTokenType(variable.resolvedType, variable.name),
-            collection: collectionKey,
-            modes
-          }
-          
-          // Add description if present
-          if (variable.description) {
-            current[tokenName].description = variable.description
-          }
-        } else {
-          // Single mode token
-          const mode = collection.modes[0]
-          const value = variable.valuesByMode[mode.modeId]
-          const tokenValue = convertVariableValue(value, variable, colorFormat)
+					current[tokenName] = {
+						type: figmaTypeToTokenType(variable.resolvedType, variable.name),
+						collection: collectionKey,
+						modes,
+					};
 
-          current[tokenName] = {
-            value: tokenValue,
-            type: figmaTypeToTokenType(variable.resolvedType, variable.name),
-            collection: collectionKey
-          }
-          
-          // Add description if present
-          if (variable.description) {
-            current[tokenName].description = variable.description
-          }
-        }
-      }
-    }
+					// Add description if present
+					if (variable.description) {
+						current[tokenName].description = variable.description;
+					}
+				} else {
+					// Single mode token
+					const mode = collection.modes[0];
+					const value = variable.valuesByMode[mode.modeId];
+					const tokenValue = convertVariableValue(value, variable, colorFormat);
 
-    // Send to UI with the format that was used
-    figma.ui.postMessage({
-      type: 'export-complete',
-      data: {
-        tokens: tokenData,
-        collectionCount: selectedCollections.length,
-        variableCount: selectedCollections.reduce((sum, c) => sum + c.variableIds.length, 0),
-        format: colorFormat
-      }
-    })
+					current[tokenName] = {
+						value: tokenValue,
+						type: figmaTypeToTokenType(variable.resolvedType, variable.name),
+						collection: collectionKey,
+					};
 
-  } catch (error) {
-    console.error('Export error:', error)
-    figma.ui.postMessage({
-      type: 'export-error',
-      data: { message: error instanceof Error ? error.message : 'Unknown error during export' }
-    })
-  }
+					// Add description if present
+					if (variable.description) {
+						current[tokenName].description = variable.description;
+					}
+				}
+			}
+		}
+
+		// Send to UI with the format that was used
+		figma.ui.postMessage({
+			type: "export-complete",
+			data: {
+				tokens: tokenData,
+				collectionCount: selectedCollections.length,
+				variableCount: selectedCollections.reduce(
+					(sum, c) => sum + c.variableIds.length,
+					0,
+				),
+				format: colorFormat,
+			},
+		});
+	} catch (error) {
+		console.error("Export error:", error);
+		figma.ui.postMessage({
+			type: "export-error",
+			data: {
+				message:
+					error instanceof Error
+						? error.message
+						: "Unknown error during export",
+			},
+		});
+	}
 }
 
 // Export Figma Styles (Paint, Text, Effect, Grid) as structured data
-export async function exportStylesAsTokens(selectedGroups: { category: string; group: string }[], colorFormat: string = 'oklch') {
-  try {
-    console.log('✨ exportStylesAsTokens called with colorFormat:', colorFormat)
-    
-    // Get all local styles
-    let paintStyles = figma.getLocalPaintStyles()
-    let textStyles = figma.getLocalTextStyles()
-    let effectStyles = figma.getLocalEffectStyles()
-    let gridStyles = figma.getLocalGridStyles()
+export async function exportStylesAsTokens(
+	selectedGroups: { category: string; group: string }[],
+	colorFormat: string = "oklch",
+) {
+	try {
+		console.log(
+			"✨ exportStylesAsTokens called with colorFormat:",
+			colorFormat,
+		);
 
-    // Filter styles based on selected groups
-    if (selectedGroups.length > 0) {
-      const matchesSelection = (styleName: string, category: 'paint' | 'text' | 'effect' | 'grid') => {
-        const parts = styleName.split('/')
-        const rootFolder = parts.length > 1 ? parts[0] : 'Root'
-        return selectedGroups.some(sel => sel.category === category && sel.group === rootFolder)
-      }
+		// Get all local styles
+		let paintStyles = figma.getLocalPaintStyles();
+		let textStyles = figma.getLocalTextStyles();
+		let effectStyles = figma.getLocalEffectStyles();
+		let gridStyles = figma.getLocalGridStyles();
 
-      paintStyles = paintStyles.filter(s => matchesSelection(s.name, 'paint'))
-      textStyles = textStyles.filter(s => matchesSelection(s.name, 'text'))
-      effectStyles = effectStyles.filter(s => matchesSelection(s.name, 'effect'))
-      gridStyles = gridStyles.filter(s => matchesSelection(s.name, 'grid'))
-    }
+		// Filter styles based on selected groups
+		if (selectedGroups.length > 0) {
+			const matchesSelection = (
+				styleName: string,
+				category: "paint" | "text" | "effect" | "grid",
+			) => {
+				const parts = styleName.split("/");
+				const rootFolder = parts.length > 1 ? parts[0] : "Root";
+				return selectedGroups.some(
+					(sel) => sel.category === category && sel.group === rootFolder,
+				);
+			};
 
-    console.log('📊 Styles to export:', {
-      paint: paintStyles.length,
-      text: textStyles.length,
-      effect: effectStyles.length,
-      grid: gridStyles.length
-    })
+			paintStyles = paintStyles.filter((s) =>
+				matchesSelection(s.name, "paint"),
+			);
+			textStyles = textStyles.filter((s) => matchesSelection(s.name, "text"));
+			effectStyles = effectStyles.filter((s) =>
+				matchesSelection(s.name, "effect"),
+			);
+			gridStyles = gridStyles.filter((s) => matchesSelection(s.name, "grid"));
+		}
 
-    const totalStyles = paintStyles.length + textStyles.length + effectStyles.length + gridStyles.length
+		console.log("📊 Styles to export:", {
+			paint: paintStyles.length,
+			text: textStyles.length,
+			effect: effectStyles.length,
+			grid: gridStyles.length,
+		});
 
-    if (totalStyles === 0) {
-      console.warn('⚠️ No styles found matching selection')
-      figma.ui.postMessage({
-        type: 'export-error',
-        data: { message: 'No styles found matching your selection.' }
-      })
-      return
-    }
+		const totalStyles =
+			paintStyles.length +
+			textStyles.length +
+			effectStyles.length +
+			gridStyles.length;
 
-    // Build styles structure
-    const stylesData: any = {
-      $schema: 'figma-styles-export',
-      $version: '1.0',
-      $exportedAt: new Date().toISOString(),
-      $counts: {
-        paint: paintStyles.length,
-        text: textStyles.length,
-        effect: effectStyles.length,
-        grid: gridStyles.length,
-        total: totalStyles
-      },
-      styles: {
-        paint: {},
-        text: {},
-        effect: {},
-        grid: {}
-      }
-    }
+		if (totalStyles === 0) {
+			console.warn("⚠️ No styles found matching selection");
+			figma.ui.postMessage({
+				type: "export-error",
+				data: { message: "No styles found matching your selection." },
+			});
+			return;
+		}
 
-    // Process Color Styles (colors, gradients, images)
-    for (const style of paintStyles) {
-      const parts = style.name.split('/')
-      const styleName = parts[parts.length - 1]
-      const parentPath = parts.slice(0, -1)
+		// Build styles structure
+		const stylesData: any = {
+			$schema: "figma-styles-export",
+			$version: "1.0",
+			$exportedAt: new Date().toISOString(),
+			$counts: {
+				paint: paintStyles.length,
+				text: textStyles.length,
+				effect: effectStyles.length,
+				grid: gridStyles.length,
+				total: totalStyles,
+			},
+			styles: {
+				paint: {},
+				text: {},
+				effect: {},
+				grid: {},
+			},
+		};
 
-      let current = stylesData.styles.paint
-      for (const part of parentPath) {
-        if (!current[part]) {
-          current[part] = {}
-        }
-        current = current[part]
-      }
+		// Process Color Styles (colors, gradients, images)
+		for (const style of paintStyles) {
+			const parts = style.name.split("/");
+			const styleName = parts[parts.length - 1];
+			const parentPath = parts.slice(0, -1);
 
-      const paints = style.paints
-      const paintValues = paints.map(paint => paintToValue(paint, colorFormat))
+			let current = stylesData.styles.paint;
+			for (const part of parentPath) {
+				if (!current[part]) {
+					current[part] = {};
+				}
+				current = current[part];
+			}
 
-      current[styleName] = {
-        id: style.id,
-        key: style.key,
-        type: 'color',
-        fills: paintValues,
-        description: style.description || undefined,
-        // Legacy format for backwards compatibility
-        value: paintValues.length === 1 && paintValues[0].type === 'solid' 
-          ? paintValues[0].color 
-          : paintValues
-      }
-    }
+			const paints = style.paints;
+			const paintValues = paints.map((paint) =>
+				paintToValue(paint, colorFormat),
+			);
 
-    // Process Text Styles (typography)
-    for (const style of textStyles) {
-      const parts = style.name.split('/')
-      const styleName = parts[parts.length - 1]
-      const parentPath = parts.slice(0, -1)
+			current[styleName] = {
+				id: style.id,
+				key: style.key,
+				type: "color",
+				fills: paintValues,
+				description: style.description || undefined,
+				// Legacy format for backwards compatibility
+				value:
+					paintValues.length === 1 && paintValues[0].type === "solid"
+						? paintValues[0].color
+						: paintValues,
+			};
+		}
 
-      let current = stylesData.styles.text
-      for (const part of parentPath) {
-        if (!current[part]) {
-          current[part] = {}
-        }
-        current = current[part]
-      }
+		// Process Text Styles (typography)
+		for (const style of textStyles) {
+			const parts = style.name.split("/");
+			const styleName = parts[parts.length - 1];
+			const parentPath = parts.slice(0, -1);
 
-      const textStyleData: any = {
-        id: style.id,
-        key: style.key,
-        type: 'text',
-        fontFamily: style.fontName.family,
-        fontStyle: style.fontName.style,
-        fontWeight: (style as any).fontWeight,
-        fontSize: `${style.fontSize}px`,
-        lineHeight: typeof style.lineHeight === 'object' && 'value' in style.lineHeight
-          ? `${style.lineHeight.value}${style.lineHeight.unit === 'PIXELS' ? 'px' : style.lineHeight.unit === 'PERCENT' ? '%' : ''}`
-          : style.lineHeight,
-        letterSpacing: typeof style.letterSpacing === 'object' && 'value' in style.letterSpacing
-          ? `${style.letterSpacing.value}${style.letterSpacing.unit === 'PIXELS' ? 'px' : style.letterSpacing.unit === 'PERCENT' ? '%' : ''}`
-          : style.letterSpacing,
-        paragraphSpacing: `${style.paragraphSpacing}px`,
-        paragraphIndent: `${style.paragraphIndent}px`,
-        textCase: style.textCase,
-        textDecoration: style.textDecoration,
-        description: style.description || undefined
-      }
+			let current = stylesData.styles.text;
+			for (const part of parentPath) {
+				if (!current[part]) {
+					current[part] = {};
+				}
+				current = current[part];
+			}
 
-      // Check for variable bindings on text style properties
-      const boundProperties = ['fontSize', 'lineHeight', 'fontFamily', 'fontWeight', 'letterSpacing', 'paragraphSpacing', 'paragraphIndent']
-      for (const prop of boundProperties) {
-        try {
-          const styleAny = style as any
-          if (styleAny.boundVariables?.[prop]?.id) {
-            const variable = figma.variables.getVariableById(styleAny.boundVariables[prop].id)
-            if (variable) {
-              const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-              textStyleData[`${prop}BoundVariable`] = {
-                type: 'variable',
-                variableId: variable.id,
-                variableName: variable.name,
-                collectionName: collection ? collection.name : 'Unknown',
-                collectionId: collection ? collection.id : undefined
-              }
-              console.log(`Text style "${style.name}" ${prop} -> variable: ${variable.name}`)
-            }
-          }
-        } catch (error) {
-          console.warn(`Could not read ${prop} bound variable for style "${style.name}":`, error)
-        }
-      }
+			const textStyleData: any = {
+				id: style.id,
+				key: style.key,
+				type: "text",
+				fontFamily: style.fontName.family,
+				fontStyle: style.fontName.style,
+				fontWeight: (style as any).fontWeight,
+				fontSize: `${style.fontSize}px`,
+				lineHeight:
+					typeof style.lineHeight === "object" && "value" in style.lineHeight
+						? `${style.lineHeight.value}${style.lineHeight.unit === "PIXELS" ? "px" : style.lineHeight.unit === "PERCENT" ? "%" : ""}`
+						: style.lineHeight,
+				letterSpacing:
+					typeof style.letterSpacing === "object" &&
+					"value" in style.letterSpacing
+						? `${style.letterSpacing.value}${style.letterSpacing.unit === "PIXELS" ? "px" : style.letterSpacing.unit === "PERCENT" ? "%" : ""}`
+						: style.letterSpacing,
+				paragraphSpacing: `${style.paragraphSpacing}px`,
+				paragraphIndent: `${style.paragraphIndent}px`,
+				textCase: style.textCase,
+				textDecoration: style.textDecoration,
+				description: style.description || undefined,
+			};
 
-      current[styleName] = textStyleData
-    }
+			// Check for variable bindings on text style properties
+			const boundProperties = [
+				"fontSize",
+				"lineHeight",
+				"fontFamily",
+				"fontWeight",
+				"letterSpacing",
+				"paragraphSpacing",
+				"paragraphIndent",
+			];
+			for (const prop of boundProperties) {
+				try {
+					const styleAny = style as any;
+					if (styleAny.boundVariables?.[prop]?.id) {
+						const variable = figma.variables.getVariableById(
+							styleAny.boundVariables[prop].id,
+						);
+						if (variable) {
+							const collection = figma.variables.getVariableCollectionById(
+								variable.variableCollectionId,
+							);
+							textStyleData[`${prop}BoundVariable`] = {
+								type: "variable",
+								variableId: variable.id,
+								variableName: variable.name,
+								collectionName: collection ? collection.name : "Unknown",
+								collectionId: collection ? collection.id : undefined,
+							};
+							console.log(
+								`Text style "${style.name}" ${prop} -> variable: ${variable.name}`,
+							);
+						}
+					}
+				} catch (error) {
+					console.warn(
+						`Could not read ${prop} bound variable for style "${style.name}":`,
+						error,
+					);
+				}
+			}
 
-    // Process Effect Styles (shadows, blurs)
-    for (const style of effectStyles) {
-      const parts = style.name.split('/')
-      const styleName = parts[parts.length - 1]
-      const parentPath = parts.slice(0, -1)
+			current[styleName] = textStyleData;
+		}
 
-      let current = stylesData.styles.effect
-      for (const part of parentPath) {
-        if (!current[part]) {
-          current[part] = {}
-        }
-        current = current[part]
-      }
+		// Process Effect Styles (shadows, blurs)
+		for (const style of effectStyles) {
+			const parts = style.name.split("/");
+			const styleName = parts[parts.length - 1];
+			const parentPath = parts.slice(0, -1);
 
-      current[styleName] = {
-        id: style.id,
-        key: style.key,
-        type: 'effect',
-        effects: style.effects.map(effect => effectToToken(effect)),
-        description: style.description || undefined
-      }
-    }
+			let current = stylesData.styles.effect;
+			for (const part of parentPath) {
+				if (!current[part]) {
+					current[part] = {};
+				}
+				current = current[part];
+			}
 
-    // Process Layout grid styles
-    for (const style of gridStyles) {
-      const parts = style.name.split('/')
-      const styleName = parts[parts.length - 1]
-      const parentPath = parts.slice(0, -1)
+			current[styleName] = {
+				id: style.id,
+				key: style.key,
+				type: "effect",
+				effects: style.effects.map((effect) => effectToToken(effect)),
+				description: style.description || undefined,
+			};
+		}
 
-      let current = stylesData.styles.grid
-      for (const part of parentPath) {
-        if (!current[part]) {
-          current[part] = {}
-        }
-        current = current[part]
-      }
+		// Process Layout grid styles
+		for (const style of gridStyles) {
+			const parts = style.name.split("/");
+			const styleName = parts[parts.length - 1];
+			const parentPath = parts.slice(0, -1);
 
-      current[styleName] = {
-        id: style.id,
-        key: style.key,
-        type: 'grid',
-        layoutGrids: style.layoutGrids.map(grid => ({
-          pattern: grid.pattern,
-          sectionSize: grid.sectionSize,
-          visible: grid.visible,
-          color: grid.color ? `rgba(${Math.round(grid.color.r * 255)}, ${Math.round(grid.color.g * 255)}, ${Math.round(grid.color.b * 255)}, ${grid.color.a})` : undefined,
-          alignment: 'alignment' in grid ? grid.alignment : undefined,
-          count: 'count' in grid ? grid.count : undefined,
-          offset: 'offset' in grid ? grid.offset : undefined,
-          gutterSize: 'gutterSize' in grid ? grid.gutterSize : undefined
-        })),
-        description: style.description || undefined
-      }
-    }
+			let current = stylesData.styles.grid;
+			for (const part of parentPath) {
+				if (!current[part]) {
+					current[part] = {};
+				}
+				current = current[part];
+			}
 
-    // Send to UI
-    console.log('✅ Styles export complete:', stylesData.$counts)
-    figma.ui.postMessage({
-      type: 'styles-export-complete',
-      data: {
-        styles: stylesData,
-        counts: stylesData.$counts,
-        format: colorFormat
-      }
-    })
+			current[styleName] = {
+				id: style.id,
+				key: style.key,
+				type: "grid",
+				layoutGrids: style.layoutGrids.map((grid) => ({
+					pattern: grid.pattern,
+					sectionSize: grid.sectionSize,
+					visible: grid.visible,
+					color: grid.color
+						? `rgba(${Math.round(grid.color.r * 255)}, ${Math.round(grid.color.g * 255)}, ${Math.round(grid.color.b * 255)}, ${grid.color.a})`
+						: undefined,
+					alignment: "alignment" in grid ? grid.alignment : undefined,
+					count: "count" in grid ? grid.count : undefined,
+					offset: "offset" in grid ? grid.offset : undefined,
+					gutterSize: "gutterSize" in grid ? grid.gutterSize : undefined,
+				})),
+				description: style.description || undefined,
+			};
+		}
 
-  } catch (error) {
-    console.error('❌ Style export error:', error)
-    figma.ui.postMessage({
-      type: 'export-error',
-      data: { message: error instanceof Error ? error.message : 'Unknown error during style export' }
-    })
-  }
+		// Send to UI
+		console.log("✅ Styles export complete:", stylesData.$counts);
+		figma.ui.postMessage({
+			type: "styles-export-complete",
+			data: {
+				styles: stylesData,
+				counts: stylesData.$counts,
+				format: colorFormat,
+			},
+		});
+	} catch (error) {
+		console.error("❌ Style export error:", error);
+		figma.ui.postMessage({
+			type: "export-error",
+			data: {
+				message:
+					error instanceof Error
+						? error.message
+						: "Unknown error during style export",
+			},
+		});
+	}
 }
-

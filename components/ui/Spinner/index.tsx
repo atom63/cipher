@@ -1,15 +1,14 @@
-export {
-  Spinner,
-  LoadingState,
-  LoadingOverlay,
-  InlineLoading,
-  Progress,
-} from './Spinner'
-
 export type {
-  SpinnerProps,
-  LoadingStateProps,
-  LoadingOverlayProps,
-  InlineLoadingProps,
-  ProgressProps,
-} from './Spinner'
+	InlineLoadingProps,
+	LoadingOverlayProps,
+	LoadingStateProps,
+	ProgressProps,
+	SpinnerProps,
+} from "./Spinner";
+export {
+	InlineLoading,
+	LoadingOverlay,
+	LoadingState,
+	Progress,
+	Spinner,
+} from "./Spinner";

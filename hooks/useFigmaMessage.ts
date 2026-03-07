@@ -3,12 +3,12 @@
  * Custom hooks for type-safe Figma message handling
  */
 
-import { useEffect, useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from "react";
 import type {
-  MainToUIMessage,
-  MainToUIMessageType,
-  UIToMainMessage,
-} from '../types/messages'
+	MainToUIMessage,
+	MainToUIMessageType,
+	UIToMainMessage,
+} from "../types/messages";
 
 /**
  * Hook to listen for messages from the Figma main thread
@@ -28,23 +28,23 @@ import type {
  * ```
  */
 export function useFigmaMessage(
-  handler: (message: MainToUIMessage) => void
+	handler: (message: MainToUIMessage) => void,
 ): void {
-  // Use ref to avoid stale closure issues
-  const handlerRef = useRef(handler)
-  handlerRef.current = handler
+	// Use ref to avoid stale closure issues
+	const handlerRef = useRef(handler);
+	handlerRef.current = handler;
 
-  useEffect(() => {
-    const listener = (event: MessageEvent) => {
-      const msg = event.data?.pluginMessage
-      if (msg && typeof msg === 'object' && 'type' in msg) {
-        handlerRef.current(msg as MainToUIMessage)
-      }
-    }
+	useEffect(() => {
+		const listener = (event: MessageEvent) => {
+			const msg = event.data?.pluginMessage;
+			if (msg && typeof msg === "object" && "type" in msg) {
+				handlerRef.current(msg as MainToUIMessage);
+			}
+		};
 
-    window.addEventListener('message', listener)
-    return () => window.removeEventListener('message', listener)
-  }, [])
+		window.addEventListener("message", listener);
+		return () => window.removeEventListener("message", listener);
+	}, []);
 }
 
 /**
@@ -62,27 +62,27 @@ export function useFigmaMessage(
  * ```
  */
 export function useFigmaMessageType<T extends MainToUIMessageType>(
-  type: T,
-  handler: (
-    data: Extract<MainToUIMessage, { type: T }> extends { data: infer D }
-      ? D
-      : never
-  ) => void
+	type: T,
+	handler: (
+		data: Extract<MainToUIMessage, { type: T }> extends { data: infer D }
+			? D
+			: never,
+	) => void,
 ): void {
-  const handlerRef = useRef(handler)
-  handlerRef.current = handler
+	const handlerRef = useRef(handler);
+	handlerRef.current = handler;
 
-  useEffect(() => {
-    const listener = (event: MessageEvent) => {
-      const msg = event.data?.pluginMessage
-      if (msg && typeof msg === 'object' && msg.type === type) {
-        handlerRef.current(msg.data)
-      }
-    }
+	useEffect(() => {
+		const listener = (event: MessageEvent) => {
+			const msg = event.data?.pluginMessage;
+			if (msg && typeof msg === "object" && msg.type === type) {
+				handlerRef.current(msg.data);
+			}
+		};
 
-    window.addEventListener('message', listener)
-    return () => window.removeEventListener('message', listener)
-  }, [type])
+		window.addEventListener("message", listener);
+		return () => window.removeEventListener("message", listener);
+	}, [type]);
 }
 
 /**
@@ -102,9 +102,9 @@ export function useFigmaMessageType<T extends MainToUIMessageType>(
  * ```
  */
 export function usePostMessage(): (message: UIToMainMessage) => void {
-  return useCallback((message: UIToMainMessage) => {
-    parent.postMessage({ pluginMessage: message }, '*')
-  }, [])
+	return useCallback((message: UIToMainMessage) => {
+		parent.postMessage({ pluginMessage: message }, "*");
+	}, []);
 }
 
 /**
@@ -126,10 +126,10 @@ export function usePostMessage(): (message: UIToMainMessage) => void {
  * ```
  */
 export function useFigmaMessages(
-  handler: (message: MainToUIMessage) => void
+	handler: (message: MainToUIMessage) => void,
 ): (message: UIToMainMessage) => void {
-  useFigmaMessage(handler)
-  return usePostMessage()
+	useFigmaMessage(handler);
+	return usePostMessage();
 }
 
 /**
@@ -144,11 +144,14 @@ export function useFigmaMessages(
  * ```
  */
 export function useRequestOnMount(
-  messageType: Extract<UIToMainMessage, { type: string; data?: undefined }>['type']
+	messageType: Extract<
+		UIToMainMessage,
+		{ type: string; data?: undefined }
+	>["type"],
 ): void {
-  const postMessage = usePostMessage()
+	const postMessage = usePostMessage();
 
-  useEffect(() => {
-    postMessage({ type: messageType } as UIToMainMessage)
-  }, [messageType, postMessage])
+	useEffect(() => {
+		postMessage({ type: messageType } as UIToMainMessage);
+	}, [messageType, postMessage]);
 }

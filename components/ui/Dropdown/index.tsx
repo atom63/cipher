@@ -1,3 +1,2 @@
-export { Dropdown } from './Dropdown'
-export type { DropdownProps, DropdownOption } from './Dropdown'
-
+export type { DropdownOption, DropdownProps } from "./Dropdown";
+export { Dropdown } from "./Dropdown";

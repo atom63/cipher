@@ -1,0 +1,49 @@
+@theme inline {
+  /* Tailwind default: `rounded` class */
+  --radius: calc(4px * var(--radius-multiplier)); /* 4px  */
+
+  /* Lower Scale: Optimized for p-1 (4px) and p-2 (8px) nesting */
+  --radius-2xs: calc(
+    (var(--corner-radius) - 8px) *
+    var(--radius-multiplier)
+  ); /* 2px  */
+  --radius-xs: calc(
+    (var(--corner-radius) - 6px) *
+    var(--radius-multiplier)
+  ); /* 4px  */
+  --radius-sm: calc(
+    (var(--corner-radius) - 4px) *
+    var(--radius-multiplier)
+  ); /* 6px  */
+  --radius-md: calc(
+    (var(--corner-radius) - 2px) *
+    var(--radius-multiplier)
+  ); /* 8px  */
+
+  /* The Anchor (shadcn lg) */
+  --radius-lg: calc(var(--corner-radius) * var(--radius-multiplier)); /* 10px */
+
+  /* Upper Scale: Optimized for larger containers nesting your LG cards */
+  --radius-xl: calc(
+    (var(--corner-radius) + 4px) *
+    var(--radius-multiplier)
+  ); /* 14px */
+  --radius-2xl: calc(
+    (var(--corner-radius) + 8px) *
+    var(--radius-multiplier)
+  ); /* 18px */
+  --radius-3xl: calc(
+    (var(--corner-radius) + 12px) *
+    var(--radius-multiplier)
+  ); /* 22px */
+  --radius-4xl: calc(
+    (var(--corner-radius) + 16px) *
+    var(--radius-multiplier)
+  ); /* 26px */
+  --radius-full: calc(9999px * var(--radius-multiplier));
+}
+
+:root {
+	--corner-radius: 10px; /* 0.625rem — design anchor */
+	--radius-multiplier: 1; /* 0 = square, 0.5 = subtle, 1 = default, 1.5 = extra round */
+}

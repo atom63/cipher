@@ -1,5 +1,4 @@
-export { Checkbox } from './Checkbox'
-export { CheckboxWithLabel } from './CheckboxWithLabel'
-export { CheckboxWithDescription } from './CheckboxWithDescription'
-export { CheckboxCard } from './CheckboxCard';
-
+export { Checkbox } from "./Checkbox";
+export { CheckboxCard } from "./CheckboxCard";
+export { CheckboxWithDescription } from "./CheckboxWithDescription";
+export { CheckboxWithLabel } from "./CheckboxWithLabel";

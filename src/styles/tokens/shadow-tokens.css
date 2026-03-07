@@ -10,22 +10,44 @@
 
 /* Define custom properties for shadow tokens */
 :root {
-  --shadow-shadow-0: 0px 0px 0px 0px rgba(0, 0, 0, 0); /* No shadow */
-  --shadow-shadow-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.05000000074505806); /* Subtle */
-  --shadow-shadow-2: 0px 2px 4px -1px rgba(0, 0, 0, 0.10000000149011612); /* Small */
-  --shadow-shadow-3: 0px 4px 6px -1px rgba(0, 0, 0, 0.10000000149011612), 0px 2px 4px -1px rgba(0, 0, 0, 0.05999999865889549); /* Medium */
-  --shadow-shadow-4: 0px 8px 10px -2px rgba(0, 0, 0, 0.10000000149011612), 0px 4px 6px -2px rgba(0, 0, 0, 0.05000000074505806); /* Large */
-  --shadow-shadow-5: 0px 16px 24px -4px rgba(0, 0, 0, 0.10000000149011612), 0px 8px 12px -4px rgba(0, 0, 0, 0.05000000074505806); /* Extra large */
-  --shadow-shadow-6: 0px 24px 48px -8px rgba(0, 0, 0, 0.15000000596046448), 0px 12px 24px -6px rgba(0, 0, 0, 0.07999999821186066); /* Maximum */
+	--shadow-shadow-0: 0px 0px 0px 0px rgba(0, 0, 0, 0); /* No shadow */
+	--shadow-shadow-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.05000000074505806); /* Subtle */
+	--shadow-shadow-2: 0px 2px 4px -1px rgba(0, 0, 0, 0.10000000149011612); /* Small */
+	--shadow-shadow-3:
+		0px 4px 6px -1px rgba(0, 0, 0, 0.10000000149011612),
+		0px 2px 4px -1px rgba(0, 0, 0, 0.05999999865889549); /* Medium */
+	--shadow-shadow-4:
+		0px 8px 10px -2px rgba(0, 0, 0, 0.10000000149011612),
+		0px 4px 6px -2px rgba(0, 0, 0, 0.05000000074505806); /* Large */
+	--shadow-shadow-5:
+		0px 16px 24px -4px rgba(0, 0, 0, 0.10000000149011612),
+		0px 8px 12px -4px rgba(0, 0, 0, 0.05000000074505806); /* Extra large */
+	--shadow-shadow-6:
+		0px 24px 48px -8px rgba(0, 0, 0, 0.15000000596046448),
+		0px 12px 24px -6px rgba(0, 0, 0, 0.07999999821186066); /* Maximum */
 }
 
 /* Utility classes for shadows */
 @layer utilities {
-  .shadow-shadow-0 { box-shadow: var(--shadow-shadow-0); }
-  .shadow-shadow-1 { box-shadow: var(--shadow-shadow-1); }
-  .shadow-shadow-2 { box-shadow: var(--shadow-shadow-2); }
-  .shadow-shadow-3 { box-shadow: var(--shadow-shadow-3); }
-  .shadow-shadow-4 { box-shadow: var(--shadow-shadow-4); }
-  .shadow-shadow-5 { box-shadow: var(--shadow-shadow-5); }
-  .shadow-shadow-6 { box-shadow: var(--shadow-shadow-6); }
+	.shadow-shadow-0 {
+		box-shadow: var(--shadow-shadow-0);
+	}
+	.shadow-shadow-1 {
+		box-shadow: var(--shadow-shadow-1);
+	}
+	.shadow-shadow-2 {
+		box-shadow: var(--shadow-shadow-2);
+	}
+	.shadow-shadow-3 {
+		box-shadow: var(--shadow-shadow-3);
+	}
+	.shadow-shadow-4 {
+		box-shadow: var(--shadow-shadow-4);
+	}
+	.shadow-shadow-5 {
+		box-shadow: var(--shadow-shadow-5);
+	}
+	.shadow-shadow-6 {
+		box-shadow: var(--shadow-shadow-6);
+	}
 }
