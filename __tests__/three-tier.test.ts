@@ -393,7 +393,7 @@ describe("semantic mode (default)", () => {
 		}
 	});
 
-	test("includes card, popover, destructive, input, ring semantics", () => {
+	test("includes card, popover, destructive, input, ring, status semantics", () => {
 		const result = generateDesignSystem(minimalConfig);
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
 		const names = semantics.map((t) => t.figmaName);
@@ -409,6 +409,9 @@ describe("semantic mode (default)", () => {
 		expect(names).toContain("input/default");
 		expect(names).toContain("ring/default");
 		expect(names).toContain("ring/primary");
+		expect(names).toContain("success/default");
+		expect(names).toContain("warning/default");
+		expect(names).toContain("info/default");
 	});
 
 	test("destructive semantics reference destructive primitive scale", () => {
@@ -539,6 +542,12 @@ describe("generateCss", () => {
 		expect(css).toContain("--destructive-default:");
 		expect(css).toContain("--input-default:");
 		expect(css).toContain("--ring-default:");
+		expect(css).toContain("--success-default:");
+		expect(css).toContain("--warning-default:");
+		expect(css).toContain("--info-default:");
+		expect(css).toContain("--color-success-500:");
+		expect(css).toContain("--color-warning-500:");
+		expect(css).toContain("--color-info-500:");
 	});
 
 	test("includes dark mode when enabled", () => {

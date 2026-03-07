@@ -53,10 +53,6 @@
   --color-util-overlay-transparent: var(--util-overlay-transparent);
   --color-util-transparent: var(--util-transparent);
   --color-warning: var(--warning);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-info-foreground: var(--info-foreground);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning-foreground: var(--warning-foreground);
 }
 /* Light Theme */
 :root {
@@ -91,10 +87,6 @@
 	--success: var(--color-accent-status-success-500);
 	--warning: var(--color-accent-status-warning-500);
 	--info: var(--color-accent-status-info-500);
-	--destructive-foreground: var(--color-red-700);
-	--info-foreground: var(--color-blue-700);
-	--success-foreground: var(--color-emerald-700);
-	--warning-foreground: var(--color-amber-700);
 	--border: var(--color-surface-light-4);
 	--input: var(--color-surface-light-5);
 	--ring: var(--color-surface-light-6);
@@ -156,10 +148,6 @@
 	--success: var(--color-accent-status-success-500);
 	--warning: var(--color-accent-status-warning-500);
 	--info: var(--color-accent-status-info-500);
-	--destructive-foreground: var(--color-red-400);
-	--info-foreground: var(--color-blue-400);
-	--success-foreground: var(--color-emerald-400);
-	--warning-foreground: var(--color-amber-400);
 	--border: var(--color-surface-dark-6);
 	--input: var(--color-surface-dark-7);
 	--ring: var(--color-surface-dark-8);

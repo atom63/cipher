@@ -268,6 +268,33 @@ function generatePrimitives(
 		);
 	}
 
+	// --- Status color scales (success, warning, info) ---
+	const statusColors = [
+		{ name: "success", hex: "#10B981" },
+		{ name: "warning", hex: "#F59E0B" },
+		{ name: "info", hex: "#3B82F6" },
+	] as const;
+
+	for (const status of statusColors) {
+		const statusScale = generateColorScale(status.name, status.hex);
+		scales.push(statusScale);
+
+		for (const step of SHADE_STEPS) {
+			tokens.push(
+				...makeDualModeTokens(
+					`${status.name}/${step}`,
+					statusScale.shades[step],
+					"primitives",
+					darkMode,
+					{
+						description: `${status.name} ${step}`,
+						originalValue: statusScale.hexValues[step],
+					},
+				),
+			);
+		}
+	}
+
 	// --- White & Black ---
 	tokens.push(
 		...makeDualModeTokens(
@@ -737,6 +764,31 @@ function buildSemanticDefs(
 		},
 	);
 
+	// Status colors — success, warning, info
+	const success = (step: number) => `{primitives.success.${step}}`;
+	const warning = (step: number) => `{primitives.warning.${step}}`;
+	const info = (step: number) => `{primitives.info.${step}}`;
+	defs.push(
+		{
+			name: "success/default",
+			light: success(500),
+			dark: success(500),
+			description: "Success status color",
+		},
+		{
+			name: "warning/default",
+			light: warning(500),
+			dark: warning(500),
+			description: "Warning status color",
+		},
+		{
+			name: "info/default",
+			light: info(500),
+			dark: info(500),
+			description: "Info status color",
+		},
+	);
+
 	if (hasSecondary) {
 		const accent = (step: number) =>
 			refBase === "abstractions"
@@ -923,6 +975,18 @@ export function generateCss(config: BrandConfig): string {
 			lines.push(
 				`  --color-destructive-${step}: ${destructiveScale.hexValues[step]};`,
 			);
+		}
+	}
+
+	// Status colors (success, warning, info)
+	for (const statusName of ["success", "warning", "info"]) {
+		const statusScale = system.primitives.find((s) => s.name === statusName);
+		if (statusScale) {
+			for (const step of SHADE_STEPS) {
+				lines.push(
+					`  --color-${statusName}-${step}: ${statusScale.hexValues[step]};`,
+				);
+			}
 		}
 	}
 

@@ -234,11 +234,10 @@ describe("token count stability", () => {
 			includeFonts: false,
 		});
 
-		// brand(11) + destructive(11) + gray(12) + white(1) + black(1)
-		// + alpha(11*2=22) = 58 primitives
-		// + semantic color defs (count should be stable)
-		// This is a snapshot — update if semantic defs change intentionally
-		expect(result.stats.primitiveCount).toBe(58);
+		// brand(11) + destructive(11) + success(11) + warning(11) + info(11)
+		// + gray(12) + white(1) + black(1) + alpha(11*2=22) = 91 primitives
+		// This is a snapshot — update if primitive scales change intentionally
+		expect(result.stats.primitiveCount).toBe(91);
 		expect(result.stats.totalCount).toBeGreaterThan(58);
 	});
 

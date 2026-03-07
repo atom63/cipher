@@ -494,9 +494,9 @@ describe("semantic token coverage vs dev semantics.css", () => {
 			border: "border/default",
 			input: "input/default",
 			ring: "ring/default",
-			success: null as any, // not yet in generator
-			warning: null as any, // not yet in generator
-			info: null as any, // not yet in generator
+			success: "success/default",
+			warning: "warning/default",
+			info: "info/default",
 		};
 
 		const result = generateDesignSystem({
@@ -802,6 +802,9 @@ describe("gap analysis", () => {
 			"accent",
 			"accent-foreground",
 			"destructive",
+			"success",
+			"warning",
+			"info",
 			"border",
 			"input",
 			"ring",
@@ -832,11 +835,7 @@ describe("gap analysis", () => {
 
 		// This test is informational — it passes but logs gaps
 		// Status colors (success, warning, info) are known gaps
-		const knownGaps = new Set([
-			"success", "warning", "info",
-			"destructive-foreground", "info-foreground",
-			"success-foreground", "warning-foreground",
-		]);
+		const knownGaps = new Set<string>([]);
 		const unknownGaps = gaps.filter((g) => !knownGaps.has(g));
 
 		expect(
