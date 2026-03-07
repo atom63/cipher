@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { type PageId, Sidebar } from './components/layout'
 import { ToastProvider, ErrorBoundary, PageErrorBoundary } from './components/ui'
+import { TooltipPortal } from './components/ui/Tooltip'
 import { usePostMessage } from './hooks/useFigmaMessage'
 import { ExportPage } from './pages/ExportPage'
 import { ImportPage } from './pages/ImportPage'
@@ -83,6 +84,7 @@ if (container) {
       <ErrorBoundary>
         <ToastProvider>
           <App />
+          <TooltipPortal />
         </ToastProvider>
       </ErrorBoundary>
     )

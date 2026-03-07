@@ -268,6 +268,172 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
       break
     }
 
+    case 'move-variables': {
+      const { variableIds, targetCollectionId } = msg.data
+      const targetCollection = figma.variables.getVariableCollectionById(targetCollectionId)
+      if (!targetCollection) {
+        figma.ui.postMessage({ type: 'variables-moved', data: { success: 0, failed: variableIds.length, previousCollections: [] } })
+        figma.notify('Target collection not found')
+        break
+      }
+
+      let success = 0
+      let failed = 0
+      const previousCollections: { id: string; collectionId: string }[] = []
+
+      // Build target mode map: match modes by name
+      const targetModeMap = new Map(targetCollection.modes.map(m => [m.name, m.modeId]))
+
+      for (const id of variableIds) {
+        try {
+          const variable = figma.variables.getVariableById(id)
+          if (!variable) { failed++; continue }
+          if (variable.variableCollectionId === targetCollectionId) { continue } // Already there
+
+          const sourceCollection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+          if (!sourceCollection) { failed++; continue }
+
+          const sourceModeMap = new Map(sourceCollection.modes.map(m => [m.modeId, m.name]))
+
+          previousCollections.push({ id, collectionId: variable.variableCollectionId })
+
+          // Create new variable in target collection
+          const newVar = figma.variables.createVariable(variable.name, targetCollection, variable.resolvedType as 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN')
+          newVar.description = variable.description
+
+          // Copy values, matching modes by name
+          for (const [sourceModeId, value] of Object.entries(variable.valuesByMode)) {
+            const modeName = sourceModeMap.get(sourceModeId)
+            if (!modeName) continue
+            const targetModeId = targetModeMap.get(modeName)
+            if (targetModeId) {
+              try { newVar.setValueForMode(targetModeId, value) } catch {}
+            }
+          }
+
+          // Remove original
+          variable.remove()
+          success++
+        } catch {
+          failed++
+        }
+      }
+      figma.ui.postMessage({ type: 'variables-moved', data: { success, failed, previousCollections } })
+      figma.notify(`Moved ${success} variable${success !== 1 ? 's' : ''} to "${targetCollection.name}"${failed > 0 ? ` (${failed} failed)` : ''}`)
+      break
+    }
+
+    case 'duplicate-variables': {
+      const { variableIds } = msg.data
+      let success = 0
+      let failed = 0
+      const newVariableIds: string[] = []
+
+      for (const id of variableIds) {
+        try {
+          const variable = figma.variables.getVariableById(id)
+          if (!variable) { failed++; continue }
+
+          const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+          if (!collection) { failed++; continue }
+
+          const newVar = figma.variables.createVariable(
+            `${variable.name} copy`,
+            collection,
+            variable.resolvedType as 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
+          )
+          newVar.description = variable.description
+
+          for (const [modeId, value] of Object.entries(variable.valuesByMode)) {
+            try { newVar.setValueForMode(modeId, value) } catch {}
+          }
+
+          newVariableIds.push(newVar.id)
+          success++
+        } catch {
+          failed++
+        }
+      }
+      figma.ui.postMessage({ type: 'variables-duplicated', data: { success, failed, newVariableIds } })
+      figma.notify(`Duplicated ${success} variable${success !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}`)
+      break
+    }
+
+    case 'update-variable-values': {
+      const { updates } = msg.data
+      let success = 0
+      let failed = 0
+      const previousValues: { id: string; valuesByMode: Record<string, any> }[] = []
+
+      for (const { id, valuesByMode } of updates) {
+        try {
+          const variable = figma.variables.getVariableById(id)
+          if (!variable) { failed++; continue }
+
+          const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+          if (!collection) { failed++; continue }
+
+          // Build mode name → mode ID map for resolving UI keys
+          const modeNameToId = new Map(collection.modes.map(m => [m.name, m.modeId]))
+
+          // Snapshot previous values (using mode names as keys for undo roundtrip)
+          const prevValues: Record<string, any> = {}
+          const modeIdToName = new Map(collection.modes.map(m => [m.modeId, m.name]))
+          for (const [modeId, value] of Object.entries(variable.valuesByMode)) {
+            const modeName = modeIdToName.get(modeId) || modeId
+            prevValues[modeName] = value
+          }
+          previousValues.push({ id, valuesByMode: prevValues })
+
+          // Apply new values — keys may be mode names (from UI) or mode IDs
+          for (const [key, rawValue] of Object.entries(valuesByMode)) {
+            const modeId = modeNameToId.get(key) || key
+            try {
+              let value: any = rawValue
+
+              // Handle alias references: {variable/name} → VARIABLE_ALIAS
+              if (typeof rawValue === 'string' && rawValue.startsWith('{') && rawValue.endsWith('}')) {
+                const refName = rawValue.slice(1, -1)
+                const allVars = figma.variables.getLocalVariables()
+                const refVar = allVars.find(v => v.name === refName)
+                if (refVar) {
+                  value = figma.variables.createVariableAlias(refVar)
+                } else {
+                  continue // Skip unresolved alias
+                }
+              } else if (typeof rawValue === 'object' && rawValue !== null) {
+                // Already a structured value (e.g. from undo snapshot) — pass through
+                value = rawValue
+              } else if (variable.resolvedType === 'FLOAT' && typeof rawValue === 'string') {
+                value = parseFloat(rawValue)
+                if (isNaN(value)) continue
+              } else if (variable.resolvedType === 'BOOLEAN' && typeof rawValue === 'string') {
+                value = rawValue.toLowerCase() === 'true'
+              } else if (variable.resolvedType === 'COLOR' && typeof rawValue === 'string') {
+                const hex = rawValue.trim()
+                if (hex.startsWith('#') && (hex.length === 7 || hex.length === 9)) {
+                  const r = parseInt(hex.slice(1, 3), 16) / 255
+                  const g = parseInt(hex.slice(3, 5), 16) / 255
+                  const b = parseInt(hex.slice(5, 7), 16) / 255
+                  const a = hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1
+                  value = { r, g, b, a }
+                } else {
+                  continue
+                }
+              }
+              variable.setValueForMode(modeId, value)
+            } catch {}
+          }
+          success++
+        } catch {
+          failed++
+        }
+      }
+      figma.ui.postMessage({ type: 'variable-values-updated', data: { success, failed, previousValues } })
+      figma.notify(`Updated ${success} variable${success !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}`)
+      break
+    }
+
     case 'create-variables': {
       const { tokens, collectionName, importMode = 'import' } = msg.data
       // Note: tokens are already filtered by selected collections in the UI

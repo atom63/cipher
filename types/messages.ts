@@ -205,6 +205,67 @@ export interface VariablesRestoredMessage {
   }
 }
 
+/** Move variables to a different collection */
+export interface MoveVariablesMessage {
+  type: 'move-variables'
+  data: {
+    variableIds: string[]
+    targetCollectionId: string
+  }
+}
+
+/** Variables moved result */
+export interface VariablesMovedMessage {
+  type: 'variables-moved'
+  data: {
+    success: number
+    failed: number
+    previousCollections: { id: string; collectionId: string }[]
+  }
+}
+
+/** Duplicate variables */
+export interface DuplicateVariablesMessage {
+  type: 'duplicate-variables'
+  data: {
+    variableIds: string[]
+  }
+}
+
+/** Variables duplicated result */
+export interface VariablesDuplicatedMessage {
+  type: 'variables-duplicated'
+  data: {
+    success: number
+    failed: number
+    newVariableIds: string[]
+  }
+}
+
+/** Update variable values in bulk */
+export interface UpdateVariableValuesMessage {
+  type: 'update-variable-values'
+  data: {
+    updates: {
+      id: string
+      valuesByMode: Record<string, any>
+    }[]
+  }
+}
+
+/** Variables values updated result */
+export interface VariableValuesUpdatedMessage {
+  type: 'variable-values-updated'
+  data: {
+    success: number
+    failed: number
+    previousValues: {
+      id: string
+      valuesByMode: Record<string, any>
+    }[]
+  }
+}
+
 /** Close the plugin */
 export interface CloseMessage {
   type: 'close'
@@ -240,6 +301,9 @@ export type UIToMainMessage =
   | RenameVariablesMessage
   | DeleteVariablesMessage
   | RestoreVariablesMessage
+  | MoveVariablesMessage
+  | DuplicateVariablesMessage
+  | UpdateVariableValuesMessage
   | ResizeWindowMessage
   | LoadSettingsMessage
   | SaveSettingsMessage
@@ -354,6 +418,9 @@ export type MainToUIMessage =
   | VariablesRenamedMessage
   | VariablesDeletedMessage
   | VariablesRestoredMessage
+  | VariablesMovedMessage
+  | VariablesDuplicatedMessage
+  | VariableValuesUpdatedMessage
   | ImportCompleteMessage
   | ExportCompleteMessage
   | StylesExportCompleteMessage
@@ -402,6 +469,9 @@ export function isUIToMainMessage(msg: unknown): msg is UIToMainMessage {
     'rename-variables',
     'delete-variables',
     'restore-variables',
+    'move-variables',
+    'duplicate-variables',
+    'update-variable-values',
     'resize-window',
     'load-settings',
     'save-settings',
@@ -422,6 +492,9 @@ export function isMainToUIMessage(msg: unknown): msg is MainToUIMessage {
     'variables-renamed',
     'variables-deleted',
     'variables-restored',
+    'variables-moved',
+    'variables-duplicated',
+    'variable-values-updated',
     'import-complete',
     'export-complete',
     'styles-export-complete',
