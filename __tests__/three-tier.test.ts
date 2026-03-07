@@ -76,6 +76,18 @@ describe("primitives-only mode", () => {
 		expect(result.stats.semanticCount).toBe(0);
 	});
 
+	test("includes destructive (red) primitive scale", () => {
+		const result = generateDesignSystem({
+			...minimalConfig,
+			layers: "primitives",
+			darkMode: false,
+		});
+		const names = result.tokens.map((t) => t.figmaName);
+		for (const step of SHADE_STEPS) {
+			expect(names).toContain(`destructive/${step}`);
+		}
+	});
+
 	test("creates brand scale (50-950) and Radix gray (1-12)", () => {
 		const result = generateDesignSystem({
 			...minimalConfig,
@@ -381,6 +393,38 @@ describe("semantic mode (default)", () => {
 		}
 	});
 
+	test("includes card, popover, destructive, input, ring semantics", () => {
+		const result = generateDesignSystem(minimalConfig);
+		const semantics = result.tokens.filter((t) => t.category === "semantics");
+		const names = semantics.map((t) => t.figmaName);
+		expect(names).toContain("card/default");
+		expect(names).toContain("card/foreground");
+		expect(names).toContain("popover/default");
+		expect(names).toContain("popover/foreground");
+		expect(names).toContain("destructive/default");
+		expect(names).toContain("destructive/foreground");
+		expect(names).toContain("destructive/border");
+		expect(names).toContain("destructive/muted");
+		expect(names).toContain("destructive/muted-foreground");
+		expect(names).toContain("input/default");
+		expect(names).toContain("ring/default");
+		expect(names).toContain("ring/primary");
+	});
+
+	test("destructive semantics reference destructive primitive scale", () => {
+		const result = generateDesignSystem({
+			...minimalConfig,
+			darkMode: false,
+		});
+		const destructiveDefault = result.tokens.find(
+			(t) =>
+				t.category === "semantics" && t.figmaName === "destructive/default",
+		);
+		expect(destructiveDefault?.originalValue).toBe(
+			"{primitives.destructive.500}",
+		);
+	});
+
 	test("includes accent semantics when secondary provided", () => {
 		const result = generateDesignSystem({
 			...minimalConfig,
@@ -488,7 +532,13 @@ describe("generateCss", () => {
 		expect(css).toContain("@theme inline {");
 		expect(css).toContain(":root {");
 		expect(css).toContain("--color-brand-500:");
+		expect(css).toContain("--color-destructive-500:");
 		expect(css).toContain("--color-slate-1:");
+		// Semantic tokens
+		expect(css).toContain("--card-default:");
+		expect(css).toContain("--destructive-default:");
+		expect(css).toContain("--input-default:");
+		expect(css).toContain("--ring-default:");
 	});
 
 	test("includes dark mode when enabled", () => {

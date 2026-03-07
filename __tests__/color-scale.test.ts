@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
 	generateColorScale,
-	generateGrayScale,
 	hexToRgb,
 	oklchToRgb,
 	rgbToHex,
@@ -114,25 +113,3 @@ describe("generateColorScale", () => {
 	});
 });
 
-describe("generateGrayScale", () => {
-	test("generates all shade steps", () => {
-		const scale = generateGrayScale("zinc");
-		expect(Object.keys(scale.shades)).toHaveLength(SHADE_STEPS.length);
-	});
-
-	test("tints toward brand color when provided", () => {
-		const untinted = generateGrayScale("gray");
-		const tinted = generateGrayScale("gray", "#EF4444");
-		// The hex values should differ slightly due to hue tint
-		expect(tinted.hexValues[500]).not.toBe(untinted.hexValues[500]);
-	});
-
-	test("is near-neutral (very low chroma)", () => {
-		const scale = generateGrayScale("zinc", "#3B82F6");
-		// Mid-tone gray should be close to a true gray
-		const mid = scale.shades[500];
-		const spread =
-			Math.max(mid.r, mid.g, mid.b) - Math.min(mid.r, mid.g, mid.b);
-		expect(spread).toBeLessThan(0.05);
-	});
-});

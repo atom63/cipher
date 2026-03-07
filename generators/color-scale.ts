@@ -46,20 +46,6 @@ const SHADE_CHROMA_MULT: Record<ShadeStep, number> = {
 	950: 0.4,
 };
 
-// Neutral gray scale lightness (no chroma)
-const GRAY_LIGHTNESS: Record<ShadeStep, number> = {
-	50: 0.98,
-	100: 0.95,
-	200: 0.9,
-	300: 0.83,
-	400: 0.71,
-	500: 0.55,
-	600: 0.45,
-	700: 0.37,
-	800: 0.27,
-	900: 0.21,
-	950: 0.14,
-};
 
 /** Convert sRGB (0-1) to OKLCH */
 export function rgbToOklch(r: number, g: number, b: number): OklchColor {
@@ -187,34 +173,3 @@ export function generateColorScale(name: string, baseHex: string): ColorScale {
 	return { name, shades, hexValues };
 }
 
-/**
- * Generate a neutral gray scale with a slight hue tint.
- * The tint comes from the brand color for visual cohesion.
- */
-export function generateGrayScale(name: string, brandHex?: string): ColorScale {
-	// Use a very small chroma from the brand color for warmth
-	let hue = 250; // default blue-gray
-	let tintChroma = 0.005;
-
-	if (brandHex) {
-		const brandRgb = hexToRgb(brandHex);
-		const brandOklch = rgbToOklch(brandRgb.r, brandRgb.g, brandRgb.b);
-		hue = brandOklch.h;
-		tintChroma = Math.min(brandOklch.c * 0.04, 0.01);
-	}
-
-	const shades = {} as Record<ShadeStep, ColorValue>;
-	const hexValues = {} as Record<ShadeStep, string>;
-
-	for (const step of SHADE_STEPS) {
-		const shade = oklchToRgb({
-			l: GRAY_LIGHTNESS[step],
-			c: tintChroma,
-			h: hue,
-		});
-		shades[step] = shade;
-		hexValues[step] = rgbToHex(shade);
-	}
-
-	return { name, shades, hexValues };
-}

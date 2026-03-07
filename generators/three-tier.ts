@@ -249,6 +249,25 @@ function generatePrimitives(
 		}
 	}
 
+	// --- Destructive (red) scale for error/danger states ---
+	const destructiveScale = generateColorScale("destructive", "#EF4444");
+	scales.push(destructiveScale);
+
+	for (const step of SHADE_STEPS) {
+		tokens.push(
+			...makeDualModeTokens(
+				`destructive/${step}`,
+				destructiveScale.shades[step],
+				"primitives",
+				darkMode,
+				{
+					description: `Destructive ${step}`,
+					originalValue: destructiveScale.hexValues[step],
+				},
+			),
+		);
+	}
+
 	// --- White & Black ---
 	tokens.push(
 		...makeDualModeTokens(
@@ -629,6 +648,95 @@ function buildSemanticDefs(
 		},
 	];
 
+	// Card
+	defs.push(
+		{
+			name: "card/default",
+			light: neutral(1),
+			dark: neutral(2),
+			description: "Card background",
+		},
+		{
+			name: "card/foreground",
+			light: neutral(12),
+			dark: neutral(12),
+			description: "Card text color",
+		},
+	);
+
+	// Popover
+	defs.push(
+		{
+			name: "popover/default",
+			light: neutral(1),
+			dark: neutral(4),
+			description: "Popover/dropdown background",
+		},
+		{
+			name: "popover/foreground",
+			light: neutral(12),
+			dark: neutral(12),
+			description: "Popover text color",
+		},
+	);
+
+	// Destructive — references destructive primitive scale
+	const destructive = (step: number) => `{primitives.destructive.${step}}`;
+	defs.push(
+		{
+			name: "destructive/default",
+			light: destructive(500),
+			dark: destructive(500),
+			description: "Destructive action background",
+		},
+		{
+			name: "destructive/foreground",
+			light: white,
+			dark: white,
+			description: "Text on destructive background",
+		},
+		{
+			name: "destructive/border",
+			light: destructive(500),
+			dark: destructive(400),
+			description: "Destructive border",
+		},
+		{
+			name: "destructive/muted",
+			light: destructive(50),
+			dark: destructive(950),
+			description: "Muted destructive surface",
+		},
+		{
+			name: "destructive/muted-foreground",
+			light: destructive(600),
+			dark: destructive(400),
+			description: "Text on muted destructive surface",
+		},
+	);
+
+	// Input & Ring
+	defs.push(
+		{
+			name: "input/default",
+			light: neutral(5),
+			dark: neutral(7),
+			description: "Input border color",
+		},
+		{
+			name: "ring/default",
+			light: neutral(6),
+			dark: neutral(8),
+			description: "Focus ring color",
+		},
+		{
+			name: "ring/primary",
+			light: primary(500),
+			dark: primary(400),
+			description: "Primary focus ring color",
+		},
+	);
+
 	if (hasSecondary) {
 		const accent = (step: number) =>
 			refBase === "abstractions"
@@ -802,6 +910,18 @@ export function generateCss(config: BrandConfig): string {
 		for (const step of SHADE_STEPS) {
 			lines.push(
 				`  --color-secondary-${step}: ${secondaryScale.hexValues[step]};`,
+			);
+		}
+	}
+
+	// Destructive colors
+	const destructiveScale = system.primitives.find(
+		(s) => s.name === "destructive",
+	);
+	if (destructiveScale) {
+		for (const step of SHADE_STEPS) {
+			lines.push(
+				`  --color-destructive-${step}: ${destructiveScale.hexValues[step]};`,
 			);
 		}
 	}
