@@ -10,6 +10,7 @@
 import { parseJSON } from './parsers/token-parsers'
 import { createVariablesFromTokens, importStylesFromTokens } from './handlers/import-handler'
 import { exportVariablesAsTokens, exportStylesAsTokens } from './handlers/export-handler'
+import type { UIToMainMessage, PluginSettings } from './types/messages'
 
 // Show the plugin UI (resizable by default)
 figma.showUI(__html__, {
@@ -19,8 +20,37 @@ figma.showUI(__html__, {
   themeColors: true,
 })
 
+// Group styles by root folder, returning name + count pairs
+function groupStylesByRoot(styles: { name: string }[]): { name: string; count: number }[] {
+  const groups = new Map<string, number>()
+  for (const style of styles) {
+    const parts = style.name.split('/')
+    const rootFolder = parts.length > 1 ? parts[0] : 'Root'
+    groups.set(rootFolder, (groups.get(rootFolder) ?? 0) + 1)
+  }
+  return Array.from(groups, ([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name))
+}
+
+// Settings persistence via clientStorage
+const DEFAULT_SETTINGS: PluginSettings = {
+  colorFormat: 'oklch',
+  lastExportTab: 'variables',
+}
+
+async function loadSettings(): Promise<PluginSettings> {
+  const stored = await figma.clientStorage.getAsync('settings')
+  return { ...DEFAULT_SETTINGS, ...stored }
+}
+
+async function saveSettings(partial: Partial<PluginSettings>): Promise<PluginSettings> {
+  const current = await loadSettings()
+  const updated = { ...current, ...partial }
+  await figma.clientStorage.setAsync('settings', updated)
+  return updated
+}
+
 // Handle messages from the UI
-figma.ui.onmessage = async (msg: { type: string; data?: any }) => {
+figma.ui.onmessage = async (msg: UIToMainMessage) => {
   switch (msg.type) {
     case 'parse-tokens': {
       const { content } = msg.data
@@ -40,7 +70,6 @@ figma.ui.onmessage = async (msg: { type: string; data?: any }) => {
           name: c.name,
           variableCount: c.variableIds.length,
         }))
-        // Sort alphabetically by name
         .sort((a, b) => a.name.localeCompare(b.name))
       figma.ui.postMessage({
         type: 'collections-list',
@@ -50,66 +79,21 @@ figma.ui.onmessage = async (msg: { type: string; data?: any }) => {
     }
 
     case 'get-styles': {
-      // Get all local styles
       const paintStyles = figma.getLocalPaintStyles()
       const textStyles = figma.getLocalTextStyles()
       const effectStyles = figma.getLocalEffectStyles()
       const gridStyles = figma.getLocalGridStyles()
 
-      // Group styles by category, then by root folder
-      const getStyleGroups = (styles: any[]) => {
-        const groups = new Set<string>()
-        styles.forEach(style => {
-          const parts = style.name.split('/')
-          const rootFolder = parts.length > 1 ? parts[0] : 'Root'
-          groups.add(rootFolder)
-        })
-        return Array.from(groups).sort()
-      }
-
-      const paintGroups = getStyleGroups(paintStyles)
-      const textGroups = getStyleGroups(textStyles)
-      const effectGroups = getStyleGroups(effectStyles)
-      const gridGroups = getStyleGroups(gridStyles)
-
       const stylesByCategory = {
-        paint: paintGroups.map(group => ({
-          name: group,
-          count: paintStyles.filter(s => {
-            const parts = s.name.split('/')
-            const rootFolder = parts.length > 1 ? parts[0] : 'Root'
-            return rootFolder === group
-          }).length
-        })),
-        text: textGroups.map(group => ({
-          name: group,
-          count: textStyles.filter(s => {
-            const parts = s.name.split('/')
-            const rootFolder = parts.length > 1 ? parts[0] : 'Root'
-            return rootFolder === group
-          }).length
-        })),
-        effect: effectGroups.map(group => ({
-          name: group,
-          count: effectStyles.filter(s => {
-            const parts = s.name.split('/')
-            const rootFolder = parts.length > 1 ? parts[0] : 'Root'
-            return rootFolder === group
-          }).length
-        })),
-        grid: gridGroups.map(group => ({
-          name: group,
-          count: gridStyles.filter(s => {
-            const parts = s.name.split('/')
-            const rootFolder = parts.length > 1 ? parts[0] : 'Root'
-            return rootFolder === group
-          }).length
-        }))
+        paint: groupStylesByRoot(paintStyles),
+        text: groupStylesByRoot(textStyles),
+        effect: groupStylesByRoot(effectStyles),
+        grid: groupStylesByRoot(gridStyles),
       }
 
       figma.ui.postMessage({
         type: 'styles-list',
-        data: { 
+        data: {
           stylesByCategory,
           totalCounts: {
             paint: paintStyles.length,
@@ -175,6 +159,20 @@ figma.ui.onmessage = async (msg: { type: string; data?: any }) => {
         type: 'import-complete',
         data: results
       })
+      break
+    }
+
+    case 'load-settings': {
+      const settings = await loadSettings()
+      figma.ui.postMessage({
+        type: 'settings-loaded',
+        data: settings,
+      })
+      break
+    }
+
+    case 'save-settings': {
+      await saveSettings(msg.data)
       break
     }
 

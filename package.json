@@ -1,35 +1,35 @@
 {
-  "name": "cipher",
-  "version": "0.1.0",
-  "description": "Cipher - Design System Token Manager for Figma",
-  "type": "module",
-  "author": "You Zhang (ATOM63)",
-  "license": "MIT",
-  "scripts": {
-    "dev": "node build.js --watch",
-    "build": "node build.js",
-    "tokens": "tsx scripts/generate-tokens.ts",
-    "tokens:watch": "tsx watch scripts/generate-tokens.ts",
-    "format": "npx ultracite fix",
-    "lint": "npx ultracite check"
-  },
-  "dependencies": {
-    "lucide-react": "^0.562.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.4",
-    "@figma/plugin-typings": "^1.98.0",
-    "@types/node": "^22.10.2",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "esbuild": "^0.24.0",
-    "sass": "^1.81.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+	"name": "cipher",
+	"version": "0.1.0",
+	"description": "Cipher - Design System Token Manager for Figma",
+	"type": "module",
+	"author": "You Zhang (ATOM63)",
+	"license": "MIT",
+	"scripts": {
+		"dev": "node build.js --watch",
+		"build": "node build.js",
+		"tokens": "tsx exports/scripts/generate-tokens.ts",
+		"tokens:watch": "tsx watch exports/scripts/generate-tokens.ts",
+		"format": "npx ultracite fix",
+		"lint": "npx ultracite check"
+	},
+	"dependencies": {
+		"lucide-react": "^0.562.0",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.4",
+		"@figma/plugin-typings": "^1.98.0",
+		"@types/node": "^22.10.2",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
+		"esbuild": "^0.24.0",
+		"sass": "^1.81.0",
+		"tsx": "^4.19.2",
+		"typescript": "^5.7.2"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	}
 }

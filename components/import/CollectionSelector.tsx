@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Button, RadioGroup, Input, SectionHeader, LoadingState, EmptyState, CheckboxCard } from '../ui'
+import { usePostMessage, useFigmaMessage } from '../../hooks/useFigmaMessage'
 import { ArrowRight, FolderPlus, FolderOpen } from 'lucide-react'
 import styles from './CollectionSelector.module.css'
 
@@ -44,46 +45,31 @@ export function CollectionSelector({ tokens, onSelect, onCancel }: CollectionSel
     new Set(detectedCollections) // All selected by default
   )
 
-  useEffect(() => {
-    // Request existing collections from Figma
-    parent.postMessage(
-      { pluginMessage: { type: 'get-collections' } },
-      '*'
-    )
+  const postMessage = usePostMessage()
 
-    // Smart default: check if any detected collections already exist
-    const checkExistingCollections = (existingCollections: Collection[]) => {
-      const existingNames = existingCollections.map(c => c.name.toLowerCase())
-      const hasExisting = detectedCollections.some(dc => 
+  useEffect(() => {
+    postMessage({ type: 'get-collections' })
+  }, [postMessage])
+
+  useFigmaMessage((msg) => {
+    if (msg.type === 'collections-list') {
+      const cols = msg.data.collections
+      setCollections(cols)
+
+      // Smart default: check if any detected collections already exist
+      const existingNames = cols.map((c: Collection) => c.name.toLowerCase())
+      const hasExisting = detectedCollections.some(dc =>
         existingNames.includes(dc.toLowerCase())
       )
-      
       setHasExistingCollections(hasExisting)
-      
-      // If collections exist, suggest Override mode; otherwise Import mode
-      if (hasExisting) {
-        setImportMode('override')
-      } else {
-        setImportMode('import')
-      }
-    }
+      setImportMode(hasExisting ? 'override' : 'import')
 
-    // Listen for collections response
-    const handleMessage = (event: MessageEvent) => {
-      const msg = event.data.pluginMessage
-      if (msg.type === 'collections-list') {
-        setCollections(msg.data.collections)
-        checkExistingCollections(msg.data.collections)
-        if (msg.data.collections.length > 0) {
-          setSelectedCollectionId(msg.data.collections[0].id)
-        }
-        setLoading(false)
+      if (cols.length > 0) {
+        setSelectedCollectionId(cols[0].id)
       }
+      setLoading(false)
     }
-
-    window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
-  }, [])
+  })
 
   const handleContinue = () => {
     // For multi-collection imports, check that at least one collection is selected

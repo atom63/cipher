@@ -6,7 +6,7 @@ import {
 	Sparkles,
 	Type,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
 	CollectionSelector,
 	FileImport,
@@ -14,11 +14,12 @@ import {
 	SuccessView,
 	TokenTable,
 } from "../components/import";
-import { RadioGroup, SectionHeader } from "../components/ui";
+import { RadioGroup, SectionHeader, useToast, ConfirmDialog } from "../components/ui";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 import { CheckboxWithLabel } from "../components/ui/Checkbox";
 import { TabPanel, Tabs } from "../components/ui/Tabs";
+import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type { DesignToken, ParsedTokens } from "../types/tokens";
 import exportStyles from "./ExportPage.module.css";
 import styles from "./ImportPage.module.css";
@@ -76,41 +77,45 @@ export function ImportPage() {
 		}>,
 	});
 
-	useEffect(() => {
-		// Listen for messages from the plugin code
-		window.onmessage = (event) => {
-			const msg = event.data.pluginMessage;
+	const postMessage = usePostMessage();
+	const { showError, showWarning } = useToast();
 
-			if (msg.type === "tokens-parsed") {
-				const parsedData: ParsedTokens = msg.data;
+	// State for tab-switch confirmation dialog
+	const [pendingTabSwitch, setPendingTabSwitch] = useState<{
+		targetTab: "variables" | "styles";
+		message: string;
+		callback: () => void;
+	} | null>(null);
 
-				if (parsedData.errors.length > 0) {
-					alert(
-						`Parsing errors:\n${parsedData.errors.map((e) => e.message).join("\n")}`,
-					);
-				}
+	useFigmaMessage((msg) => {
+		if (msg.type === "tokens-parsed") {
+			const parsedData: ParsedTokens = msg.data;
 
-				if (parsedData.tokens.length > 0) {
-					setTokens(parsedData.tokens);
-					setFileType("variables");
-					setView("collection");
-				} else {
-					alert("No tokens found in the file");
-				}
+			if (parsedData.errors.length > 0) {
+				showWarning(
+					`Parsing errors: ${parsedData.errors.map((e) => e.message).join(", ")}`,
+				);
 			}
 
-			if (msg.type === "variables-created" || msg.type === "import-complete") {
-				console.log("Import result received:", msg.data);
-				setResult(msg.data);
-				setView("success");
+			if (parsedData.tokens.length > 0) {
+				setTokens(parsedData.tokens);
+				setFileType("variables");
+				setView("collection");
+			} else {
+				showError("No tokens found in the file");
 			}
+		}
 
-			if (msg.type === "error") {
-				alert(`Error: ${msg.data.message}`);
-				setView("upload");
-			}
-		};
-	}, []);
+		if (msg.type === "variables-created" || msg.type === "import-complete") {
+			setResult(msg.data);
+			setView("success");
+		}
+
+		if (msg.type === "error") {
+			showError(msg.data.message);
+			setView("upload");
+		}
+	});
 
 	// Helper: Parse style groups from styles data
 	const parseStyleGroups = (stylesObj: any): StylesByCategory => {
@@ -153,47 +158,36 @@ export function ImportPage() {
 	};
 
 	const handleTokensParsed = (parsed: ParsedTokens) => {
-		// Variables file parsed successfully
+		const applyTokens = () => {
+			setTokens(parsed.tokens);
+			setFileType("variables");
+			setView("collection");
+		};
+
 		if (activeTab !== "variables") {
-			const switchTab = confirm(
-				"This is a Variables file, but you're in the Styles tab. Switch to Variables tab?",
-			);
-			if (switchTab) {
-				setActiveTab("variables");
-			} else {
-				return;
-			}
+			setPendingTabSwitch({
+				targetTab: "variables",
+				message: "This is a Variables file, but you're in the Styles tab. Switch to Variables tab?",
+				callback: () => {
+					setActiveTab("variables");
+					applyTokens();
+				},
+			});
+			return;
 		}
 
-		setTokens(parsed.tokens);
-		setFileType("variables");
-		setView("collection");
+		applyTokens();
 	};
 
 	const handleFileParsed = (data: any) => {
-		// Detect file type based on schema
-		if (data.$schema === "figma-styles-export") {
-			// Style export file
-			if (activeTab !== "styles") {
-				const switchTab = confirm(
-					"This is a Styles export file, but you're in the Variables tab. Switch to Styles tab?",
-				);
-				if (switchTab) {
-					setActiveTab("styles");
-				} else {
-					return;
-				}
-			}
-
+		const applyStylesData = () => {
 			setStylesData(data);
 			setFileType("styles");
 
-			// Parse style groups
 			if (data.styles) {
 				const groups = parseStyleGroups(data.styles);
 				setStylesByCategory(groups);
 
-				// Select all by default
 				const allGroups: { category: string; group: string }[] = [];
 				Object.entries(groups).forEach(([category, styleGroups]) => {
 					styleGroups.forEach((group: StyleGroup) => {
@@ -204,28 +198,40 @@ export function ImportPage() {
 			}
 
 			setView("review");
+		};
+
+		if (data.$schema === "figma-styles-export") {
+			if (activeTab !== "styles") {
+				setPendingTabSwitch({
+					targetTab: "styles",
+					message: "This is a Styles export file, but you're in the Variables tab. Switch to Styles tab?",
+					callback: () => {
+						setActiveTab("styles");
+						applyStylesData();
+					},
+				});
+				return;
+			}
+			applyStylesData();
 		} else if (
 			data.$schema === "design-tokens-with-collections" ||
 			data.tokens
 		) {
-			// Variable tokens file
 			if (activeTab !== "variables") {
-				const switchTab = confirm(
-					"This is a Variables export file, but you're in the Styles tab. Switch to Variables tab?",
-				);
-				if (switchTab) {
-					setActiveTab("variables");
-				} else {
-					return;
-				}
+				setPendingTabSwitch({
+					targetTab: "variables",
+					message: "This is a Variables export file, but you're in the Styles tab. Switch to Variables tab?",
+					callback: () => {
+						setActiveTab("variables");
+					},
+				});
+				return;
 			}
-
-			// Trigger the parser for variables
-			alert(
+			showWarning(
 				"Please use the file upload to parse variable tokens. Direct JSON parsing is not yet supported.",
 			);
 		} else {
-			alert(
+			showError(
 				"Unknown file format. Please upload a valid design tokens or styles export file.",
 			);
 		}
@@ -300,43 +306,33 @@ export function ImportPage() {
 
 		setView("progress");
 
-		parent.postMessage(
-			{
-				pluginMessage: {
-					type: "create-variables",
-					data: {
-						tokens: tokensToImport,
-						collectionName,
-						importMode,
-						selectedCollections,
-					},
-				},
+		postMessage({
+			type: "create-variables",
+			data: {
+				tokens: tokensToImport,
+				collectionName,
+				importMode,
+				selectedCollections,
 			},
-			"*",
-		);
+		});
 	};
 
 	const handleStyleImport = () => {
 		if (selectedStyleGroups.length === 0) {
-			alert("Please select at least one style group to import");
+			showError("Please select at least one style group to import");
 			return;
 		}
 
 		setView("progress");
 
-		parent.postMessage(
-			{
-				pluginMessage: {
-					type: "import-styles",
-					data: {
-						stylesData,
-						selectedGroups: selectedStyleGroups,
-						importMode,
-					},
-				},
+		postMessage({
+			type: "import-styles",
+			data: {
+				stylesData,
+				selectedGroups: selectedStyleGroups,
+				importMode,
 			},
-			"*",
-		);
+		});
 	};
 
 	const handleCancel = () => {
@@ -352,7 +348,7 @@ export function ImportPage() {
 	};
 
 	const handleClose = () => {
-		parent.postMessage({ pluginMessage: { type: "close" } }, "*");
+		postMessage({ type: "close" });
 	};
 
 	const handleImportMore = () => {
@@ -687,6 +683,20 @@ export function ImportPage() {
 					changes={result.changes}
 				/>
 			)}
+
+			{/* Tab switch confirmation dialog */}
+			<ConfirmDialog
+				isOpen={pendingTabSwitch !== null}
+				onClose={() => setPendingTabSwitch(null)}
+				onConfirm={() => {
+					pendingTabSwitch?.callback();
+					setPendingTabSwitch(null);
+				}}
+				title="Switch Tab"
+				message={pendingTabSwitch?.message ?? ""}
+				confirmText="Switch"
+				cancelText="Cancel"
+			/>
 		</div>
 	);
 }

@@ -120,6 +120,23 @@ export interface CloseMessage {
   type: 'close'
 }
 
+/** Plugin settings stored via clientStorage */
+export interface PluginSettings {
+  colorFormat: 'oklch' | 'hex' | 'rgba' | 'hsl'
+  lastExportTab: 'variables' | 'styles'
+}
+
+/** Load settings from clientStorage */
+export interface LoadSettingsMessage {
+  type: 'load-settings'
+}
+
+/** Save settings to clientStorage */
+export interface SaveSettingsMessage {
+  type: 'save-settings'
+  data: Partial<PluginSettings>
+}
+
 /** Union of all UI → Main thread messages */
 export type UIToMainMessage =
   | ParseTokensMessage
@@ -130,6 +147,8 @@ export type UIToMainMessage =
   | ExportStylesMessage
   | ImportStylesMessage
   | ResizeWindowMessage
+  | LoadSettingsMessage
+  | SaveSettingsMessage
   | CloseMessage
 
 // ============================================================================
@@ -225,6 +244,12 @@ export interface ErrorMessage {
   }
 }
 
+/** Settings loaded from clientStorage */
+export interface SettingsLoadedMessage {
+  type: 'settings-loaded'
+  data: PluginSettings
+}
+
 /** Union of all Main thread → UI messages */
 export type MainToUIMessage =
   | TokensParsedMessage
@@ -237,6 +262,7 @@ export type MainToUIMessage =
   | ExportErrorMessage
   | ProgressUpdateMessage
   | ErrorMessage
+  | SettingsLoadedMessage
 
 // ============================================================================
 // UTILITY TYPES
@@ -275,6 +301,8 @@ export function isUIToMainMessage(msg: unknown): msg is UIToMainMessage {
     'export-styles',
     'import-styles',
     'resize-window',
+    'load-settings',
+    'save-settings',
     'close',
   ].includes(type)
 }
@@ -294,5 +322,6 @@ export function isMainToUIMessage(msg: unknown): msg is MainToUIMessage {
     'export-error',
     'progress-update',
     'error',
+    'settings-loaded',
   ].includes(type)
 }

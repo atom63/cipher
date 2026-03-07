@@ -1,4 +1,4 @@
-import { Download, Upload, RefreshCw, Settings, HelpCircle, ChevronLeft, ChevronRight, Palette } from 'lucide-react'
+import { Download, Upload, Settings, ChevronLeft, ChevronRight, Palette } from 'lucide-react'
 import styles from './Sidebar.module.css'
 
 export type PageId = 'import' | 'export' | 'sync' | 'settings' | 'styleguide' | 'help'
@@ -21,10 +21,8 @@ interface SidebarProps {
 const menuItems: MenuItem[] = [
   { id: 'import', label: 'Import', icon: Download, enabled: true, section: 'features' },
   { id: 'export', label: 'Export', icon: Upload, enabled: true, section: 'features' },
-  { id: 'sync', label: 'Sync', icon: RefreshCw, enabled: false, section: 'features' },
   { id: 'settings', label: 'Settings', icon: Settings, enabled: true, section: 'config' },
   { id: 'styleguide', label: 'Styleguide', icon: Palette, enabled: true, section: 'config' },
-  { id: 'help', label: 'Help', icon: HelpCircle, enabled: false, section: 'config' },
 ]
 
 export function Sidebar({ activePage, onPageChange, collapsed, onToggleCollapse }: SidebarProps) {

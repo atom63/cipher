@@ -1,539 +1,383 @@
 # Product Requirements Document: Cipher
 
-**Version:** 2.0  
-**Last Updated:** December 16, 2024  
-**Status:** Active Development  
+**Version:** 3.0
+**Last Updated:** March 6, 2026
+**Status:** Active Development
 **Owner:** You Zhang (ATOM63)
 
 ---
 
-## 🎯 Executive Summary
+## Executive Summary
 
-**Cipher** is a Figma plugin that bridges the gap between design and code through **intelligent design token management**. It enables designers and developers to import, export, and generate design system tokens with automatic CSS generation, opacity support, and seamless Figma Variables integration.
+**Cipher** is a Figma plugin for **managing and exporting design tokens**. It solves two problems that Figma's native UI doesn't:
 
-### The Problem
-- **Design-Dev Disconnect**: Design tokens exist in code (JSON/CSS) but manually syncing to Figma is error-prone
-- **Token Generation Complexity**: Creating comprehensive token systems (primitives → semantics) requires deep knowledge
-- **Opacity Loss**: Figma opacity values are lost when exporting to code
-- **No Automation**: Existing tools require manual CSS generation from token JSON
+1. **Variable & style management is painful** — Figma only supports one-by-one editing. Cipher provides fast batch CRUD operations with a visual editor.
+2. **Getting tokens into code is indirect** — Figma exports JSON that still needs transformation. Cipher exports production-ready CSS (with CSS variables, `color-mix()` opacity, `@theme inline` for Tailwind) directly from the plugin.
+
+### The Problems
+
+- **Figma's variable editor is slow**: No bulk rename, no find/replace, no batch value changes, no cross-collection operations. Managing 500+ tokens is tedious.
+- **Export requires a pipeline**: Figma Variables → JSON → external script → CSS → code. Too many steps for what should be one action.
+- **Opacity is lost in translation**: Figma stores opacity separately from color values. Standard exports drop it. Recovering it requires traversing `styles.json` metadata.
+- **Token structure is tribal knowledge**: Setting up a proper layered token system (primitives → abstractions → semantics) requires expertise most teams don't have.
 
 ### The Solution
-- **Bidirectional Sync**: Import JSON tokens → Figma Variables, Export Figma Variables → CSS
-- **Intelligent Generation**: Automatic CSS generation with proper prefixes, opacity mixing, and Tailwind compatibility
-- **Future-Proof Architecture**: 4-layer token system (primitives, abstractions, semantics, responsive)
-- **Dynamic Opacity Support**: Automatically detects and applies opacity from Figma using `color-mix()`
+
+- **Batch variable manager**: Fast, visual CRUD for Figma variables and styles — the editor Figma should have built.
+- **Direct-to-CSS export**: Skip JSON intermediaries. Export Figma Variables as production CSS with opacity preservation, Tailwind compatibility, and proper prefixes.
+- **JSON import/export**: Bidirectional JSON support for teams that need it, but CSS is the primary export format.
+- **Guided token structure**: Opinionated 4-layer defaults with flexibility to customize.
 
 ### Unique Value Proposition
-**First plugin to combine JSON import + automatic CSS generation + opacity preservation + zero-config token generation**
+
+**The fastest way to manage Figma variables and get them into production CSS — with opacity preserved and Tailwind ready.**
 
 ---
 
-## 🎪 Product Vision
-
-### Vision Statement
-*"Design systems should flow effortlessly between design and code, with zero manual configuration."*
-
-### Mission
-Eliminate manual token synchronization, preserve design intent (especially opacity), and provide a professional token generation system that adapts to any design system architecture.
-
-### Product Goals (6 months)
-1. **Adoption**: 1,000+ active plugin users
-2. **Quality**: 100% accurate opacity preservation from Figma
-3. **Automation**: Zero manual CSS writing for token consumers
-4. **Flexibility**: Support any token architecture (primitives, semantics, custom)
-
----
-
-## 👥 Target Users
+## Target Users
 
 ### Primary: Design System Engineers
-- Maintain design tokens in both Figma and code
-- Need bidirectional sync workflow
-- Value automation and accuracy
-- **Pain**: Manual CSS generation and opacity handling
 
-### Secondary: Product Designers
-- Create design systems in Figma
-- Export tokens for developer handoff
-- Need professional token structure
-- **Pain**: No easy way to generate production-ready CSS
+- Maintain 200-1000+ tokens across multiple collections
+- Need to bulk rename, restructure, and update variables regularly
+- Want production CSS output, not intermediate JSON
+- **Pain**: Figma's one-by-one variable editing; multi-step export pipelines
 
-### Tertiary: Frontend Developers
-- Import design tokens into Figma for design work
+### Secondary: Frontend Developers
+
+- Consume design tokens in React/Vue/Svelte projects
+- Use Tailwind CSS or CSS custom properties
 - Need exact color values with opacity
-- Prefer code-friendly formats
-- **Pain**: Figma opacity not translating to CSS
+- **Pain**: Manual CSS generation from Figma exports; opacity loss
+
+### Tertiary: Product Designers
+
+- Create and maintain design systems in Figma
+- Export tokens for developer handoff
+- **Pain**: No efficient way to manage large variable sets or verify export accuracy
 
 ---
 
-## 🏗️ Product Architecture
+## Feature Architecture
 
-### 4-Layer Token System
+### Three Pillars
 
 ```
-primitives/      → Raw values (colors, spacing, typography)
-  ├─ color/      → Base color palettes (zinc, blue, etc.)
-  ├─ spacing/    → Spacing scale (0, 0.5, 1, 2, etc.)
-  ├─ typography/ → Font sizes, weights, line heights
-  └─ radius/     → Border radius values
-
-abstractions/    → Semantic mappings
-  ├─ surface/    → {primitives.color.zinc.*}
-  └─ primary/    → {primitives.color.blue.*}
-
-semantics/       → Context-aware tokens (with modes)
-  ├─ background/ → Light & Dark mode specific
-  ├─ foreground/ → Adaptive text colors
-  └─ shadcn/     → Framework-specific tokens
-
-responsive/      → Viewport-aware tokens
-  └─ typography/ → Mobile, tablet, desktop scales
-```
-
-### Token Generation Flow
-
-```mermaid
-Figma Export → tokens.json + styles.json
-                    ↓
-            scripts/generate-tokens.ts
-                    ↓
-     ┌──────────────┴──────────────┐
-     ↓                             ↓
-Dynamic Opacity Detection    Token Resolution
-(traverses styles.json)      (resolves references)
-     ↓                             ↓
-     └──────────────┬──────────────┘
-                    ↓
-         Generate CSS with:
-         - CSS Variables
-         - color-mix() for opacity
-         - @theme inline blocks
-         - Proper prefixes
-                    ↓
-         Output: tokens/styles/
-         - primitives.css
-         - abstractions.css
-         - semantics.css
-         - responsive.css
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│     MANAGE      │  │     EXPORT      │  │     IMPORT      │
+│                 │  │                 │  │                 │
+│ Batch CRUD for  │  │ Figma Variables │  │ JSON/CSS tokens │
+│ variables and   │  │ → production    │  │ → Figma         │
+│ styles          │  │   CSS/JSON      │  │   Variables     │
+│                 │  │                 │  │                 │
+│ P0 - Core       │  │ P1 - Primary    │  │ P1 - Built      │
+│                 │  │     output      │  │                 │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
 
 ---
 
-## ✅ Current Implementation Status
+## P0: Variable & Style Manager
 
-### What's Built (Phase 0-1) ✅
+The core daily-use feature. A fast, visual batch editor for Figma variables and styles.
 
-#### Core Features
-- ✅ **JSON Import**: Parse design tokens and create Figma Variables
-- ✅ **Multi-collection Support**: Import multiple token collections
-- ✅ **Mode Support**: Light/Dark themes and responsive breakpoints
-- ✅ **Type Support**: COLOR, FLOAT, STRING variable types
-- ✅ **Token References**: Resolve `{primitives.zinc.50}` style references
-- ✅ **Change Tracking**: Show created/updated/unchanged variables
-- ✅ **Batch Operations**: Rename and edit multiple tokens
+### Why This Is P0
 
-#### Token Generation System ✅
-- ✅ **TypeScript-based**: Type-safe token parsing and generation
-- ✅ **Dynamic Opacity Detection**: Automatically extracts opacity from `styles.json`
-- ✅ **CSS Generation**: Creates production-ready CSS with:
-  - Proper variable prefixes (--color-*, --spacing-*, etc.)
-  - color-mix() for opacity (e.g., `color-mix(in srgb, var(--color), transparent 10%)`)
-  - @theme inline blocks for Tailwind compatibility
-  - Flattened shadcn- prefixes for clean variable names
-- ✅ **Future-proof**: Zero hardcoding - adapts to any new token automatically
-- ✅ **Watch Mode**: Auto-regenerate CSS on token changes
+Figma's native variable panel supports only single-item editing. For any team with 100+ tokens, common operations are painfully slow:
+- Renaming a color scale from `gray` to `slate` across 12 shades
+- Moving tokens between collections
+- Updating mode values across dozens of semantic tokens
+- Deleting deprecated token groups
 
-#### Technical Excellence
-- ✅ **Fast**: Token generation in <1 second for 100+ tokens
-- ✅ **Accurate**: 100 tokens with opacity discovered (vs 26 with manual mapping)
-- ✅ **Maintainable**: Zero code changes needed for new tokens
-- ✅ **Well-documented**: Comprehensive README and architecture docs
+No plugin currently does this well. This is the standalone value prop.
 
-### What's NOT Supported ❌
+### Batch Operations
 
-#### Out of Scope (Design Decision)
-- ❌ Figma Styles (Color/Text/Effect Styles) - Focus on Variables only
-- ❌ Library Presets (Radix/Tailwind) - Use external token files instead
-- ❌ Custom Palette Generator - Use existing design tools
-- ❌ In-app Token Editor - Edit in JSON, regenerate CSS
-- ❌ Cloud Sync - File-based workflow is sufficient
+#### Bulk Rename
+- Find/replace across variable names (plain text and regex)
+- Scope: all variables, specific collection, or current selection
+- Preview changes before applying
+- Support prefix/suffix add/remove
 
-#### Why These Are Out of Scope
-1. **Variables > Styles**: Figma's modern system, better for tokens
-2. **Focus**: Master token sync workflow before generation features
-3. **Simplicity**: File-based workflow is more reliable than cloud
-4. **Ecosystem**: Let specialized tools handle palette generation
+#### Bulk Value Edit
+- Swap references (e.g., change all `{primitives.zinc.*}` refs to `{primitives.slate.*}`)
+- Scale numeric values (multiply all spacing by 1.5)
+- Batch set mode values (set Dark mode for 20 tokens at once)
 
----
+#### Bulk Organize
+- Move variables between collections
+- Reorder and restructure token groups
+- Bulk delete with dependency warnings
+- Duplicate tokens/groups across collections
 
-## 🚀 Feature Roadmap
+#### Visual Editor UX
+- Table view with inline editing (click to edit any cell)
+- Multi-select with Shift/Cmd click
+- Keyboard shortcuts for common actions (rename, delete, duplicate)
+- Color preview swatches inline
+- Filter/search across all variables
+- Undo support for batch operations
 
-### Phase 2: Export & Sync (Next - Q1 2025)
-
-#### 2.1: Export Figma Variables to JSON
-**Priority:** P0 (Critical)
-
-**User Story:**
-> "As a design system engineer, I want to export my Figma variables to JSON so developers can use them in code."
-
-**Acceptance Criteria:**
-- [ ] Export selected collections to JSON
-- [ ] Preserve modes (Light/Dark, responsive)
-- [ ] Maintain token references
-- [ ] Include opacity information in export
-- [ ] Generate matching `styles.json` for CSS generation
-
-**Output Format:**
-```json
-{
-  "$schema": "design-tokens-with-collections",
-  "tokens": {
-    "semantics": {
-      "background": {
-        "primary": {
-          "rest": {
-            "value": "{abstractions.surface.200}",
-            "type": "color",
-            "collection": "semantics",
-            "modes": {
-              "Light": "{abstractions.surface.200}",
-              "Dark": "{abstractions.surface.800}"
-            }
-          }
-        }
-      }
-    }
-  }
-}
-```
+### Styles Management
+- Same batch operations for Figma Styles (paint, text, effect)
+- Style → Variable migration helper (convert legacy styles to variables)
 
 ---
 
-#### 2.2: Live CSS Generation
-**Priority:** P1 (Important)
+## P1: Export — Direct to CSS
 
-**User Story:**
-> "As a developer, I want to see generated CSS immediately after export so I can copy-paste into my project."
+The primary export format is **production-ready CSS**, not JSON. The plugin should output files a developer can drop into their project and use immediately.
 
-**Acceptance Criteria:**
-- [ ] Generate CSS on export
-- [ ] Show CSS preview in plugin UI
-- [ ] Copy CSS to clipboard
-- [ ] Download CSS files
-- [ ] Multiple format options (CSS vars, Tailwind, SCSS)
+### Why CSS First
 
-**UI Design:**
+The current workflow is: export JSON → run `generate-tokens.js` → get CSS files. That script does real work — opacity detection via `color-mix()`, reference resolution, `@theme inline` blocks, responsive typography, shadow extraction, Tailwind utility mapping. That logic should live **in the plugin**, eliminating the external script step.
+
+JSON export remains available as a secondary format for teams that need it (Style Dictionary pipelines, cross-platform, etc.).
+
+### CSS Export Features
+
+#### Core Output
+- CSS custom properties with proper prefixes (`--color-*`, `--spacing-*`, `--radius-*`)
+- `color-mix(in srgb, ...)` for opacity preservation
+- `@theme inline` blocks for Tailwind CSS compatibility
+- Light/Dark mode via `:root` and `.dark` selectors
+- Responsive typography via media queries and `data-window-size` attributes
+- Shadow tokens from effect styles
+
+#### Output Structure
+Match the current `exports/styles/` structure:
 ```
-┌─────────────────────────────────────┐
-│ ✅ Exported 112 semantic tokens     │
-│                                     │
-│ 📄 Generated Files:                 │
-│ ┌─────────────────────────────────┐│
-│ │ semantics.css       (112 tokens)││
-│ │ primitives.css      (475 tokens)││
-│ │ abstractions.css    (192 tokens)││
-│ └─────────────────────────────────┘│
-│                                     │
-│ [Copy CSS] [Download ZIP] [Preview]│
-└─────────────────────────────────────┘
+tokens/
+  primitives.css      — Raw values (colors, spacing, typography, radius)
+  abstractions.css    — Semantic mappings with @theme inline
+  semantics.css       — Context-aware tokens (Light/Dark modes)
+  typescales.css      — Responsive typography with breakpoints
+  shadow-tokens.css   — Shadow elevation tokens
+  radius.css          — Border radius tokens
+  index.css           — Imports all token files
+tailwind-colors.css   — Full OKLCH color palette for Tailwind
+index.css             — Master entry point
 ```
+
+#### Export UX
+- Select collections to export
+- Choose color format (OKLCH, HEX, RGBA, HSL)
+- Preview generated CSS in plugin with syntax highlighting
+- Copy individual files or all CSS to clipboard
+- Download as ZIP
+- Remember last export settings
+
+### JSON Export (Secondary)
+- Export selected collections as `tokens.json`
+- Include `styles.json` with Figma metadata (opacity, effects)
+- W3C DTCG format option (`$value`, `$type`) for ecosystem interop
+- Maintain token references in output
 
 ---
 
-#### 2.3: Bidirectional Sync Workflow
-**Priority:** P1 (Important)
+## P1: Import — JSON to Figma
 
-**User Story:**
-> "As a design system lead, I want changes in either Figma or code to sync seamlessly so my team stays in sync."
+Already built and working. Maintained as-is with incremental improvements.
 
-**Workflow:**
-```
-1. Import tokens.json → Figma Variables
-2. Edit in Figma (add tokens, adjust colors)
-3. Export from Figma → Updated tokens.json + styles.json
-4. Run: bun run tokens → Generate CSS
-5. Commit to git
-```
+### Current Capabilities (Built)
+- Parse `tokens.json` and create Figma Variables
+- Multi-collection support
+- Mode support (Light/Dark, responsive breakpoints)
+- Type support (COLOR, FLOAT, STRING)
+- Token reference resolution (`{primitives.zinc.50}`)
+- Change tracking (created/updated/unchanged)
+- Batch rename before import
+- Override vs append modes
 
-**Acceptance Criteria:**
-- [ ] Round-trip integrity (import → edit → export → import = same)
-- [ ] Preserve custom metadata
-- [ ] Git-friendly output (consistent formatting)
-- [ ] Conflict detection (warn if manual edits detected)
+### Planned Improvements
+- **Validation on import**: Check for broken references, circular dependencies, invalid values before creating variables
+- **CSS import**: Parse CSS custom property files to create Figma variables (closing the bidirectional loop without JSON)
+- **Conflict resolution**: When importing over existing variables, show diff and let user choose per-token
 
 ---
 
-### Phase 3: Advanced Features (Q2 2025)
+## P2: Token Structure & Onboarding
 
-#### 3.1: Batch Export Multiple Collections
-- [ ] Select multiple collections for export
-- [ ] Generate merged CSS or separate files
-- [ ] Customizable export templates
+The 4-layer architecture is opinionated and effective, but shouldn't be forced on users.
 
-#### 3.2: Token Validation
-- [ ] Validate token references
-- [ ] Check for circular dependencies
-- [ ] Warn about missing modes
-- [ ] Accessibility contrast checking
+### 4-Layer Token System (Default)
 
-#### 3.3: Style Guide Generation
-- [ ] Auto-generate HTML style guide from tokens
-- [ ] Show color palettes with WCAG ratings
-- [ ] Typography scale preview
-- [ ] Spacing scale visualization
+```
+primitives/      → Raw values (colors, spacing, typography, radius)
+abstractions/    → Semantic mappings (surface, primary, accent)
+semantics/       → Context-aware tokens with modes (Light/Dark)
+responsive/      → Viewport-aware tokens (mobile/tablet/desktop)
+```
 
-#### 3.4: CLI Tool (Future)
-- [ ] Command-line tool for CI/CD integration
-- [ ] `cipher generate --input tokens.json --output ./styles/`
-- [ ] Watch mode for development
-- [ ] Git hooks integration
+### Guided Flexibility
+- **First-run setup**: Ask what layers the user needs, with presets:
+  - **Full system** (default): All 4 layers — for mature design systems
+  - **Simple**: Primitives + Semantics — for small teams
+  - **Flat**: Single collection — for prototyping
+- **Templates**: Pre-built token structures users can import as starting points
+- **Documentation**: In-plugin tooltips explaining each layer's purpose
+- **No lock-in**: Users can rename, add, or remove layers freely
 
 ---
 
-## 🎨 UI/UX Principles
+## P3: Styleguide
 
-### Design Philosophy
-1. **Zero Config**: Should just work without setup
-2. **Transparency**: Show what will happen before it happens
-3. **Reversibility**: Always allow undo/cancel
-4. **Education**: Explain concepts inline for learning
+Visual preview of the token system. Already partially built.
 
-### Key Interactions
-
-**Import Flow:**
-```
-1. Upload JSON → 2. Preview Tokens → 3. Configure → 4. Import
-   [File]         [Table View]       [Options]     [Progress]
-```
-
-**Export Flow:**
-```
-1. Select Collections → 2. Preview Output → 3. Export
-   [Checkboxes]          [CSS Preview]      [Download]
-```
-
-### Visual Design
-- **Figma-native**: Match Figma's UI patterns and colors
-- **Minimal**: Don't over-design, focus on functionality
-- **Responsive**: Handle large token sets gracefully
-- **Accessible**: WCAG AA minimum, keyboard navigation
+- Color palette visualization with swatches
+- Typography scale preview
+- Spacing scale visualization
+- Shadow elevation preview
+- WCAG contrast checking for color pairs
 
 ---
 
-## 📊 Success Metrics
+## Current Implementation Status
 
-### North Star Metric
-**Time from Figma Edit to Code Update**
-- Target: <2 minutes (export → generate CSS → commit)
-- Current manual: 30+ minutes
-- Measurement: Export time + generation time
+### Built
+- [x] JSON import with full variable creation pipeline
+- [x] JSON export (variables and styles)
+- [x] Multi-collection and mode support
+- [x] Token reference resolution
+- [x] Change tracking and import preview
+- [x] Batch rename (find/replace with regex)
+- [x] Settings with `clientStorage` persistence
+- [x] Toast notifications and confirmation dialogs
+- [x] Styleguide page (basic)
+- [x] Type-safe message system between UI and plugin
+- [x] CSS Module architecture with scoped styles
 
-### Key Performance Indicators
+### External (Not in Plugin)
+- [x] `generate-tokens.js` — Full CSS generation pipeline (1150 lines)
+  - Opacity detection from `styles.json` via `color-mix()`
+  - `@theme inline` Tailwind blocks
+  - Responsive typography with media queries
+  - Shadow token extraction
+  - Token reference → CSS variable resolution
 
-**Adoption (Month 3):**
-- 500+ plugin installs
-- 100+ active weekly users
-- 50+ GitHub stars (if open source)
-
-**Quality:**
-- 100% opacity preservation accuracy
-- <1s CSS generation for 500 tokens
-- Zero reported data loss incidents
-
-**Engagement:**
-- 70%+ users export within first session
-- 40%+ users return after 7 days
-- Average 3+ exports per active user/week
+### Not Built
+- [ ] Batch CRUD beyond rename (bulk value edit, move, delete, organize)
+- [ ] Direct CSS export from plugin (currently requires external script)
+- [ ] CSS import
+- [ ] Import validation
+- [ ] Token structure templates/onboarding
+- [ ] CSS preview with syntax highlighting
 
 ---
 
-## 🛠️ Technical Architecture
+## Technical Architecture
 
 ### Stack
 - **Plugin**: React 18, TypeScript, esbuild
-- **Token Generation**: TypeScript (Node.js)
-- **Build**: Bun for package management
-- **Code Quality**: Ultracite (Biome)
+- **Build**: Bun for package management, custom `build.js`
+- **Styling**: CSS Modules (components) + SCSS (global tokens/layout)
+- **Code Quality**: Biome
+- **Figma API**: Variables API, Styles API, `clientStorage` for persistence
 
-### Key Technical Decisions
+### Key Architecture Decisions
 
-#### 1. **File-based Token System**
-**Decision:** Use JSON files, not cloud database  
-**Rationale:**
-- Git-friendly (version control)
-- No backend infrastructure needed
-- Works offline
-- Industry standard (Style Dictionary, etc.)
+#### 1. CSS Modules for Plugin UI
+Scoped styles per component, global SCSS only for design tokens and layout. Prevents class name conflicts in the single-file plugin bundle.
 
-#### 2. **Dynamic Opacity Detection**
-**Decision:** Auto-traverse styles.json vs hardcoded mappings  
-**Rationale:**
-- Future-proof for any new tokens
-- More accurate (found 100 vs 26 tokens)
-- Zero maintenance
+#### 2. Typed Message Protocol
+Discriminated union types for all UI ↔ plugin communication. No `any` types crossing the iframe boundary.
 
-#### 3. **Separate Token + Styles Files**
-**Decision:** tokens.json (values) + styles.json (Figma metadata)  
-**Rationale:**
-- tokens.json is clean, code-friendly
-- styles.json has Figma-specific data (opacity, gradients)
-- Separation of concerns
+#### 3. File-based Token System
+JSON files, not cloud. Git-friendly, works offline, no backend needed.
 
-#### 4. **TypeScript Generation Script**
-**Decision:** TypeScript over JavaScript  
-**Rationale:**
-- Type safety prevents errors
-- Better IDE support
-- Consistent with plugin codebase
-- Modern (ESM, async/await)
+#### 4. Dynamic Opacity Detection
+Auto-traverse `styles.json` to find opacity values rather than hardcoded mappings. Found 100 tokens with opacity vs 26 with manual mapping.
+
+#### 5. Separate Token + Styles Files
+`tokens.json` for clean values, `styles.json` for Figma-specific metadata (opacity, gradients, effects). Separation of concerns.
 
 ---
 
-## 🚦 Release Strategy
+## UI/UX Principles
 
-### v0.1.0 - Foundation (Current) ✅
-- JSON import to Figma Variables
-- Token generation system
-- Dynamic opacity support
-- Documentation
+1. **Speed first**: Batch operations should feel instant. No unnecessary confirmation dialogs for reversible actions.
+2. **Show before doing**: Preview changes before applying. Especially for batch operations that affect many tokens.
+3. **Figma-native feel**: Match Figma's visual language — colors, typography, spacing, interaction patterns.
+4. **Keyboard-friendly**: Power users should be able to work without touching the mouse for common operations.
+5. **Progressive disclosure**: Simple defaults, advanced options available but not in the way.
 
-### v0.2.0 - Export (Q1 2025)
-- Export Figma Variables to JSON
-- Live CSS preview
-- Multiple export formats
-- Batch operations
+---
 
-### v1.0.0 - Public Launch (Q2 2025)
-- Bidirectional sync workflow
-- Token validation
-- Style guide generation
-- Comprehensive documentation
+## Success Metrics
+
+### North Star
+**Time saved per design system update cycle**
+- Variable management: 10x faster than Figma's native editor for batch operations
+- Export: One-click to production CSS vs multi-step pipeline
+
+### Quality
+- 100% opacity preservation accuracy in CSS export
+- Zero data loss on import/export round-trips
+- < 1s for batch operations on 500+ tokens
+- < 3s for full CSS generation of 1000+ tokens
+
+---
+
+## Release Plan
+
+### v0.5.0 — Current
+- JSON import/export working
+- Basic batch rename
+- Settings, toast, dialogs
+- Styleguide page
+
+### v0.6.0 — Variable Manager
+- Bulk rename improvements (prefix/suffix, regex preview)
+- Bulk delete with dependency check
+- Bulk value editing
+- Multi-select operations
+- Keyboard shortcuts
+
+### v0.7.0 — CSS Export
+- Embed CSS generation logic in plugin
+- CSS preview with syntax highlighting
+- Copy/download CSS files
+- Color format selection (OKLCH, HEX, RGBA, HSL)
+- `@theme inline` and `color-mix()` output
+
+### v0.8.0 — Polish
+- Import validation (broken refs, circular deps)
+- Conflict resolution UI for imports
+- Token structure templates
+- Performance optimization for large token sets
+
+### v1.0.0 — Public Launch
+- All core features stable
+- Documentation complete
+- Plugin ID set for Figma Community
 - Community feedback integration
 
-### v1.1.0 - Polish (Q2 2025)
-- Performance optimizations
-- Advanced batch operations
-- CLI tool
-- Plugin ecosystem hooks
+---
+
+## Out of Scope
+
+- **Cloud sync / GitHub integration**: File-based workflow is sufficient. Let git handle versioning.
+- **Palette generator**: Use existing tools (Radix, Tailwind, Realtime Colors). Cipher manages tokens, not creates palettes.
+- **In-plugin token value authoring from scratch**: Edit in Figma or code, use Cipher to manage and export.
+- **Multi-platform export (iOS/Android)**: Focus on web (CSS) first. JSON export covers cross-platform needs.
+- **Real-time collaboration features**: Figma already handles multiplayer. Cipher operates on the local file.
 
 ---
 
-## 📈 Go-to-Market
-
-### Distribution
-1. **Figma Community** (primary)
-2. **GitHub** (open source potential)
-3. **Design system communities** (Discord, Slack)
-4. **Dev communities** (Reddit, HackerNews)
-
-### Marketing Messages
-
-**For Design System Teams:**
-> "Cipher: Seamless design token sync between Figma and code. Export once, use everywhere. Zero configuration."
-
-**For Developers:**
-> "Turn Figma variables into production CSS in one click. Opacity preserved, Tailwind-compatible, type-safe."
-
-**For Solo Designers:**
-> "Professional design token workflow without the complexity. Import tokens, edit in Figma, export CSS. Simple."
-
----
-
-## 🎯 Competitive Advantage
-
-### vs Tokens Studio
-- ✅ **Simpler**: File-based vs cloud config
-- ✅ **Automated CSS**: Built-in generation, no build step
-- ✅ **Opacity**: Automatic detection and preservation
-- ❌ **Less features**: No GitHub sync (yet)
-
-### vs Manual Workflow
-- ✅ **100x faster**: 2 minutes vs 30+ minutes
-- ✅ **Accurate**: No copy-paste errors
-- ✅ **Consistent**: Guaranteed format adherence
-- ✅ **Maintainable**: Changes tracked in git
-
-### vs Variables Import/Export
-- ✅ **CSS Generation**: Built-in, automatic
-- ✅ **Opacity Support**: color-mix() generation
-- ✅ **Professional**: Type-safe, tested codebase
-- ✅ **Documented**: Comprehensive guides
-
----
-
-## ❓ Open Questions
-
-### Technical
-1. **Export format priority?**
-   - Simple JSON vs Style Dictionary vs both?
-   - Decision: Simple JSON first, Style Dictionary v0.3.0
-
-2. **CLI tool scope?**
-   - Just generation or full sync?
-   - Decision: Defer to v1.1.0
-
-3. **Performance at scale?**
-   - How many tokens before slowdown?
-   - Target: 1000+ tokens <3s
-
-### Product
-1. **Free vs paid?**
-   - Keep free forever or introduce paid tier?
-   - Decision: Free forever, explore sponsorships
-
-2. **Open source?**
-   - MIT license or proprietary?
-   - Decision: Open source after v1.0.0
-
-3. **Community features?**
-   - Token library sharing?
-   - Decision: Defer to community demand
-
----
-
-## 🎬 Next Steps
-
-### This Week
-- [ ] Update old PRD.md → Archive to docs/archive/
-- [ ] Finalize export JSON format spec
-- [ ] Design export UI mockups
-- [ ] Set up telemetry (privacy-friendly)
-
-### Next Sprint (2 weeks)
-- [ ] Implement export to JSON
-- [ ] Add CSS preview UI
-- [ ] Write export tests
-- [ ] Update documentation
-
-### This Quarter
-- [ ] Complete Phase 2 (Export & Sync)
-- [ ] Beta testing with 10 users
-- [ ] Performance optimization
-- [ ] Prepare for v1.0.0 launch
-
----
-
-## 📚 Resources
+## Resources
 
 ### Documentation
-- [README.md](./README.md) - Getting started
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical architecture
-- [Token Generation Guide](./docs/TOKEN-GENERATION-GUIDE.md) - How CSS generation works
+- [README.md](./README.md) — Getting started
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — Technical architecture and component patterns
+- Feature matrix is consolidated into this PRD (see "Current Implementation Status" and "Release Plan")
 
-### Figma
-- [Variables API](https://www.figma.com/plugin-docs/api/Variable/)
-- [Plugin Development](https://www.figma.com/plugin-docs/)
-
-### Design Tokens
-- [Design Tokens Format Module](https://design-tokens.github.io/community-group/format/)
-- [Style Dictionary](https://amzn.github.io/style-dictionary/)
-- [W3C Design Tokens](https://www.w3.org/community/design-tokens/)
+### References
+- [Figma Variables API](https://www.figma.com/plugin-docs/api/Variable/)
+- [Figma Plugin Development](https://www.figma.com/plugin-docs/)
+- [W3C Design Tokens Format](https://www.w3.org/community/design-tokens/)
+- [Tailwind CSS v4 Theme](https://tailwindcss.com/docs/theme)
 
 ---
 
-**Status:** Living Document  
-**Last Updated:** December 16, 2024  
+**Status:** Living Document
 **Next Review:** Weekly during active development
-
-*Built with ❤️ for the design community*
-

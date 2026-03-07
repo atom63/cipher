@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { type PageId, Sidebar } from './components/layout'
 import { ToastProvider, ErrorBoundary, PageErrorBoundary } from './components/ui'
+import { usePostMessage } from './hooks/useFigmaMessage'
 import { ExportPage } from './pages/ExportPage'
 import { HelpPage } from './pages/HelpPage'
 import { ImportPage } from './pages/ImportPage'
@@ -18,11 +19,12 @@ function App() {
   const [activePage, setActivePage] = useState<PageId>('import')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [viewMode, setViewMode] = useState<'default' | 'compact'>('default')
+  const postMessage = usePostMessage()
 
   const toggleViewMode = () => {
     const newMode = viewMode === 'default' ? 'compact' : 'default'
     setViewMode(newMode)
-    parent.postMessage({ pluginMessage: { type: 'resize-window', data: { mode: newMode } } }, '*')
+    postMessage({ type: 'resize-window', data: { mode: newMode } })
   }
 
   const renderPage = () => {

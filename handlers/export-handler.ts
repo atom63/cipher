@@ -461,8 +461,8 @@ export async function exportStylesAsTokens(selectedGroups: { category: string; g
         fontStyle: style.fontName.style,
         fontWeight: (style as any).fontWeight,
         fontSize: `${style.fontSize}px`,
-        lineHeight: typeof style.lineHeight === 'object' && 'value' in style.lineHeight 
-          ? `${style.lineHeight.value}${style.lineHeight.unit === 'PIXELS' ? 'px' : style.lineHeight.unit === 'PERCENT' ? '%' : ''}` 
+        lineHeight: typeof style.lineHeight === 'object' && 'value' in style.lineHeight
+          ? `${style.lineHeight.value}${style.lineHeight.unit === 'PIXELS' ? 'px' : style.lineHeight.unit === 'PERCENT' ? '%' : ''}`
           : style.lineHeight,
         letterSpacing: typeof style.letterSpacing === 'object' && 'value' in style.letterSpacing
           ? `${style.letterSpacing.value}${style.letterSpacing.unit === 'PIXELS' ? 'px' : style.letterSpacing.unit === 'PERCENT' ? '%' : ''}`
@@ -473,152 +473,29 @@ export async function exportStylesAsTokens(selectedGroups: { category: string; g
         textDecoration: style.textDecoration,
         description: style.description || undefined
       }
-      
-      // Check for variable bindings on fontSize
-      try {
-        const styleAny = style as any
-        if (styleAny.boundVariables?.fontSize?.id) {
-          const variable = figma.variables.getVariableById(styleAny.boundVariables.fontSize.id)
-          if (variable) {
-            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-            textStyleData.fontSizeBoundVariable = {
-              type: 'variable',
-              variableId: variable.id,
-              variableName: variable.name,
-              collectionName: collection ? collection.name : 'Unknown',
-              collectionId: collection ? collection.id : undefined
+
+      // Check for variable bindings on text style properties
+      const boundProperties = ['fontSize', 'lineHeight', 'fontFamily', 'fontWeight', 'letterSpacing', 'paragraphSpacing', 'paragraphIndent']
+      for (const prop of boundProperties) {
+        try {
+          const styleAny = style as any
+          if (styleAny.boundVariables?.[prop]?.id) {
+            const variable = figma.variables.getVariableById(styleAny.boundVariables[prop].id)
+            if (variable) {
+              const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
+              textStyleData[`${prop}BoundVariable`] = {
+                type: 'variable',
+                variableId: variable.id,
+                variableName: variable.name,
+                collectionName: collection ? collection.name : 'Unknown',
+                collectionId: collection ? collection.id : undefined
+              }
+              console.log(`Text style "${style.name}" ${prop} -> variable: ${variable.name}`)
             }
-            console.log(`🔗 Text style "${style.name}" fontSize → variable: ${variable.name}`)
           }
+        } catch (error) {
+          console.warn(`Could not read ${prop} bound variable for style "${style.name}":`, error)
         }
-      } catch (error) {
-        console.warn(`Could not read fontSize bound variable for style "${style.name}":`, error)
-      }
-      
-      // Check for variable bindings on lineHeight
-      try {
-        const styleAny = style as any
-        if (styleAny.boundVariables?.lineHeight?.id) {
-          const variable = figma.variables.getVariableById(styleAny.boundVariables.lineHeight.id)
-          if (variable) {
-            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-            textStyleData.lineHeightBoundVariable = {
-              type: 'variable',
-              variableId: variable.id,
-              variableName: variable.name,
-              collectionName: collection ? collection.name : 'Unknown',
-              collectionId: collection ? collection.id : undefined
-            }
-            console.log(`🔗 Text style "${style.name}" lineHeight → variable: ${variable.name}`)
-          }
-        }
-      } catch (error) {
-        console.warn(`Could not read lineHeight bound variable for style "${style.name}":`, error)
-      }
-      
-      // Check for variable bindings on fontFamily
-      try {
-        const styleAny = style as any
-        if (styleAny.boundVariables?.fontFamily?.id) {
-          const variable = figma.variables.getVariableById(styleAny.boundVariables.fontFamily.id)
-          if (variable) {
-            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-            textStyleData.fontFamilyBoundVariable = {
-              type: 'variable',
-              variableId: variable.id,
-              variableName: variable.name,
-              collectionName: collection ? collection.name : 'Unknown',
-              collectionId: collection ? collection.id : undefined
-            }
-            console.log(`🔗 Text style "${style.name}" fontFamily → variable: ${variable.name}`)
-          }
-        }
-      } catch (error) {
-        console.warn(`Could not read fontFamily bound variable for style "${style.name}":`, error)
-      }
-      
-      // Check for variable bindings on fontWeight
-      try {
-        const styleAny = style as any
-        if (styleAny.boundVariables?.fontWeight?.id) {
-          const variable = figma.variables.getVariableById(styleAny.boundVariables.fontWeight.id)
-          if (variable) {
-            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-            textStyleData.fontWeightBoundVariable = {
-              type: 'variable',
-              variableId: variable.id,
-              variableName: variable.name,
-              collectionName: collection ? collection.name : 'Unknown',
-              collectionId: collection ? collection.id : undefined
-            }
-            console.log(`🔗 Text style "${style.name}" fontWeight → variable: ${variable.name}`)
-          }
-        }
-      } catch (error) {
-        console.warn(`Could not read fontWeight bound variable for style "${style.name}":`, error)
-      }
-      
-      // Check for variable bindings on letterSpacing
-      try {
-        const styleAny = style as any
-        if (styleAny.boundVariables?.letterSpacing?.id) {
-          const variable = figma.variables.getVariableById(styleAny.boundVariables.letterSpacing.id)
-          if (variable) {
-            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-            textStyleData.letterSpacingBoundVariable = {
-              type: 'variable',
-              variableId: variable.id,
-              variableName: variable.name,
-              collectionName: collection ? collection.name : 'Unknown',
-              collectionId: collection ? collection.id : undefined
-            }
-            console.log(`🔗 Text style "${style.name}" letterSpacing → variable: ${variable.name}`)
-          }
-        }
-      } catch (error) {
-        console.warn(`Could not read letterSpacing bound variable for style "${style.name}":`, error)
-      }
-      
-      // Check for variable bindings on paragraphSpacing
-      try {
-        const styleAny = style as any
-        if (styleAny.boundVariables?.paragraphSpacing?.id) {
-          const variable = figma.variables.getVariableById(styleAny.boundVariables.paragraphSpacing.id)
-          if (variable) {
-            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-            textStyleData.paragraphSpacingBoundVariable = {
-              type: 'variable',
-              variableId: variable.id,
-              variableName: variable.name,
-              collectionName: collection ? collection.name : 'Unknown',
-              collectionId: collection ? collection.id : undefined
-            }
-            console.log(`🔗 Text style "${style.name}" paragraphSpacing → variable: ${variable.name}`)
-          }
-        }
-      } catch (error) {
-        console.warn(`Could not read paragraphSpacing bound variable for style "${style.name}":`, error)
-      }
-      
-      // Check for variable bindings on paragraphIndent
-      try {
-        const styleAny = style as any
-        if (styleAny.boundVariables?.paragraphIndent?.id) {
-          const variable = figma.variables.getVariableById(styleAny.boundVariables.paragraphIndent.id)
-          if (variable) {
-            const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId)
-            textStyleData.paragraphIndentBoundVariable = {
-              type: 'variable',
-              variableId: variable.id,
-              variableName: variable.name,
-              collectionName: collection ? collection.name : 'Unknown',
-              collectionId: collection ? collection.id : undefined
-            }
-            console.log(`🔗 Text style "${style.name}" paragraphIndent → variable: ${variable.name}`)
-          }
-        }
-      } catch (error) {
-        console.warn(`Could not read paragraphIndent bound variable for style "${style.name}":`, error)
       }
 
       current[styleName] = textStyleData

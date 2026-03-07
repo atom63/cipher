@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Button, SectionHeader, LoadingState, EmptyState, CheckboxWithLabel, RadioGroup, Alert, Tabs, TabPanel } from '../components/ui'
+import { Button, SectionHeader, LoadingState, EmptyState, CheckboxWithLabel, RadioGroup, Alert, Tabs, TabPanel, useToast } from '../components/ui'
+import { useFigmaMessage, usePostMessage } from '../hooks/useFigmaMessage'
 import { Download, Check, FileDown, Database, Paintbrush, Palette, Type, Sparkles, Grid } from 'lucide-react'
 import styles from './ExportPage.module.css'
 
@@ -46,65 +47,80 @@ export function ExportPage() {
     format: ColorFormat
   } | null>(null)
 
+  const postMessage = usePostMessage()
+  const { showError } = useToast()
+
+  // Request collections, styles, and saved settings on mount
   useEffect(() => {
-    // Request collections and styles from Figma
-    parent.postMessage({ pluginMessage: { type: 'get-collections' } }, '*')
-    parent.postMessage({ pluginMessage: { type: 'get-styles' } }, '*')
+    postMessage({ type: 'get-collections' })
+    postMessage({ type: 'get-styles' })
+    postMessage({ type: 'load-settings' })
+  }, [postMessage])
 
-    // Listen for messages
-    const handleMessage = (event: MessageEvent) => {
-      const msg = event.data.pluginMessage
-
-      if (msg.type === 'collections-list') {
-        const cols = msg.data.collections.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          variableCount: c.variableCount,
-          modes: c.modes || ['Default']
-        }))
-        setCollections(cols)
-        // Select all by default
-        setSelectedCollectionIds(cols.map((c: Collection) => c.id))
-        setLoading(false)
+  // Listen for messages from Figma main thread
+  useFigmaMessage((msg) => {
+    if (msg.type === 'settings-loaded') {
+      if (msg.data.colorFormat) {
+        setColorFormat(msg.data.colorFormat as ColorFormat)
       }
-
-      if (msg.type === 'styles-list') {
-        const styles = msg.data.stylesByCategory as StylesByCategory
-        setStylesByCategory(styles)
-        // Select all by default
-        const allSelections: { category: string; group: string }[] = []
-        Object.entries(styles).forEach(([category, groups]) => {
-          groups.forEach((group: StyleGroup) => {
-            allSelections.push({ category, group: group.name })
-          })
-        })
-        setSelectedStyleGroups(allSelections)
-      }
-
-      if (msg.type === 'export-complete') {
-        // Backend now returns the format that was used
-        setExportResult(msg.data)
-        setView('success')
-        // Trigger download
-        downloadJSON(msg.data.tokens, 'design-tokens')
-      }
-
-      if (msg.type === 'styles-export-complete') {
-        setStylesExportResult(msg.data)
-        setView('success')
-        // Trigger download with different filename
-        downloadJSON(msg.data.styles, 'figma-styles')
-      }
-
-      if (msg.type === 'export-error') {
-        alert(`Export error: ${msg.data.message}`)
-        setView('selection')
+      if (msg.data.lastExportTab) {
+        setActiveTab(msg.data.lastExportTab as 'variables' | 'styles')
       }
     }
 
-    window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
-  }, [])
+    if (msg.type === 'collections-list') {
+      const cols = msg.data.collections.map((c) => ({
+        id: c.id,
+        name: c.name,
+        variableCount: c.variableCount,
+        modes: (c as any).modes || ['Default']
+      }))
+      setCollections(cols)
+      setSelectedCollectionIds(cols.map((c: Collection) => c.id))
+      setLoading(false)
+    }
+
+    if (msg.type === 'styles-list') {
+      const stylesData = msg.data.stylesByCategory as StylesByCategory
+      setStylesByCategory(stylesData)
+      const allSelections: { category: string; group: string }[] = []
+      Object.entries(stylesData).forEach(([category, groups]) => {
+        groups.forEach((group: StyleGroup) => {
+          allSelections.push({ category, group: group.name })
+        })
+      })
+      setSelectedStyleGroups(allSelections)
+    }
+
+    if (msg.type === 'export-complete') {
+      setExportResult(msg.data)
+      setView('success')
+      downloadJSON(msg.data.tokens, 'design-tokens')
+    }
+
+    if (msg.type === 'styles-export-complete') {
+      setStylesExportResult(msg.data)
+      setView('success')
+      downloadJSON(msg.data.styles, 'figma-styles')
+    }
+
+    if (msg.type === 'export-error') {
+      showError(`Export error: ${msg.data.message}`)
+      setView('selection')
+    }
+  })
+
+  const handleColorFormatChange = (value: string) => {
+    const format = value as ColorFormat
+    setColorFormat(format)
+    postMessage({ type: 'save-settings', data: { colorFormat: format } })
+  }
+
+  const handleTabChange = (tabId: string) => {
+    const tab = tabId as 'variables' | 'styles'
+    setActiveTab(tab)
+    postMessage({ type: 'save-settings', data: { lastExportTab: tab } })
+  }
 
   const handleToggleCollection = (collectionId: string) => {
     setSelectedCollectionIds(prev => 
@@ -153,23 +169,18 @@ export function ExportPage() {
 
   const handleExport = () => {
     if (selectedCollectionIds.length === 0) {
-      alert('Please select at least one collection to export')
+      showError('Please select at least one collection to export')
       return
     }
 
     setView('exporting')
-    parent.postMessage(
-      {
-        pluginMessage: {
-          type: 'export-variables',
-          data: { 
-            collectionIds: selectedCollectionIds,
-            colorFormat: colorFormat
-          }
-        }
-      },
-      '*'
-    )
+    postMessage({
+      type: 'export-variables',
+      data: {
+        collectionIds: selectedCollectionIds,
+        colorFormat: colorFormat
+      }
+    })
   }
 
   const downloadJSON = (data: any, prefix: string = 'export') => {
@@ -187,25 +198,18 @@ export function ExportPage() {
 
   const handleExportStyles = () => {
     if (selectedStyleGroups.length === 0) {
-      alert('Please select at least one style group to export')
+      showError('Please select at least one style group to export')
       return
     }
 
-    console.log('🎨 UI: Exporting styles with colorFormat:', colorFormat)
-    
     setView('exporting')
-    parent.postMessage(
-      {
-        pluginMessage: {
-          type: 'export-styles',
-          data: { 
-            selectedGroups: selectedStyleGroups,
-            colorFormat: colorFormat
-          }
-        }
-      },
-      '*'
-    )
+    postMessage({
+      type: 'export-styles',
+      data: {
+        selectedGroups: selectedStyleGroups,
+        colorFormat: colorFormat
+      }
+    })
   }
 
   const handleExportAgain = () => {
@@ -215,7 +219,7 @@ export function ExportPage() {
   }
 
   const handleClose = () => {
-    parent.postMessage({ pluginMessage: { type: 'close' } }, '*')
+    postMessage({ type: 'close' })
   }
 
   // Determine initial tab - if no collections, default to styles
@@ -337,7 +341,7 @@ export function ExportPage() {
           }
         ]}
         activeTab={activeTab}
-        onTabChange={(tabId) => setActiveTab(tabId as 'variables' | 'styles')}
+        onTabChange={handleTabChange}
       >
         <TabPanel id="variables" activeTab={activeTab}>
           {collections.length === 0 ? (
@@ -356,7 +360,7 @@ export function ExportPage() {
           name="color-format"
           variant="inline"
           value={colorFormat}
-          onChange={(value) => setColorFormat(value as ColorFormat)}
+          onChange={handleColorFormatChange}
           options={[
             {
               value: 'oklch',
@@ -454,7 +458,7 @@ export function ExportPage() {
                   name="color-format-styles"
                   variant="inline"
                   value={colorFormat}
-                  onChange={(value) => setColorFormat(value as ColorFormat)}
+                  onChange={handleColorFormatChange}
                   options={[
                     {
                       value: 'oklch',

@@ -1,33 +1,45 @@
-import { useState } from 'react'
-import { Button, SectionHeader, Input, RadioGroup } from '../components/ui'
+import { useEffect, useState } from 'react'
+import { Button, SectionHeader, Input, RadioGroup, useToast } from '../components/ui'
+import { useFigmaMessage, usePostMessage } from '../hooks/useFigmaMessage'
 import { Save, RotateCcw } from 'lucide-react'
 
 interface Settings {
   collectionName: string
   namingConvention: 'kebab' | 'camel' | 'pascal'
+  colorFormat: 'oklch' | 'hex' | 'rgba' | 'hsl'
+}
+
+const DEFAULT_SETTINGS: Settings = {
+  collectionName: 'Design Tokens',
+  namingConvention: 'kebab',
+  colorFormat: 'oklch',
 }
 
 export function SettingsPage() {
-  const [settings, setSettings] = useState<Settings>({
-    collectionName: 'Design Tokens',
-    namingConvention: 'kebab',
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
+  const postMessage = usePostMessage()
+  const { showSuccess } = useToast()
+
+  // Load saved settings on mount
+  useEffect(() => {
+    postMessage({ type: 'load-settings' })
+  }, [postMessage])
+
+  useFigmaMessage((msg) => {
+    if (msg.type === 'settings-loaded') {
+      setSettings((prev) => ({ ...prev, ...msg.data }))
+    }
   })
 
-  const [saved, setSaved] = useState(false)
-
   const handleSave = () => {
-    // Save to local storage or plugin data
-    localStorage.setItem('pluginSettings', JSON.stringify(settings))
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    postMessage({ type: 'save-settings', data: settings })
+    showSuccess('Settings saved')
   }
 
   const handleReset = () => {
-    const defaultSettings: Settings = {
-      collectionName: 'Design Tokens',
-      namingConvention: 'kebab',
-    }
-    setSettings(defaultSettings)
+    setSettings(DEFAULT_SETTINGS)
+    postMessage({ type: 'save-settings', data: DEFAULT_SETTINGS })
+    showSuccess('Settings reset to defaults')
   }
 
   return (
@@ -69,6 +81,25 @@ export function SettingsPage() {
             ]}
           />
         </section>
+
+        {/* Color Format */}
+        <section className="settings-section">
+          <h3>Export Settings</h3>
+
+          <RadioGroup
+            label="Default Color Format"
+            description="Default format for exporting colors"
+            name="colorFormat"
+            value={settings.colorFormat}
+            onChange={(value: string) => setSettings({ ...settings, colorFormat: value as Settings['colorFormat'] })}
+            options={[
+              { value: 'oklch', label: 'OKLCH', description: 'Modern perceptual color space (recommended)' },
+              { value: 'hex', label: 'HEX', description: 'Traditional hexadecimal (#RRGGBB)' },
+              { value: 'rgba', label: 'RGBA', description: 'RGB with alpha channel' },
+              { value: 'hsl', label: 'HSL', description: 'Hue, saturation, lightness' },
+            ]}
+          />
+        </section>
       </div>
 
       {/* Actions */}
@@ -79,7 +110,7 @@ export function SettingsPage() {
         </Button>
         <Button variant="primary" onClick={handleSave}>
           <Save size={14} />
-          {saved ? 'Saved!' : 'Save Settings'}
+          Save Settings
         </Button>
       </div>
     </div>

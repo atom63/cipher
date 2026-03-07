@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { Button, SectionHeader, Textarea, LoadingState, useToast } from '../ui'
+import { usePostMessage } from '../../hooks/useFigmaMessage'
 import { FileText, Upload } from 'lucide-react'
 import type { ParsedTokens } from '../../types/tokens'
 import { getErrorMessage } from '../../utils/error-handler'
@@ -17,6 +18,7 @@ export function FileImport({ onTokensParsed, onFileParsed }: FileImportProps) {
   const [pastedContent, setPastedContent] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { showError } = useToast()
+  const postMessage = usePostMessage()
 
   const handleFile = async (file: File) => {
     setIsLoading(true)
@@ -45,15 +47,10 @@ export function FileImport({ onTokensParsed, onFileParsed }: FileImportProps) {
     }
     
     // Send to plugin backend for parsing (for variable tokens)
-    parent.postMessage(
-      {
-        pluginMessage: {
-          type: 'parse-tokens',
-          data: { content, format: 'json' },
-        },
-      },
-      '*'
-    )
+    postMessage({
+      type: 'parse-tokens',
+      data: { content },
+    })
   }
 
   const handleDrop = (e: React.DragEvent) => {
