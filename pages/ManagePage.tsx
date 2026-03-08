@@ -28,6 +28,8 @@ import {
 	Button,
 	Checkbox,
 	ConfirmDialog,
+	Dialog,
+	DialogActions,
 	EmptyState,
 	Input,
 	LoadingState,
@@ -212,6 +214,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 	const [activePanel, setActivePanel] = useState<ActionPanel>(null);
 
 	// Rename state
+	const [renameMode, setRenameMode] = useState<"find-replace" | "prefix" | "suffix">("find-replace");
 	const [findText, setFindText] = useState("");
 	const [replaceText, setReplaceText] = useState("");
 	const [useRegex, setUseRegex] = useState(false);
@@ -588,26 +591,38 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 		});
 	}, []);
 
-	// Rename preview
+	// Rename preview — always shows all selected variables, newName is null when unchanged
 	const renamePreview = useMemo(() => {
-		if (!findText || selectedIds.size === 0) return [];
+		if (selectedIds.size === 0) return [];
 		const selected = variables.filter((v) => selectedIds.has(v.id));
-		try {
-			const pattern = useRegex ? new RegExp(findText, "g") : null;
-			return selected
-				.map((v) => {
-					const newName = pattern
+
+		return selected.map((v) => {
+			let newName: string | null = null;
+
+			if (renameMode === "prefix" && renamePrefix) {
+				newName = `${renamePrefix}/${v.name}`;
+			} else if (renameMode === "suffix" && renameSuffix) {
+				newName = `${v.name}/${renameSuffix}`;
+			} else if (renameMode === "find-replace" && findText) {
+				try {
+					const pattern = useRegex ? new RegExp(findText, "g") : null;
+					const result = pattern
 						? v.name.replace(pattern, replaceText)
 						: v.name.replaceAll(findText, replaceText);
-					return newName !== v.name
-						? { id: v.id, oldName: v.name, newName }
-						: null;
-				})
-				.filter(Boolean) as { id: string; oldName: string; newName: string }[];
-		} catch {
-			return [];
-		}
-	}, [findText, replaceText, useRegex, selectedIds, variables]);
+					if (result !== v.name) newName = result;
+				} catch {
+					// invalid regex
+				}
+			}
+
+			return { id: v.id, oldName: v.name, newName };
+		});
+	}, [renameMode, findText, replaceText, useRegex, renamePrefix, renameSuffix, selectedIds, variables]);
+
+	const renameChanges = useMemo(
+		() => renamePreview.filter((r) => r.newName !== null) as { id: string; oldName: string; newName: string }[],
+		[renamePreview],
+	);
 
 	// Keyboard shortcuts
 	useEffect(() => {
@@ -653,38 +668,14 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 
 	// Actions (guarded against double-submit)
 	const handleRename = () => {
-		if (renamePreview.length === 0 || operationPending) return;
+		if (renameChanges.length === 0 || operationPending) return;
 		setOperationPending(true);
 		postMessage({
 			type: "rename-variables",
 			data: {
-				renames: renamePreview.map((r) => ({ id: r.id, newName: r.newName })),
+				renames: renameChanges.map((r) => ({ id: r.id, newName: r.newName })),
 			},
 		});
-	};
-
-	const handleApplyPrefix = () => {
-		if (!renamePrefix || operationPending) return;
-		const selectedVars = variables.filter((v) => selectedIds.has(v.id));
-		const renames = selectedVars.map((v) => ({
-			id: v.id,
-			newName: `${renamePrefix}/${v.name}`,
-		}));
-		if (renames.length === 0) return;
-		setOperationPending(true);
-		postMessage({ type: "rename-variables", data: { renames } });
-	};
-
-	const handleApplySuffix = () => {
-		if (!renameSuffix || operationPending) return;
-		const selectedVars = variables.filter((v) => selectedIds.has(v.id));
-		const renames = selectedVars.map((v) => ({
-			id: v.id,
-			newName: `${v.name}/${renameSuffix}`,
-		}));
-		if (renames.length === 0) return;
-		setOperationPending(true);
-		postMessage({ type: "rename-variables", data: { renames } });
 	};
 
 	const handleSwapReferences = () => {
@@ -1043,174 +1034,145 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 				</div>
 			</div>
 
-			{/* Rename panel */}
-			{activePanel === "rename" && selectedIds.size > 0 && (
-				<div className="manage-action-panel">
-					<div className="manage-action-panel-header">
-						<span>Rename — find & replace in variable names</span>
-						<button
-							type="button"
-							className="manage-panel-close"
-							onClick={() => setActivePanel(null)}
-							data-tooltip="Close panel"
-						>
-							<X size={14} />
-						</button>
-					</div>
-					{/* Quick prefix/suffix actions */}
-					<div className="manage-rename-quick">
-						<div className="manage-rename-quick-row">
+			{/* Rename dialog */}
+			<Dialog
+				isOpen={activePanel === "rename" && selectedIds.size > 0}
+				onClose={() => setActivePanel(null)}
+				title={`Rename ${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
+				maxWidth="md"
+				footer={
+					<DialogActions>
+						<Button variant="outline" onClick={() => setActivePanel(null)}>
+							Cancel
+						</Button>
+						<Button variant="primary" onClick={handleRename} disabled={renameChanges.length === 0 || operationPending}>
+							<Check size={14} />
+							Rename{renameChanges.length > 0 ? ` ${renameChanges.length}` : ""}
+						</Button>
+					</DialogActions>
+				}
+			>
+				{/* Mode selector */}
+				<div className="manage-rename-modes">
+					<button
+						type="button"
+						className={`manage-rename-mode-btn ${renameMode === "find-replace" ? "active" : ""}`}
+						onClick={() => setRenameMode("find-replace")}
+					>
+						Replace
+					</button>
+					<button
+						type="button"
+						className={`manage-rename-mode-btn ${renameMode === "prefix" ? "active" : ""}`}
+						onClick={() => setRenameMode("prefix")}
+					>
+						Prefix
+					</button>
+					<button
+						type="button"
+						className={`manage-rename-mode-btn ${renameMode === "suffix" ? "active" : ""}`}
+						onClick={() => setRenameMode("suffix")}
+					>
+						Suffix
+					</button>
+				</div>
+
+				{/* Mode-specific inputs */}
+				<div className="manage-rename-inputs">
+					{renameMode === "find-replace" && (
+						<>
 							<Input
-								label="Add prefix"
-								value={renamePrefix}
+								label="Find"
+								value={findText}
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setRenamePrefix(e.target.value)
+									setFindText(e.target.value)
 								}
-								placeholder="e.g. brand"
+								placeholder="Text to find…"
 							/>
-							<Button
-								variant="ghost"
-								onClick={handleApplyPrefix}
-								disabled={!renamePrefix || operationPending}
-							>
-								Apply
-							</Button>
-						</div>
-						<div className="manage-rename-quick-row">
 							<Input
-								label="Add suffix"
-								value={renameSuffix}
+								label="Replace with"
+								value={replaceText}
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setRenameSuffix(e.target.value)
+									setReplaceText(e.target.value)
 								}
-								placeholder="e.g. dark"
+								placeholder="Replace with…"
 							/>
-							<Button
-								variant="ghost"
-								onClick={handleApplySuffix}
-								disabled={!renameSuffix || operationPending}
+							<label
+								className="manage-regex-toggle"
+								title="Use regular expressions (e.g. color/(\w+) → colour/$1)"
 							>
-								Apply
-							</Button>
-						</div>
-					</div>
-
-					<div className="manage-rename-divider">
-						<span>or use find & replace</span>
-					</div>
-
-					<div className="manage-rename-inputs">
+								<Checkbox
+									id="use-regex"
+									checked={useRegex}
+									size="sm"
+									onChange={(e) => setUseRegex(e.target.checked)}
+								/>
+								Regex
+							</label>
+						</>
+					)}
+					{renameMode === "prefix" && (
 						<Input
-							label="Find text"
-							value={findText}
+							label="Prefix"
+							value={renamePrefix}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-								setFindText(e.target.value)
+								setRenamePrefix(e.target.value)
 							}
-							placeholder="Text to find…"
+							placeholder="e.g. brand/"
 						/>
+					)}
+					{renameMode === "suffix" && (
 						<Input
-							label="Replace with"
-							value={replaceText}
+							label="Suffix"
+							value={renameSuffix}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-								setReplaceText(e.target.value)
+								setRenameSuffix(e.target.value)
 							}
-							placeholder="Replace with…"
+							placeholder="e.g. /dark"
 						/>
-						<label
-							className="manage-regex-toggle"
-							title="Use regular expressions for advanced pattern matching (e.g. color/(\w+) → colour/$1)"
-						>
-							<input
-								type="checkbox"
-								checked={useRegex}
-								onChange={(e) => setUseRegex(e.target.checked)}
-							/>
-							Regex
-							<span className="manage-regex-hint">.*</span>
-						</label>
-					</div>
-
-					<div className="manage-rename-hint">
-						{useRegex
-							? "Using regex patterns. Use capture groups like (\\w+) and reference them with $1, $2 in replace."
-							: "Replaces all exact matches of the find text in each variable name."}
-					</div>
-
-					{renamePreview.length > 0 && (
-						<div className="manage-rename-preview">
-							<div className="manage-rename-preview-header">
-								{renamePreview.length} variable
-								{renamePreview.length !== 1 ? "s" : ""} will be renamed:
-							</div>
-							<div className="manage-rename-preview-list">
-								{renamePreview.slice(0, 10).map((r) => (
-									<div key={r.id} className="manage-rename-preview-item">
-										<span className="manage-rename-old">{r.oldName}</span>
-										<span className="manage-rename-arrow"><ArrowRight size={12} /></span>
-										<span className="manage-rename-new">{r.newName}</span>
-									</div>
-								))}
-								{renamePreview.length > 10 && (
-									<div className="manage-rename-preview-more">
-										…and {renamePreview.length - 10} more
-									</div>
-								)}
-							</div>
-							<div className="manage-panel-actions">
-								<Button variant="ghost" onClick={() => setActivePanel(null)}>
-									Cancel
-								</Button>
-								<Button variant="primary" onClick={handleRename} disabled={operationPending}>
-									<Check size={14} />
-									Rename {renamePreview.length}
-								</Button>
-							</div>
-						</div>
 					)}
 				</div>
-			)}
 
-			{/* Move panel */}
-			{activePanel === "move" && selectedIds.size > 0 && (
-				<div className="manage-action-panel">
-					<div className="manage-action-panel-header">
-						<span>
-							Move {selectedIds.size} variable
-							{selectedIds.size !== 1 ? "s" : ""} to collection
-						</span>
-						<button
-							type="button"
-							className="manage-panel-close"
-							onClick={() => setActivePanel(null)}
-							data-tooltip="Close panel"
-						>
-							<X size={14} />
-						</button>
+				{/* Preview */}
+				{renamePreview.length > 0 && (
+					<div className="manage-rename-preview">
+						<div className="manage-rename-preview-header">
+							{renameChanges.length > 0
+								? `${renameChanges.length} of ${renamePreview.length} will change`
+								: `${renamePreview.length} ${renamePreview.length === 1 ? "variable" : "variables"} selected`
+							}
+						</div>
+						<div className="manage-rename-preview-list">
+							{renamePreview.slice(0, 15).map((r) => (
+								<div key={r.id} className={`manage-rename-preview-item ${r.newName === null ? "unchanged" : ""}`}>
+									<span className={r.newName !== null ? "manage-rename-old" : "manage-rename-unchanged"}>{r.oldName}</span>
+									{r.newName !== null && (
+										<>
+											<span className="manage-rename-arrow"><ArrowRight size={12} /></span>
+											<span className="manage-rename-new">{r.newName}</span>
+										</>
+									)}
+								</div>
+							))}
+							{renamePreview.length > 15 && (
+								<div className="manage-rename-preview-more">
+									…and {renamePreview.length - 15} more
+								</div>
+							)}
+						</div>
 					</div>
-					<div className="manage-move-options">
-						{moveTargetCollections.map((c) => (
-							<label
-								key={c.id}
-								className={`manage-move-option ${c.isCurrent ? "manage-move-current" : ""}`}
-							>
-								<input
-									type="radio"
-									name="moveTarget"
-									value={c.id}
-									checked={moveTargetId === c.id}
-									onChange={() => setMoveTargetId(c.id)}
-									disabled={c.isCurrent}
-								/>
-								<span>{c.name}</span>
-								<span className="manage-move-count">
-									{c.variableCount} vars
-								</span>
-								{c.isCurrent && <Badge>current</Badge>}
-							</label>
-						))}
-					</div>
-					<div className="manage-panel-actions">
-						<Button variant="ghost" onClick={() => setActivePanel(null)}>
+				)}
+			</Dialog>
+
+			{/* Move dialog */}
+			<Dialog
+				isOpen={activePanel === "move" && selectedIds.size > 0}
+				onClose={() => setActivePanel(null)}
+				title={`Move ${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
+				maxWidth="sm"
+				footer={
+					<DialogActions>
+						<Button variant="outline" onClick={() => setActivePanel(null)}>
 							Cancel
 						</Button>
 						<Button
@@ -1221,227 +1183,42 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							<FolderInput size={14} />
 							Move
 						</Button>
-					</div>
-				</div>
-			)}
-
-			{/* Edit values panel — inline editable list */}
-			{activePanel === "edit" && editSelectedVars.length > 0 && (
-				<div className="manage-action-panel manage-edit-panel">
-					<div className="manage-action-panel-header">
-						<span>
-							Edit {editSelectedVars.length} variable
-							{editSelectedVars.length !== 1 ? "s" : ""}
-						</span>
-						<button
-							type="button"
-							className="manage-panel-close"
-							onClick={() => setActivePanel(null)}
-							data-tooltip="Close panel"
+					</DialogActions>
+				}
+			>
+				<div className="manage-move-options">
+					{moveTargetCollections.map((c) => (
+						<label
+							key={c.id}
+							className={`manage-move-option ${c.isCurrent ? "manage-move-current" : ""}`}
 						>
-							<X size={14} />
-						</button>
-					</div>
+							<input
+								type="radio"
+								name="moveTarget"
+								value={c.id}
+								checked={moveTargetId === c.id}
+								onChange={() => setMoveTargetId(c.id)}
+								disabled={c.isCurrent}
+							/>
+							<span>{c.name}</span>
+							<span className="manage-move-count">
+								{c.variableCount} vars
+							</span>
+							{c.isCurrent && <Badge>current</Badge>}
+						</label>
+					))}
+				</div>
+			</Dialog>
 
-					<div className="manage-edit-table">
-						{/* Column headers */}
-						<div className="manage-edit-table-header">
-							<div className="manage-edit-col-name">Variable</div>
-							{editModeNames.map((mode) => (
-								<div key={mode} className="manage-edit-col-value">
-									{editModeNames.length > 1 ? mode : "Value"}
-								</div>
-							))}
-						</div>
-
-						{/* Editable rows */}
-						<div className="manage-edit-table-body">
-							{editSelectedVars.map((v) => (
-								<div key={v.id} className="manage-edit-row">
-									<div className="manage-edit-col-name" title={v.name}>
-										{v.resolvedType === "COLOR" && (
-											<span className="manage-name-swatches">
-												{editModeNames.map((mode) => {
-													const val = editValues[v.id]?.[mode] || "";
-													return isColorValue(val) ? (
-														<span
-															key={mode}
-															className="manage-color-swatch"
-															style={{ backgroundColor: val }}
-														/>
-													) : null;
-												})}
-											</span>
-										)}
-										<span className="manage-edit-var-name">{v.name}</span>
-										<Badge>{v.resolvedType}</Badge>
-									</div>
-									{editModeNames.map((mode) => {
-										const fieldKey = `${v.id}|||${mode}`;
-										const val = editValues[v.id]?.[mode] ?? "";
-										const isAlias = isReference(val);
-										const isPickingAlias = aliasPickField === fieldKey;
-
-										return (
-											<div key={mode} className="manage-edit-col-value">
-												{isPickingAlias ? (
-													/* Alias picker inline */
-													<div className="manage-edit-alias-field">
-														<div className="manage-edit-alias-search">
-															<input
-																type="text"
-																placeholder="Search variables…"
-																value={aliasSearch}
-																onChange={(e) => setAliasSearch(e.target.value)}
-																className="manage-edit-alias-input"
-																autoFocus
-															/>
-															<div className="manage-edit-alias-list">
-																{filteredAliasOptions.map((opt) => (
-																	<button
-																		key={opt.id}
-																		type="button"
-																		className={`manage-edit-alias-option ${val === `{${opt.name}}` ? "active" : ""}`}
-																		onClick={() => {
-																			setEditField(v.id, mode, `{${opt.name}}`);
-																			setAliasPickField(null);
-																			setAliasSearch("");
-																		}}
-																	>
-																		{opt.resolvedType === "COLOR" && (
-																			<span
-																				className="manage-color-swatch"
-																				style={{
-																					backgroundColor:
-																						Object.values(
-																							opt.valuesByMode,
-																						)[0] || "",
-																				}}
-																			/>
-																		)}
-																		<span className="manage-edit-alias-name">
-																			{opt.name}
-																		</span>
-																		<span className="manage-edit-alias-collection">
-																			{opt.collectionName}
-																		</span>
-																	</button>
-																))}
-																{filteredAliasOptions.length === 0 && (
-																	<div className="manage-edit-alias-empty">
-																		No matching variables
-																	</div>
-																)}
-															</div>
-														</div>
-														<button
-															type="button"
-															className="manage-edit-unlink"
-															onClick={() => {
-																setAliasPickField(null);
-																setAliasSearch("");
-															}}
-														>
-															Cancel
-														</button>
-													</div>
-												) : isAlias ? (
-													/* Show alias reference with change/unlink options */
-													<div className="manage-edit-alias-display">
-														<span className="manage-ref-value" title={val}>
-															{val}
-														</span>
-														<button
-															type="button"
-															className="manage-edit-link-btn"
-															data-tooltip="Change linked variable"
-															onClick={() => {
-																setAliasPickField(fieldKey);
-																setAliasSearch("");
-															}}
-														>
-															<Link size={12} />
-														</button>
-														<button
-															type="button"
-															className="manage-edit-unlink"
-															data-tooltip="Unlink"
-															onClick={() => setEditField(v.id, mode, "")}
-														>
-															<X size={12} />
-														</button>
-													</div>
-												) : (
-													/* Raw value input */
-													<div className="manage-edit-input-row">
-														{v.resolvedType === "COLOR" &&
-															isColorValue(val) && (
-																<input
-																	type="color"
-																	className="manage-edit-color-picker"
-																	value={
-																		val.startsWith("#")
-																			? val.slice(0, 7)
-																			: "#000000"
-																	}
-																	onChange={(e) =>
-																		setEditField(v.id, mode, e.target.value)
-																	}
-																/>
-															)}
-														{v.resolvedType === "BOOLEAN" ? (
-															<select
-																className="manage-filter-select"
-																value={val || "false"}
-																onChange={(e) =>
-																	setEditField(v.id, mode, e.target.value)
-																}
-															>
-																<option value="true">true</option>
-																<option value="false">false</option>
-															</select>
-														) : (
-															<input
-																type={
-																	v.resolvedType === "FLOAT" ? "number" : "text"
-																}
-																className="manage-edit-input"
-																value={val}
-																onChange={(e) =>
-																	setEditField(v.id, mode, e.target.value)
-																}
-																placeholder={
-																	v.resolvedType === "COLOR"
-																		? "#000000"
-																		: `${v.resolvedType}...`
-																}
-															/>
-														)}
-														{v.resolvedType !== "BOOLEAN" && (
-															<button
-																type="button"
-																className="manage-edit-link-btn"
-																data-tooltip="Link to variable"
-																onClick={() => {
-																	setAliasPickField(fieldKey);
-																	setAliasSearch("");
-																}}
-															>
-																<Link size={12} />
-															</button>
-														)}
-													</div>
-												)}
-											</div>
-										);
-									})}
-								</div>
-							))}
-						</div>
-					</div>
-
-					<div className="manage-panel-actions">
-						<Button variant="ghost" onClick={() => setActivePanel(null)}>
+			{/* Edit values dialog */}
+			<Dialog
+				isOpen={activePanel === "edit" && editSelectedVars.length > 0}
+				onClose={() => setActivePanel(null)}
+				title={`Edit ${editSelectedVars.length} ${editSelectedVars.length === 1 ? "variable" : "variables"}`}
+				maxWidth="lg"
+				footer={
+					<DialogActions>
+						<Button variant="outline" onClick={() => setActivePanel(null)}>
 							Cancel
 						</Button>
 						<Button
@@ -1455,89 +1232,216 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 								? `(${editSelectedVars.length})`
 								: ""}
 						</Button>
+					</DialogActions>
+				}
+			>
+				<div className="manage-edit-table">
+					{/* Column headers */}
+					<div className="manage-edit-table-header">
+						<div className="manage-edit-col-name">Variable</div>
+						{editModeNames.map((mode) => (
+							<div key={mode} className="manage-edit-col-value">
+								{editModeNames.length > 1 ? mode : "Value"}
+							</div>
+						))}
+					</div>
+
+					{/* Editable rows */}
+					<div className="manage-edit-table-body">
+						{editSelectedVars.map((v) => (
+							<div key={v.id} className="manage-edit-row">
+								<div className="manage-edit-col-name" title={v.name}>
+									{v.resolvedType === "COLOR" && (
+										<span className="manage-name-swatches">
+											{editModeNames.map((mode) => {
+												const val = editValues[v.id]?.[mode] || "";
+												return isColorValue(val) ? (
+													<span
+														key={mode}
+														className="manage-color-swatch"
+														style={{ backgroundColor: val }}
+													/>
+												) : null;
+											})}
+										</span>
+									)}
+									<span className="manage-edit-var-name">{v.name}</span>
+									<Badge>{v.resolvedType}</Badge>
+								</div>
+								{editModeNames.map((mode) => {
+									const fieldKey = `${v.id}|||${mode}`;
+									const val = editValues[v.id]?.[mode] ?? "";
+									const isAlias = isReference(val);
+									const isPickingAlias = aliasPickField === fieldKey;
+
+									return (
+										<div key={mode} className="manage-edit-col-value">
+											{isPickingAlias ? (
+												/* Alias picker inline */
+												<div className="manage-edit-alias-field">
+													<div className="manage-edit-alias-search">
+														<input
+															type="text"
+															placeholder="Search variables…"
+															value={aliasSearch}
+															onChange={(e) => setAliasSearch(e.target.value)}
+															className="manage-edit-alias-input"
+															autoFocus
+														/>
+														<div className="manage-edit-alias-list">
+															{filteredAliasOptions.map((opt) => (
+																<button
+																	key={opt.id}
+																	type="button"
+																	className={`manage-edit-alias-option ${val === `{${opt.name}}` ? "active" : ""}`}
+																	onClick={() => {
+																		setEditField(v.id, mode, `{${opt.name}}`);
+																		setAliasPickField(null);
+																		setAliasSearch("");
+																	}}
+																>
+																	{opt.resolvedType === "COLOR" && (
+																		<span
+																			className="manage-color-swatch"
+																			style={{
+																				backgroundColor:
+																					Object.values(
+																						opt.valuesByMode,
+																					)[0] || "",
+																			}}
+																		/>
+																	)}
+																	<span className="manage-edit-alias-name">
+																		{opt.name}
+																	</span>
+																	<span className="manage-edit-alias-collection">
+																		{opt.collectionName}
+																	</span>
+																</button>
+															))}
+															{filteredAliasOptions.length === 0 && (
+																<div className="manage-edit-alias-empty">
+																	No matching variables
+																</div>
+															)}
+														</div>
+													</div>
+													<button
+														type="button"
+														className="manage-edit-unlink"
+														onClick={() => {
+															setAliasPickField(null);
+															setAliasSearch("");
+														}}
+													>
+														Cancel
+													</button>
+												</div>
+											) : isAlias ? (
+												/* Show alias reference with change/unlink options */
+												<div className="manage-edit-alias-display">
+													<span className="manage-ref-value" title={val}>
+														{val}
+													</span>
+													<button
+														type="button"
+														className="manage-edit-link-btn"
+														data-tooltip="Change linked variable"
+														onClick={() => {
+															setAliasPickField(fieldKey);
+															setAliasSearch("");
+														}}
+													>
+														<Link size={12} />
+													</button>
+													<button
+														type="button"
+														className="manage-edit-unlink"
+														data-tooltip="Unlink"
+														onClick={() => setEditField(v.id, mode, "")}
+													>
+														<X size={12} />
+													</button>
+												</div>
+											) : (
+												/* Raw value input */
+												<div className="manage-edit-input-row">
+													{v.resolvedType === "COLOR" &&
+														isColorValue(val) && (
+															<input
+																type="color"
+																className="manage-edit-color-picker"
+																value={
+																	val.startsWith("#")
+																		? val.slice(0, 7)
+																		: "#000000"
+																}
+																onChange={(e) =>
+																	setEditField(v.id, mode, e.target.value)
+																}
+															/>
+														)}
+													{v.resolvedType === "BOOLEAN" ? (
+														<select
+															className="manage-filter-select"
+															value={val || "false"}
+															onChange={(e) =>
+																setEditField(v.id, mode, e.target.value)
+															}
+														>
+															<option value="true">true</option>
+															<option value="false">false</option>
+														</select>
+													) : (
+														<input
+															type={
+																v.resolvedType === "FLOAT" ? "number" : "text"
+															}
+															className="manage-edit-input"
+															value={val}
+															onChange={(e) =>
+																setEditField(v.id, mode, e.target.value)
+															}
+															placeholder={
+																v.resolvedType === "COLOR"
+																	? "#000000"
+																	: `${v.resolvedType}...`
+															}
+														/>
+													)}
+													{v.resolvedType !== "BOOLEAN" && (
+														<button
+															type="button"
+															className="manage-edit-link-btn"
+															data-tooltip="Link to variable"
+															onClick={() => {
+																setAliasPickField(fieldKey);
+																setAliasSearch("");
+															}}
+														>
+															<Link size={12} />
+														</button>
+													)}
+												</div>
+											)}
+										</div>
+									);
+								})}
+							</div>
+						))}
 					</div>
 				</div>
-			)}
+			</Dialog>
 
-			{/* Swap references panel */}
-			{activePanel === "swap" && selectedIds.size > 0 && (
-				<div className="manage-action-panel">
-					<div className="manage-action-panel-header">
-						<span>Swap References</span>
-						<button
-							type="button"
-							className="manage-panel-close"
-							onClick={() => setActivePanel(null)}
-							data-tooltip="Close panel"
-						>
-							<X size={14} />
-						</button>
-					</div>
-					<div className="manage-rename-hint">
-						Replace all alias references pointing to the source variable with the target variable.
-					</div>
-					<div className="manage-rename-inputs">
-						<div>
-							<label className="manage-swap-label">Source variable</label>
-							<select
-								className="manage-filter-select"
-								value={swapSourceId}
-								onChange={(e) => setSwapSourceId(e.target.value)}
-							>
-								<option value="">Select source…</option>
-								{variables
-									.filter((v) => selectedIds.has(v.id))
-									.map((v) => (
-										<option key={v.id} value={v.id}>
-											{v.name} ({v.collectionName})
-										</option>
-									))}
-							</select>
-						</div>
-						<div>
-							<label className="manage-swap-label">Target variable</label>
-							<input
-								type="text"
-								className="manage-edit-input"
-								placeholder="Search target variable…"
-								value={swapTargetSearch}
-								onChange={(e) => {
-									setSwapTargetSearch(e.target.value);
-									setSwapTargetId("");
-								}}
-							/>
-							{swapTargetSearch && !swapTargetId && (
-								<div className="manage-edit-alias-list">
-									{variables
-										.filter(
-											(v) =>
-												v.id !== swapSourceId &&
-												(v.name.toLowerCase().includes(swapTargetSearch.toLowerCase()) ||
-													v.collectionName.toLowerCase().includes(swapTargetSearch.toLowerCase())),
-										)
-										.slice(0, 20)
-										.map((v) => (
-											<button
-												key={v.id}
-												type="button"
-												className="manage-edit-alias-option"
-												onClick={() => {
-													setSwapTargetId(v.id);
-													setSwapTargetSearch(v.name);
-												}}
-											>
-												<span className="manage-edit-alias-name">{v.name}</span>
-												<span className="manage-edit-alias-collection">
-													{v.collectionName}
-												</span>
-											</button>
-										))}
-								</div>
-							)}
-						</div>
-					</div>
-					<div className="manage-panel-actions">
-						<Button variant="ghost" onClick={() => setActivePanel(null)}>
+			{/* Swap references dialog */}
+			<Dialog
+				isOpen={activePanel === "swap" && selectedIds.size > 0}
+				onClose={() => setActivePanel(null)}
+				title="Swap references"
+				maxWidth="sm"
+				footer={
+					<DialogActions>
+						<Button variant="outline" onClick={() => setActivePanel(null)}>
 							Cancel
 						</Button>
 						<Button
@@ -1548,32 +1452,105 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							<ArrowLeftRight size={14} />
 							Swap
 						</Button>
+					</DialogActions>
+				}
+			>
+				<div className="manage-rename-hint">
+					Replace all alias references pointing to the source variable with the target variable.
+				</div>
+				<div className="manage-rename-inputs">
+					<div>
+						<label className="manage-swap-label">Source variable</label>
+						<select
+							className="manage-filter-select"
+							value={swapSourceId}
+							onChange={(e) => setSwapSourceId(e.target.value)}
+						>
+							<option value="">Select source…</option>
+							{variables
+								.filter((v) => selectedIds.has(v.id))
+								.map((v) => (
+									<option key={v.id} value={v.id}>
+										{v.name} ({v.collectionName})
+									</option>
+								))}
+						</select>
+					</div>
+					<div>
+						<label className="manage-swap-label">Target variable</label>
+						<input
+							type="text"
+							className="manage-edit-input"
+							placeholder="Search target variable…"
+							value={swapTargetSearch}
+							onChange={(e) => {
+								setSwapTargetSearch(e.target.value);
+								setSwapTargetId("");
+							}}
+						/>
+						{swapTargetSearch && !swapTargetId && (
+							<div className="manage-edit-alias-list">
+								{variables
+									.filter(
+										(v) =>
+											v.id !== swapSourceId &&
+											(v.name.toLowerCase().includes(swapTargetSearch.toLowerCase()) ||
+												v.collectionName.toLowerCase().includes(swapTargetSearch.toLowerCase())),
+									)
+									.slice(0, 20)
+									.map((v) => (
+										<button
+											key={v.id}
+											type="button"
+											className="manage-edit-alias-option"
+											onClick={() => {
+												setSwapTargetId(v.id);
+												setSwapTargetSearch(v.name);
+											}}
+										>
+											<span className="manage-edit-alias-name">{v.name}</span>
+											<span className="manage-edit-alias-collection">
+												{v.collectionName}
+											</span>
+										</button>
+									))}
+							</div>
+						)}
 					</div>
 				</div>
-			)}
+			</Dialog>
 
-			{/* Scale numeric values panel */}
-			{activePanel === "scale" && selectedIds.size > 0 && (() => {
+			{/* Scale numeric values dialog */}
+			{(() => {
 				const selectedVars = variables.filter((v) => selectedIds.has(v.id));
 				const floatVars = selectedVars.filter((v) => v.resolvedType === "FLOAT");
 				const factor = parseFloat(scaleFactor);
 				const validFactor = !Number.isNaN(factor) && factor !== 0;
 
 				return (
-					<div className="manage-action-panel">
-						<div className="manage-action-panel-header">
-							<span>
-								Scale {floatVars.length} numeric variable{floatVars.length !== 1 ? "s" : ""}
-							</span>
-							<button
-								type="button"
-								className="manage-panel-close"
-								onClick={() => setActivePanel(null)}
-								data-tooltip="Close panel"
-							>
-								<X size={14} />
-							</button>
-						</div>
+					<Dialog
+						isOpen={activePanel === "scale" && selectedIds.size > 0}
+						onClose={() => setActivePanel(null)}
+						title={`Scale ${floatVars.length} numeric ${floatVars.length === 1 ? "variable" : "variables"}`}
+						maxWidth="sm"
+						footer={
+							floatVars.length > 0 ? (
+								<DialogActions>
+									<Button variant="outline" onClick={() => setActivePanel(null)}>
+										Cancel
+									</Button>
+									<Button
+										variant="primary"
+										onClick={handleScale}
+										disabled={!validFactor || floatVars.length === 0 || operationPending}
+									>
+										<Check size={14} />
+										Scale {floatVars.length}
+									</Button>
+								</DialogActions>
+							) : undefined
+						}
+					>
 						{floatVars.length === 0 ? (
 							<div className="manage-rename-hint">
 								No numeric variables in selection. Scale works on number values only.
@@ -1643,22 +1620,9 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 										</div>
 									</div>
 								)}
-								<div className="manage-panel-actions">
-									<Button variant="ghost" onClick={() => setActivePanel(null)}>
-										Cancel
-									</Button>
-									<Button
-										variant="primary"
-										onClick={handleScale}
-										disabled={!validFactor || floatVars.length === 0 || operationPending}
-									>
-										<Check size={14} />
-										Scale {floatVars.length}
-									</Button>
-								</div>
 							</>
 						)}
-					</div>
+					</Dialog>
 				);
 			})()}
 

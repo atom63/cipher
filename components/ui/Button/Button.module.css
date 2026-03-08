@@ -35,32 +35,62 @@
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
-  color: var(--muted-foreground);
-  border-color: var(--border);
 }
 
 /* ============================================
-   PRIMARY / DEFAULT - Main CTA button
+   DEFAULT - Neutral high-emphasis button
    ============================================ */
-.default,
+.default {
+  background-color: var(--foreground);
+  color: var(--background);
+  box-shadow:
+    var(--shadow-shadow-1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+
+.default:hover:not(:disabled) {
+  background-color: color-mix(in oklch, var(--foreground) 90%, transparent);
+  box-shadow:
+    var(--shadow-shadow-2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+
+.default:active:not(:disabled) {
+  background-color: color-mix(in oklch, var(--foreground) 85%, transparent);
+  box-shadow:
+    var(--shadow-shadow-1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   PRIMARY - Brand-colored CTA button
+   ============================================ */
 .primary {
   background-color: var(--primary);
   color: var(--primary-foreground);
-  box-shadow: var(--shadow-shadow-1);
+  box-shadow:
+    var(--shadow-shadow-1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
-.default:hover:not(:disabled),
 .primary:hover:not(:disabled) {
-  background-color: color-mix(in oklch, var(--primary) 85%, black);
-  box-shadow: var(--shadow-shadow-2);
-  transform: translateY(-1px);
+  background-color: color-mix(in oklch, var(--primary) 90%, black);
+  box-shadow:
+    var(--shadow-shadow-2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
-.default:active:not(:disabled),
 .primary:active:not(:disabled) {
-  background-color: color-mix(in oklch, var(--primary) 75%, black);
-  box-shadow: var(--shadow-shadow-1);
-  transform: translateY(0);
+  background-color: color-mix(in oklch, var(--primary) 80%, black);
+  box-shadow:
+    var(--shadow-shadow-1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
 /* ============================================
@@ -105,33 +135,43 @@
 .destructive {
   background-color: var(--destructive);
   color: var(--destructive-foreground);
-  box-shadow: var(--shadow-shadow-1);
+  box-shadow:
+    var(--shadow-shadow-1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
 .destructive:hover:not(:disabled) {
-  background-color: color-mix(in oklch, var(--destructive) 85%, black);
-  box-shadow: var(--shadow-shadow-2);
-  transform: translateY(-1px);
+  background-color: color-mix(in oklch, var(--destructive) 90%, black);
+  box-shadow:
+    var(--shadow-shadow-2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
 .destructive:active:not(:disabled) {
-  background-color: color-mix(in oklch, var(--destructive) 75%, black);
-  box-shadow: var(--shadow-shadow-1);
-  transform: translateY(0);
+  background-color: color-mix(in oklch, var(--destructive) 80%, black);
+  box-shadow:
+    var(--shadow-shadow-1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
 /* ============================================
    OUTLINE - Bordered button
    ============================================ */
 .outline {
-  background-color: transparent;
+  background-color: var(--background);
   border-color: var(--border);
   color: var(--foreground);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.06);
 }
 
 .outline:hover:not(:disabled) {
   background-color: var(--accent);
-  border-color: var(--accent);
+  border-color: color-mix(in oklch, var(--border) 80%, var(--foreground));
   color: var(--accent-foreground);
 }
 

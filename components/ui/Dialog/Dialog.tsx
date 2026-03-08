@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { Button } from "../Button";
 import styles from "./Dialog.module.css";
 
@@ -43,61 +43,63 @@ export function Dialog({
 	const dialogRef = useRef<HTMLDivElement>(null);
 	const previousFocusRef = useRef<HTMLElement | null>(null);
 
-	// Handle escape key
-	const handleEscape = useCallback(
-		(e: KeyboardEvent) => {
-			if (e.key === "Escape" && closeOnEscape) {
-				onClose();
-			}
-		},
-		[closeOnEscape, onClose],
-	);
-
-	// Focus trap
-	const handleFocusTrap = useCallback((e: KeyboardEvent) => {
-		if (e.key !== "Tab" || !dialogRef.current) return;
-
-		const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-			'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-		);
-		if (focusable.length === 0) return;
-
-		const first = focusable[0];
-		const last = focusable[focusable.length - 1];
-
-		if (e.shiftKey && document.activeElement === first) {
-			e.preventDefault();
-			last.focus();
-		} else if (!e.shiftKey && document.activeElement === last) {
-			e.preventDefault();
-			first.focus();
-		}
-	}, []);
+	// Stable refs for callbacks to avoid effect re-runs
+	const onCloseRef = useRef(onClose);
+	const closeOnEscapeRef = useRef(closeOnEscape);
+	onCloseRef.current = onClose;
+	closeOnEscapeRef.current = closeOnEscape;
 
 	// Add/remove listeners + focus management
 	useEffect(() => {
-		if (isOpen) {
-			previousFocusRef.current = document.activeElement as HTMLElement;
-			document.addEventListener("keydown", handleEscape);
-			document.addEventListener("keydown", handleFocusTrap);
-			document.body.style.overflow = "hidden";
-			// Focus the dialog after mount
-			requestAnimationFrame(() => {
-				const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
-					'button:not([disabled]), [href], input:not([disabled])',
-				);
-				firstFocusable?.focus();
-			});
-		}
+		if (!isOpen) return;
+
+		previousFocusRef.current = document.activeElement as HTMLElement;
+
+		const handleEscape = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && closeOnEscapeRef.current) {
+				onCloseRef.current();
+			}
+		};
+
+		const handleFocusTrap = (e: KeyboardEvent) => {
+			if (e.key !== "Tab" || !dialogRef.current) return;
+
+			const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+				'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+			);
+			if (focusable.length === 0) return;
+
+			const first = focusable[0];
+			const last = focusable[focusable.length - 1];
+
+			if (e.shiftKey && document.activeElement === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
+		};
+
+		document.addEventListener("keydown", handleEscape);
+		document.addEventListener("keydown", handleFocusTrap);
+		document.body.style.overflow = "hidden";
+
+		// Focus the first focusable element on open
+		requestAnimationFrame(() => {
+			const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
+				'button:not([disabled]), [href], input:not([disabled])',
+			);
+			firstFocusable?.focus();
+		});
 
 		return () => {
 			document.removeEventListener("keydown", handleEscape);
 			document.removeEventListener("keydown", handleFocusTrap);
 			document.body.style.overflow = "";
-			// Restore focus to the element that opened the dialog
 			previousFocusRef.current?.focus();
 		};
-	}, [isOpen, handleEscape, handleFocusTrap]);
+	}, [isOpen]);
 
 	if (!isOpen) return null;
 
