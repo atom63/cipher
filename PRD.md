@@ -240,7 +240,11 @@ Visual preview of the token system. Already partially built.
 - [x] Multi-collection and mode support
 - [x] Token reference resolution
 - [x] Change tracking and import preview
-- [x] Batch rename (find/replace with regex)
+- [x] Batch rename (find/replace with regex, prefix/suffix)
+- [x] Bulk value edit (inline editor, alias picker, scale numeric)
+- [x] Bulk organize (move between collections, duplicate, delete with dependency warnings + undo)
+- [x] Multi-select (Shift/Cmd click) with keyboard shortcuts
+- [x] Styles management (batch rename, batch delete, rebind to variables)
 - [x] Settings with `clientStorage` persistence
 - [x] Toast notifications and confirmation dialogs
 - [x] Styleguide page (basic)
@@ -256,12 +260,12 @@ Visual preview of the token system. Already partially built.
   - Token reference → CSS variable resolution
 
 ### Not Built
-- [ ] Batch CRUD beyond rename (bulk value edit, move, delete, organize)
 - [ ] Direct CSS export from plugin (currently requires external script)
 - [ ] CSS import
 - [ ] Import validation
 - [ ] Token structure templates/onboarding
 - [ ] CSS preview with syntax highlighting
+- [ ] Style → Variable migration helper
 
 ---
 

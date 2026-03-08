@@ -122,6 +122,9 @@ export function StylesPage() {
 	const [showRename, setShowRename] = useState(false);
 	const [findText, setFindText] = useState("");
 	const [replaceText, setReplaceText] = useState("");
+	const [useRegex, setUseRegex] = useState(false);
+	const [renamePrefix, setRenamePrefix] = useState("");
+	const [renameSuffix, setRenameSuffix] = useState("");
 	const [pendingDelete, setPendingDelete] = useState(false);
 	const [operationPending, setOperationPending] = useState(false);
 	const [showRebind, setShowRebind] = useState(false);
@@ -380,20 +383,27 @@ export function StylesPage() {
 	const renamePreview = useMemo(() => {
 		if (!findText || selectedIds.size === 0) return [];
 		const selected = styles.filter((s) => selectedIds.has(s.id));
-		return selected
-			.map((s) => {
-				const newName = s.name.replaceAll(findText, replaceText);
-				return newName !== s.name
-					? { id: s.id, category: s.category, oldName: s.name, newName }
-					: null;
-			})
-			.filter(Boolean) as {
-			id: string;
-			category: string;
-			oldName: string;
-			newName: string;
-		}[];
-	}, [findText, replaceText, selectedIds, styles]);
+		try {
+			const pattern = useRegex ? new RegExp(findText, "g") : null;
+			return selected
+				.map((s) => {
+					const newName = pattern
+						? s.name.replace(pattern, replaceText)
+						: s.name.replaceAll(findText, replaceText);
+					return newName !== s.name
+						? { id: s.id, category: s.category, oldName: s.name, newName }
+						: null;
+				})
+				.filter(Boolean) as {
+				id: string;
+				category: string;
+				oldName: string;
+				newName: string;
+			}[];
+		} catch {
+			return [];
+		}
+	}, [findText, replaceText, useRegex, selectedIds, styles]);
 
 	const handleRename = () => {
 		if (renamePreview.length === 0 || operationPending) return;
@@ -408,6 +418,32 @@ export function StylesPage() {
 				})),
 			},
 		});
+	};
+
+	const handleApplyPrefix = () => {
+		if (!renamePrefix || operationPending) return;
+		const selected = styles.filter((s) => selectedIds.has(s.id));
+		const renames = selected.map((s) => ({
+			id: s.id,
+			category: s.category as "paint" | "text" | "effect" | "grid",
+			newName: `${renamePrefix}/${s.name}`,
+		}));
+		if (renames.length === 0) return;
+		setOperationPending(true);
+		postMessage({ type: "rename-styles", data: { renames } });
+	};
+
+	const handleApplySuffix = () => {
+		if (!renameSuffix || operationPending) return;
+		const selected = styles.filter((s) => selectedIds.has(s.id));
+		const renames = selected.map((s) => ({
+			id: s.id,
+			category: s.category as "paint" | "text" | "effect" | "grid",
+			newName: `${s.name}/${renameSuffix}`,
+		}));
+		if (renames.length === 0) return;
+		setOperationPending(true);
+		postMessage({ type: "rename-styles", data: { renames } });
 	};
 
 	const handleDelete = () => {
@@ -799,6 +835,48 @@ export function StylesPage() {
 							<X size={14} />
 						</button>
 					</div>
+					{/* Quick prefix/suffix actions */}
+					<div className="manage-rename-quick">
+						<div className="manage-rename-quick-row">
+							<Input
+								label="Add prefix"
+								value={renamePrefix}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setRenamePrefix(e.target.value)
+								}
+								placeholder="e.g. brand"
+							/>
+							<Button
+								variant="ghost"
+								onClick={handleApplyPrefix}
+								disabled={!renamePrefix || operationPending}
+							>
+								Apply
+							</Button>
+						</div>
+						<div className="manage-rename-quick-row">
+							<Input
+								label="Add suffix"
+								value={renameSuffix}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setRenameSuffix(e.target.value)
+								}
+								placeholder="e.g. dark"
+							/>
+							<Button
+								variant="ghost"
+								onClick={handleApplySuffix}
+								disabled={!renameSuffix || operationPending}
+							>
+								Apply
+							</Button>
+						</div>
+					</div>
+
+					<div className="manage-rename-divider">
+						<span>or use find & replace</span>
+					</div>
+
 					<div className="manage-rename-inputs">
 						<Input
 							label="Find text"
@@ -816,6 +894,24 @@ export function StylesPage() {
 							}
 							placeholder="Replace with…"
 						/>
+						<label
+							className="manage-regex-toggle"
+							title="Use regular expressions for advanced pattern matching (e.g. color/(\w+) → colour/$1)"
+						>
+							<input
+								type="checkbox"
+								checked={useRegex}
+								onChange={(e) => setUseRegex(e.target.checked)}
+							/>
+							Regex
+							<span className="manage-regex-hint">.*</span>
+						</label>
+					</div>
+
+					<div className="manage-rename-hint">
+						{useRegex
+							? "Using regex patterns. Use capture groups like (\\w+) and reference them with $1, $2 in replace."
+							: "Replaces all exact matches of the find text in each style name."}
 					</div>
 
 					{renamePreview.length > 0 && (
