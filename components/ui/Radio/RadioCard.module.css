@@ -33,7 +33,7 @@
 }
 
 .radio-align {
-  margin-top: 2px; /* Align with first line of text when description exists */
+  margin-top: var(--spacing-2xs); /* Align with first line of text when description exists */
 }
 
 .content {

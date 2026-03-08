@@ -268,8 +268,8 @@
 .cssPreviewCode {
   margin: 0;
   padding: var(--spacing-md);
-  font-size: 11px;
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
   line-height: 1.6;
   color: var(--foreground);
   background: var(--muted);

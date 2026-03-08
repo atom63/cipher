@@ -53,7 +53,7 @@
 .dots {
   border: none;
   display: flex;
-  gap: 4px;
+  gap: var(--spacing-xs);
   animation: none;
 }
 

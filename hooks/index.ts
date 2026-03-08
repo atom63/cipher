@@ -10,3 +10,4 @@ export {
 	usePostMessage,
 	useRequestOnMount,
 } from "./useFigmaMessage";
+export { useDebouncedValue } from "./useDebouncedValue";

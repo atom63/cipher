@@ -28,14 +28,14 @@
   );
   border-radius: var(--radius-full);
   color: var(--primary);
-  font-size: 24px;
+  font-size: var(--text-3xl);
 }
 
 /* Smaller variant */
 .emptyState[data-size="sm"] .icon {
   width: 48px;
   height: 48px;
-  font-size: 20px;
+  font-size: var(--text-2xl);
   margin-bottom: var(--spacing-md);
 }
 
@@ -43,7 +43,7 @@
 .emptyState[data-size="lg"] .icon {
   width: 80px;
   height: 80px;
-  font-size: 32px;
+  font-size: var(--text-4xl);
   margin-bottom: var(--spacing-xl);
 }
 
@@ -87,7 +87,7 @@
 .compact .icon {
   width: 40px;
   height: 40px;
-  font-size: 16px;
+  font-size: var(--text-lg);
   margin-bottom: var(--spacing-sm);
 }
 

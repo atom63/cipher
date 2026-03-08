@@ -30,7 +30,7 @@
 
 .sm {
   padding: var(--spacing-2xs) var(--spacing-sm);
-  font-size: 10px;
+  font-size: var(--text-xs);
   min-height: 18px;
   gap: var(--spacing-2xs);
 }

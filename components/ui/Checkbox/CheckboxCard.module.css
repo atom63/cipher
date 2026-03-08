@@ -55,7 +55,7 @@
   justify-content: center;
   color: var(--primary);
   flex-shrink: 0;
-  padding-top: 2px; /* Optical alignment with text baseline */
+  padding-top: var(--spacing-2xs); /* Optical alignment with text baseline */
 }
 
 /* Content container */

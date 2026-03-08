@@ -12,7 +12,13 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	Badge,
 	Button,
@@ -23,12 +29,131 @@ import {
 	SectionHeader,
 	useToast,
 } from "../components/ui";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type {
 	CollectionInfo,
 	DeletedVariableSnapshot,
 	VariableInfo,
 } from "../types/messages";
+
+// Value rendering helpers (shared between row component and edit panel)
+const isColorValue = (val: string) =>
+	val.startsWith("#") ||
+	val.startsWith("rgb") ||
+	val.startsWith("hsl") ||
+	val.startsWith("oklch");
+
+const isReference = (val: string) => val.startsWith("{");
+
+// Memoized variable row to avoid re-renders when sibling rows change
+const VariableRow = React.memo(function VariableRow({
+	variable,
+	isSelected,
+	onToggleSelect,
+	onContextSelect,
+}: {
+	variable: VariableInfo;
+	isSelected: boolean;
+	onToggleSelect: (id: string, event: React.MouseEvent) => void;
+	onContextSelect: (id: string) => void;
+}) {
+	const renderNameSwatches = () => {
+		if (variable.resolvedType !== "COLOR") return null;
+		const entries = Object.entries(variable.valuesByMode);
+		const colorEntries = entries.filter(([, val]) => isColorValue(val));
+		if (colorEntries.length === 0) return null;
+
+		return (
+			<span className="manage-name-swatches">
+				{colorEntries.map(([mode, val]) => (
+					<span
+						key={mode}
+						className="manage-color-swatch"
+						style={{ backgroundColor: val }}
+						title={`${mode}: ${val}`}
+					/>
+				))}
+			</span>
+		);
+	};
+
+	const renderValue = () => {
+		const entries = Object.entries(variable.valuesByMode);
+		const isColor = variable.resolvedType === "COLOR";
+
+		if (entries.length === 1) {
+			const [, val] = entries[0];
+			return (
+				<span className="manage-value">
+					{isColor && isColorValue(val) && (
+						<span
+							className="manage-color-swatch"
+							style={{ backgroundColor: val }}
+						/>
+					)}
+					<span className={isReference(val) ? "manage-ref-value" : ""}>
+						{val}
+					</span>
+				</span>
+			);
+		}
+
+		return (
+			<div className="manage-value-modes">
+				{entries.map(([mode, val]) => (
+					<div
+						key={mode}
+						className="manage-mode-chip"
+						title={`${mode}: ${val}`}
+					>
+						<span className="manage-mode-label">{mode}</span>
+						{isColor && isColorValue(val) && (
+							<span
+								className="manage-color-swatch"
+								style={{ backgroundColor: val }}
+							/>
+						)}
+						<span
+							className={`manage-mode-val ${isReference(val) ? "manage-ref-value" : ""}`}
+						>
+							{val}
+						</span>
+					</div>
+				))}
+			</div>
+		);
+	};
+
+	return (
+		<div
+			className={`manage-row ${isSelected ? "manage-row-selected" : ""}`}
+			onClick={(e) => onToggleSelect(variable.id, e)}
+			onContextMenu={(e) => {
+				e.preventDefault();
+				onContextSelect(variable.id);
+			}}
+		>
+			<div className="manage-col-check">
+				<input
+					type="checkbox"
+					checked={isSelected}
+					onChange={() => {}}
+				/>
+			</div>
+			<div className="manage-col-name">
+				{renderNameSwatches()}
+				<span className="manage-var-name" title={variable.name}>
+					{variable.name}
+				</span>
+			</div>
+			<div className="manage-col-value">{renderValue()}</div>
+			<div className="manage-col-type">
+				<Badge>{variable.resolvedType}</Badge>
+			</div>
+		</div>
+	);
+});
 
 type SortField = "name" | "collection" | "type";
 type SortDir = "asc" | "desc";
@@ -51,6 +176,7 @@ export function ManagePage() {
 		new Set(),
 	);
 	const [lastClickedId, setLastClickedId] = useState<string | null>(null);
+	const debouncedSearch = useDebouncedValue(search, 150);
 	const listRef = useRef<HTMLDivElement>(null);
 
 	// Action panels
@@ -73,6 +199,9 @@ export function ManagePage() {
 	// Delete confirmation
 	const [pendingDelete, setPendingDelete] = useState(false);
 
+	// Prevents double-submit on async operations
+	const [operationPending, setOperationPending] = useState(false);
+
 	const postMessage = usePostMessage();
 	const { showSuccess, showError } = useToast();
 
@@ -91,6 +220,7 @@ export function ManagePage() {
 			setVariables(vars);
 			setCollections(msg.data.collections);
 			setLoading(false);
+			setOperationPending(false);
 
 			// Auto-collapse large groups (50+ variables) on initial load
 			if (loading) {
@@ -240,8 +370,8 @@ export function ManagePage() {
 		if (filterType !== "all") {
 			result = result.filter((v) => v.resolvedType === filterType);
 		}
-		if (search) {
-			const lower = search.toLowerCase();
+		if (debouncedSearch) {
+			const lower = debouncedSearch.toLowerCase();
 			result = result.filter(
 				(v) =>
 					v.name.toLowerCase().includes(lower) ||
@@ -266,7 +396,7 @@ export function ManagePage() {
 		});
 
 		return result;
-	}, [variables, filterCollection, filterType, search, sortField, sortDir]);
+	}, [variables, filterCollection, filterType, debouncedSearch, sortField, sortDir]);
 
 	// Group by collection, preserving sort order within groups
 	const grouped = useMemo(() => {
@@ -297,39 +427,50 @@ export function ManagePage() {
 	}, [variables]);
 
 	// Selection helpers
-	const toggleSelect = (id: string, event?: React.MouseEvent) => {
-		setSelectedIds((prev) => {
-			const next = new Set(prev);
-			if (event?.shiftKey && lastClickedId) {
-				const allIds = filtered.map((v) => v.id);
-				const start = allIds.indexOf(lastClickedId);
-				const end = allIds.indexOf(id);
-				if (start !== -1 && end !== -1) {
-					const [from, to] = start < end ? [start, end] : [end, start];
-					for (let i = from; i <= to; i++) {
-						next.add(allIds[i]);
+	const toggleSelect = useCallback(
+		(id: string, event?: React.MouseEvent) => {
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				if (event?.shiftKey && lastClickedId) {
+					const allIds = filtered.map((v) => v.id);
+					const start = allIds.indexOf(lastClickedId);
+					const end = allIds.indexOf(id);
+					if (start !== -1 && end !== -1) {
+						const [from, to] = start < end ? [start, end] : [end, start];
+						for (let i = from; i <= to; i++) {
+							next.add(allIds[i]);
+						}
+						return next;
 					}
-					return next;
 				}
-			}
-			if (next.has(id)) next.delete(id);
-			else next.add(id);
-			return next;
-		});
+				if (next.has(id)) next.delete(id);
+				else next.add(id);
+				return next;
+			});
+			setLastClickedId(id);
+		},
+		[filtered, lastClickedId],
+	);
+
+	const selectAll = useCallback(
+		() => setSelectedIds(new Set(filtered.map((v) => v.id))),
+		[filtered],
+	);
+	const selectNone = useCallback(() => setSelectedIds(new Set()), []);
+
+	const contextSelect = useCallback((id: string) => {
+		setSelectedIds(new Set([id]));
 		setLastClickedId(id);
-	};
+	}, []);
 
-	const selectAll = () => setSelectedIds(new Set(filtered.map((v) => v.id)));
-	const selectNone = () => setSelectedIds(new Set());
-
-	const toggleGroup = (collectionName: string) => {
+	const toggleGroup = useCallback((collectionName: string) => {
 		setCollapsedGroups((prev) => {
 			const next = new Set(prev);
 			if (next.has(collectionName)) next.delete(collectionName);
 			else next.add(collectionName);
 			return next;
 		});
-	};
+	}, []);
 
 	// Rename preview
 	const renamePreview = useMemo(() => {
@@ -391,9 +532,10 @@ export function ManagePage() {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [selectedIds, filtered, activePanel]);
 
-	// Actions
+	// Actions (guarded against double-submit)
 	const handleRename = () => {
-		if (renamePreview.length === 0) return;
+		if (renamePreview.length === 0 || operationPending) return;
+		setOperationPending(true);
 		postMessage({
 			type: "rename-variables",
 			data: {
@@ -403,6 +545,8 @@ export function ManagePage() {
 	};
 
 	const handleDelete = () => {
+		if (operationPending) return;
+		setOperationPending(true);
 		postMessage({
 			type: "delete-variables",
 			data: { variableIds: Array.from(selectedIds) },
@@ -411,7 +555,8 @@ export function ManagePage() {
 	};
 
 	const handleMove = () => {
-		if (!moveTargetId) return;
+		if (!moveTargetId || operationPending) return;
+		setOperationPending(true);
 		postMessage({
 			type: "move-variables",
 			data: {
@@ -422,6 +567,8 @@ export function ManagePage() {
 	};
 
 	const handleDuplicate = () => {
+		if (operationPending) return;
+		setOperationPending(true);
 		postMessage({
 			type: "duplicate-variables",
 			data: { variableIds: Array.from(selectedIds) },
@@ -487,12 +634,15 @@ export function ManagePage() {
 	}, [aliasPickField, aliasSearch, getAliasOptions, variables]);
 
 	// Helper to update a single field in editValues
-	const setEditField = (varId: string, modeName: string, value: string) => {
-		setEditValues((prev) => ({
-			...prev,
-			[varId]: { ...prev[varId], [modeName]: value },
-		}));
-	};
+	const setEditField = useCallback(
+		(varId: string, modeName: string, value: string) => {
+			setEditValues((prev) => ({
+				...prev,
+				[varId]: { ...prev[varId], [modeName]: value },
+			}));
+		},
+		[],
+	);
 
 	// Check if any values actually changed
 	const editHasChanges = useMemo(() => {
@@ -507,6 +657,7 @@ export function ManagePage() {
 	}, [editSelectedVars, editValues]);
 
 	const handleEditValues = () => {
+		if (operationPending) return;
 		// Collect only variables that actually changed
 		const updates = editSelectedVars
 			.filter((v) => {
@@ -522,6 +673,7 @@ export function ManagePage() {
 			}));
 
 		if (updates.length === 0) return;
+		setOperationPending(true);
 		postMessage({
 			type: "update-variable-values",
 			data: { updates },
@@ -539,82 +691,6 @@ export function ManagePage() {
 
 	const openPanel = (panel: ActionPanel) => {
 		setActivePanel((prev) => (prev === panel ? null : panel));
-	};
-
-	// Value rendering
-	const isColorValue = (val: string) =>
-		val.startsWith("#") ||
-		val.startsWith("rgb") ||
-		val.startsWith("hsl") ||
-		val.startsWith("oklch");
-
-	const isReference = (val: string) => val.startsWith("{");
-
-	const renderValue = (v: VariableInfo) => {
-		const entries = Object.entries(v.valuesByMode);
-		const isColor = v.resolvedType === "COLOR";
-
-		if (entries.length === 1) {
-			const [, val] = entries[0];
-			return (
-				<span className="manage-value">
-					{isColor && isColorValue(val) && (
-						<span
-							className="manage-color-swatch"
-							style={{ backgroundColor: val }}
-						/>
-					)}
-					<span className={isReference(val) ? "manage-ref-value" : ""}>
-						{val}
-					</span>
-				</span>
-			);
-		}
-
-		return (
-			<div className="manage-value-modes">
-				{entries.map(([mode, val]) => (
-					<div
-						key={mode}
-						className="manage-mode-chip"
-						title={`${mode}: ${val}`}
-					>
-						<span className="manage-mode-label">{mode}</span>
-						{isColor && isColorValue(val) && (
-							<span
-								className="manage-color-swatch"
-								style={{ backgroundColor: val }}
-							/>
-						)}
-						<span
-							className={`manage-mode-val ${isReference(val) ? "manage-ref-value" : ""}`}
-						>
-							{val}
-						</span>
-					</div>
-				))}
-			</div>
-		);
-	};
-
-	const renderNameSwatches = (v: VariableInfo) => {
-		if (v.resolvedType !== "COLOR") return null;
-		const entries = Object.entries(v.valuesByMode);
-		const colorEntries = entries.filter(([, val]) => isColorValue(val));
-		if (colorEntries.length === 0) return null;
-
-		return (
-			<span className="manage-name-swatches">
-				{colorEntries.map(([mode, val]) => (
-					<span
-						key={mode}
-						className="manage-color-swatch"
-						style={{ backgroundColor: val }}
-						title={`${mode}: ${val}`}
-					/>
-				))}
-			</span>
-		);
 	};
 
 	// Move target options (exclude collections that all selected vars are already in)
@@ -735,6 +811,7 @@ export function ManagePage() {
 						<Button
 							variant="ghost"
 							onClick={handleDuplicate}
+							disabled={operationPending}
 							title="Duplicate selected"
 						>
 							<Copy size={14} />
@@ -834,7 +911,7 @@ export function ManagePage() {
 								<Button variant="ghost" onClick={() => setActivePanel(null)}>
 									Cancel
 								</Button>
-								<Button variant="primary" onClick={handleRename}>
+								<Button variant="primary" onClick={handleRename} disabled={operationPending}>
 									<Check size={14} />
 									Apply Rename
 								</Button>
@@ -890,7 +967,7 @@ export function ManagePage() {
 						<Button
 							variant="primary"
 							onClick={handleMove}
-							disabled={!moveTargetId}
+							disabled={!moveTargetId || operationPending}
 						>
 							<FolderInput size={14} />
 							Move
@@ -1121,7 +1198,7 @@ export function ManagePage() {
 						<Button
 							variant="primary"
 							onClick={handleEditValues}
-							disabled={!editHasChanges}
+							disabled={!editHasChanges || operationPending}
 						>
 							<Check size={14} />
 							Save{" "}
@@ -1200,34 +1277,13 @@ export function ManagePage() {
 								</div>
 								{!isCollapsed &&
 									vars.map((v) => (
-										<div
+										<VariableRow
 											key={v.id}
-											className={`manage-row ${selectedIds.has(v.id) ? "manage-row-selected" : ""}`}
-											onClick={(e) => toggleSelect(v.id, e)}
-											onContextMenu={(e) => {
-												e.preventDefault();
-												setSelectedIds(new Set([v.id]));
-												setLastClickedId(v.id);
-											}}
-										>
-											<div className="manage-col-check">
-												<input
-													type="checkbox"
-													checked={selectedIds.has(v.id)}
-													onChange={() => {}}
-												/>
-											</div>
-											<div className="manage-col-name">
-												{renderNameSwatches(v)}
-												<span className="manage-var-name" title={v.name}>
-													{v.name}
-												</span>
-											</div>
-											<div className="manage-col-value">{renderValue(v)}</div>
-											<div className="manage-col-type">
-												<Badge>{v.resolvedType}</Badge>
-											</div>
-										</div>
+											variable={v}
+											isSelected={selectedIds.has(v.id)}
+											onToggleSelect={toggleSelect}
+											onContextSelect={contextSelect}
+										/>
 									))}
 							</div>
 						);

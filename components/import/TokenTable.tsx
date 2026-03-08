@@ -1,5 +1,5 @@
 import { AlertTriangle, Check, Search, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
 	type ValidationResult,
 	validateTokens,
@@ -32,6 +32,223 @@ interface EditingState {
 	field: "figmaName" | "value";
 }
 
+// Badge variant for token type
+const getTypeBadgeVariant = (
+	type: string,
+): "default" | "secondary" | "success" | "warning" | "info" | "outline" => {
+	const variantMap: Record<
+		string,
+		"default" | "secondary" | "success" | "warning" | "info" | "outline"
+	> = {
+		color: "info",
+		spacing: "success",
+		sizing: "default",
+		borderRadius: "warning",
+		borderWidth: "warning",
+		number: "info",
+		dimension: "default",
+		string: "secondary",
+		fontFamily: "secondary",
+		fontWeight: "secondary",
+		reference: "info",
+	};
+	return variantMap[type] || "outline";
+};
+
+// Render a token's value display
+function renderTokenValue(token: DesignToken) {
+	if (
+		token.type === "color" &&
+		typeof token.value === "object" &&
+		"r" in token.value
+	) {
+		const { r, g, b } = token.value;
+		const rgb = `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
+		return (
+			<div className={styles.colorPreviewWrapper}>
+				<div
+					className={styles.colorPreview}
+					style={{ backgroundColor: rgb }}
+				/>
+				<code className={styles.value}>{token.originalValue}</code>
+			</div>
+		);
+	}
+
+	if (
+		token.type === "spacing" ||
+		token.type === "sizing" ||
+		token.type === "borderRadius" ||
+		token.type === "borderWidth" ||
+		token.type === "number" ||
+		token.type === "dimension"
+	) {
+		return (
+			<code className={styles.value}>
+				{token.originalValue}
+				<span className={styles.tokenUnit}>px</span>
+			</code>
+		);
+	}
+
+	if (token.type === "reference") {
+		return (
+			<code className={`${styles.value} ${styles.tokenReference}`}>
+				{token.originalValue}
+			</code>
+		);
+	}
+
+	if (
+		token.type === "string" ||
+		token.type === "fontFamily" ||
+		token.type === "fontWeight" ||
+		token.type === "text"
+	) {
+		return (
+			<code className={`${styles.value} ${styles.tokenString}`}>
+				{token.originalValue}
+			</code>
+		);
+	}
+
+	return <code className={styles.value}>{token.originalValue}</code>;
+}
+
+// Memoized token row
+const TokenRow = React.memo(function TokenRow({
+	token,
+	typeDisplayText,
+	editing,
+	onToggle,
+	onActionChange,
+	onNameChange,
+	onValueChange,
+	onStartEdit,
+	onCancelEdit,
+}: {
+	token: DesignToken;
+	typeDisplayText: string;
+	editing: EditingState | null;
+	onToggle: (id: string) => void;
+	onActionChange: (id: string, action: TokenAction) => void;
+	onNameChange: (id: string, name: string) => void;
+	onValueChange: (id: string, value: string) => void;
+	onStartEdit: (state: EditingState) => void;
+	onCancelEdit: () => void;
+}) {
+	const isEditing = editing?.tokenId === token.id;
+
+	return (
+		<div
+			className={`${styles.tokenRow} ${token.action === "skip" ? styles.skipped : ""}`}
+		>
+			<label className={styles.tokenCheckbox}>
+				<input
+					checked={token.action === "import"}
+					onChange={() => onToggle(token.id)}
+					type="checkbox"
+				/>
+			</label>
+
+			<div className={styles.tokenInfo}>
+				<div className={styles.tokenNames}>
+					<span className={styles.originalName}>{token.name}</span>
+					<Badge variant={getTypeBadgeVariant(token.type)} size="sm">
+						{typeDisplayText}
+					</Badge>
+					<span className={styles.arrow}>→</span>
+					{isEditing && editing.field === "figmaName" ? (
+						<input
+							autoFocus
+							className={styles.inlineEdit}
+							onBlur={onCancelEdit}
+							onChange={(e) =>
+								onNameChange(
+									token.id,
+									(e.target as HTMLInputElement).value,
+								)
+							}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === "Escape") {
+									onCancelEdit();
+								}
+							}}
+							type="text"
+							value={token.figmaName}
+						/>
+					) : (
+						<span
+							className={`${styles.figmaName} ${styles.editable}`}
+							onClick={() =>
+								onStartEdit({ tokenId: token.id, field: "figmaName" })
+							}
+							title="Click to edit"
+						>
+							{token.figmaName} ✎
+						</span>
+					)}
+				</div>
+
+				{isEditing && editing.field === "value" ? (
+					<input
+						autoFocus
+						className={styles.inlineEdit}
+						onBlur={onCancelEdit}
+						onChange={(e) =>
+							onValueChange(
+								token.id,
+								(e.target as HTMLInputElement).value,
+							)
+						}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === "Escape") {
+								onCancelEdit();
+							}
+						}}
+						type="text"
+						value={token.originalValue}
+					/>
+				) : (
+					<div
+						onClick={() =>
+							onStartEdit({ tokenId: token.id, field: "value" })
+						}
+						style={{ cursor: "pointer" }}
+						title="Click to edit"
+					>
+						{renderTokenValue(token)}
+					</div>
+				)}
+			</div>
+
+			<div className={styles.tokenActions}>
+				<Dropdown
+					trigger={
+						token.action === "import"
+							? "✓ Import"
+							: token.action === "skip"
+								? "Skip"
+								: "Overwrite"
+					}
+					options={[
+						{ value: "import", label: "✓ Import" },
+						{ value: "skip", label: "Skip" },
+						{ value: "overwrite", label: "Overwrite" },
+					]}
+					variant="ghost"
+					size="sm"
+					align="right"
+					width={120}
+					onSelect={(value) =>
+						onActionChange(token.id, value as TokenAction)
+					}
+				/>
+			</div>
+		</div>
+	);
+});
+
 export function TokenTable({
 	tokens,
 	onTokensUpdated,
@@ -46,80 +263,93 @@ export function TokenTable({
 	const filteredTokens =
 		filter === "all" ? tokens : tokens.filter((t) => t.category === filter);
 
-	const handleToggleToken = (tokenId: string) => {
-		const updated = tokens.map((token) =>
-			token.id === tokenId
-				? {
-						...token,
-						action: (token.action === "import"
-							? "skip"
-							: "import") as TokenAction,
+	const handleToggleToken = useCallback(
+		(tokenId: string) => {
+			const updated = tokens.map((token) =>
+				token.id === tokenId
+					? {
+							...token,
+							action: (token.action === "import"
+								? "skip"
+								: "import") as TokenAction,
+						}
+					: token,
+			);
+			onTokensUpdated(updated);
+		},
+		[tokens, onTokensUpdated],
+	);
+
+	const handleToggleAll = useCallback(
+		(checked: boolean) => {
+			const newAction: TokenAction = checked ? "import" : "skip";
+			const updated = tokens.map((token) => ({ ...token, action: newAction }));
+			onTokensUpdated(updated);
+			setSelectAll(checked);
+		},
+		[tokens, onTokensUpdated],
+	);
+
+	const handleActionChange = useCallback(
+		(tokenId: string, action: TokenAction) => {
+			const updated = tokens.map((token) =>
+				token.id === tokenId ? { ...token, action } : token,
+			);
+			onTokensUpdated(updated);
+		},
+		[tokens, onTokensUpdated],
+	);
+
+	const handleNameChange = useCallback(
+		(tokenId: string, newName: string) => {
+			const updated = tokens.map((token) =>
+				token.id === tokenId ? { ...token, figmaName: newName } : token,
+			);
+			onTokensUpdated(updated);
+			setEditing(null);
+		},
+		[tokens, onTokensUpdated],
+	);
+
+	const handleValueChange = useCallback(
+		(tokenId: string, newValue: string) => {
+			const updated = tokens.map((token) => {
+				if (token.id === tokenId) {
+					if (token.type === "color") {
+						const trimmed = newValue.trim();
+						if (trimmed.startsWith("#") || trimmed.startsWith("oklch(")) {
+							return { ...token, originalValue: trimmed };
+						}
+					} else if (
+						token.type === "spacing" ||
+						token.type === "sizing" ||
+						token.type === "borderRadius" ||
+						token.type === "borderWidth" ||
+						token.type === "number" ||
+						token.type === "dimension"
+					) {
+						const num = Number.parseFloat(newValue);
+						if (!Number.isNaN(num)) {
+							return { ...token, value: num, originalValue: newValue };
+						}
+					} else if (
+						token.type === "string" ||
+						token.type === "fontFamily" ||
+						token.type === "fontWeight" ||
+						token.type === "text"
+					) {
+						return { ...token, value: newValue, originalValue: newValue };
 					}
-				: token,
-		);
-		onTokensUpdated(updated);
-	};
-
-	const handleToggleAll = (checked: boolean) => {
-		const newAction: TokenAction = checked ? "import" : "skip";
-		const updated = tokens.map((token) => ({ ...token, action: newAction }));
-		onTokensUpdated(updated);
-		setSelectAll(checked);
-	};
-
-	const handleActionChange = (tokenId: string, action: TokenAction) => {
-		const updated = tokens.map((token) =>
-			token.id === tokenId ? { ...token, action } : token,
-		);
-		onTokensUpdated(updated);
-	};
-
-	const handleNameChange = (tokenId: string, newName: string) => {
-		const updated = tokens.map((token) =>
-			token.id === tokenId ? { ...token, figmaName: newName } : token,
-		);
-		onTokensUpdated(updated);
-		setEditing(null);
-	};
-
-	const handleValueChange = (tokenId: string, newValue: string) => {
-		const updated = tokens.map((token) => {
-			if (token.id === tokenId) {
-				// Parse new value based on type
-				if (token.type === "color") {
-					// Re-parse color (hex or oklch)
-					const trimmed = newValue.trim();
-					if (trimmed.startsWith("#") || trimmed.startsWith("oklch(")) {
-						return { ...token, originalValue: trimmed };
-					}
-				} else if (
-					token.type === "spacing" ||
-					token.type === "sizing" ||
-					token.type === "borderRadius" ||
-					token.type === "borderWidth" ||
-					token.type === "number" ||
-					token.type === "dimension"
-				) {
-					// Parse numeric types
-					const num = Number.parseFloat(newValue);
-					if (!Number.isNaN(num)) {
-						return { ...token, value: num, originalValue: newValue };
-					}
-				} else if (
-					token.type === "string" ||
-					token.type === "fontFamily" ||
-					token.type === "fontWeight" ||
-					token.type === "text"
-				) {
-					// String types: update directly
-					return { ...token, value: newValue, originalValue: newValue };
 				}
-			}
-			return token;
-		});
-		onTokensUpdated(updated);
-		setEditing(null);
-	};
+				return token;
+			});
+			onTokensUpdated(updated);
+			setEditing(null);
+		},
+		[tokens, onTokensUpdated],
+	);
+
+	const handleCancelEdit = useCallback(() => setEditing(null), []);
 
 	const handleBatchRename = (
 		find: string,
@@ -204,135 +434,51 @@ export function TokenTable({
 		return category.charAt(0).toUpperCase() + category.slice(1);
 	};
 
-	const renderTokenValue = (token: DesignToken) => {
-		// Color tokens: show color preview
-		if (
-			token.type === "color" &&
-			typeof token.value === "object" &&
-			"r" in token.value
-		) {
-			const { r, g, b } = token.value;
-			const rgb = `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
-			return (
-				<div className={styles.colorPreviewWrapper}>
-					<div
-						className={styles.colorPreview}
-						style={{ backgroundColor: rgb }}
-					/>
-					<code className={styles.value}>{token.originalValue}</code>
-				</div>
-			);
-		}
-
-		// Numeric tokens: show with unit hint
-		if (
-			token.type === "spacing" ||
-			token.type === "sizing" ||
-			token.type === "borderRadius" ||
-			token.type === "borderWidth" ||
-			token.type === "number" ||
-			token.type === "dimension"
-		) {
-			return (
-				<code className={styles.value}>
-					{token.originalValue}
-					<span className={styles.tokenUnit}>px</span>
-				</code>
-			);
-		}
-
-		// Reference tokens: show with special styling
-		if (token.type === "reference") {
-			return (
-				<code className={`${styles.value} ${styles.tokenReference}`}>
-					{token.originalValue}
-				</code>
-			);
-		}
-
-		// String tokens: show as text
-		if (
-			token.type === "string" ||
-			token.type === "fontFamily" ||
-			token.type === "fontWeight" ||
-			token.type === "text"
-		) {
-			return (
-				<code className={`${styles.value} ${styles.tokenString}`}>
-					{token.originalValue}
-				</code>
-			);
-		}
-
-		// Default: show original value
-		return <code className={styles.value}>{token.originalValue}</code>;
-	};
-
 	// Resolve reference to find the actual token type (follows reference chains)
-	const resolveReferenceType = (
-		token: DesignToken,
-		visited = new Set<string>(),
-	): string | null => {
-		if (token.type !== "reference" || typeof token.originalValue !== "string") {
-			return null;
+	const resolveReferenceType = useCallback(
+		(token: DesignToken, visited = new Set<string>()): string | null => {
+			if (
+				token.type !== "reference" ||
+				typeof token.originalValue !== "string"
+			) {
+				return null;
+			}
+
+			if (visited.has(token.id)) return null;
+			visited.add(token.id);
+
+			const refMatch = token.originalValue.match(/\{([^}]+)\}/);
+			if (!refMatch) return null;
+
+			const refPath = refMatch[1].replace(/\./g, "/");
+			const referencedToken = tokens.find((t) => t.figmaName === refPath);
+			if (!referencedToken) return null;
+
+			if (referencedToken.type === "reference") {
+				return resolveReferenceType(referencedToken, visited);
+			}
+
+			return referencedToken.type;
+		},
+		[tokens],
+	);
+
+	// Pre-compute type display text for all tokens
+	const typeDisplayTexts = useMemo(() => {
+		const map = new Map<string, string>();
+		for (const token of tokens) {
+			if (token.type === "reference") {
+				const actualType = resolveReferenceType(token);
+				map.set(
+					token.id,
+					actualType ? `reference → ${actualType}` : "reference",
+				);
+			} else {
+				map.set(token.id, token.type);
+			}
 		}
-
-		// Prevent infinite loops in circular references
-		if (visited.has(token.id)) {
-			return null;
-		}
-		visited.add(token.id);
-
-		// Parse reference: {primitives.zinc.50} or {abstractions.surface.50}
-		const refMatch = token.originalValue.match(/\{([^}]+)\}/);
-		if (!refMatch) return null;
-
-		const refPath = refMatch[1].replace(/\./g, "/");
-
-		// Find the referenced token
-		const referencedToken = tokens.find((t) => t.figmaName === refPath);
-		if (!referencedToken) return null;
-
-		// If the referenced token is also a reference, resolve recursively
-		if (referencedToken.type === "reference") {
-			return resolveReferenceType(referencedToken, visited);
-		}
-
-		// Found the concrete type
-		return referencedToken.type;
-	};
-
-	// Get display text for token type (with reference resolution)
-	const getTypeDisplayText = (token: DesignToken): string => {
-		if (token.type === "reference") {
-			const actualType = resolveReferenceType(token);
-			return actualType ? `reference → ${actualType}` : "reference";
-		}
-		return token.type;
-	};
-
-	// Get badge variant for token type
-	const getTypeBadgeVariant = (
-		type: string,
-	): "default" | "secondary" | "success" | "warning" | "info" | "outline" => {
-		const variantMap: Record<
-			string,
-			"default" | "secondary" | "success" | "warning" | "info" | "outline"
-		> = {
-			color: "info",
-			spacing: "success",
-			sizing: "default",
-			borderRadius: "warning",
-			borderWidth: "warning",
-			number: "info",
-			dimension: "default",
-			string: "secondary",
-			fontFamily: "secondary",
-			fontWeight: "secondary",
-			reference: "info",
-		};
-		return variantMap[type] || "outline";
-	};
+		return map;
+	}, [tokens, resolveReferenceType]);
 
 	return (
 		<div className={styles.tokenTableContainer}>
@@ -420,120 +566,18 @@ export function TokenTable({
 					<div className={styles.emptyState}>No tokens to display</div>
 				) : (
 					filteredTokens.map((token) => (
-						<div
-							className={`${styles.tokenRow} ${token.action === "skip" ? styles.skipped : ""}`}
+						<TokenRow
 							key={token.id}
-						>
-							<label className={styles.tokenCheckbox}>
-								<input
-									checked={token.action === "import"}
-									onChange={() => handleToggleToken(token.id)}
-									type="checkbox"
-								/>
-							</label>
-
-							<div className={styles.tokenInfo}>
-								<div className={styles.tokenNames}>
-									<span className={styles.originalName}>{token.name}</span>
-									<Badge variant={getTypeBadgeVariant(token.type)} size="sm">
-										{getTypeDisplayText(token)}
-									</Badge>
-									<span className={styles.arrow}>→</span>
-									{editing?.tokenId === token.id &&
-									editing.field === "figmaName" ? (
-										<input
-											autoFocus
-											className={styles.inlineEdit}
-											onBlur={() => setEditing(null)}
-											onChange={(e) =>
-												handleNameChange(
-													token.id,
-													(e.target as HTMLInputElement).value,
-												)
-											}
-											onKeyDown={(e) => {
-												if (e.key === "Enter") {
-													setEditing(null);
-												}
-												if (e.key === "Escape") {
-													setEditing(null);
-												}
-											}}
-											type="text"
-											value={token.figmaName}
-										/>
-									) : (
-										<span
-											className={`${styles.figmaName} ${styles.editable}`}
-											onClick={() =>
-												setEditing({ tokenId: token.id, field: "figmaName" })
-											}
-											title="Click to edit"
-										>
-											{token.figmaName} ✎
-										</span>
-									)}
-								</div>
-
-								{editing?.tokenId === token.id && editing.field === "value" ? (
-									<input
-										autoFocus
-										className={styles.inlineEdit}
-										onBlur={() => setEditing(null)}
-										onChange={(e) =>
-											handleValueChange(
-												token.id,
-												(e.target as HTMLInputElement).value,
-											)
-										}
-										onKeyDown={(e) => {
-											if (e.key === "Enter") {
-												setEditing(null);
-											}
-											if (e.key === "Escape") {
-												setEditing(null);
-											}
-										}}
-										type="text"
-										value={token.originalValue}
-									/>
-								) : (
-									<div
-										onClick={() =>
-											setEditing({ tokenId: token.id, field: "value" })
-										}
-										style={{ cursor: "pointer" }}
-										title="Click to edit"
-									>
-										{renderTokenValue(token)}
-									</div>
-								)}
-							</div>
-
-							<div className={styles.tokenActions}>
-								<Dropdown
-									trigger={
-										token.action === "import"
-											? "✓ Import"
-											: token.action === "skip"
-												? "Skip"
-												: "Overwrite"
-									}
-									options={[
-										{ value: "import", label: "✓ Import" },
-										{ value: "skip", label: "Skip" },
-										{ value: "overwrite", label: "Overwrite" },
-									]}
-									variant="ghost"
-									size="sm"
-									align="right"
-									width={120}
-									onSelect={(value) =>
-										handleActionChange(token.id, value as TokenAction)
-									}
-								/>
-							</div>
-						</div>
+							token={token}
+							typeDisplayText={typeDisplayTexts.get(token.id) || token.type}
+							editing={editing}
+							onToggle={handleToggleToken}
+							onActionChange={handleActionChange}
+							onNameChange={handleNameChange}
+							onValueChange={handleValueChange}
+							onStartEdit={setEditing}
+							onCancelEdit={handleCancelEdit}
+						/>
 					))
 				)}
 			</div>

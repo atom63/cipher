@@ -19,8 +19,8 @@
   gap: var(--spacing-sm);
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius);
-  background: var(--figma-color-bg);
-  border: 1px solid var(--figma-color-border);
+  background: var(--card);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow-shadow-3);
   pointer-events: auto;
   animation: slideIn 0.2s ease-out;
@@ -45,35 +45,35 @@
 
 /* Variants */
 .info {
-  border-left: 3px solid var(--figma-color-icon-brand);
+  border-left: 3px solid var(--info);
 }
 
 .info .icon {
-  color: var(--figma-color-icon-brand);
+  color: var(--info);
 }
 
 .success {
-  border-left: 3px solid var(--figma-color-icon-success);
+  border-left: 3px solid var(--success);
 }
 
 .success .icon {
-  color: var(--figma-color-icon-success);
+  color: var(--success);
 }
 
 .warning {
-  border-left: 3px solid var(--figma-color-icon-warning);
+  border-left: 3px solid var(--warning);
 }
 
 .warning .icon {
-  color: var(--figma-color-icon-warning);
+  color: var(--warning);
 }
 
 .error {
-  border-left: 3px solid var(--figma-color-icon-danger);
+  border-left: 3px solid var(--destructive);
 }
 
 .error .icon {
-  color: var(--figma-color-icon-danger);
+  color: var(--destructive);
 }
 
 /* Icon */
@@ -81,7 +81,7 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  margin-top: 2px;
+  margin-top: var(--spacing-2xs);
 }
 
 /* Message */
@@ -89,32 +89,32 @@
   flex: 1;
   font-size: var(--text-xs);
   line-height: 1.4;
-  color: var(--figma-color-text);
+  color: var(--foreground);
   word-break: break-word;
 }
 
 /* Action Button */
 .actionButton {
   flex-shrink: 0;
-  padding: 2px var(--spacing-sm);
+  padding: var(--spacing-2xs) var(--spacing-sm);
   border: none;
   background: transparent;
-  color: var(--figma-color-text-brand);
+  color: var(--primary);
   cursor: pointer;
   border-radius: var(--radius-xs);
   font-size: var(--text-xs);
-  font-weight: 600;
-  transition: background 0.15s ease, color 0.15s ease;
+  font-weight: var(--font-semibold);
+  transition: background-color var(--transition), color var(--transition);
   white-space: nowrap;
 }
 
 .actionButton:hover {
-  background: var(--figma-color-bg-hover);
+  background: var(--accent);
 }
 
 .actionButton:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--figma-color-bg), 0 0 0 4px var(--figma-color-icon-brand);
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
 .actionButton:active {
@@ -132,20 +132,20 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--figma-color-text-secondary);
+  color: var(--muted-foreground);
   cursor: pointer;
   border-radius: var(--radius-xs);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background-color var(--transition), color var(--transition);
 }
 
 .dismissButton:hover {
-  background: var(--figma-color-bg-hover);
-  color: var(--figma-color-text);
+  background: var(--accent);
+  color: var(--foreground);
 }
 
 .dismissButton:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--figma-color-bg), 0 0 0 4px var(--figma-color-icon-brand);
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
 .dismissButton:active {

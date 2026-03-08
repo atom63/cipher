@@ -14,7 +14,7 @@ import {
 	Unlink,
 	X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Badge,
 	Button,
@@ -25,6 +25,7 @@ import {
 	SectionHeader,
 	useToast,
 } from "../components/ui";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type {
 	EffectInfo,
@@ -52,6 +53,49 @@ const CATEGORY_LABELS: Record<string, string> = {
 	grid: "Grid",
 };
 
+// Memoized style row to avoid re-renders when sibling rows change
+const StyleRow = React.memo(function StyleRow({
+	style,
+	isSelected,
+	onToggleSelect,
+	onContextSelect,
+	renderPreview,
+}: {
+	style: StyleInfo;
+	isSelected: boolean;
+	onToggleSelect: (id: string, event: React.MouseEvent) => void;
+	onContextSelect: (id: string) => void;
+	renderPreview: (s: StyleInfo) => React.ReactNode;
+}) {
+	return (
+		<div
+			className={`manage-row ${isSelected ? "manage-row-selected" : ""}`}
+			onClick={(e) => onToggleSelect(style.id, e)}
+			onContextMenu={(e) => {
+				e.preventDefault();
+				onContextSelect(style.id);
+			}}
+		>
+			<div className="manage-col-check">
+				<input
+					type="checkbox"
+					checked={isSelected}
+					onChange={() => {}}
+				/>
+			</div>
+			<div className="manage-col-name">
+				<span className="manage-var-name" title={style.name}>
+					{style.name.split("/").pop()}
+				</span>
+			</div>
+			<div className="manage-col-value">{renderPreview(style)}</div>
+			<div className="manage-col-type">
+				<Badge>{CATEGORY_LABELS[style.category]}</Badge>
+			</div>
+		</div>
+	);
+});
+
 export function StylesPage() {
 	const [styles, setStyles] = useState<StyleInfo[]>([]);
 	const [counts, setCounts] = useState<StyleCounts | null>(null);
@@ -65,12 +109,14 @@ export function StylesPage() {
 		new Set(),
 	);
 	const [lastClickedId, setLastClickedId] = useState<string | null>(null);
+	const debouncedSearch = useDebouncedValue(search, 150);
 
 	// Action panels
 	const [showRename, setShowRename] = useState(false);
 	const [findText, setFindText] = useState("");
 	const [replaceText, setReplaceText] = useState("");
 	const [pendingDelete, setPendingDelete] = useState(false);
+	const [operationPending, setOperationPending] = useState(false);
 	const [showRebind, setShowRebind] = useState(false);
 	const [rebindSuggestions, setRebindSuggestions] = useState<
 		RebindSuggestion[]
@@ -96,6 +142,7 @@ export function StylesPage() {
 			setStyles(stylesList);
 			setCounts(msg.data.counts);
 			setLoading(false);
+			setOperationPending(false);
 
 			// Auto-collapse large groups (50+ styles) on initial load
 			if (loading) {
@@ -192,8 +239,8 @@ export function StylesPage() {
 		if (filterCategory !== "all") {
 			result = result.filter((s) => s.category === filterCategory);
 		}
-		if (search) {
-			const lower = search.toLowerCase();
+		if (debouncedSearch) {
+			const lower = debouncedSearch.toLowerCase();
 			result = result.filter(
 				(s) =>
 					s.name.toLowerCase().includes(lower) ||
@@ -213,7 +260,7 @@ export function StylesPage() {
 		});
 
 		return result;
-	}, [styles, filterCategory, search, sortField, sortDir]);
+	}, [styles, filterCategory, debouncedSearch, sortField, sortDir]);
 
 	// Group by root folder
 	const grouped = useMemo(() => {
@@ -279,37 +326,48 @@ export function StylesPage() {
 	}, [selectedIds, filtered, showRename, showRebind]);
 
 	// Selection
-	const toggleSelect = (id: string, event?: React.MouseEvent) => {
-		setSelectedIds((prev) => {
-			const next = new Set(prev);
-			if (event?.shiftKey && lastClickedId) {
-				const allIds = filtered.map((s) => s.id);
-				const start = allIds.indexOf(lastClickedId);
-				const end = allIds.indexOf(id);
-				if (start !== -1 && end !== -1) {
-					const [from, to] = start < end ? [start, end] : [end, start];
-					for (let i = from; i <= to; i++) next.add(allIds[i]);
-					return next;
+	const toggleSelect = useCallback(
+		(id: string, event?: React.MouseEvent) => {
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				if (event?.shiftKey && lastClickedId) {
+					const allIds = filtered.map((s) => s.id);
+					const start = allIds.indexOf(lastClickedId);
+					const end = allIds.indexOf(id);
+					if (start !== -1 && end !== -1) {
+						const [from, to] = start < end ? [start, end] : [end, start];
+						for (let i = from; i <= to; i++) next.add(allIds[i]);
+						return next;
+					}
 				}
-			}
-			if (next.has(id)) next.delete(id);
-			else next.add(id);
-			return next;
-		});
+				if (next.has(id)) next.delete(id);
+				else next.add(id);
+				return next;
+			});
+			setLastClickedId(id);
+		},
+		[filtered, lastClickedId],
+	);
+
+	const selectAll = useCallback(
+		() => setSelectedIds(new Set(filtered.map((s) => s.id))),
+		[filtered],
+	);
+	const selectNone = useCallback(() => setSelectedIds(new Set()), []);
+
+	const contextSelect = useCallback((id: string) => {
+		setSelectedIds(new Set([id]));
 		setLastClickedId(id);
-	};
+	}, []);
 
-	const selectAll = () => setSelectedIds(new Set(filtered.map((s) => s.id)));
-	const selectNone = () => setSelectedIds(new Set());
-
-	const toggleGroup = (groupKey: string) => {
+	const toggleGroup = useCallback((groupKey: string) => {
 		setCollapsedGroups((prev) => {
 			const next = new Set(prev);
 			if (next.has(groupKey)) next.delete(groupKey);
 			else next.add(groupKey);
 			return next;
 		});
-	};
+	}, []);
 
 	// Rename preview
 	const renamePreview = useMemo(() => {
@@ -331,7 +389,8 @@ export function StylesPage() {
 	}, [findText, replaceText, selectedIds, styles]);
 
 	const handleRename = () => {
-		if (renamePreview.length === 0) return;
+		if (renamePreview.length === 0 || operationPending) return;
+		setOperationPending(true);
 		postMessage({
 			type: "rename-styles",
 			data: {
@@ -345,6 +404,8 @@ export function StylesPage() {
 	};
 
 	const handleDelete = () => {
+		if (operationPending) return;
+		setOperationPending(true);
 		// Group by category for the message
 		const selected = styles.filter((s) => selectedIds.has(s.id));
 		const byCategory = new Map<string, string[]>();
@@ -387,10 +448,12 @@ export function StylesPage() {
 	};
 
 	const handleApplyRebind = () => {
+		if (operationPending) return;
 		const activeSuggestions = rebindSuggestions.filter(
 			(_, i) => !rebindExcluded.has(i),
 		);
 		if (activeSuggestions.length === 0) return;
+		setOperationPending(true);
 		postMessage({
 			type: "apply-rebind",
 			data: {
@@ -555,8 +618,8 @@ export function StylesPage() {
 		);
 	};
 
-	// Render preview
-	const renderPreview = (s: StyleInfo) => {
+	// Render preview (stable reference for memoized rows)
+	const renderPreview = useCallback((s: StyleInfo) => {
 		const p = s.preview;
 		if (p.type === "paint") {
 			return (
@@ -606,7 +669,7 @@ export function StylesPage() {
 			);
 		}
 		return null;
-	};
+	}, []);
 
 	if (loading) {
 		return (
@@ -772,7 +835,7 @@ export function StylesPage() {
 								<Button variant="ghost" onClick={() => setShowRename(false)}>
 									Cancel
 								</Button>
-								<Button variant="primary" onClick={handleRename}>
+								<Button variant="primary" onClick={handleRename} disabled={operationPending}>
 									<Check size={14} />
 									Apply Rename
 								</Button>
@@ -864,7 +927,7 @@ export function StylesPage() {
 								<Button
 									variant="primary"
 									onClick={handleApplyRebind}
-									disabled={rebindExcluded.size === rebindSuggestions.length}
+									disabled={rebindExcluded.size === rebindSuggestions.length || operationPending}
 								>
 									<Check size={14} />
 									Apply {rebindSuggestions.length - rebindExcluded.size}{" "}
@@ -947,33 +1010,14 @@ export function StylesPage() {
 								</div>
 								{!isCollapsed &&
 									groupStyles.map((s) => (
-										<div
+										<StyleRow
 											key={s.id}
-											className={`manage-row ${selectedIds.has(s.id) ? "manage-row-selected" : ""}`}
-											onClick={(e) => toggleSelect(s.id, e)}
-											onContextMenu={(e) => {
-												e.preventDefault();
-												setSelectedIds(new Set([s.id]));
-												setLastClickedId(s.id);
-											}}
-										>
-											<div className="manage-col-check">
-												<input
-													type="checkbox"
-													checked={selectedIds.has(s.id)}
-													onChange={() => {}}
-												/>
-											</div>
-											<div className="manage-col-name">
-												<span className="manage-var-name" title={s.name}>
-													{s.name.split("/").pop()}
-												</span>
-											</div>
-											<div className="manage-col-value">{renderPreview(s)}</div>
-											<div className="manage-col-type">
-												<Badge>{CATEGORY_LABELS[s.category]}</Badge>
-											</div>
-										</div>
+											style={s}
+											isSelected={selectedIds.has(s.id)}
+											onToggleSelect={toggleSelect}
+											onContextSelect={contextSelect}
+											renderPreview={renderPreview}
+										/>
 									))}
 							</div>
 						);

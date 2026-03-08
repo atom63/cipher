@@ -37,7 +37,7 @@
 
 .dialogReference::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .dialogReference::-webkit-scrollbar-thumb:hover {
@@ -104,7 +104,7 @@
 }
 
 .tokenCategories summary {
-  padding: 10px var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-md);
   cursor: pointer;
   font-size: var(--text-base);
   font-weight: var(--font-medium);
@@ -129,12 +129,12 @@
   border-top: 1px solid var(--border-light);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--spacing-sm);
 }
 
 .refName {
   color: var(--muted-foreground);
-  font-family: "Monaco", "Courier New", monospace;
+  font-family: var(--font-mono);
 }
 
 .refArrow {
@@ -144,8 +144,12 @@
 
 .refPath {
   color: var(--primary);
-  font-family: "Monaco", "Courier New", monospace;
+  font-family: var(--font-mono);
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tokenMore {
@@ -177,12 +181,12 @@
 }
 
 .previewItem {
-  padding: 10px var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-md);
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: var(--text-sm);
-  font-family: "Monaco", "Courier New", monospace;
+  font-family: var(--font-mono);
 }
 
 .previewItem.changed {

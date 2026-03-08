@@ -113,6 +113,10 @@
   font-size: var(--text-base);
   font-weight: var(--font-medium);
   color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .arrow {
@@ -128,7 +132,7 @@
 
 .figmaName.editable {
   cursor: pointer;
-  padding: 2px var(--spacing-xs);
+  padding: var(--spacing-2xs) var(--spacing-xs);
   border-radius: var(--radius-xs);
   transition: background var(--transition);
 }
@@ -162,13 +166,13 @@
 }
 
 .value {
-  font-family: "Monaco", "Courier New", monospace;
+  font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--muted-foreground);
 }
 
 .tokenUnit {
-  margin-left: 2px;
+  margin-left: var(--spacing-2xs);
   color: var(--muted-foreground-light);
   font-size: var(--text-xs);
 }

@@ -97,7 +97,7 @@
   padding: var(--spacing-md);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  font-family: "Monaco", "Courier New", monospace;
+  font-family: var(--font-mono);
   font-size: var(--text-sm);
   resize: vertical;
   margin-bottom: var(--spacing-md);
@@ -126,7 +126,7 @@
   padding: var(--spacing-md);
   background: var(--muted);
   border-radius: var(--radius-sm);
-  font-family: "Monaco", "Courier New", monospace;
+  font-family: var(--font-mono);
   font-size: var(--text-sm);
   overflow-x: auto;
 }

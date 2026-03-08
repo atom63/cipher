@@ -61,7 +61,7 @@
 .textContainer {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--spacing-md);
   width: 100%;
 }
 
@@ -85,7 +85,7 @@
 .cardHeaderText {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--spacing-sm);
   flex: 1;
 }
 
@@ -115,7 +115,7 @@
 .listItemContent {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--spacing-xs);
   flex: 1;
 }
 
