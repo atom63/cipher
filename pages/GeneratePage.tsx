@@ -769,6 +769,12 @@ function TypescalePreview({ config }: { config: TypescaleConfig }) {
 		<div className={styles.typescalePreview}>
 			{steps.map((step) => (
 				<div key={step.name} className={styles.typescalePreviewRow}>
+					<div className={styles.typescaleMeta}>
+						<span className={styles.typescaleName}>{step.name}</span>
+						<span className={styles.typescaleSize}>
+							{step.size}/{step.lineHeight}
+						</span>
+					</div>
 					<span
 						className={styles.typescaleSample}
 						style={{
@@ -778,12 +784,6 @@ function TypescalePreview({ config }: { config: TypescaleConfig }) {
 					>
 						Aa
 					</span>
-					<div className={styles.typescaleMeta}>
-						<span className={styles.typescaleName}>{step.name}</span>
-						<span className={styles.typescaleSize}>
-							{step.size}/{step.lineHeight}
-						</span>
-					</div>
 				</div>
 			))}
 		</div>
