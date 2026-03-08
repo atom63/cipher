@@ -6,6 +6,7 @@ import {
 	useContext,
 	useState,
 } from "react";
+import { Button } from "../Button";
 import styles from "./Toast.module.css";
 
 // ============================================================================
@@ -176,8 +177,9 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
 			<span className={styles.icon}>{icons[toast.variant]}</span>
 			<span className={styles.message}>{toast.message}</span>
 			{toast.action && (
-				<button
-					type="button"
+				<Button
+					variant="soft"
+					size="sm"
 					className={styles.actionButton}
 					onClick={() => {
 						toast.action?.onClick();
@@ -185,16 +187,17 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
 					}}
 				>
 					{toast.action.label}
-				</button>
+				</Button>
 			)}
-			<button
-				type="button"
+			<Button
+				variant="ghost"
+				size="icon-xs"
 				className={styles.dismissButton}
 				onClick={() => onDismiss(toast.id)}
 				aria-label="Dismiss"
 			>
-				<X size={14} aria-hidden="true" />
-			</button>
+				<X size={12} aria-hidden="true" />
+			</Button>
 		</div>
 	);
 }

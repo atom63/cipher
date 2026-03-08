@@ -434,7 +434,7 @@ export interface VariablesMovedMessage {
 	data: {
 		success: number;
 		failed: number;
-		previousCollections: { id: string; collectionId: string }[];
+		previousCollections: { newId: string; id: string; collectionId: string }[];
 	};
 }
 

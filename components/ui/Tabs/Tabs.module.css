@@ -1,48 +1,63 @@
+/* ============================================
+   TABS CONTAINER
+   ============================================ */
+
 .tabsContainer {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xl);
 }
 
+/* ============================================
+   TAB LIST — shared base
+   ============================================ */
+
 .tabList {
   display: flex;
-  gap: var(--spacing-xs);
-  border-bottom: 1px solid var(--border);
   padding: 0;
   margin: 0;
 }
+
+/* Underline variant — border-separated tabs */
+.listUnderline {
+  gap: var(--spacing-xs);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Default variant — pill/segmented control */
+.listDefault {
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  width: fit-content;
+}
+
+/* Small size list */
+.listSm {
+  gap: 0;
+}
+
+/* ============================================
+   TAB — shared base
+   ============================================ */
 
 .tab {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-xl);
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
   color: var(--muted-foreground);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   cursor: pointer;
-  transition: background-color var(--transition), color var(--transition), border-color var(--transition);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
   position: relative;
-  margin-bottom: -1px;
-}
-
-.tab:hover:not(:disabled) {
-  background: var(--muted);
-  color: var(--foreground);
-}
-
-.tab:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-}
-
-.tab.active {
-  color: var(--foreground);
-  border-bottom-color: var(--primary);
+  white-space: nowrap;
 }
 
 .tab:disabled {
@@ -50,6 +65,78 @@
   cursor: not-allowed;
   opacity: 0.5;
 }
+
+/* ============================================
+   TAB — underline variant
+   ============================================ */
+
+.tabUnderline {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tabUnderline:hover:not(:disabled) {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.tabUnderline:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.tabUnderline.active {
+  color: var(--foreground);
+  border-bottom-color: var(--primary);
+}
+
+/* ============================================
+   TAB — default (pill/segmented) variant
+   ============================================ */
+
+.tabDefault {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--background);
+}
+
+.tabDefault:hover:not(:disabled) {
+  color: var(--foreground);
+  background: var(--accent);
+}
+
+.tabDefault:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ring);
+}
+
+.tabDefault.active {
+  color: var(--foreground);
+  font-weight: var(--font-semibold);
+  background: var(--background);
+  box-shadow: inset 0 -2px 0 var(--primary);
+}
+
+/* ============================================
+   TAB — small size
+   ============================================ */
+
+.tabSm {
+  font-size: var(--text-xs);
+  padding: var(--spacing-2xs) var(--spacing-sm);
+  gap: var(--spacing-xs);
+}
+
+.tabSm.tabUnderline {
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* ============================================
+   TAB ICON & LABEL
+   ============================================ */
 
 .tabIcon {
   display: flex;
@@ -59,24 +146,31 @@
   height: var(--size-4);
 }
 
+.tabSm .tabIcon {
+  width: 14px;
+  height: 14px;
+}
+
 .tabLabel {
   white-space: nowrap;
 }
 
+/* ============================================
+   CONTENT & PANELS
+   ============================================ */
+
 .tabContent {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
 }
 
 .tabPanel {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
-  animation: fadeIn var(--transition) ease;
+  animation: tabFadeIn 0.15s ease;
 }
 
-@keyframes fadeIn {
+@keyframes tabFadeIn {
   from {
     opacity: 0;
     transform: translateY(-4px);
@@ -86,6 +180,10 @@
     transform: translateY(0);
   }
 }
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
   .tab {

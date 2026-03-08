@@ -297,6 +297,8 @@ export function StyleguidePage() {
 							<Button variant="soft">Soft</Button>
 							<Button variant="ghost">Ghost</Button>
 							<Button variant="destructive">Destructive</Button>
+							<Button variant="destructive-ghost">Destructive Ghost</Button>
+							<Button variant="destructive-soft">Destructive Soft</Button>
 							<Button variant="outline">Outline</Button>
 							<Button variant="link">Link</Button>
 						</div>
@@ -308,8 +310,17 @@ export function StyleguidePage() {
 							<Button size="sm">Small</Button>
 							<Button size="md">Medium</Button>
 							<Button size="lg">Large</Button>
-							<Button size="icon">
+							<Button size="icon-xs">
+								<SearchIcon size={12} />
+							</Button>
+							<Button size="icon-sm">
 								<SearchIcon size={14} />
+							</Button>
+							<Button size="icon">
+								<SearchIcon size={16} />
+							</Button>
+							<Button size="icon-lg">
+								<SearchIcon size={18} />
 							</Button>
 						</div>
 					</div>

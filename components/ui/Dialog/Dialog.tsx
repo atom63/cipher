@@ -24,6 +24,8 @@ export interface DialogProps {
 	closeOnEscape?: boolean;
 	/** Show close button (default: true) */
 	showCloseButton?: boolean;
+	/** Remove content padding for full-bleed layouts like tables */
+	noPadding?: boolean;
 	className?: string;
 }
 
@@ -38,6 +40,7 @@ export function Dialog({
 	closeOnOverlayClick = true,
 	closeOnEscape = true,
 	showCloseButton = true,
+	noPadding = false,
 	className = "",
 }: DialogProps) {
 	const dialogRef = useRef<HTMLDivElement>(null);
@@ -136,7 +139,7 @@ export function Dialog({
 						</button>
 					)}
 				</div>
-				<div className={styles.content}>{children}</div>
+				<div className={`${styles.content} ${noPadding ? styles.noPadding : ""}`}>{children}</div>
 				{footer && <div className={styles.footer}>{footer}</div>}
 			</div>
 		</div>

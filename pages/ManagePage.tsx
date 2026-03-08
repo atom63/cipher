@@ -1,5 +1,4 @@
 import {
-	ArrowLeftRight,
 	ArrowRight,
 	ArrowUpDown,
 	Check,
@@ -34,6 +33,7 @@ import {
 	Input,
 	LoadingState,
 	SectionHeader,
+	Tabs,
 	useToast,
 } from "../components/ui";
 import { FirstRunWizard } from "../components/manage";
@@ -188,7 +188,7 @@ const VariableRow = React.memo(function VariableRow({
 
 type SortField = "name" | "collection";
 type SortDir = "asc" | "desc";
-type ActionPanel = "rename" | "move" | "edit" | "swap" | "scale" | null;
+type ActionPanel = "rename" | "move" | "edit" | "scale" | null;
 
 /** Per-variable, per-mode edit values. Key = variableId, value = { modeName: editedValue } */
 type EditValuesMap = Record<string, Record<string, string>>;
@@ -206,6 +206,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 	const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
 		new Set(),
 	);
+	const isInitialLoad = useRef(true);
 	const [lastClickedId, setLastClickedId] = useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search, 150);
 	const listRef = useRef<HTMLDivElement>(null);
@@ -224,10 +225,6 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 	// Move state
 	const [moveTargetId, setMoveTargetId] = useState<string>("");
 
-	// Swap references state
-	const [swapSourceId, setSwapSourceId] = useState<string>("");
-	const [swapTargetId, setSwapTargetId] = useState<string>("");
-	const [swapTargetSearch, setSwapTargetSearch] = useState("");
 
 	// Scale state
 	const [scaleFactor, setScaleFactor] = useState<string>("2");
@@ -238,6 +235,8 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 	// Track which field is in alias-pick mode: "varId:modeName"
 	const [aliasPickField, setAliasPickField] = useState<string | null>(null);
 	const [aliasSearch, setAliasSearch] = useState("");
+	// Active mode tab per collection in edit dialog
+	const [editActiveModes, setEditActiveModes] = useState<Record<string, string>>({});
 
 	// Delete confirmation
 	const [pendingDelete, setPendingDelete] = useState(false);
@@ -274,18 +273,8 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 			setLoading(false);
 			setOperationPending(false);
 
-			// Auto-collapse large groups (50+ variables) on initial load
-			if (loading) {
-				const counts = new Map<string, number>();
-				for (const v of vars) {
-					counts.set(v.collectionName, (counts.get(v.collectionName) || 0) + 1);
-				}
-				const largeGroups = new Set<string>();
-				for (const [name, count] of counts) {
-					if (count >= 50) largeGroups.add(name);
-				}
-				if (largeGroups.size > 0) setCollapsedGroups(largeGroups);
-			}
+			// Mark initial load complete
+			isInitialLoad.current = false;
 		} else if (msg.type === "variables-renamed") {
 			const { success, failed, previousNames } = msg.data;
 			if (failed > 0) {
@@ -351,13 +340,35 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 			}
 			loadVariables();
 		} else if (msg.type === "variables-moved") {
-			const { success, failed } = msg.data;
+			const { success, failed, previousCollections } = msg.data;
 			if (failed > 0) {
 				showError(`${failed} ${failed === 1 ? "move" : "moves"} failed`);
 			} else {
 				showSuccess(
 					`Moved ${success} variable${success !== 1 ? "s" : ""}`,
-					// Undo: move them back (requires re-fetch since IDs changed after recreate)
+					previousCollections.length > 0
+						? {
+								label: "Undo",
+								onClick: () => {
+									// Group by original collection and move each group back
+									const grouped = new Map<string, string[]>();
+									for (const p of previousCollections) {
+										const ids = grouped.get(p.collectionId) || [];
+										ids.push(p.newId);
+										grouped.set(p.collectionId, ids);
+									}
+									for (const [collectionId, varIds] of grouped) {
+										postMessage({
+											type: "move-variables",
+											data: {
+												variableIds: varIds,
+												targetCollectionId: collectionId,
+											},
+										});
+									}
+								},
+							}
+						: undefined,
 				);
 			}
 			setActivePanel(null);
@@ -431,18 +442,6 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 			} else {
 				setPendingDelete(true);
 			}
-		} else if (msg.type === "references-swapped") {
-			const { success, failed } = msg.data;
-			if (failed > 0) {
-				showError(`${failed} reference swap${failed === 1 ? "" : "s"} failed`);
-			} else {
-				showSuccess(`Swapped ${success} reference${success !== 1 ? "s" : ""}`);
-			}
-			setActivePanel(null);
-			setSwapSourceId("");
-			setSwapTargetId("");
-			setSwapTargetSearch("");
-			loadVariables();
 		} else if (msg.type === "variable-values-scaled") {
 			const { success, failed, previousValues } = msg.data;
 			if (failed > 0) {
@@ -678,14 +677,6 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 		});
 	};
 
-	const handleSwapReferences = () => {
-		if (!swapSourceId || !swapTargetId || operationPending) return;
-		setOperationPending(true);
-		postMessage({
-			type: "swap-references",
-			data: { sourceId: swapSourceId, targetId: swapTargetId },
-		});
-	};
 
 	const handleScale = () => {
 		const factor = parseFloat(scaleFactor);
@@ -738,15 +729,31 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 		return variables.filter((v) => selectedIds.has(v.id));
 	}, [activePanel, selectedIds, variables]);
 
-	// All mode names across selected variables (for column headers)
-	const editModeNames = useMemo(() => {
-		const modes = new Set<string>();
+	// Group selected variables by collection (each collection has its own modes)
+	const editGroups = useMemo(() => {
+		const map = new Map<
+			string,
+			{ collectionName: string; modes: string[]; vars: typeof editSelectedVars }
+		>();
 		for (const v of editSelectedVars) {
-			for (const mode of Object.keys(v.valuesByMode)) {
-				modes.add(mode);
+			let group = map.get(v.collectionId);
+			if (!group) {
+				group = {
+					collectionName: v.collectionName,
+					modes: Object.keys(v.valuesByMode),
+					vars: [],
+				};
+				map.set(v.collectionId, group);
 			}
+			// Merge any modes we haven't seen yet
+			for (const mode of Object.keys(v.valuesByMode)) {
+				if (!group.modes.includes(mode)) {
+					group.modes.push(mode);
+				}
+			}
+			group.vars.push(v);
 		}
-		return Array.from(modes);
+		return Array.from(map.values());
 	}, [editSelectedVars]);
 
 	// Initialize edit values when edit panel opens — snapshot current values
@@ -759,6 +766,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 			setEditValues(initial);
 			setAliasPickField(null);
 			setAliasSearch("");
+			setEditActiveModes({});
 		}
 	}, [activePanel, editSelectedVars]); // Only run when panel opens, not on every var change
 
@@ -848,9 +856,6 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 
 	const openPanel = (panel: ActionPanel) => {
 		setActivePanel((prev) => (prev === panel ? null : panel));
-		if (panel === "swap" && selectedIds.size === 1) {
-			setSwapSourceId(Array.from(selectedIds)[0]);
-		}
 	};
 
 	// Move target options (exclude collections that all selected vars are already in)
@@ -1015,15 +1020,6 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={() => openPanel("swap")}
-							disabled={selectedIds.size === 0}
-						>
-							<ArrowLeftRight size={14} />
-							Swap Refs
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
 							onClick={() => openPanel("scale")}
 							disabled={selectedIds.size === 0}
 						>
@@ -1181,7 +1177,9 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							disabled={!moveTargetId || operationPending}
 						>
 							<FolderInput size={14} />
-							Move
+							{moveTargetId
+								? `Move to ${moveTargetCollections.find((c) => c.id === moveTargetId)?.name ?? "collection"}`
+								: "Select a collection"}
 						</Button>
 					</DialogActions>
 				}
@@ -1200,11 +1198,11 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 								onChange={() => setMoveTargetId(c.id)}
 								disabled={c.isCurrent}
 							/>
-							<span>{c.name}</span>
+							<span className="manage-move-name">{c.name}</span>
 							<span className="manage-move-count">
-								{c.variableCount} vars
+								{c.variableCount} {c.variableCount === 1 ? "variable" : "variables"}
 							</span>
-							{c.isCurrent && <Badge>current</Badge>}
+							{c.isCurrent && <Badge variant="secondary" size="sm">current</Badge>}
 						</label>
 					))}
 				</div>
@@ -1216,6 +1214,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 				onClose={() => setActivePanel(null)}
 				title={`Edit ${editSelectedVars.length} ${editSelectedVars.length === 1 ? "variable" : "variables"}`}
 				maxWidth="lg"
+				noPadding
 				footer={
 					<DialogActions>
 						<Button variant="outline" onClick={() => setActivePanel(null)}>
@@ -1227,299 +1226,211 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							disabled={!editHasChanges || operationPending}
 						>
 							<Check size={14} />
-							Save{" "}
-							{editSelectedVars.length > 1
-								? `(${editSelectedVars.length})`
-								: ""}
+							Save changes
 						</Button>
 					</DialogActions>
 				}
 			>
 				<div className="manage-edit-table">
-					{/* Column headers */}
-					<div className="manage-edit-table-header">
-						<div className="manage-edit-col-name">Variable</div>
-						{editModeNames.map((mode) => (
-							<div key={mode} className="manage-edit-col-value">
-								{editModeNames.length > 1 ? mode : "Value"}
-							</div>
-						))}
-					</div>
-
-					{/* Editable rows */}
-					<div className="manage-edit-table-body">
-						{editSelectedVars.map((v) => (
-							<div key={v.id} className="manage-edit-row">
-								<div className="manage-edit-col-name" title={v.name}>
-									{v.resolvedType === "COLOR" && (
-										<span className="manage-name-swatches">
-											{editModeNames.map((mode) => {
-												const val = editValues[v.id]?.[mode] || "";
-												return isColorValue(val) ? (
-													<span
-														key={mode}
-														className="manage-color-swatch"
-														style={{ backgroundColor: val }}
-													/>
-												) : null;
-											})}
-										</span>
-									)}
-									<span className="manage-edit-var-name">{v.name}</span>
-									<Badge>{v.resolvedType}</Badge>
+					{editGroups.map((group) => {
+						const activeMode = editActiveModes[group.collectionName] || group.modes[0];
+						return (
+							<div key={group.collectionName} className="manage-edit-group">
+								{/* Collection label + mode tabs */}
+								{(editGroups.length > 1 || group.modes.length > 1) && (
+									<div className="manage-edit-group-bar">
+										{editGroups.length > 1 && (
+											<span className="manage-edit-group-label">{group.collectionName}</span>
+										)}
+										{group.modes.length > 1 && (
+											<Tabs
+												tabs={group.modes.map((m) => ({ id: m, label: m }))}
+												activeTab={activeMode}
+												onTabChange={(id) => setEditActiveModes((prev) => ({ ...prev, [group.collectionName]: id }))}
+												variant="default"
+												size="sm"
+												className="manage-edit-mode-tabs"
+											/>
+										)}
+									</div>
+								)}
+								{/* Column headers */}
+								<div className="manage-edit-table-header">
+									<div className="manage-edit-col-name">Name</div>
+									<div className="manage-edit-col-value">Value</div>
 								</div>
-								{editModeNames.map((mode) => {
-									const fieldKey = `${v.id}|||${mode}`;
-									const val = editValues[v.id]?.[mode] ?? "";
-									const isAlias = isReference(val);
-									const isPickingAlias = aliasPickField === fieldKey;
 
-									return (
-										<div key={mode} className="manage-edit-col-value">
-											{isPickingAlias ? (
-												/* Alias picker inline */
-												<div className="manage-edit-alias-field">
-													<div className="manage-edit-alias-search">
-														<input
-															type="text"
-															placeholder="Search variables…"
-															value={aliasSearch}
-															onChange={(e) => setAliasSearch(e.target.value)}
-															className="manage-edit-alias-input"
-															autoFocus
-														/>
-														<div className="manage-edit-alias-list">
-															{filteredAliasOptions.map((opt) => (
-																<button
-																	key={opt.id}
-																	type="button"
-																	className={`manage-edit-alias-option ${val === `{${opt.name}}` ? "active" : ""}`}
+								{/* Editable rows — single mode at a time */}
+								<div className="manage-edit-table-body">
+									{group.vars.map((v) => {
+										const fieldKey = `${v.id}|||${activeMode}`;
+										const val = editValues[v.id]?.[activeMode] ?? "";
+										const isAlias = isReference(val);
+										const isPickingAlias = aliasPickField === fieldKey;
+
+										return (
+											<div key={v.id} className="manage-edit-row">
+												<div className="manage-edit-col-name" title={v.name}>
+													<span className="manage-edit-var-name">{v.name}</span>
+												</div>
+												<div className="manage-edit-col-value">
+													{isPickingAlias ? (
+														<div className="manage-edit-alias-field">
+															<div className="manage-edit-alias-search">
+																<input
+																	type="text"
+																	placeholder="Search variables…"
+																	value={aliasSearch}
+																	onChange={(e) => setAliasSearch(e.target.value)}
+																	className="manage-edit-alias-input"
+																	autoFocus
+																/>
+																<div className="manage-edit-alias-list">
+																	{filteredAliasOptions.map((opt) => {
+																		const optVal = Object.values(opt.valuesByMode)[0] || "";
+																		return (
+																			<button
+																				key={opt.id}
+																				type="button"
+																				className={`manage-edit-alias-option ${val === `{${opt.name}}` ? "active" : ""}`}
+																				onClick={() => {
+																					setEditField(v.id, activeMode, `{${opt.name}}`);
+																					setAliasPickField(null);
+																					setAliasSearch("");
+																				}}
+																			>
+																				{opt.resolvedType === "COLOR" && isColorValue(optVal) && (
+																					<span
+																						className="manage-color-swatch"
+																						style={{ backgroundColor: optVal }}
+																					/>
+																				)}
+																				<span className="manage-edit-alias-name">
+																					{opt.name}
+																				</span>
+																				<span className="manage-edit-alias-value">
+																					{optVal}
+																				</span>
+																			</button>
+																		);
+																	})}
+																	{filteredAliasOptions.length === 0 && (
+																		<div className="manage-edit-alias-empty">
+																			No matching variables
+																		</div>
+																	)}
+																</div>
+															</div>
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={() => {
+																	setAliasPickField(null);
+																	setAliasSearch("");
+																}}
+															>
+																Cancel
+															</Button>
+														</div>
+													) : isAlias ? (
+														<div className="manage-edit-alias-display">
+															<Badge variant="outline" size="sm" icon={<Link size={10} />}>
+																{val.slice(1, -1)}
+															</Badge>
+															<Button
+																variant="ghost"
+																size="icon-xs"
+																data-tooltip="Change reference"
+																onClick={() => {
+																	setAliasPickField(fieldKey);
+																	setAliasSearch("");
+																}}
+															>
+																<Link size={12} />
+															</Button>
+															<Button
+																variant="destructive-soft"
+																size="icon-xs"
+																data-tooltip="Remove reference"
+																onClick={() => setEditField(v.id, activeMode, "")}
+															>
+																<X size={12} />
+															</Button>
+														</div>
+													) : (
+														<div className="manage-edit-input-row">
+															{v.resolvedType === "COLOR" &&
+																isColorValue(val) && (
+																	<input
+																		type="color"
+																		className="manage-edit-color-picker"
+																		value={
+																			val.startsWith("#")
+																				? val.slice(0, 7)
+																				: "#000000"
+																		}
+																		onChange={(e) =>
+																			setEditField(v.id, activeMode, e.target.value)
+																		}
+																	/>
+																)}
+															{v.resolvedType === "BOOLEAN" ? (
+																<select
+																	className="manage-filter-select"
+																	value={val || "false"}
+																	onChange={(e) =>
+																		setEditField(v.id, activeMode, e.target.value)
+																	}
+																>
+																	<option value="true">true</option>
+																	<option value="false">false</option>
+																</select>
+															) : (
+																<input
+																	type={
+																		v.resolvedType === "FLOAT" ? "number" : "text"
+																	}
+																	className="manage-edit-input"
+																	value={val}
+																	onChange={(e) =>
+																		setEditField(v.id, activeMode, e.target.value)
+																	}
+																	placeholder={
+																		v.resolvedType === "COLOR"
+																			? "#000000"
+																			: v.resolvedType === "FLOAT"
+																				? "0"
+																				: "Value…"
+																	}
+																/>
+															)}
+															{v.resolvedType !== "BOOLEAN" && (
+																<Button
+																	variant="ghost"
+																	size="icon-xs"
+																	data-tooltip="Set as reference"
 																	onClick={() => {
-																		setEditField(v.id, mode, `{${opt.name}}`);
-																		setAliasPickField(null);
+																		setAliasPickField(fieldKey);
 																		setAliasSearch("");
 																	}}
 																>
-																	{opt.resolvedType === "COLOR" && (
-																		<span
-																			className="manage-color-swatch"
-																			style={{
-																				backgroundColor:
-																					Object.values(
-																						opt.valuesByMode,
-																					)[0] || "",
-																			}}
-																		/>
-																	)}
-																	<span className="manage-edit-alias-name">
-																		{opt.name}
-																	</span>
-																	<span className="manage-edit-alias-collection">
-																		{opt.collectionName}
-																	</span>
-																</button>
-															))}
-															{filteredAliasOptions.length === 0 && (
-																<div className="manage-edit-alias-empty">
-																	No matching variables
-																</div>
+																	<Link size={12} />
+																</Button>
 															)}
 														</div>
-													</div>
-													<button
-														type="button"
-														className="manage-edit-unlink"
-														onClick={() => {
-															setAliasPickField(null);
-															setAliasSearch("");
-														}}
-													>
-														Cancel
-													</button>
-												</div>
-											) : isAlias ? (
-												/* Show alias reference with change/unlink options */
-												<div className="manage-edit-alias-display">
-													<span className="manage-ref-value" title={val}>
-														{val}
-													</span>
-													<button
-														type="button"
-														className="manage-edit-link-btn"
-														data-tooltip="Change linked variable"
-														onClick={() => {
-															setAliasPickField(fieldKey);
-															setAliasSearch("");
-														}}
-													>
-														<Link size={12} />
-													</button>
-													<button
-														type="button"
-														className="manage-edit-unlink"
-														data-tooltip="Unlink"
-														onClick={() => setEditField(v.id, mode, "")}
-													>
-														<X size={12} />
-													</button>
-												</div>
-											) : (
-												/* Raw value input */
-												<div className="manage-edit-input-row">
-													{v.resolvedType === "COLOR" &&
-														isColorValue(val) && (
-															<input
-																type="color"
-																className="manage-edit-color-picker"
-																value={
-																	val.startsWith("#")
-																		? val.slice(0, 7)
-																		: "#000000"
-																}
-																onChange={(e) =>
-																	setEditField(v.id, mode, e.target.value)
-																}
-															/>
-														)}
-													{v.resolvedType === "BOOLEAN" ? (
-														<select
-															className="manage-filter-select"
-															value={val || "false"}
-															onChange={(e) =>
-																setEditField(v.id, mode, e.target.value)
-															}
-														>
-															<option value="true">true</option>
-															<option value="false">false</option>
-														</select>
-													) : (
-														<input
-															type={
-																v.resolvedType === "FLOAT" ? "number" : "text"
-															}
-															className="manage-edit-input"
-															value={val}
-															onChange={(e) =>
-																setEditField(v.id, mode, e.target.value)
-															}
-															placeholder={
-																v.resolvedType === "COLOR"
-																	? "#000000"
-																	: `${v.resolvedType}...`
-															}
-														/>
-													)}
-													{v.resolvedType !== "BOOLEAN" && (
-														<button
-															type="button"
-															className="manage-edit-link-btn"
-															data-tooltip="Link to variable"
-															onClick={() => {
-																setAliasPickField(fieldKey);
-																setAliasSearch("");
-															}}
-														>
-															<Link size={12} />
-														</button>
 													)}
 												</div>
-											)}
-										</div>
-									);
-								})}
+											</div>
+										);
+									})}
+								</div>
 							</div>
-						))}
-					</div>
+						);
+					})}
 				</div>
 			</Dialog>
 
-			{/* Swap references dialog */}
-			<Dialog
-				isOpen={activePanel === "swap" && selectedIds.size > 0}
-				onClose={() => setActivePanel(null)}
-				title="Swap references"
-				maxWidth="sm"
-				footer={
-					<DialogActions>
-						<Button variant="outline" onClick={() => setActivePanel(null)}>
-							Cancel
-						</Button>
-						<Button
-							variant="primary"
-							onClick={handleSwapReferences}
-							disabled={!swapSourceId || !swapTargetId || operationPending}
-						>
-							<ArrowLeftRight size={14} />
-							Swap
-						</Button>
-					</DialogActions>
-				}
-			>
-				<div className="manage-rename-hint">
-					Replace all alias references pointing to the source variable with the target variable.
-				</div>
-				<div className="manage-rename-inputs">
-					<div>
-						<label className="manage-swap-label">Source variable</label>
-						<select
-							className="manage-filter-select"
-							value={swapSourceId}
-							onChange={(e) => setSwapSourceId(e.target.value)}
-						>
-							<option value="">Select source…</option>
-							{variables
-								.filter((v) => selectedIds.has(v.id))
-								.map((v) => (
-									<option key={v.id} value={v.id}>
-										{v.name} ({v.collectionName})
-									</option>
-								))}
-						</select>
-					</div>
-					<div>
-						<label className="manage-swap-label">Target variable</label>
-						<input
-							type="text"
-							className="manage-edit-input"
-							placeholder="Search target variable…"
-							value={swapTargetSearch}
-							onChange={(e) => {
-								setSwapTargetSearch(e.target.value);
-								setSwapTargetId("");
-							}}
-						/>
-						{swapTargetSearch && !swapTargetId && (
-							<div className="manage-edit-alias-list">
-								{variables
-									.filter(
-										(v) =>
-											v.id !== swapSourceId &&
-											(v.name.toLowerCase().includes(swapTargetSearch.toLowerCase()) ||
-												v.collectionName.toLowerCase().includes(swapTargetSearch.toLowerCase())),
-									)
-									.slice(0, 20)
-									.map((v) => (
-										<button
-											key={v.id}
-											type="button"
-											className="manage-edit-alias-option"
-											onClick={() => {
-												setSwapTargetId(v.id);
-												setSwapTargetSearch(v.name);
-											}}
-										>
-											<span className="manage-edit-alias-name">{v.name}</span>
-											<span className="manage-edit-alias-collection">
-												{v.collectionName}
-											</span>
-										</button>
-									))}
-							</div>
-						)}
-					</div>
-				</div>
-			</Dialog>
-
+	
 			{/* Scale numeric values dialog */}
 			{(() => {
 				const selectedVars = variables.filter((v) => selectedIds.has(v.id));

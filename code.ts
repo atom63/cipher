@@ -1019,7 +1019,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			let success = 0;
 			let failed = 0;
-			const previousCollections: { id: string; collectionId: string }[] = [];
+			const previousCollections: { newId: string; id: string; collectionId: string }[] = [];
 
 			// Build target mode map: match modes by name
 			const targetModeMap = new Map(
@@ -1049,11 +1049,6 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						sourceCollection.modes.map((m) => [m.modeId, m.name]),
 					);
 
-					previousCollections.push({
-						id,
-						collectionId: variable.variableCollectionId,
-					});
-
 					// Create new variable in target collection
 					const newVar = figma.variables.createVariable(
 						variable.name,
@@ -1075,6 +1070,12 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							} catch {}
 						}
 					}
+
+					previousCollections.push({
+						newId: newVar.id,
+						id,
+						collectionId: variable.variableCollectionId,
+					});
 
 					// Remove original
 					variable.remove();

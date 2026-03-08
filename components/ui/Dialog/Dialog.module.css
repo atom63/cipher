@@ -147,6 +147,10 @@
   overscroll-behavior: contain;
 }
 
+.noPadding {
+  padding: 0;
+}
+
 /* Scrollbar styling */
 .content::-webkit-scrollbar {
   width: 6px;

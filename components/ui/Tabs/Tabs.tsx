@@ -14,7 +14,10 @@ interface TabsProps {
 	defaultTab?: string;
 	activeTab?: string;
 	onTabChange?: (tabId: string) => void;
-	children: React.ReactNode;
+	variant?: "default" | "underline";
+	size?: "sm" | "md";
+	className?: string;
+	children?: React.ReactNode;
 }
 
 export function Tabs({
@@ -22,6 +25,9 @@ export function Tabs({
 	defaultTab,
 	activeTab: controlledActiveTab,
 	onTabChange,
+	variant = "underline",
+	size = "md",
+	className = "",
 	children,
 }: TabsProps) {
 	const [internalActiveTab, setInternalActiveTab] = useState(
@@ -82,11 +88,29 @@ export function Tabs({
 		[tabs, activeTab],
 	);
 
+	const containerClasses = [
+		styles.tabsContainer,
+		className,
+	].filter(Boolean).join(" ");
+
+	const listClasses = [
+		styles.tabList,
+		variant === "default" ? styles.listDefault : styles.listUnderline,
+		size === "sm" ? styles.listSm : "",
+	].filter(Boolean).join(" ");
+
+	const tabClass = (isActive: boolean) => [
+		styles.tab,
+		variant === "default" ? styles.tabDefault : styles.tabUnderline,
+		size === "sm" ? styles.tabSm : "",
+		isActive ? styles.active : "",
+	].filter(Boolean).join(" ");
+
 	return (
-		<div className={styles.tabsContainer}>
+		<div className={containerClasses}>
 			<div
 				ref={tabListRef}
-				className={styles.tabList}
+				className={listClasses}
 				role="tablist"
 				onKeyDown={handleKeyDown}
 			>
@@ -99,7 +123,7 @@ export function Tabs({
 						aria-controls={`tabpanel-${tab.id}`}
 						id={`tab-${tab.id}`}
 						tabIndex={activeTab === tab.id ? 0 : -1}
-						className={`${styles.tab} ${activeTab === tab.id ? styles.active : ""}`}
+						className={tabClass(activeTab === tab.id)}
 						onClick={() => handleTabClick(tab.id)}
 						disabled={tab.disabled}
 					>
@@ -108,7 +132,7 @@ export function Tabs({
 					</button>
 				))}
 			</div>
-			<div className={styles.tabContent}>{children}</div>
+			{children && <div className={styles.tabContent}>{children}</div>}
 		</div>
 	);
 }

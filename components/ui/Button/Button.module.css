@@ -22,6 +22,12 @@
   overflow: hidden;
 }
 
+/* Auto-size SVG children */
+.button svg {
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
 /* Focus state - polished ring */
 .button:focus-visible {
   outline: none;
@@ -158,6 +164,42 @@
 }
 
 /* ============================================
+   DESTRUCTIVE GHOST - Transparent, destructive on hover
+   ============================================ */
+.destructiveGhost {
+  background-color: transparent;
+  color: var(--muted-foreground);
+  border-color: transparent;
+}
+
+.destructiveGhost:hover:not(:disabled) {
+  background-color: color-mix(in oklch, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+}
+
+.destructiveGhost:active:not(:disabled) {
+  background-color: color-mix(in oklch, var(--destructive) 15%, transparent);
+  color: var(--destructive);
+}
+
+/* ============================================
+   DESTRUCTIVE SOFT - Muted destructive button
+   ============================================ */
+.destructiveSoft {
+  background-color: color-mix(in oklch, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+  border-color: transparent;
+}
+
+.destructiveSoft:hover:not(:disabled) {
+  background-color: color-mix(in oklch, var(--destructive) 20%, transparent);
+}
+
+.destructiveSoft:active:not(:disabled) {
+  background-color: color-mix(in oklch, var(--destructive) 25%, transparent);
+}
+
+/* ============================================
    OUTLINE - Bordered button
    ============================================ */
 .outline {
@@ -241,20 +283,54 @@
   border-radius: calc(var(--radius) + 2px);
 }
 
+.iconXs {
+  height: var(--size-6);
+  width: var(--size-6);
+  padding: 0;
+  flex-shrink: 0;
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.iconXs svg {
+  width: 12px;
+  height: 12px;
+}
+
+.iconSm {
+  height: var(--size-7, 1.75rem);
+  width: var(--size-7, 1.75rem);
+  padding: 0;
+  flex-shrink: 0;
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.iconSm svg {
+  width: 14px;
+  height: 14px;
+}
+
 .icon {
   height: var(--size-8);
   width: var(--size-8);
   padding: 0;
+  flex-shrink: 0;
 }
 
-.icon.sm {
-  height: var(--size-6);
-  width: var(--size-6);
+.icon svg {
+  width: 16px;
+  height: 16px;
 }
 
-.icon.lg {
+.iconLg {
   height: var(--size-10);
   width: var(--size-10);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.iconLg svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* ============================================

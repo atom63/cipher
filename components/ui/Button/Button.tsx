@@ -9,10 +9,12 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 		| "secondary"
 		| "ghost"
 		| "destructive"
+		| "destructive-ghost"
+		| "destructive-soft"
 		| "outline"
 		| "link"
 		| "soft";
-	size?: "sm" | "md" | "lg" | "icon";
+	size?: "sm" | "md" | "lg" | "icon-xs" | "icon-sm" | "icon" | "icon-lg";
 	loading?: boolean;
 	children: React.ReactNode;
 }
@@ -37,6 +39,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 			secondary: styles.secondary,
 			ghost: styles.ghost,
 			destructive: styles.destructive,
+			"destructive-ghost": styles.destructiveGhost,
+			"destructive-soft": styles.destructiveSoft,
 			outline: styles.outline,
 			link: styles.link,
 			soft: styles.soft,
@@ -45,7 +49,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 			sm: styles.sm,
 			md: styles.md,
 			lg: styles.lg,
+			"icon-xs": styles.iconXs,
+			"icon-sm": styles.iconSm,
 			icon: styles.icon,
+			"icon-lg": styles.iconLg,
 		};
 
 		const classes = [
