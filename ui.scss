@@ -95,12 +95,12 @@
   --input: var(--color-zinc-400);
   --ring: var(--color-emerald-500);
 
-  /* Legacy aliases for gradual migration */
-  --muted-foreground-light: var(--color-zinc-400);
-  --border-light: var(--color-zinc-100);
-  --success-light: var(--color-emerald-50);
-  --error: var(--destructive);
-  --error-light: var(--color-rose-500);
+  /* Extended semantic tokens */
+  --muted-foreground-light: var(--color-zinc-400); /* Lighter than --muted-foreground, used for tertiary text */
+  --border-light: var(--color-zinc-100); /* Lighter than --border, used for subtle dividers */
+  --success-light: var(--color-emerald-50); /* Light success background tint */
+  --error: var(--destructive); /* Alias for --destructive */
+  --error-light: var(--color-rose-500); /* Light error tint */
 
   /* Spacing scale (matches primitives.spacing tokens) */
   --spacing-0: 0px;
@@ -192,6 +192,7 @@
   /* Component-specific */
   --sidebar-width: 180px;
   --sidebar-collapsed: 60px;
+  --radius-pill: 9999px;
 }
 
 /* ============================================
@@ -247,7 +248,7 @@
   --input: var(--color-zinc-700);
   --ring: var(--color-emerald-500);
 
-  /* Legacy aliases */
+  /* Extended semantic tokens (dark mode) */
   --muted-foreground-light: var(--color-zinc-500);
   --border-light: var(--color-zinc-900);
   --success-light: var(--color-emerald-950);
@@ -280,34 +281,16 @@
   padding: 0;
 }
 
-/* === Form Input Reset - Remove Outline & Prevent Color Change === */
+/* === Form Input Reset === */
 input[type="radio"],
 input[type="checkbox"] {
-  /* Keep native appearance, just remove outline */
-  outline: none !important;
-  outline-width: 0 !important;
-  outline-style: none !important;
-  outline-offset: 0 !important;
+  outline: none;
 }
 
-input[type="radio"]:focus,
-input[type="checkbox"]:focus,
 input[type="radio"]:focus-visible,
 input[type="checkbox"]:focus-visible {
-  /* Remove ALL outline variants */
-  outline: none !important;
-  outline-width: 0 !important;
-  outline-style: none !important;
-  outline-offset: 0 !important;
-  box-shadow: none !important;
-}
-
-input[type="radio"]:active,
-input[type="checkbox"]:active {
-  /* Prevent color change on press/mousedown */
-  filter: brightness(1) !important;
-  opacity: 1 !important;
-  transform: none !important;
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 body {
@@ -335,9 +318,9 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-md) var(--spacing-lg);
-  background: linear-gradient(135deg, var(--accent) 0%, #764ba2 100%);
-  color: var(--accent-foreground);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--muted);
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 
   h1 {
@@ -348,11 +331,11 @@ body {
 }
 
 .view-mode-toggle {
-  padding: 6px var(--spacing-md);
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
   border-radius: var(--radius);
-  color: var(--accent-foreground);
+  color: var(--foreground);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   cursor: pointer;
@@ -362,8 +345,8 @@ body {
   gap: var(--spacing-xs);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: color-mix(in srgb, var(--primary) 25%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 35%, transparent);
     transform: translateY(-1px);
   }
 
@@ -443,8 +426,8 @@ body {
 .coming-soon-badge {
   display: inline-block;
   padding: var(--spacing-sm) var(--spacing-xl);
-  background: linear-gradient(135deg, var(--accent) 0%, #764ba2 100%);
-  color: var(--primary-foreground);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  color: var(--primary);
   border-radius: var(--radius-pill);
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
@@ -1172,6 +1155,11 @@ body {
   &:hover {
     color: var(--foreground);
   }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--ring);
+  }
 }
 
 .manage-col-check {
@@ -1217,6 +1205,11 @@ body {
   &:hover {
     background: var(--accent);
   }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--ring);
+  }
 }
 
 .manage-group-name {
@@ -1243,6 +1236,11 @@ body {
   &:last-child {
     border-bottom: none;
   }
+}
+
+.manage-row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ring);
 }
 
 .manage-row-selected {

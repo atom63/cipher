@@ -30,12 +30,13 @@
     0 0 0 4px var(--ring);
 }
 
-/* Disabled state - grayscale instead of just opacity */
+/* Disabled state */
 .button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
-  filter: grayscale(30%);
+  color: var(--muted-foreground);
+  border-color: var(--border);
 }
 
 /* ============================================

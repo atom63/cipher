@@ -128,7 +128,16 @@ const VariableRow = React.memo(function VariableRow({
 	return (
 		<div
 			className={`manage-row ${isSelected ? "manage-row-selected" : ""}`}
+			role="row"
+			tabIndex={0}
+			aria-selected={isSelected}
 			onClick={(e) => onToggleSelect(variable.id, e)}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					onToggleSelect(variable.id, e as unknown as React.MouseEvent);
+				}
+			}}
 			onContextMenu={(e) => {
 				e.preventDefault();
 				onContextSelect(variable.id);
@@ -1239,14 +1248,22 @@ export function ManagePage() {
 						</div>
 						<div
 							className="manage-col-name manage-sortable"
+							role="columnheader"
+							tabIndex={0}
+							aria-sort={sortField === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
 							onClick={() => handleSort("name")}
+							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("name"); } }}
 						>
 							Name {sortField === "name" && (sortDir === "asc" ? "↑" : "↓")}
 						</div>
 						<div className="manage-col-value">Value</div>
 						<div
 							className="manage-col-type manage-sortable"
+							role="columnheader"
+							tabIndex={0}
+							aria-sort={sortField === "type" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
 							onClick={() => handleSort("type")}
+							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("type"); } }}
 						>
 							Type {sortField === "type" && (sortDir === "asc" ? "↑" : "↓")}
 						</div>
@@ -1262,7 +1279,16 @@ export function ManagePage() {
 							<div key={collectionName} className="manage-group">
 								<div
 									className="manage-group-header"
+									role="button"
+									tabIndex={0}
+									aria-expanded={!isCollapsed}
 									onClick={() => toggleGroup(collectionName)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" || e.key === " ") {
+											e.preventDefault();
+											toggleGroup(collectionName);
+										}
+									}}
 								>
 									{isCollapsed ? (
 										<ChevronRight size={14} />

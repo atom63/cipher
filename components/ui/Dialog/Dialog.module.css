@@ -60,19 +60,19 @@
    ============================================ */
 
 .maxWidth-sm {
-  max-width: 400px;
+  max-width: min(400px, calc(100vw - 2rem));
 }
 
 .maxWidth-md {
-  max-width: 500px;
+  max-width: min(500px, calc(100vw - 2rem));
 }
 
 .maxWidth-lg {
-  max-width: 640px;
+  max-width: min(640px, calc(100vw - 2rem));
 }
 
 .maxWidth-xl {
-  max-width: 800px;
+  max-width: min(800px, calc(100vw - 2rem));
 }
 
 .maxWidth-full {

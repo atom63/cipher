@@ -70,7 +70,16 @@ const StyleRow = React.memo(function StyleRow({
 	return (
 		<div
 			className={`manage-row ${isSelected ? "manage-row-selected" : ""}`}
+			role="row"
+			tabIndex={0}
+			aria-selected={isSelected}
 			onClick={(e) => onToggleSelect(style.id, e)}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					onToggleSelect(style.id, e as unknown as React.MouseEvent);
+				}
+			}}
 			onContextMenu={(e) => {
 				e.preventDefault();
 				onContextSelect(style.id);
@@ -970,14 +979,22 @@ export function StylesPage() {
 						</div>
 						<div
 							className="manage-col-name manage-sortable"
+							role="columnheader"
+							tabIndex={0}
+							aria-sort={sortField === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
 							onClick={() => handleSort("name")}
+							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("name"); } }}
 						>
 							Name {sortField === "name" && (sortDir === "asc" ? "↑" : "↓")}
 						</div>
 						<div className="manage-col-value">Preview</div>
 						<div
 							className="manage-col-type manage-sortable"
+							role="columnheader"
+							tabIndex={0}
+							aria-sort={sortField === "category" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
 							onClick={() => handleSort("category")}
+							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("category"); } }}
 						>
 							Type {sortField === "category" && (sortDir === "asc" ? "↑" : "↓")}
 						</div>
@@ -994,7 +1011,16 @@ export function StylesPage() {
 							<div key={groupKey} className="manage-group">
 								<div
 									className="manage-group-header"
+									role="button"
+									tabIndex={0}
+									aria-expanded={!isCollapsed}
 									onClick={() => toggleGroup(groupKey)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" || e.key === " ") {
+											e.preventDefault();
+											toggleGroup(groupKey);
+										}
+									}}
 								>
 									{isCollapsed ? (
 										<ChevronRight size={14} />

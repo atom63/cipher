@@ -19,6 +19,8 @@ export interface BadgeProps {
 	pill?: boolean;
 	/** Show dot indicator */
 	dot?: boolean;
+	/** Animate the dot (pulse effect, limited to 3 cycles) */
+	dotAnimated?: boolean;
 	/** Dot color (defaults to variant color) */
 	dotColor?: string;
 	/** Make badge removable */
@@ -36,6 +38,7 @@ export function Badge({
 	size = "md",
 	pill = false,
 	dot = false,
+	dotAnimated = false,
 	dotColor,
 	removable = false,
 	onRemove,
@@ -51,7 +54,7 @@ export function Badge({
 		>
 			{dot && (
 				<span
-					className={styles.dot}
+					className={`${styles.dot} ${dotAnimated ? styles.dotAnimated : ""}`}
 					style={dotColor ? { backgroundColor: dotColor } : undefined}
 					aria-hidden="true"
 				/>
@@ -90,14 +93,14 @@ export type StatusType =
 
 const statusConfig: Record<
 	StatusType,
-	{ variant: BadgeProps["variant"]; label: string }
+	{ variant: BadgeProps["variant"]; label: string; animated?: boolean }
 > = {
-	online: { variant: "success", label: "Online" },
+	online: { variant: "success", label: "Online", animated: true },
 	offline: { variant: "secondary", label: "Offline" },
 	busy: { variant: "destructive", label: "Busy" },
 	away: { variant: "warning", label: "Away" },
-	pending: { variant: "warning", label: "Pending" },
-	active: { variant: "success", label: "Active" },
+	pending: { variant: "warning", label: "Pending", animated: true },
+	active: { variant: "success", label: "Active", animated: true },
 	inactive: { variant: "secondary", label: "Inactive" },
 };
 
@@ -115,6 +118,7 @@ export function StatusBadge({
 		<Badge
 			variant={config.variant}
 			dot={showDot}
+			dotAnimated={config.animated}
 			size="sm"
 			pill
 			className={className}
