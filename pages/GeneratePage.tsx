@@ -762,20 +762,28 @@ function RadiusPreview({ scale }: { scale: Record<string, number> }) {
 
 // --- Typescale live preview ---
 
+const MAX_PREVIEW_SIZE = 40;
+const MIN_PREVIEW_SIZE = 9;
+
 function TypescalePreview({ config }: { config: TypescaleConfig }) {
 	const steps = useMemo(() => computeTypescale(config), [config]);
+
+	// Scale proportionally so all steps remain visually distinct
+	const largestSize = steps.length > 0 ? steps[0].size : 16;
+	const scale = largestSize > MAX_PREVIEW_SIZE ? MAX_PREVIEW_SIZE / largestSize : 1;
 
 	return (
 		<div className={styles.typescalePreview}>
 			{steps.map((step) => {
-				const clampedSize = Math.min(step.size, 48);
+				const previewSize = Math.max(MIN_PREVIEW_SIZE, Math.round(step.size * scale));
+				const previewLh = Math.max(MIN_PREVIEW_SIZE, Math.round(step.lineHeight * scale));
 				return (
 					<div key={step.name} className={styles.typescalePreviewRow}>
 						<span
 							className={styles.typescaleSample}
 							style={{
-								fontSize: `${clampedSize}px`,
-								lineHeight: `${Math.min(step.lineHeight, 64)}px`,
+								fontSize: `${previewSize}px`,
+								lineHeight: `${previewLh}px`,
 							}}
 						>
 							Aa
