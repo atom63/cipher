@@ -276,7 +276,7 @@
   border-top: 1px solid var(--border);
   overflow-x: auto;
   white-space: pre;
-  max-height: 400px;
+  max-height: min(400px, calc(100vh - 200px));
   overflow-y: auto;
 }
 

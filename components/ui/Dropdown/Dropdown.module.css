@@ -19,7 +19,8 @@
   position: absolute;
   top: calc(100% + var(--spacing-xs));
   z-index: var(--z-dropdown, 50);
-  min-width: 11rem;
+  min-width: min(11rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 1rem);
   background-color: var(--background);
   border: 1px solid var(--border);
   border-radius: var(--radius);

@@ -206,6 +206,14 @@
    RESPONSIVE
    ============================================ */
 
+/* Narrow viewport: reduce overlay padding */
+@media (max-width: 400px) {
+  .overlay {
+    padding: var(--spacing-sm);
+  }
+}
+
+/* Small viewport: bottom sheet style */
 @media (max-width: 600px) {
   .overlay {
     padding: 0;

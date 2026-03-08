@@ -3,13 +3,13 @@
 .dialogLayout {
   display: flex;
   gap: 0; /* No gap needed since we have border divider */
-  height: 500px; /* Fixed height for better scroll control */
-  max-height: calc(100vh - 200px); /* Responsive to viewport */
+  height: min(500px, calc(100vh - 200px)); /* Responsive to viewport */
+  max-height: calc(100vh - 200px);
 }
 
 .dialogForm {
-  flex: 0 0 320px; /* Fixed width, no grow/shrink */
-  min-width: 280px;
+  flex: 0 0 280px; /* Fixed width, no grow/shrink */
+  min-width: 0;
   padding: var(--spacing-xl);
   border-right: 1px solid var(--border);
   display: flex;
@@ -20,7 +20,7 @@
 
 .dialogReference {
   flex: 1; /* Take remaining space */
-  min-width: 280px;
+  min-width: 0;
   padding: var(--spacing-xl);
   background: var(--muted);
   overflow-y: auto; /* Scrollable content area */
@@ -45,23 +45,23 @@
 }
 
 /* Responsive: Stack on narrow windows */
-@media (max-width: 700px) {
+@media (max-width: 500px) {
   .dialogLayout {
     flex-direction: column;
-    height: auto; /* Allow natural height on mobile */
-    max-height: calc(100vh - 150px);
+    height: auto;
+    max-height: calc(100vh - 120px);
   }
 
   .dialogForm {
-    flex: 0 0 auto; /* Natural height on mobile */
+    flex: 0 0 auto;
     border-right: none;
     border-bottom: 1px solid var(--border);
-    max-height: 200px; /* Limit form height on mobile */
+    max-height: 180px;
   }
 
   .dialogReference {
     flex: 1;
-    min-height: 300px; /* Ensure enough space for preview */
+    min-height: 0;
   }
 }
 

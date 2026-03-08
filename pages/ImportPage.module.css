@@ -2,7 +2,7 @@
 
 .reviewContent {
   padding: var(--spacing-2xl);
-  max-height: 600px;
+  max-height: min(600px, calc(100vh - 150px));
   overflow-y: auto;
 }
 
