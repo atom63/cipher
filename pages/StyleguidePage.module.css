@@ -1,27 +1,9 @@
 /* Styleguide Page */
 .styleguide {
-  padding: var(--spacing-xl);
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.header {
-  margin-bottom: var(--spacing-3xl);
-  text-align: center;
-}
-
-.header h1 {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  color: var(--foreground);
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.subtitle {
-  font-size: var(--text-base);
-  color: var(--muted-foreground);
-  margin: 0;
-}
 
 /* Sections */
 .section {

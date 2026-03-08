@@ -1,9 +1,9 @@
 import {
 	Archive,
 	Check,
-	CircleOff,
 	ChevronDown,
 	ChevronRight,
+	CircleOff,
 	Code,
 	Copy,
 	Database,
@@ -381,9 +381,7 @@ export function ExportPage() {
 		return (
 			<div className="page-content">
 				<LoadingState
-					message={
-						exportResult ? "Exporting variables…" : "Exporting styles…"
-					}
+					message={exportResult ? "Exporting variables…" : "Exporting styles…"}
 				/>
 			</div>
 		);

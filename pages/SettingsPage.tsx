@@ -1,13 +1,8 @@
 import { RotateCcw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-	Button,
-	RadioGroup,
-	SectionHeader,
-	useToast,
-} from "../components/ui";
-import type { PluginSettings } from "../types/messages";
+import { Button, RadioGroup, SectionHeader, useToast } from "../components/ui";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
+import type { PluginSettings } from "../types/messages";
 import { applyTheme } from "../utils/theme";
 
 const DEFAULT_SETTINGS: PluginSettings = {

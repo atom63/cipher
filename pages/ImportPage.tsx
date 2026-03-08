@@ -150,7 +150,9 @@ export function ImportPage() {
 
 			// Auto-set conflicting tokens to "skip" by default
 			if (conflictData.length > 0) {
-				const conflictIds = new Set(conflictData.map((c: ImportConflict) => c.tokenId));
+				const conflictIds = new Set(
+					conflictData.map((c: ImportConflict) => c.tokenId),
+				);
 				setTokens((prev) =>
 					prev.map((t) =>
 						conflictIds.has(t.id) ? { ...t, action: "skip" as const } : t,

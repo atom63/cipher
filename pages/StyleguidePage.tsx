@@ -1,18 +1,18 @@
 import {
 	Bell,
 	Cog,
+	Copy,
 	FolderPlus,
 	Home,
 	Package,
+	Pencil,
+	Search as SearchIcon,
 	Settings,
 	Shield,
 	Star,
+	Trash2,
 	User,
 	Zap,
-	Search as SearchIcon,
-	Pencil,
-	Copy,
-	Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -70,26 +70,56 @@ export function StyleguidePage() {
 	const { showSuccess, showError, showWarning, showInfo } = useToast();
 
 	// --- Token Visualization: read CSS custom properties ---
-	const colorTokenGroups = useMemo(() => [
-		{
-			label: "Backgrounds",
-			tokens: ["--background", "--background-secondary", "--card", "--popover", "--muted"],
-		},
-		{
-			label: "Foregrounds",
-			tokens: ["--foreground", "--foreground-secondary", "--card-foreground", "--popover-foreground", "--muted-foreground"],
-		},
-		{
-			label: "Accents",
-			tokens: ["--primary", "--primary-foreground", "--secondary", "--secondary-foreground", "--accent", "--accent-foreground"],
-		},
-		{
-			label: "Status",
-			tokens: ["--destructive", "--destructive-foreground", "--success", "--warning", "--info"],
-		},
-	], []);
+	const colorTokenGroups = useMemo(
+		() => [
+			{
+				label: "Backgrounds",
+				tokens: [
+					"--background",
+					"--background-secondary",
+					"--card",
+					"--popover",
+					"--muted",
+				],
+			},
+			{
+				label: "Foregrounds",
+				tokens: [
+					"--foreground",
+					"--foreground-secondary",
+					"--card-foreground",
+					"--popover-foreground",
+					"--muted-foreground",
+				],
+			},
+			{
+				label: "Accents",
+				tokens: [
+					"--primary",
+					"--primary-foreground",
+					"--secondary",
+					"--secondary-foreground",
+					"--accent",
+					"--accent-foreground",
+				],
+			},
+			{
+				label: "Status",
+				tokens: [
+					"--destructive",
+					"--destructive-foreground",
+					"--success",
+					"--warning",
+					"--info",
+				],
+			},
+		],
+		[],
+	);
 
-	const [resolvedColors, setResolvedColors] = useState<Record<string, string>>({});
+	const [resolvedColors, setResolvedColors] = useState<Record<string, string>>(
+		{},
+	);
 
 	useEffect(() => {
 		const root = document.documentElement;
@@ -122,7 +152,13 @@ export function StyleguidePage() {
 
 	function hexToRgb(hex: string): [number, number, number] {
 		const h = hex.replace("#", "");
-		const full = h.length === 3 ? h.split("").map(c => c + c).join("") : h;
+		const full =
+			h.length === 3
+				? h
+						.split("")
+						.map((c) => c + c)
+						.join("")
+				: h;
 		return [
 			parseInt(full.slice(0, 2), 16),
 			parseInt(full.slice(2, 4), 16),
@@ -131,8 +167,8 @@ export function StyleguidePage() {
 	}
 
 	function getRelativeLuminance(r: number, g: number, b: number): number {
-		const [rs, gs, bs] = [r / 255, g / 255, b / 255].map(c =>
-			c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+		const [rs, gs, bs] = [r / 255, g / 255, b / 255].map((c) =>
+			c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4,
 		);
 		return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
 	}
@@ -153,31 +189,33 @@ export function StyleguidePage() {
 		} catch {
 			return 0;
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [contrastFg, contrastBg]);
 
-	const wcagResults = useMemo(() => [
-		{ label: "AA Normal", threshold: 4.5 },
-		{ label: "AA Large", threshold: 3 },
-		{ label: "AAA Normal", threshold: 7 },
-		{ label: "AAA Large", threshold: 4.5 },
-	], []);
+	const wcagResults = useMemo(
+		() => [
+			{ label: "AA Normal", threshold: 4.5 },
+			{ label: "AA Large", threshold: 3 },
+			{ label: "AAA Normal", threshold: 7 },
+			{ label: "AAA Large", threshold: 4.5 },
+		],
+		[],
+	);
 
 	return (
 		<div className={styles.styleguide}>
-			<div className={styles.header}>
-				<h1>UI Component Styleguide</h1>
-				<p className={styles.subtitle}>
-					A comprehensive showcase of all UI components and their variants
-				</p>
-			</div>
+			<SectionHeader
+				variant="primary"
+				title="UI Component Styleguide"
+				description="A comprehensive showcase of all UI components and their variants"
+			/>
 
 			{/* Section Headers */}
 			<section className={styles.section}>
 				<SectionHeader
+					variant="secondary"
 					title="Section Headers"
 					description="Page and section headers with different hierarchy levels"
-					variant="primary"
 				/>
 
 				<Card>
@@ -270,7 +308,9 @@ export function StyleguidePage() {
 							<Button size="sm">Small</Button>
 							<Button size="md">Medium</Button>
 							<Button size="lg">Large</Button>
-							<Button size="icon"><SearchIcon size={14} /></Button>
+							<Button size="icon">
+								<SearchIcon size={14} />
+							</Button>
 						</div>
 					</div>
 
@@ -417,10 +457,7 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>Textarea</h4>
 						<div className={styles.column}>
-							<Textarea
-								label="Description"
-								placeholder="Enter description…"
-							/>
+							<Textarea label="Description" placeholder="Enter description…" />
 							<Textarea
 								label="With Description"
 								description="Maximum 500 characters"
@@ -788,10 +825,18 @@ export function StyleguidePage() {
 						<h4>Features</h4>
 						<div className={styles.row}>
 							<Badge pill>Pill shape</Badge>
-							<Badge dot variant="success">With dot</Badge>
-							<Badge dot dotAnimated variant="warning">Animated dot</Badge>
-							<Badge icon={<Bell size={12} />} variant="info">With icon</Badge>
-							<Badge removable onRemove={() => {}}>Removable</Badge>
+							<Badge dot variant="success">
+								With dot
+							</Badge>
+							<Badge dot dotAnimated variant="warning">
+								Animated dot
+							</Badge>
+							<Badge icon={<Bell size={12} />} variant="info">
+								With icon
+							</Badge>
+							<Badge removable onRemove={() => {}}>
+								Removable
+							</Badge>
 						</div>
 					</div>
 
@@ -898,8 +943,8 @@ export function StyleguidePage() {
 					<Card onClick={() => {}} selected>
 						<CardContent>
 							<p>
-								<strong>Interactive + Selected</strong> - Clickable with selected
-								state
+								<strong>Interactive + Selected</strong> - Clickable with
+								selected state
 							</p>
 						</CardContent>
 					</Card>
@@ -927,7 +972,10 @@ export function StyleguidePage() {
 
 					<div className={styles.componentGroup}>
 						<h4>Loading State</h4>
-						<LoadingState message="Loading components…" hint="This may take a moment" />
+						<LoadingState
+							message="Loading components…"
+							hint="This may take a moment"
+						/>
 					</div>
 
 					<div className={styles.componentGroup}>
@@ -938,7 +986,10 @@ export function StyleguidePage() {
 						<div className={styles.column}>
 							<div className={styles.row}>
 								<Skeleton width={40} height={40} radius="full" />
-								<div className={styles.column} style={{ flex: 1, gap: "var(--spacing-sm)" }}>
+								<div
+									className={styles.column}
+									style={{ flex: 1, gap: "var(--spacing-sm)" }}
+								>
 									<Skeleton height={14} width="60%" radius="sm" />
 									<Skeleton height={10} width="40%" radius="sm" />
 								</div>
@@ -954,15 +1005,30 @@ export function StyleguidePage() {
 						<div className={styles.row}>
 							<div className={styles.column} style={{ flex: 1 }}>
 								<p className={styles.componentDescription}>Shimmer (default)</p>
-								<Skeleton height={40} width="100%" animation="shimmer" radius="md" />
+								<Skeleton
+									height={40}
+									width="100%"
+									animation="shimmer"
+									radius="md"
+								/>
 							</div>
 							<div className={styles.column} style={{ flex: 1 }}>
 								<p className={styles.componentDescription}>Pulse</p>
-								<Skeleton height={40} width="100%" animation="pulse" radius="md" />
+								<Skeleton
+									height={40}
+									width="100%"
+									animation="pulse"
+									radius="md"
+								/>
 							</div>
 							<div className={styles.column} style={{ flex: 1 }}>
 								<p className={styles.componentDescription}>None</p>
-								<Skeleton height={40} width="100%" animation="none" radius="md" />
+								<Skeleton
+									height={40}
+									width="100%"
+									animation="none"
+									radius="md"
+								/>
 							</div>
 						</div>
 					</div>
@@ -990,11 +1056,15 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>Bordered Variant</h4>
 						<EmptyState
-							icon="📭"
+							icon={<Package size={32} />}
 							title="No tokens yet"
 							description="Import a design tokens file or generate from a color palette."
 							variant="bordered"
-							action={<Button variant="primary" size="sm">Import tokens</Button>}
+							action={
+								<Button variant="primary" size="sm">
+									Import tokens
+								</Button>
+							}
 						/>
 					</div>
 
@@ -1023,16 +1093,32 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>Trigger Toasts</h4>
 						<div className={styles.row}>
-							<Button variant="primary" size="sm" onClick={() => showSuccess("Changes saved successfully")}>
+							<Button
+								variant="primary"
+								size="sm"
+								onClick={() => showSuccess("Changes saved successfully")}
+							>
 								Success
 							</Button>
-							<Button variant="destructive" size="sm" onClick={() => showError("Failed to delete variable")}>
+							<Button
+								variant="destructive"
+								size="sm"
+								onClick={() => showError("Failed to delete variable")}
+							>
 								Error
 							</Button>
-							<Button variant="outline" size="sm" onClick={() => showWarning("3 variables will be overwritten")}>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => showWarning("3 variables will be overwritten")}
+							>
 								Warning
 							</Button>
-							<Button variant="secondary" size="sm" onClick={() => showInfo("Tip: Use Cmd+Z to undo")}>
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() => showInfo("Tip: Use Cmd+Z to undo")}
+							>
 								Info
 							</Button>
 						</div>
@@ -1084,7 +1170,11 @@ export function StyleguidePage() {
 						<p className={styles.componentDescription}>
 							Preset for destructive confirmations with danger styling
 						</p>
-						<Button variant="destructive" size="sm" onClick={() => setConfirmOpen(true)}>
+						<Button
+							variant="destructive"
+							size="sm"
+							onClick={() => setConfirmOpen(true)}
+						>
 							Delete collection
 						</Button>
 
@@ -1243,11 +1333,18 @@ export function StyleguidePage() {
 				<Card>
 					<div className={styles.componentGroup}>
 						<h4>Color Swatches</h4>
-						{colorTokenGroups.map(group => (
+						{colorTokenGroups.map((group) => (
 							<div key={group.label} style={{ marginBottom: 16 }}>
 								<p className={styles.componentDescription}>{group.label}</p>
-								<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
-									{group.tokens.map(token => {
+								<div
+									style={{
+										display: "grid",
+										gridTemplateColumns:
+											"repeat(auto-fill, minmax(140px, 1fr))",
+										gap: 8,
+									}}
+								>
+									{group.tokens.map((token) => {
 										const value = resolvedColors[token];
 										if (!value) return null;
 										return (
@@ -1272,10 +1369,21 @@ export function StyleguidePage() {
 														border: "1px solid var(--border)",
 													}}
 												/>
-												<span style={{ fontSize: "var(--text-xs)", fontWeight: "var(--font-medium)", textAlign: "center" }}>
+												<span
+													style={{
+														fontSize: "var(--text-xs)",
+														fontWeight: "var(--font-medium)",
+														textAlign: "center",
+													}}
+												>
 													{token}
 												</span>
-												<span style={{ fontSize: "var(--text-xs)", color: "var(--muted-foreground)" }}>
+												<span
+													style={{
+														fontSize: "var(--text-xs)",
+														color: "var(--muted-foreground)",
+													}}
+												>
 													{value}
 												</span>
 											</div>
@@ -1289,9 +1397,19 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>Spacing Scale</h4>
 						<div className={styles.column}>
-							{spacingScale.map(size => (
-								<div key={size} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-									<span style={{ fontSize: "var(--text-xs)", width: 36, textAlign: "right", color: "var(--muted-foreground)" }}>
+							{spacingScale.map((size) => (
+								<div
+									key={size}
+									style={{ display: "flex", alignItems: "center", gap: 12 }}
+								>
+									<span
+										style={{
+											fontSize: "var(--text-xs)",
+											width: 36,
+											textAlign: "right",
+											color: "var(--muted-foreground)",
+										}}
+									>
 										{size}px
 									</span>
 									<div
@@ -1311,9 +1429,19 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>Typography Scale</h4>
 						<div className={styles.column}>
-							{typeScale.map(size => (
-								<div key={size} style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-									<span style={{ fontSize: "var(--text-xs)", width: 36, textAlign: "right", color: "var(--muted-foreground)" }}>
+							{typeScale.map((size) => (
+								<div
+									key={size}
+									style={{ display: "flex", alignItems: "baseline", gap: 12 }}
+								>
+									<span
+										style={{
+											fontSize: "var(--text-xs)",
+											width: 36,
+											textAlign: "right",
+											color: "var(--muted-foreground)",
+										}}
+									>
 										{size}px
 									</span>
 									<span style={{ fontSize: size, lineHeight: 1.3 }}>
@@ -1339,38 +1467,64 @@ export function StyleguidePage() {
 						<h4>Color Inputs</h4>
 						<div className={styles.row}>
 							<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-								<label style={{ fontSize: "var(--text-xs)", fontWeight: "var(--font-medium)" }}>
+								<label
+									style={{
+										fontSize: "var(--text-xs)",
+										fontWeight: "var(--font-medium)",
+									}}
+								>
 									Foreground
 								</label>
 								<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 									<input
 										type="color"
 										value={contrastFg}
-										onChange={e => setContrastFg(e.target.value)}
-										style={{ width: 36, height: 36, border: "none", cursor: "pointer", borderRadius: 4 }}
+										onChange={(e) => setContrastFg(e.target.value)}
+										style={{
+											width: 36,
+											height: 36,
+											border: "none",
+											cursor: "pointer",
+											borderRadius: 4,
+										}}
 									/>
 									<Input
 										value={contrastFg}
-										onChange={e => setContrastFg((e.target as HTMLInputElement).value)}
+										onChange={(e) =>
+											setContrastFg((e.target as HTMLInputElement).value)
+										}
 										style={{ width: 100 }}
 										type="text"
 									/>
 								</div>
 							</div>
 							<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-								<label style={{ fontSize: "var(--text-xs)", fontWeight: "var(--font-medium)" }}>
+								<label
+									style={{
+										fontSize: "var(--text-xs)",
+										fontWeight: "var(--font-medium)",
+									}}
+								>
 									Background
 								</label>
 								<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 									<input
 										type="color"
 										value={contrastBg}
-										onChange={e => setContrastBg(e.target.value)}
-										style={{ width: 36, height: 36, border: "none", cursor: "pointer", borderRadius: 4 }}
+										onChange={(e) => setContrastBg(e.target.value)}
+										style={{
+											width: 36,
+											height: 36,
+											border: "none",
+											cursor: "pointer",
+											borderRadius: 4,
+										}}
 									/>
 									<Input
 										value={contrastBg}
-										onChange={e => setContrastBg((e.target as HTMLInputElement).value)}
+										onChange={(e) =>
+											setContrastBg((e.target as HTMLInputElement).value)
+										}
 										style={{ width: 100 }}
 										type="text"
 									/>
@@ -1413,10 +1567,7 @@ export function StyleguidePage() {
 							{wcagResults.map(({ label, threshold }) => {
 								const pass = contrastRatio >= threshold;
 								return (
-									<Badge
-										key={label}
-										variant={pass ? "success" : "destructive"}
-									>
+									<Badge key={label} variant={pass ? "success" : "destructive"}>
 										{label} ({threshold}:1) {pass ? "Pass" : "Fail"}
 									</Badge>
 								);

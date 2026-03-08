@@ -1586,7 +1586,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 														<span className="manage-rename-old">
 															{v.name}: {original}
 														</span>
-														<span className="manage-rename-arrow">&rarr;</span>
+														<span className="manage-rename-arrow"><ArrowRight size={12} /></span>
 														<span className="manage-rename-new">
 															{Number.isInteger(result) ? result : result.toFixed(2)}
 														</span>

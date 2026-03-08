@@ -88,11 +88,7 @@ const StyleRow = React.memo(function StyleRow({
 			}}
 		>
 			<div className="manage-col-check">
-				<input
-					type="checkbox"
-					checked={isSelected}
-					onChange={() => {}}
-				/>
+				<input type="checkbox" checked={isSelected} onChange={() => {}} />
 			</div>
 			<div className="manage-col-name">
 				<span className="manage-var-name" title={style.name}>
@@ -832,7 +828,9 @@ export function StylesPage() {
 								{renamePreview.slice(0, 10).map((r) => (
 									<div key={r.id} className="manage-rename-preview-item">
 										<span className="manage-rename-old">{r.oldName}</span>
-										<span className="manage-rename-arrow"><ArrowRight size={12} /></span>
+										<span className="manage-rename-arrow">
+											<ArrowRight size={12} />
+										</span>
 										<span className="manage-rename-new">{r.newName}</span>
 									</div>
 								))}
@@ -846,7 +844,11 @@ export function StylesPage() {
 								<Button variant="ghost" onClick={() => setShowRename(false)}>
 									Cancel
 								</Button>
-								<Button variant="primary" onClick={handleRename} disabled={operationPending}>
+								<Button
+									variant="primary"
+									onClick={handleRename}
+									disabled={operationPending}
+								>
 									<Check size={14} />
 									Apply Rename
 								</Button>
@@ -913,7 +915,9 @@ export function StylesPage() {
 														: ""}
 											</span>
 										</span>
-										<span className="manage-rename-arrow"><ArrowRight size={12} /></span>
+										<span className="manage-rename-arrow">
+											<ArrowRight size={12} />
+										</span>
 										<span className="styles-var-ref">
 											<Link size={10} /> {s.suggestedVariableName}
 										</span>
@@ -938,7 +942,10 @@ export function StylesPage() {
 								<Button
 									variant="primary"
 									onClick={handleApplyRebind}
-									disabled={rebindExcluded.size === rebindSuggestions.length || operationPending}
+									disabled={
+										rebindExcluded.size === rebindSuggestions.length ||
+										operationPending
+									}
 								>
 									<Check size={14} />
 									Apply {rebindSuggestions.length - rebindExcluded.size}{" "}
@@ -983,22 +990,56 @@ export function StylesPage() {
 							className="manage-col-name manage-sortable"
 							role="columnheader"
 							tabIndex={0}
-							aria-sort={sortField === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+							aria-sort={
+								sortField === "name"
+									? sortDir === "asc"
+										? "ascending"
+										: "descending"
+									: "none"
+							}
 							onClick={() => handleSort("name")}
-							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("name"); } }}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									handleSort("name");
+								}
+							}}
 						>
-							Name {sortField === "name" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+							Name{" "}
+							{sortField === "name" &&
+								(sortDir === "asc" ? (
+									<ChevronUp size={12} />
+								) : (
+									<ChevronDown size={12} />
+								))}
 						</div>
 						<div className="manage-col-value">Preview</div>
 						<div
 							className="manage-col-type manage-sortable"
 							role="columnheader"
 							tabIndex={0}
-							aria-sort={sortField === "category" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+							aria-sort={
+								sortField === "category"
+									? sortDir === "asc"
+										? "ascending"
+										: "descending"
+									: "none"
+							}
 							onClick={() => handleSort("category")}
-							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("category"); } }}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									handleSort("category");
+								}
+							}}
 						>
-							Type {sortField === "category" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+							Type{" "}
+							{sortField === "category" &&
+								(sortDir === "asc" ? (
+									<ChevronUp size={12} />
+								) : (
+									<ChevronDown size={12} />
+								))}
 						</div>
 					</div>
 

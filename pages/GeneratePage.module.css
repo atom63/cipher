@@ -1,7 +1,6 @@
 /* Generate Page Styles */
 
 .page {
-	padding: var(--spacing-2xl);
 	max-height: 100%;
 	overflow-y: auto;
 }

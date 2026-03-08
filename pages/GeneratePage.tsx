@@ -183,6 +183,7 @@ export function GeneratePage() {
 				{view === "config" && (
 					<>
 						<SectionHeader
+							variant="primary"
 							title="Generate Design System"
 							description="Create a complete token system from your brand colors"
 						/>
@@ -421,6 +422,7 @@ export function GeneratePage() {
 				{view === "preview" && generated && (
 					<>
 						<SectionHeader
+							variant="primary"
 							title="Preview"
 							description={`${generated.stats.totalCount} tokens in "${collectionName}"`}
 						/>
