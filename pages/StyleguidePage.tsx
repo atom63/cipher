@@ -1,4 +1,5 @@
 import {
+	Bell,
 	Cog,
 	FolderPlus,
 	Home,
@@ -24,6 +25,8 @@ import {
 	CheckboxCard,
 	CheckboxWithDescription,
 	CheckboxWithLabel,
+	ConfirmDialog,
+	CountBadge,
 	Dialog,
 	DialogActions,
 	Dropdown,
@@ -36,15 +39,19 @@ import {
 	RadioWithHelper,
 	RadioWithLabel,
 	SectionHeader,
+	Skeleton,
 	Spinner,
+	StatusBadge,
 	TabPanel,
 	Tabs,
 	Textarea,
+	useToast,
 } from "../components/ui";
 import styles from "./StyleguidePage.module.css";
 
 export function StyleguidePage() {
 	const [dialogOpen, setDialogOpen] = useState(false);
+	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [radioValue, setRadioValue] = useState("option1");
 	const [radioGroupValue, setRadioGroupValue] = useState("medium");
 	const [radioHelperValue, setRadioHelperValue] = useState("standard");
@@ -56,6 +63,7 @@ export function StyleguidePage() {
 	const [checkboxCard2, setCheckboxCard2] = useState(false);
 	const [checkboxCard3, setCheckboxCard3] = useState(true);
 	const [activeTab, setActiveTab] = useState("home");
+	const { showSuccess, showError, showWarning, showInfo } = useToast();
 
 	return (
 		<div className={styles.styleguide}>
@@ -150,6 +158,7 @@ export function StyleguidePage() {
 							<Button variant="default">Default</Button>
 							<Button variant="primary">Primary</Button>
 							<Button variant="secondary">Secondary</Button>
+							<Button variant="soft">Soft</Button>
 							<Button variant="ghost">Ghost</Button>
 							<Button variant="destructive">Destructive</Button>
 							<Button variant="outline">Outline</Button>
@@ -172,6 +181,7 @@ export function StyleguidePage() {
 						<div className={styles.row}>
 							<Button>Default</Button>
 							<Button disabled>Disabled</Button>
+							<Button loading>Loading</Button>
 						</div>
 					</div>
 				</Card>
@@ -675,6 +685,40 @@ export function StyleguidePage() {
 							<Badge size="lg">Large</Badge>
 						</div>
 					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Features</h4>
+						<div className={styles.row}>
+							<Badge pill>Pill shape</Badge>
+							<Badge dot variant="success">With dot</Badge>
+							<Badge dot dotAnimated variant="warning">Animated dot</Badge>
+							<Badge icon={<Bell size={12} />} variant="info">With icon</Badge>
+							<Badge removable onRemove={() => {}}>Removable</Badge>
+						</div>
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Status Badges</h4>
+						<div className={styles.row}>
+							<StatusBadge status="online" />
+							<StatusBadge status="away" />
+							<StatusBadge status="busy" />
+							<StatusBadge status="offline" />
+							<StatusBadge status="pending" />
+							<StatusBadge status="active" />
+							<StatusBadge status="inactive" />
+						</div>
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Count Badges</h4>
+						<div className={styles.row}>
+							<CountBadge count={3} />
+							<CountBadge count={42} />
+							<CountBadge count={150} />
+							<CountBadge count={0} />
+						</div>
+					</div>
 				</Card>
 			</section>
 
@@ -729,10 +773,35 @@ export function StyleguidePage() {
 						</CardContent>
 					</Card>
 
+					<Card variant="muted">
+						<CardContent>
+							<p>
+								<strong>Muted Variant</strong> - Filled background, no border
+							</p>
+						</CardContent>
+					</Card>
+
 					<Card variant="outline">
 						<CardContent>
 							<p>
 								<strong>Outline Variant</strong> - Transparent with border
+							</p>
+						</CardContent>
+					</Card>
+
+					<Card hover>
+						<CardContent>
+							<p>
+								<strong>Hover Effect</strong> - Lifts on hover with shadow
+							</p>
+						</CardContent>
+					</Card>
+
+					<Card onClick={() => {}} selected>
+						<CardContent>
+							<p>
+								<strong>Interactive + Selected</strong> - Clickable with selected
+								state
 							</p>
 						</CardContent>
 					</Card>
@@ -744,22 +813,60 @@ export function StyleguidePage() {
 				<SectionHeader
 					variant="secondary"
 					title="Loading States"
-					description="Spinners and loading indicators"
+					description="Spinners, skeletons, and loading indicators"
 				/>
 
 				<Card>
 					<div className={styles.componentGroup}>
-						<h4>Spinner</h4>
+						<h4>Spinner Sizes</h4>
 						<div className={styles.row}>
 							<Spinner size="sm" />
 							<Spinner size="md" />
 							<Spinner size="lg" />
+							<Spinner size="xl" />
 						</div>
 					</div>
 
 					<div className={styles.componentGroup}>
 						<h4>Loading State</h4>
-						<LoadingState message="Loading components…" />
+						<LoadingState message="Loading components…" hint="This may take a moment" />
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Skeleton</h4>
+						<p className={styles.componentDescription}>
+							Placeholder shapes for content that hasn't loaded yet
+						</p>
+						<div className={styles.column}>
+							<div className={styles.row}>
+								<Skeleton width={40} height={40} radius="full" />
+								<div className={styles.column} style={{ flex: 1, gap: "var(--spacing-sm)" }}>
+									<Skeleton height={14} width="60%" radius="sm" />
+									<Skeleton height={10} width="40%" radius="sm" />
+								</div>
+							</div>
+							<Skeleton height={12} width="100%" radius="sm" />
+							<Skeleton height={12} width="100%" radius="sm" />
+							<Skeleton height={12} width="70%" radius="sm" />
+						</div>
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Skeleton Animations</h4>
+						<div className={styles.row}>
+							<div className={styles.column} style={{ flex: 1 }}>
+								<p className={styles.componentDescription}>Shimmer (default)</p>
+								<Skeleton height={40} width="100%" animation="shimmer" radius="md" />
+							</div>
+							<div className={styles.column} style={{ flex: 1 }}>
+								<p className={styles.componentDescription}>Pulse</p>
+								<Skeleton height={40} width="100%" animation="pulse" radius="md" />
+							</div>
+							<div className={styles.column} style={{ flex: 1 }}>
+								<p className={styles.componentDescription}>None</p>
+								<Skeleton height={40} width="100%" animation="none" radius="md" />
+							</div>
+						</div>
 					</div>
 				</Card>
 			</section>
@@ -773,11 +880,65 @@ export function StyleguidePage() {
 				/>
 
 				<Card>
-					<EmptyState
-						title="No items found"
-						description="Get started by creating your first item"
-						action={<Button variant="primary">Create Item</Button>}
-					/>
+					<div className={styles.componentGroup}>
+						<h4>Default</h4>
+						<EmptyState
+							title="No items found"
+							description="Get started by creating your first item"
+							action={<Button variant="primary">Create Item</Button>}
+						/>
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Bordered Variant</h4>
+						<EmptyState
+							icon="📭"
+							title="No tokens yet"
+							description="Import a design tokens file or generate from a color palette."
+							variant="bordered"
+							action={<Button variant="primary" size="sm">Import tokens</Button>}
+						/>
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Compact Variant</h4>
+						<EmptyState
+							icon="🔍"
+							title="No results"
+							description="Try adjusting your search or filters."
+							variant="compact"
+							size="sm"
+						/>
+					</div>
+				</Card>
+			</section>
+
+			{/* Toasts */}
+			<section className={styles.section}>
+				<SectionHeader
+					variant="secondary"
+					title="Toasts"
+					description="Notification messages triggered by actions"
+				/>
+
+				<Card>
+					<div className={styles.componentGroup}>
+						<h4>Trigger Toasts</h4>
+						<div className={styles.row}>
+							<Button variant="primary" size="sm" onClick={() => showSuccess("Changes saved successfully")}>
+								Success
+							</Button>
+							<Button variant="destructive" size="sm" onClick={() => showError("Failed to delete variable")}>
+								Error
+							</Button>
+							<Button variant="outline" size="sm" onClick={() => showWarning("3 variables will be overwritten")}>
+								Warning
+							</Button>
+							<Button variant="secondary" size="sm" onClick={() => showInfo("Tip: Use Cmd+Z to undo")}>
+								Info
+							</Button>
+						</div>
+					</div>
 				</Card>
 			</section>
 
@@ -786,11 +947,12 @@ export function StyleguidePage() {
 				<SectionHeader
 					variant="secondary"
 					title="Dialogs"
-					description="Modal dialogs and overlays"
+					description="Modal dialogs and confirmation prompts"
 				/>
 
 				<Card>
 					<div className={styles.componentGroup}>
+						<h4>Custom Dialog</h4>
 						<Button onClick={() => setDialogOpen(true)}>Open Dialog</Button>
 
 						<Dialog
@@ -817,6 +979,27 @@ export function StyleguidePage() {
 							</p>
 							<p>Dialogs can contain any content and are fully accessible.</p>
 						</Dialog>
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Confirm Dialog</h4>
+						<p className={styles.componentDescription}>
+							Preset for destructive confirmations with danger styling
+						</p>
+						<Button variant="destructive" size="sm" onClick={() => setConfirmOpen(true)}>
+							Delete collection
+						</Button>
+
+						<ConfirmDialog
+							isOpen={confirmOpen}
+							onClose={() => setConfirmOpen(false)}
+							onConfirm={() => setConfirmOpen(false)}
+							title="Delete collection?"
+							message="This will permanently delete the collection and all its variables. This can't be undone."
+							confirmText="Delete collection"
+							cancelText="Cancel"
+							variant="danger"
+						/>
 					</div>
 				</Card>
 			</section>

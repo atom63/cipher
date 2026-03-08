@@ -46,6 +46,7 @@ function groupStylesByRoot(
 const DEFAULT_SETTINGS: PluginSettings = {
 	colorFormat: "oklch",
 	lastExportTab: "variables",
+	theme: "system",
 };
 
 async function loadSettings(): Promise<PluginSettings> {

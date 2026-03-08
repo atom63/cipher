@@ -3,7 +3,7 @@
  * Author: You Zhang (ATOM63)
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { type PageId, Sidebar } from "./components/layout";
 import {
@@ -12,7 +12,7 @@ import {
 	ToastProvider,
 } from "./components/ui";
 import { TooltipPortal } from "./components/ui/Tooltip";
-import { usePostMessage } from "./hooks/useFigmaMessage";
+import { useFigmaMessage, usePostMessage } from "./hooks/useFigmaMessage";
 import { ExportPage } from "./pages/ExportPage";
 import { GeneratePage } from "./pages/GeneratePage";
 import { ImportPage } from "./pages/ImportPage";
@@ -20,12 +20,25 @@ import { ManagePage } from "./pages/ManagePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { StyleguidePage } from "./pages/StyleguidePage";
 import { StylesPage } from "./pages/StylesPage";
+import type { PluginSettings } from "./types/messages";
+import { applyTheme } from "./utils/theme";
 
 function App() {
 	const [activePage, setActivePage] = useState<PageId>("manage");
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [viewMode, setViewMode] = useState<"default" | "compact">("default");
 	const postMessage = usePostMessage();
+
+	// Load theme on startup
+	useEffect(() => {
+		postMessage({ type: "load-settings" });
+	}, [postMessage]);
+
+	useFigmaMessage((msg) => {
+		if (msg.type === "settings-loaded" && msg.data?.theme) {
+			applyTheme(msg.data.theme as PluginSettings["theme"]);
+		}
+	});
 
 	const toggleViewMode = () => {
 		const newMode = viewMode === "default" ? "compact" : "default";

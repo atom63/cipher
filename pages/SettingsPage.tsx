@@ -2,27 +2,22 @@ import { RotateCcw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	Button,
-	Input,
 	RadioGroup,
 	SectionHeader,
 	useToast,
 } from "../components/ui";
+import type { PluginSettings } from "../types/messages";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
+import { applyTheme } from "../utils/theme";
 
-interface Settings {
-	collectionName: string;
-	namingConvention: "kebab" | "camel" | "pascal";
-	colorFormat: "oklch" | "hex" | "rgba" | "hsl";
-}
-
-const DEFAULT_SETTINGS: Settings = {
-	collectionName: "Design Tokens",
-	namingConvention: "kebab",
+const DEFAULT_SETTINGS: PluginSettings = {
 	colorFormat: "oklch",
+	lastExportTab: "variables",
+	theme: "system",
 };
 
 export function SettingsPage() {
-	const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+	const [settings, setSettings] = useState<PluginSettings>(DEFAULT_SETTINGS);
 	const postMessage = usePostMessage();
 	const { showSuccess } = useToast();
 
@@ -33,18 +28,22 @@ export function SettingsPage() {
 
 	useFigmaMessage((msg) => {
 		if (msg.type === "settings-loaded") {
-			setSettings((prev) => ({ ...prev, ...msg.data }));
+			const loaded = { ...DEFAULT_SETTINGS, ...msg.data };
+			setSettings(loaded);
+			applyTheme(loaded.theme);
 		}
 	});
 
 	const handleSave = () => {
 		postMessage({ type: "save-settings", data: settings });
+		applyTheme(settings.theme);
 		showSuccess("Settings saved");
 	};
 
 	const handleReset = () => {
 		setSettings(DEFAULT_SETTINGS);
 		postMessage({ type: "save-settings", data: DEFAULT_SETTINGS });
+		applyTheme(DEFAULT_SETTINGS.theme);
 		showSuccess("Settings reset to defaults");
 	};
 
@@ -52,56 +51,40 @@ export function SettingsPage() {
 		<div className="settings-page">
 			<SectionHeader
 				variant="primary"
-				title="Plugin Settings"
-				description="Configure how the plugin imports and manages design tokens"
+				title="Settings"
+				description="Configure plugin preferences"
 			/>
 
 			<div className="settings-content">
-				{/* Collection Settings */}
+				{/* Theme */}
 				<section className="settings-section">
-					<h3>Collection Settings</h3>
-
-					<Input
-						label="Default Collection Name"
-						description="Name for the Figma variable collection"
-						value={settings.collectionName}
-						onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-							setSettings({ ...settings, collectionName: e.target.value })
-						}
-						placeholder="Design Tokens"
-					/>
-				</section>
-
-				{/* Naming Convention */}
-				<section className="settings-section">
-					<h3>Naming Convention</h3>
+					<h3>Appearance</h3>
 
 					<RadioGroup
-						label="Variable Naming Style"
-						description="How variable names should be formatted"
-						name="namingConvention"
-						value={settings.namingConvention}
-						onChange={(value: string) =>
-							setSettings({
-								...settings,
-								namingConvention: value as Settings["namingConvention"],
-							})
-						}
+						label="Theme"
+						description="Controls light and dark mode for the plugin UI"
+						name="theme"
+						value={settings.theme}
+						onChange={(value: string) => {
+							const theme = value as PluginSettings["theme"];
+							setSettings({ ...settings, theme });
+							applyTheme(theme);
+						}}
 						options={[
 							{
-								value: "kebab",
-								label: "kebab-case",
-								description: "color-primary-500",
+								value: "system",
+								label: "System",
+								description: "Follow Figma's theme preference",
 							},
 							{
-								value: "camel",
-								label: "camelCase",
-								description: "colorPrimary500",
+								value: "light",
+								label: "Light",
+								description: "Always use light mode",
 							},
 							{
-								value: "pascal",
-								label: "PascalCase",
-								description: "ColorPrimary500",
+								value: "dark",
+								label: "Dark",
+								description: "Always use dark mode",
 							},
 						]}
 					/>
@@ -109,29 +92,29 @@ export function SettingsPage() {
 
 				{/* Color Format */}
 				<section className="settings-section">
-					<h3>Export Settings</h3>
+					<h3>Export</h3>
 
 					<RadioGroup
 						label="Default Color Format"
-						description="Default format for exporting colors"
+						description="Format used when exporting color values"
 						name="colorFormat"
 						value={settings.colorFormat}
 						onChange={(value: string) =>
 							setSettings({
 								...settings,
-								colorFormat: value as Settings["colorFormat"],
+								colorFormat: value as PluginSettings["colorFormat"],
 							})
 						}
 						options={[
 							{
 								value: "oklch",
 								label: "OKLCH",
-								description: "Modern perceptual color space (recommended)",
+								description: "Perceptual color space (recommended)",
 							},
 							{
 								value: "hex",
 								label: "HEX",
-								description: "Traditional hexadecimal (#RRGGBB)",
+								description: "#RRGGBB format",
 							},
 							{
 								value: "rgba",

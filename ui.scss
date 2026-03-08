@@ -196,13 +196,67 @@
 }
 
 /* ============================================
-   Dark Mode
+   Theme Overrides
    ============================================
    Figma adds .figma-dark to <html> when the user
    has dark mode enabled (requires themeColors: true).
-   We also support .dark class and prefers-color-scheme
-   as fallbacks.
+   We support manual .light/.dark classes for user
+   theme preference, plus prefers-color-scheme fallback.
    ============================================ */
+
+@mixin light-tokens {
+  /* Base colors */
+  --background: var(--color-zinc-50);
+  --foreground: var(--color-zinc-950);
+
+  /* Card colors */
+  --card: var(--color-zinc-50);
+  --card-foreground: var(--color-zinc-950);
+
+  /* Popover colors */
+  --popover: var(--color-zinc-50);
+  --popover-foreground: var(--color-zinc-950);
+
+  /* Primary brand colors */
+  --primary: var(--color-emerald-600);
+  --primary-foreground: var(--color-zinc-50);
+
+  /* Secondary colors */
+  --secondary: var(--color-zinc-200);
+  --secondary-foreground: var(--color-zinc-700);
+
+  /* Muted/subtle colors */
+  --muted: var(--color-zinc-100);
+  --muted-foreground: var(--color-zinc-500);
+
+  /* Accent colors */
+  --accent: color-mix(in srgb, var(--color-emerald-500), transparent 90%);
+  --accent-foreground: var(--color-zinc-900);
+
+  /* Status colors */
+  --destructive: var(--color-rose-500);
+  --destructive-foreground: var(--color-zinc-50);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-zinc-50);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-zinc-950);
+  --info: var(--color-blue-500);
+  --info-foreground: var(--color-zinc-50);
+
+  /* Border and input colors */
+  --border: var(--color-zinc-200);
+  --input: var(--color-zinc-400);
+  --ring: var(--color-emerald-500);
+
+  /* Extended semantic tokens */
+  --muted-foreground-light: var(--color-zinc-400);
+  --border-light: var(--color-zinc-100);
+  --success-light: var(--color-emerald-50);
+  --error: var(--destructive);
+  --error-light: var(--color-rose-500);
+
+  color-scheme: light;
+}
 
 @mixin dark-tokens {
   /* Base colors */
@@ -263,17 +317,13 @@
   @include dark-tokens;
 }
 
-/* Manual toggle class */
-.dark {
-  @include dark-tokens;
-}
-
 /* OS-level dark mode fallback */
 @media (prefers-color-scheme: dark) {
-  :root:not(.figma-light):not(.light) {
+  :root {
     @include dark-tokens;
   }
 }
+
 
 * {
   box-sizing: border-box;
