@@ -423,7 +423,7 @@
 
 .typescalePreviewRow {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	gap: var(--spacing-lg);
 	min-width: 0;
 	min-height: 0;
