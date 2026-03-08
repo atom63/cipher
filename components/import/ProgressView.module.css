@@ -239,12 +239,12 @@
 
 .changesSummary {
   padding: var(--spacing-md);
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 25%, transparent);
   border-radius: var(--radius-sm);
   margin-bottom: var(--spacing-lg);
   font-size: var(--text-sm);
-  color: #1e40af;
+  color: var(--info);
 }
 
 .changesSection {
@@ -310,10 +310,10 @@
 
 .oldValue {
   padding: 2px 6px;
-  background: #fee2e2;
-  border: 1px solid #fecaca;
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--destructive) 25%, transparent);
   border-radius: var(--radius-xs);
-  color: #991b1b;
+  color: var(--destructive);
 }
 
 .changeArrow {
@@ -323,10 +323,10 @@
 
 .newValue {
   padding: 2px 6px;
-  background: #dcfce7;
-  border: 1px solid #bbf7d0;
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
   border-radius: var(--radius-xs);
-  color: #166534;
+  color: var(--success);
 }
 
 .changeMore {

@@ -68,17 +68,17 @@
 .affectedCount {
   margin-top: var(--spacing-lg);
   padding: var(--spacing-md);
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 25%, transparent);
   border-radius: var(--radius);
   font-size: var(--text-base);
-  color: #1e40af;
+  color: var(--info);
   text-align: center;
 }
 
 .affectedCount strong {
   font-weight: var(--font-semibold);
-  color: #1e3a8a;
+  color: var(--info);
 }
 
 /* Reference Section */

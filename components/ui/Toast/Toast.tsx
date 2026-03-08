@@ -155,10 +155,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 // ============================================================================
 
 const icons = {
-	info: <Info size={16} />,
-	success: <CheckCircle size={16} />,
-	warning: <AlertTriangle size={16} />,
-	error: <AlertCircle size={16} />,
+	info: <Info size={16} aria-hidden="true" />,
+	success: <CheckCircle size={16} aria-hidden="true" />,
+	warning: <AlertTriangle size={16} aria-hidden="true" />,
+	error: <AlertCircle size={16} aria-hidden="true" />,
 };
 
 interface ToastItemProps {
@@ -168,7 +168,11 @@ interface ToastItemProps {
 
 function ToastItem({ toast, onDismiss }: ToastItemProps) {
 	return (
-		<div className={`${styles.toast} ${styles[toast.variant]}`} role="alert">
+		<div
+			className={`${styles.toast} ${styles[toast.variant]}`}
+			role="alert"
+			aria-live={toast.variant === "error" ? "assertive" : "polite"}
+		>
 			<span className={styles.icon}>{icons[toast.variant]}</span>
 			<span className={styles.message}>{toast.message}</span>
 			{toast.action && (

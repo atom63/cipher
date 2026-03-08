@@ -12,10 +12,10 @@ export interface AlertProps {
 }
 
 const defaultIcons = {
-	info: <Info size={16} />,
-	success: <CheckCircle size={16} />,
-	warning: <AlertTriangle size={16} />,
-	error: <AlertCircle size={16} />,
+	info: <Info size={16} aria-hidden="true" />,
+	success: <CheckCircle size={16} aria-hidden="true" />,
+	warning: <AlertTriangle size={16} aria-hidden="true" />,
+	error: <AlertCircle size={16} aria-hidden="true" />,
 };
 
 export function Alert({
@@ -33,6 +33,7 @@ export function Alert({
 		<div
 			className={`${styles.alert} ${variantClass} ${className}`}
 			role="alert"
+			aria-live={variant === "error" || variant === "warning" ? "assertive" : "polite"}
 		>
 			{showIcon && <div className={styles.alertIcon}>{displayIcon}</div>}
 			<div className={styles.alertContent}>

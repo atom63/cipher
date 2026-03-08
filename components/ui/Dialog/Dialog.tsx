@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
-import { type ReactNode, useCallback, useEffect } from "react";
+import { type ReactNode, useCallback, useEffect, useRef } from "react";
+import { Button } from "../Button";
 import styles from "./Dialog.module.css";
 
 export interface DialogProps {
@@ -39,6 +40,9 @@ export function Dialog({
 	showCloseButton = true,
 	className = "",
 }: DialogProps) {
+	const dialogRef = useRef<HTMLDivElement>(null);
+	const previousFocusRef = useRef<HTMLElement | null>(null);
+
 	// Handle escape key
 	const handleEscape = useCallback(
 		(e: KeyboardEvent) => {
@@ -49,19 +53,51 @@ export function Dialog({
 		[closeOnEscape, onClose],
 	);
 
-	// Add/remove escape listener
+	// Focus trap
+	const handleFocusTrap = useCallback((e: KeyboardEvent) => {
+		if (e.key !== "Tab" || !dialogRef.current) return;
+
+		const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+			'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+		);
+		if (focusable.length === 0) return;
+
+		const first = focusable[0];
+		const last = focusable[focusable.length - 1];
+
+		if (e.shiftKey && document.activeElement === first) {
+			e.preventDefault();
+			last.focus();
+		} else if (!e.shiftKey && document.activeElement === last) {
+			e.preventDefault();
+			first.focus();
+		}
+	}, []);
+
+	// Add/remove listeners + focus management
 	useEffect(() => {
 		if (isOpen) {
+			previousFocusRef.current = document.activeElement as HTMLElement;
 			document.addEventListener("keydown", handleEscape);
-			// Prevent body scroll when dialog is open
+			document.addEventListener("keydown", handleFocusTrap);
 			document.body.style.overflow = "hidden";
+			// Focus the dialog after mount
+			requestAnimationFrame(() => {
+				const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
+					'button:not([disabled]), [href], input:not([disabled])',
+				);
+				firstFocusable?.focus();
+			});
 		}
 
 		return () => {
 			document.removeEventListener("keydown", handleEscape);
+			document.removeEventListener("keydown", handleFocusTrap);
 			document.body.style.overflow = "";
+			// Restore focus to the element that opened the dialog
+			previousFocusRef.current?.focus();
 		};
-	}, [isOpen, handleEscape]);
+	}, [isOpen, handleEscape, handleFocusTrap]);
 
 	if (!isOpen) return null;
 
@@ -80,6 +116,7 @@ export function Dialog({
 			aria-labelledby="dialog-title"
 		>
 			<div
+				ref={dialogRef}
 				className={`${styles.dialog} ${styles[`maxWidth-${maxWidth}`]} ${className}`}
 				onClick={(e) => e.stopPropagation()}
 				data-variant={variant !== "default" ? variant : undefined}
@@ -164,36 +201,20 @@ export function ConfirmDialog({
 			maxWidth="sm"
 			footer={
 				<DialogActions>
-					<button
-						type="button"
+					<Button
+						variant="outline"
 						onClick={onClose}
 						disabled={loading}
-						style={{
-							padding: "8px 16px",
-							borderRadius: "var(--radius)",
-							border: "1px solid var(--border)",
-							background: "transparent",
-							cursor: "pointer",
-						}}
 					>
 						{cancelText}
-					</button>
-					<button
-						type="button"
+					</Button>
+					<Button
+						variant={variant === "danger" ? "destructive" : "primary"}
 						onClick={onConfirm}
-						disabled={loading}
-						style={{
-							padding: "8px 16px",
-							borderRadius: "var(--radius)",
-							border: "none",
-							background:
-								variant === "danger" ? "var(--destructive)" : "var(--primary)",
-							color: "white",
-							cursor: "pointer",
-						}}
+						loading={loading}
 					>
-						{loading ? "Loading..." : confirmText}
-					</button>
+						{confirmText}
+					</Button>
 				</DialogActions>
 			}
 		>

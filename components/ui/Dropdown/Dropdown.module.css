@@ -11,21 +11,20 @@
 
 .triggerOpen {
   /* Visual indicator when dropdown is open */
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
 /* Dropdown Menu */
 .menu {
   position: absolute;
-  top: calc(100% + 0.5rem);
-  z-index: 50;
+  top: calc(100% + var(--spacing-xs));
+  z-index: var(--z-dropdown, 50);
   min-width: 11rem;
   background-color: var(--background);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 
-              0 4px 6px -2px rgba(0, 0, 0, 0.03);
-  animation: dropdownSlideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-shadow-3);
+  animation: dropdownSlideDown 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
@@ -47,28 +46,28 @@
 .menuList {
   list-style: none;
   margin: 0;
-  padding: 0.5rem;
+  padding: var(--spacing-xs);
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: 1px;
 }
 
 /* Menu Items */
 .menuItem {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--spacing-md);
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--text-sm);
   font-weight: 400;
   text-align: left;
   color: var(--foreground);
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.15s ease, color 0.15s ease;
   outline: none;
 }
 
@@ -77,14 +76,18 @@
   color: var(--foreground);
 }
 
-.menuItem:focus {
+.menuItem:focus-visible {
   outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+}
+
+.menuItem[data-active]:not(:disabled) {
   background-color: var(--muted);
+  color: var(--foreground);
 }
 
 .menuItem:active:not(:disabled) {
   background-color: var(--border);
-  transform: scale(0.98);
 }
 
 .menuItemDisabled {
@@ -97,8 +100,9 @@
   color: var(--destructive);
 }
 
-.menuItemDanger:hover:not(:disabled) {
-  background-color: var(--destructive-light, #fef2f2);
+.menuItemDanger:hover:not(:disabled),
+.menuItemDanger[data-active]:not(:disabled) {
+  background-color: color-mix(in srgb, var(--destructive) 10%, transparent);
   color: var(--destructive);
 }
 
@@ -120,27 +124,10 @@
 @keyframes dropdownSlideDown {
   from {
     opacity: 0;
-    transform: translateY(-0.5rem);
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-
-/* Dark Mode */
-@media (prefers-color-scheme: dark) {
-  .menu {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 
-                0 4px 6px -2px rgba(0, 0, 0, 0.15);
-  }
-
-  .triggerOpen {
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
-  }
-
-  .menuItemDanger:hover:not(:disabled) {
-    background-color: rgba(239, 68, 68, 0.2);
-  }
-}
-

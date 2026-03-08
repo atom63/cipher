@@ -58,6 +58,8 @@ export function TooltipPortal() {
 
 		document.addEventListener("mouseenter", show, true);
 		document.addEventListener("mouseleave", hide, true);
+		document.addEventListener("focusin", show, true);
+		document.addEventListener("focusout", hide, true);
 		document.addEventListener("mousedown", hide, true);
 		document.addEventListener("scroll", hide, true);
 
@@ -65,6 +67,8 @@ export function TooltipPortal() {
 			if (timeout) clearTimeout(timeout);
 			document.removeEventListener("mouseenter", show, true);
 			document.removeEventListener("mouseleave", hide, true);
+			document.removeEventListener("focusin", show, true);
+			document.removeEventListener("focusout", hide, true);
 			document.removeEventListener("mousedown", hide, true);
 			document.removeEventListener("scroll", hide, true);
 		};

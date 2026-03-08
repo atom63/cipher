@@ -81,3 +81,15 @@
   line-height: 1.5;
 }
 
+/* Focus-visible state for accessibility */
+.card:focus-visible,
+.card:has(input:focus-visible) {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+}
+
+/* Active press state */
+.card:active:not(.disabled) {
+  transform: scale(0.99);
+}
+

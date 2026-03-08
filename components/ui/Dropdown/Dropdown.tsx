@@ -76,9 +76,12 @@ export function Dropdown({
 		};
 	}, [isOpen]);
 
+	const [activeIndex, setActiveIndex] = useState(-1);
+
 	const handleToggle = () => {
 		if (!disabled) {
 			setIsOpen(!isOpen);
+			if (!isOpen) setActiveIndex(-1);
 		}
 	};
 
@@ -87,8 +90,59 @@ export function Dropdown({
 			option.onClick?.();
 			onSelect?.(option.value);
 			setIsOpen(false);
+			triggerRef.current?.focus();
 		}
 	};
+
+	// Arrow key navigation
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			const enabledOptions = options.filter((o) => !o.disabled);
+			if (enabledOptions.length === 0) return;
+
+			switch (e.key) {
+				case "ArrowDown": {
+					e.preventDefault();
+					setActiveIndex((prev) => {
+						const next = prev + 1;
+						return next >= options.length ? 0 : next;
+					});
+					break;
+				}
+				case "ArrowUp": {
+					e.preventDefault();
+					setActiveIndex((prev) => {
+						const next = prev - 1;
+						return next < 0 ? options.length - 1 : next;
+					});
+					break;
+				}
+				case "Home": {
+					e.preventDefault();
+					setActiveIndex(0);
+					break;
+				}
+				case "End": {
+					e.preventDefault();
+					setActiveIndex(options.length - 1);
+					break;
+				}
+				case "Enter":
+				case " ": {
+					e.preventDefault();
+					if (activeIndex >= 0 && activeIndex < options.length) {
+						handleSelect(options[activeIndex]);
+					}
+					break;
+				}
+			}
+		};
+
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, activeIndex, options]);
 
 	const getMenuWidth = () => {
 		if (width === "auto") {
@@ -124,15 +178,22 @@ export function Dropdown({
 					style={{ width: getMenuWidth() }}
 					role="menu"
 					aria-orientation="vertical"
+					aria-activedescendant={
+						activeIndex >= 0
+							? `menuitem-${options[activeIndex]?.value}`
+							: undefined
+					}
 				>
 					<ul className={styles.menuList}>
-						{options.map((option) => (
+						{options.map((option, index) => (
 							<li key={option.value} role="none">
 								<button
 									type="button"
 									role="menuitem"
+									id={`menuitem-${option.value}`}
 									disabled={option.disabled}
 									onClick={() => handleSelect(option)}
+									data-active={index === activeIndex || undefined}
 									className={`${styles.menuItem} ${
 										option.disabled ? styles.menuItemDisabled : ""
 									} ${option.danger ? styles.menuItemDanger : ""}`}

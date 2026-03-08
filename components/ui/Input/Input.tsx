@@ -90,12 +90,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 				/>
 				{rightIcon && <span className={styles.rightIcon}>{rightIcon}</span>}
 				{hasError && !rightIcon && (
-					<span className={styles.stateIcon}>
+					<span className={styles.stateIcon} aria-hidden="true">
 						<AlertCircle size={16} />
 					</span>
 				)}
 				{hasSuccess && !rightIcon && (
-					<span className={styles.stateIcon}>
+					<span className={styles.stateIcon} aria-hidden="true">
 						<CheckCircle size={16} />
 					</span>
 				)}
