@@ -1,10 +1,11 @@
 import { ArrowLeft, ClipboardCopy, Sparkles, Wand2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
 import { SectionHeader, useToast } from "../components/ui";
 import { Button } from "../components/ui/Button";
 import { CheckboxWithLabel } from "../components/ui/Checkbox";
 import { Input } from "../components/ui/Input";
+import { RadioCard } from "../components/ui/Radio";
 import { SHADE_STEPS } from "../generators/color-scale";
 import { RADIX_GRAYS } from "../generators/radix-grays";
 import {
@@ -128,21 +129,20 @@ export function GeneratePage() {
 	}, [brandConfig]);
 
 	// Listen for import result
-	useFigmaMessage((msg: any) => {
-		if (msg.type === "import-complete" || msg.type === "variables-created") {
-			setResult(msg.data);
-			setView("success");
-		}
-		if (msg.type === "error") {
-			showError(msg.data?.message || "Generation failed");
-			setView("preview");
-		}
-		if (msg.type === "progress-update") {
-			// Progress is handled by ProgressView
-		}
-	});
+	useFigmaMessage(
+		useCallback((msg: any) => {
+			if (msg.type === "import-complete" || msg.type === "variables-created") {
+				setResult(msg.data);
+				setView("success");
+			}
+			if (msg.type === "error") {
+				showError(msg.data?.message || "Generation failed");
+				setView("preview");
+			}
+		}, [showError]),
+	);
 
-	const handleGenerate = () => {
+	const handleGenerate = useCallback(() => {
 		if (!generated) return;
 		setView("progress");
 		postMessage({
@@ -153,21 +153,21 @@ export function GeneratePage() {
 				importMode: "import",
 			},
 		});
-	};
+	}, [generated, collectionName, postMessage]);
 
-	const handleCopyCss = () => {
+	const handleCopyCss = useCallback(() => {
 		if (!brandConfig) return;
 		const css = generateCss(brandConfig);
 		navigator.clipboard.writeText(css).then(
 			() => showSuccess("CSS copied to clipboard"),
 			() => showError("Failed to copy CSS"),
 		);
-	};
+	}, [brandConfig, showSuccess, showError]);
 
-	const handleReset = () => {
+	const handleReset = useCallback(() => {
 		setView("config");
 		setResult(null);
-	};
+	}, []);
 
 	// ---- Config View ----
 	if (view === "config" || view === "preview") {
@@ -300,26 +300,16 @@ export function GeneratePage() {
 								<label>Structure</label>
 								<div className={styles.layerOptions}>
 									{LAYER_OPTIONS.map((opt) => (
-										<label
+										<RadioCard
 											key={opt.value}
-											className={styles.layerOption}
-											data-selected={layers === opt.value}
-										>
-											<input
-												type="radio"
-												name="layers"
-												checked={layers === opt.value}
-												onChange={() => setLayers(opt.value)}
-											/>
-											<div className={styles.layerOptionText}>
-												<span className={styles.layerOptionTitle}>
-													{opt.title}
-												</span>
-												<span className={styles.layerOptionDesc}>
-													{opt.desc}
-												</span>
-											</div>
-										</label>
+											id={`layer-${opt.value}`}
+											name="layers"
+											value={opt.value}
+											checked={layers === opt.value}
+											onChange={(v) => setLayers(v as LayerMode)}
+											title={opt.title}
+											description={opt.desc}
+										/>
 									))}
 								</div>
 							</div>
@@ -820,73 +810,79 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 	const [expanded, setExpanded] = useState(false);
 	const limit = expanded ? generated.tokens.length : 20;
 
-	const categories = ["primitives", "abstractions", "semantics"] as const;
+	// Memoize the expensive grouping/sorting work
+	const groupedCategories = useMemo(() => {
+		const categories = ["primitives", "abstractions", "semantics"] as const;
+		return categories.map((cat) => {
+			const catTokens = generated.tokens.filter((t) => t.category === cat);
+			if (catTokens.length === 0) return null;
+
+			// Deduplicate by figmaName (modes create duplicates)
+			const seen = new Set<string>();
+			const unique = catTokens.filter((t) => {
+				if (seen.has(t.figmaName)) return false;
+				seen.add(t.figmaName);
+				return true;
+			});
+
+			// Sub-group by token type
+			const grouped = new Map<string, typeof unique>();
+			for (const token of unique) {
+				const group = getTokenTypeGroup(token.type);
+				const arr = grouped.get(group) ?? [];
+				if (!grouped.has(group)) grouped.set(group, arr);
+				arr.push(token);
+			}
+
+			// Sort groups by defined order
+			const sortedGroups = TOKEN_TYPE_ORDER.filter((g) => grouped.has(g)).map(
+				(g) => ({ group: g, tokens: grouped.get(g) ?? [] }),
+			);
+
+			return { cat, unique, sortedGroups };
+		}).filter(Boolean) as { cat: string; unique: any[]; sortedGroups: { group: string; tokens: any[] }[] }[];
+	}, [generated.tokens]);
+
+	const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
 
 	return (
 		<div className={styles.tokenPreviewList}>
-			{categories.map((cat) => {
-				const catTokens = generated.tokens.filter((t) => t.category === cat);
-				if (catTokens.length === 0) return null;
-
-				// Deduplicate by figmaName (modes create duplicates)
-				const seen = new Set<string>();
-				const unique = catTokens.filter((t) => {
-					if (seen.has(t.figmaName)) return false;
-					seen.add(t.figmaName);
-					return true;
-				});
-
-				// Sub-group by token type
-				const grouped = new Map<string, typeof unique>();
-				for (const token of unique) {
-					const group = getTokenTypeGroup(token.type);
-					const arr = grouped.get(group) ?? [];
-					if (!grouped.has(group)) grouped.set(group, arr);
-					arr.push(token);
-				}
-
-				// Sort groups by defined order
-				const sortedGroups = TOKEN_TYPE_ORDER.filter((g) => grouped.has(g)).map(
-					(g) => ({ group: g, tokens: grouped.get(g) ?? [] }),
-				);
-
-				return (
-					<div key={cat}>
-						<div className={styles.tokenCategoryHeader}>
-							{cat} ({unique.length})
-						</div>
-						{sortedGroups.map(({ group, tokens: groupTokens }) => {
-							const displayed = groupTokens.slice(0, limit);
-							return (
-								<div key={group}>
-									{sortedGroups.length > 1 && (
-										<div className={styles.tokenSubgroupHeader}>
-											{group} ({groupTokens.length})
-										</div>
-									)}
-									{displayed.map((token) => (
-										<div key={token.id} className={styles.tokenRow}>
-											<TokenIndicator token={token} />
-											<span className={styles.tokenName}>
-												{token.figmaName}
-											</span>
-											<span className={styles.tokenValue}>
-												{token.originalValue}
-											</span>
-										</div>
-									))}
-								</div>
-							);
-						})}
+			{groupedCategories.map(({ cat, unique, sortedGroups }) => (
+				<div key={cat}>
+					<div className={styles.tokenCategoryHeader}>
+						{cat} ({unique.length})
 					</div>
-				);
-			})}
+					{sortedGroups.map(({ group, tokens: groupTokens }) => {
+						const displayed = groupTokens.slice(0, limit);
+						return (
+							<div key={group}>
+								{sortedGroups.length > 1 && (
+									<div className={styles.tokenSubgroupHeader}>
+										{group} ({groupTokens.length})
+									</div>
+								)}
+								{displayed.map((token) => (
+									<div key={token.id} className={styles.tokenRow}>
+										<TokenIndicator token={token} />
+										<span className={styles.tokenName}>
+											{token.figmaName}
+										</span>
+										<span className={styles.tokenValue}>
+											{token.originalValue}
+										</span>
+									</div>
+								))}
+							</div>
+						);
+					})}
+				</div>
+			))}
 
 			{generated.tokens.length > 40 && (
 				<Button
 					variant="ghost"
 					size="sm"
-					onClick={() => setExpanded(!expanded)}
+					onClick={toggleExpanded}
 				>
 					{expanded
 						? "Show less"
@@ -899,7 +895,12 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 
 // --- Token indicator dot ---
 
-function TokenIndicator({ token }: { token: { type: string; value: any } }) {
+const NON_COLOR_DOT_STYLE = {
+	backgroundColor: "transparent",
+	border: "1px dashed var(--border)",
+} as const;
+
+const TokenIndicator = React.memo(function TokenIndicator({ token }: { token: { type: string; value: any } }) {
 	if (
 		token.type === "color" &&
 		typeof token.value === "object" &&
@@ -917,10 +918,7 @@ function TokenIndicator({ token }: { token: { type: string; value: any } }) {
 	return (
 		<div
 			className={styles.tokenColorDot}
-			style={{
-				backgroundColor: "transparent",
-				border: "1px dashed var(--border)",
-			}}
+			style={NON_COLOR_DOT_STYLE}
 		/>
 	);
-}
+});
