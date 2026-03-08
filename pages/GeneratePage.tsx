@@ -762,41 +762,30 @@ function RadiusPreview({ scale }: { scale: Record<string, number> }) {
 
 // --- Typescale live preview ---
 
-const MAX_PREVIEW_SIZE = 40;
-const MIN_PREVIEW_SIZE = 9;
-
 function TypescalePreview({ config }: { config: TypescaleConfig }) {
 	const steps = useMemo(() => computeTypescale(config), [config]);
 
-	// Scale proportionally so all steps remain visually distinct
-	const largestSize = steps.length > 0 ? steps[0].size : 16;
-	const scale = largestSize > MAX_PREVIEW_SIZE ? MAX_PREVIEW_SIZE / largestSize : 1;
-
 	return (
 		<div className={styles.typescalePreview}>
-			{steps.map((step) => {
-				const previewSize = Math.max(MIN_PREVIEW_SIZE, Math.round(step.size * scale));
-				const previewLh = Math.max(MIN_PREVIEW_SIZE, Math.round(step.lineHeight * scale));
-				return (
-					<div key={step.name} className={styles.typescalePreviewRow}>
-						<span
-							className={styles.typescaleSample}
-							style={{
-								fontSize: `${previewSize}px`,
-								lineHeight: `${previewLh}px`,
-							}}
-						>
-							Aa
+			{steps.map((step) => (
+				<div key={step.name} className={styles.typescalePreviewRow}>
+					<span
+						className={styles.typescaleSample}
+						style={{
+							fontSize: `${step.size}px`,
+							lineHeight: `${step.lineHeight}px`,
+						}}
+					>
+						Aa
+					</span>
+					<div className={styles.typescaleMeta}>
+						<span className={styles.typescaleName}>{step.name}</span>
+						<span className={styles.typescaleSize}>
+							{step.size}/{step.lineHeight}
 						</span>
-						<div className={styles.typescaleMeta}>
-							<span className={styles.typescaleName}>{step.name}</span>
-							<span className={styles.typescaleSize}>
-								{step.size}/{step.lineHeight}
-							</span>
-						</div>
 					</div>
-				);
-			})}
+				</div>
+			))}
 		</div>
 	);
 }
