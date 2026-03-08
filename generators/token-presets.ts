@@ -69,9 +69,12 @@ const RADIUS_OFFSETS: Record<string, number> = {
 	full: Infinity, // special: always 9999
 };
 
+/** Accepts either a plain anchor number (multiplier=1) or a full RadiusConfig */
 export function computeRadiusScale(
-	config: RadiusConfig,
+	input: number | RadiusConfig,
 ): Record<string, number> {
+	const config: RadiusConfig =
+		typeof input === "number" ? { anchor: input, multiplier: 1 } : input;
 	const scale: Record<string, number> = {};
 	for (const [name, offset] of Object.entries(RADIUS_OFFSETS)) {
 		if (name === "none") {
@@ -139,72 +142,118 @@ export function shadowToCss(defOrLayers: ShadowLayer | ShadowLayer[]): string {
 }
 
 // =========================================================================
-// Typography — HIG-inspired responsive type scale
+// Typography — Mathematical modular type scale
 // =========================================================================
 
 export interface TypeStep {
 	name: string;
-	sizes: { min: number; sm: number; md: number };
-	lineHeights: { min: number; sm: number; md: number };
+	size: number;
+	lineHeight: number;
 }
 
-export const TYPE_SCALE: TypeStep[] = [
-	{
-		name: "large-title",
-		sizes: { min: 28, sm: 32, md: 36 },
-		lineHeights: { min: 34, sm: 40, md: 44 },
-	},
-	{
-		name: "title-1",
-		sizes: { min: 24, sm: 28, md: 30 },
-		lineHeights: { min: 30, sm: 34, md: 38 },
-	},
-	{
-		name: "title-2",
-		sizes: { min: 20, sm: 22, md: 24 },
-		lineHeights: { min: 26, sm: 28, md: 32 },
-	},
-	{
-		name: "title-3",
-		sizes: { min: 18, sm: 20, md: 20 },
-		lineHeights: { min: 24, sm: 26, md: 26 },
-	},
-	{
-		name: "headline",
-		sizes: { min: 16, sm: 16, md: 16 },
-		lineHeights: { min: 22, sm: 22, md: 22 },
-	},
-	{
-		name: "body",
-		sizes: { min: 14, sm: 14, md: 14 },
-		lineHeights: { min: 20, sm: 20, md: 20 },
-	},
-	{
-		name: "callout",
-		sizes: { min: 14, sm: 14, md: 14 },
-		lineHeights: { min: 20, sm: 20, md: 20 },
-	},
-	{
-		name: "subhead",
-		sizes: { min: 13, sm: 13, md: 13 },
-		lineHeights: { min: 18, sm: 18, md: 18 },
-	},
-	{
-		name: "footnote",
-		sizes: { min: 12, sm: 12, md: 12 },
-		lineHeights: { min: 16, sm: 16, md: 16 },
-	},
-	{
-		name: "caption-1",
-		sizes: { min: 11, sm: 11, md: 11 },
-		lineHeights: { min: 14, sm: 14, md: 14 },
-	},
-	{
-		name: "caption-2",
-		sizes: { min: 10, sm: 10, md: 10 },
-		lineHeights: { min: 12, sm: 12, md: 12 },
-	},
+// --- Scale ratios ---
+
+export interface TypescaleRatio {
+	label: string;
+	value: number;
+}
+
+export const TYPESCALE_RATIOS: Record<string, TypescaleRatio> = {
+	"minor-second": { label: "Minor Second", value: 1.067 },
+	"major-second": { label: "Major Second", value: 1.125 },
+	"minor-third": { label: "Minor Third", value: 1.2 },
+	"major-third": { label: "Major Third", value: 1.25 },
+	"perfect-fourth": { label: "Perfect Fourth", value: 1.333 },
+	"augmented-fourth": { label: "Augmented Fourth", value: 1.414 },
+	"perfect-fifth": { label: "Perfect Fifth", value: 1.5 },
+	"golden-ratio": { label: "Golden Ratio", value: 1.618 },
+};
+
+// --- Typescale config ---
+
+export interface TypescaleConfig {
+	/** Base font size in px (default: 16) */
+	base: number;
+	/** Scale ratio key or numeric value (default: "major-third" = 1.25) */
+	ratio: string;
+	/** Line-height for body text (base + downscales) as percentage (default: 150) */
+	lineHeightBody: number;
+	/** Line-height for headings (upscales) as percentage (default: 125) */
+	lineHeightHeading: number;
+	/** Number of sizes above base (default: 4, max: 7) */
+	stepsUp: number;
+	/** Number of sizes below base (default: 2, max: 4) */
+	stepsDown: number;
+	/** Round computed values to whole px (default: true) */
+	round: boolean;
+}
+
+export const DEFAULT_TYPESCALE: TypescaleConfig = {
+	base: 16,
+	ratio: "major-third",
+	lineHeightBody: 150,
+	lineHeightHeading: 125,
+	stepsUp: 4,
+	stepsDown: 2,
+	round: true,
+};
+
+// Step names indexed from base outward
+const STEP_NAMES_UP = [
+	"lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl",
 ];
+const STEP_NAMES_DOWN = [
+	"sm", "xs", "2xs", "3xs",
+];
+
+/** Resolve ratio key to numeric value */
+export function resolveRatio(ratioKey: string): number {
+	return TYPESCALE_RATIOS[ratioKey]?.value ?? (Number(ratioKey) || 1.25);
+}
+
+/** Compute a modular type scale from config */
+export function computeTypescale(config?: TypescaleConfig): TypeStep[] {
+	const c = { ...DEFAULT_TYPESCALE, ...config };
+	const ratio = resolveRatio(c.ratio);
+	const headingLh = c.lineHeightHeading / 100;
+	const bodyLh = c.lineHeightBody / 100;
+	const stepsUp = Math.min(c.stepsUp, STEP_NAMES_UP.length);
+	const stepsDown = Math.min(c.stepsDown, STEP_NAMES_DOWN.length);
+
+	const round = (v: number) => (c.round ? Math.round(v) : Math.round(v * 100) / 100);
+
+	const steps: TypeStep[] = [];
+
+	// Upscales — heading line-height (largest first)
+	for (let i = stepsUp; i >= 1; i--) {
+		const size = round(c.base * ratio ** i);
+		steps.push({
+			name: STEP_NAMES_UP[i - 1],
+			size,
+			lineHeight: round(size * headingLh),
+		});
+	}
+
+	// Base — body line-height
+	const baseSize = round(c.base);
+	steps.push({
+		name: "base",
+		size: baseSize,
+		lineHeight: round(baseSize * bodyLh),
+	});
+
+	// Downscales — body line-height
+	for (let i = 1; i <= stepsDown; i++) {
+		const size = round(c.base / ratio ** i);
+		steps.push({
+			name: STEP_NAMES_DOWN[i - 1],
+			size,
+			lineHeight: round(size * bodyLh),
+		});
+	}
+
+	return steps;
+}
 
 // =========================================================================
 // Duration — Named semantic scale
@@ -244,6 +293,31 @@ export const FONT_FAMILIES: Record<string, string> = {
 	mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
 };
 
+export interface FontOverrides {
+	sans?: string;
+	serif?: string;
+	mono?: string;
+}
+
+const SYSTEM_FALLBACKS: Record<string, string> = {
+	sans: ", ui-sans-serif, system-ui, -apple-system, sans-serif",
+	serif: ", ui-serif, Georgia, Cambria, serif",
+	mono: ", ui-monospace, SFMono-Regular, Menlo, monospace",
+};
+
+/** Build font stacks with optional custom font names prepended to system fallbacks */
+export function buildFontFamilies(overrides?: FontOverrides): Record<string, string> {
+	if (!overrides) return { ...FONT_FAMILIES };
+	const result = { ...FONT_FAMILIES };
+	for (const key of ["sans", "serif", "mono"] as const) {
+		const name = overrides[key]?.trim();
+		if (name) {
+			result[key] = `'${name}'${SYSTEM_FALLBACKS[key]}`;
+		}
+	}
+	return result;
+}
+
 // =========================================================================
 // Font weights — Named weight scale
 // =========================================================================
@@ -261,73 +335,19 @@ export const FONT_WEIGHTS: Record<string, number> = {
 };
 
 // =========================================================================
-// Responsive typography CSS generator
+// Typography CSS generator
 // =========================================================================
 
-const BREAKPOINTS = [
-	{ name: "sm", minWidth: "40rem" },
-	{ name: "md", minWidth: "48rem" },
-] as const;
-
-type BreakpointKey = "min" | "sm" | "md";
-
-/** Generate responsive typography CSS with media queries + data-window-size attributes */
-export function generateResponsiveTypographyCss(): string {
+/** Generate typography CSS custom properties */
+export function generateTypographyCss(steps: TypeStep[]): string {
 	const lines: string[] = [];
 
-	// :root — base (min) values
 	lines.push(":root {");
-	for (const step of TYPE_SCALE) {
-		lines.push(`  --typography-${step.name}-font-size: ${step.sizes.min}px;`);
-		lines.push(
-			`  --typography-${step.name}-line-height: ${step.lineHeights.min}px;`,
-		);
+	for (const step of steps) {
+		lines.push(`  --typography-${step.name}-font-size: ${step.size}px;`);
+		lines.push(`  --typography-${step.name}-line-height: ${step.lineHeight}px;`);
 	}
 	lines.push("}");
-
-	// data-window-size="xs" mirrors :root (mobile baseline)
-	lines.push("");
-	lines.push('[data-window-size="xs"] {');
-	for (const step of TYPE_SCALE) {
-		lines.push(`  --typography-${step.name}-font-size: ${step.sizes.min}px;`);
-		lines.push(
-			`  --typography-${step.name}-line-height: ${step.lineHeights.min}px;`,
-		);
-	}
-	lines.push("}");
-
-	// Responsive breakpoints
-	for (const bp of BREAKPOINTS) {
-		const key = bp.name as BreakpointKey;
-
-		// Media query
-		lines.push("");
-		lines.push(`@media (min-width: ${bp.minWidth}) {`);
-		lines.push("  :root {");
-		for (const step of TYPE_SCALE) {
-			lines.push(
-				`    --typography-${step.name}-font-size: ${step.sizes[key]}px;`,
-			);
-			lines.push(
-				`    --typography-${step.name}-line-height: ${step.lineHeights[key]}px;`,
-			);
-		}
-		lines.push("  }");
-		lines.push("}");
-
-		// data-window-size attribute
-		lines.push("");
-		lines.push(`[data-window-size="${bp.name}"] {`);
-		for (const step of TYPE_SCALE) {
-			lines.push(
-				`  --typography-${step.name}-font-size: ${step.sizes[key]}px;`,
-			);
-			lines.push(
-				`  --typography-${step.name}-line-height: ${step.lineHeights[key]}px;`,
-			);
-		}
-		lines.push("}");
-	}
 
 	return lines.join("\n");
 }

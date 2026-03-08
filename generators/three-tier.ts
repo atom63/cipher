@@ -12,18 +12,20 @@ import {
 } from "./color-scale";
 import { getRadixGray, RADIX_GRAYS, type RadixGrayScale } from "./radix-grays";
 import {
+	buildFontFamilies,
 	computeRadiusScale,
+	computeTypescale,
 	DEFAULT_RADIUS,
 	DURATION_RAW,
 	DURATION_SEMANTIC,
-	FONT_FAMILIES,
+	type FontOverrides,
 	FONT_WEIGHTS,
-	generateResponsiveTypographyCss,
+	generateTypographyCss,
 	type RadiusConfig,
 	SHADOW_SCALE,
 	SPACING_SCALE,
 	shadowToCss,
-	TYPE_SCALE,
+	type TypescaleConfig,
 } from "./token-presets";
 
 // --- Configuration types ---
@@ -45,20 +47,12 @@ export interface BrandConfig {
 	layers?: LayerMode;
 	/** Whether to generate light+dark semantic modes (default: true, ignored for "primitives" mode) */
 	darkMode?: boolean;
-	/** Radius anchor config (default: { anchor: 10, multiplier: 1 }) */
-	radius?: RadiusConfig;
-	/** Whether to include spacing tokens (default: true) */
-	includeSpacing?: boolean;
-	/** Whether to include radius tokens (default: true) */
-	includeRadius?: boolean;
-	/** Whether to include shadow tokens (default: true) */
-	includeShadows?: boolean;
-	/** Whether to include typography size tokens (default: true) */
-	includeTypography?: boolean;
-	/** Whether to include duration tokens (default: true) */
-	includeDurations?: boolean;
-	/** Whether to include font family/weight tokens (default: true) */
-	includeFonts?: boolean;
+	/** Radius anchor in px (default: 10) — the "lg" base from which other sizes are derived */
+	radius?: number;
+	/** Typescale configuration (base, ratio, line-height, steps) */
+	typescale?: TypescaleConfig;
+	/** Custom font name overrides (prepended to system fallback stacks) */
+	fonts?: FontOverrides;
 }
 
 export interface GeneratedSystem {
@@ -68,7 +62,7 @@ export interface GeneratedSystem {
 	/** The selected Radix gray palette (null if name didn't match) */
 	radixGray: RadixGrayScale | null;
 	/** Computed radius scale (t-shirt sizes -> px) */
-	radiusScale: Record<string, number> | null;
+	radiusScale: Record<string, number>;
 	stats: {
 		primitiveCount: number;
 		abstractionCount: number;
@@ -347,79 +341,72 @@ function generatePrimitives(
 	}
 
 	// --- Spacing ---
-	if (config.includeSpacing !== false) {
-		for (const [key, px] of Object.entries(SPACING_SCALE)) {
-			tokens.push(
-				...makeDualModeTokens(`spacing/${key}`, px, "primitives", darkMode, {
-					type: "spacing",
-					originalValue: `${px}px`,
-					description: `Spacing ${key} (${px}px)`,
-				}),
-			);
-		}
+	for (const [key, px] of Object.entries(SPACING_SCALE)) {
+		tokens.push(
+			...makeDualModeTokens(`spacing/${key}`, px, "primitives", darkMode, {
+				type: "spacing",
+				originalValue: `${px}px`,
+				description: `Spacing ${key} (${px}px)`,
+			}),
+		);
 	}
 
 	// --- Shadows (multi-layer) ---
-	if (config.includeShadows !== false) {
-		for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
-			const cssValue = shadowToCss(layers);
-			tokens.push(
-				...makeDualModeTokens(
-					`shadow/${level}`,
-					cssValue,
-					"primitives",
-					darkMode,
-					{
-						type: "boxShadow",
-						originalValue: cssValue,
-						description: `Shadow elevation ${level}`,
-					},
-				),
-			);
-		}
+	for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
+		const cssValue = shadowToCss(layers);
+		tokens.push(
+			...makeDualModeTokens(
+				`shadow/${level}`,
+				cssValue,
+				"primitives",
+				darkMode,
+				{
+					type: "boxShadow",
+					originalValue: cssValue,
+					description: `Shadow elevation ${level}`,
+				},
+			),
+		);
 	}
 
 	// --- Duration raw values ---
-	if (config.includeDurations !== false) {
-		for (const [key, ms] of Object.entries(DURATION_RAW)) {
-			tokens.push(
-				...makeDualModeTokens(`duration/${key}`, ms, "primitives", darkMode, {
-					type: "duration",
-					originalValue: `${ms}ms`,
-					description: `Duration ${key}ms`,
-				}),
-			);
-		}
+	for (const [key, ms] of Object.entries(DURATION_RAW)) {
+		tokens.push(
+			...makeDualModeTokens(`duration/${key}`, ms, "primitives", darkMode, {
+				type: "duration",
+				originalValue: `${ms}ms`,
+				description: `Duration ${key}ms`,
+			}),
+		);
 	}
 
 	// --- Font families ---
-	if (config.includeFonts !== false) {
-		for (const [name, stack] of Object.entries(FONT_FAMILIES)) {
-			tokens.push(
-				...makeDualModeTokens(`font/${name}`, stack, "primitives", darkMode, {
-					type: "fontFamily",
-					originalValue: stack,
-					description: `Font family ${name}`,
-				}),
-			);
-		}
+	const fontStacks = buildFontFamilies(config.fonts);
+	for (const [name, stack] of Object.entries(fontStacks)) {
+		tokens.push(
+			...makeDualModeTokens(`font/${name}`, stack, "primitives", darkMode, {
+				type: "fontFamily",
+				originalValue: stack,
+				description: `Font family ${name}`,
+			}),
+		);
+	}
 
-		// --- Font weights ---
-		for (const [name, weight] of Object.entries(FONT_WEIGHTS)) {
-			tokens.push(
-				...makeDualModeTokens(
-					`font-weight/${name}`,
-					String(weight),
-					"primitives",
-					darkMode,
-					{
-						type: "fontWeight",
-						originalValue: String(weight),
-						description: `Font weight ${name} (${weight})`,
-					},
-				),
-			);
-		}
+	// --- Font weights ---
+	for (const [name, weight] of Object.entries(FONT_WEIGHTS)) {
+		tokens.push(
+			...makeDualModeTokens(
+				`font-weight/${name}`,
+				String(weight),
+				"primitives",
+				darkMode,
+				{
+					type: "fontWeight",
+					originalValue: String(weight),
+					description: `Font weight ${name} (${weight})`,
+				},
+			),
+		);
 	}
 
 	return { tokens, scales, radixGray };
@@ -486,38 +473,33 @@ function generateAbstractions(
 	}
 
 	// Radius (computed from anchor)
-	if (config.includeRadius !== false) {
-		const radiusConfig = config.radius ?? DEFAULT_RADIUS;
-		const radiusScale = computeRadiusScale(radiusConfig);
-		for (const [size, px] of Object.entries(radiusScale)) {
-			tokens.push(
-				...makeDualModeTokens(`radius/${size}`, px, "abstractions", darkMode, {
-					type: "borderRadius",
-					originalValue: `${px}px`,
-					description: `Border radius ${size} (${px}px)`,
-				}),
-			);
-		}
+	const radiusScale = computeRadiusScale(config.radius ?? DEFAULT_RADIUS.anchor);
+	for (const [size, px] of Object.entries(radiusScale)) {
+		tokens.push(
+			...makeDualModeTokens(`radius/${size}`, px, "abstractions", darkMode, {
+				type: "borderRadius",
+				originalValue: `${px}px`,
+				description: `Border radius ${size} (${px}px)`,
+			}),
+		);
 	}
 
 	// Duration semantic aliases
-	if (config.includeDurations !== false) {
-		for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
-			const ref = `{primitives.duration.${rawKey}}`;
-			tokens.push(
-				...makeDualModeTokens(
-					`duration/${name}`,
-					ref,
-					"abstractions",
-					darkMode,
-					{
-						type: "duration",
-						originalValue: ref,
-						description: `Duration ${name} (${DURATION_RAW[rawKey]}ms)`,
-					},
-				),
-			);
-		}
+	for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
+		const ref = `{primitives.duration.${rawKey}}`;
+		tokens.push(
+			...makeDualModeTokens(
+				`duration/${name}`,
+				ref,
+				"abstractions",
+				darkMode,
+				{
+					type: "duration",
+					originalValue: ref,
+					description: `Duration ${name} (${DURATION_RAW[rawKey]}ms)`,
+				},
+			),
+		);
 	}
 
 	return { tokens, mappings };
@@ -923,45 +905,39 @@ function generateSemantics(
 	}
 
 	// Typography tokens (semantics — not mode-dependent but need dual-mode for consistency)
-	if (config.includeTypography !== false) {
-		for (const step of TYPE_SCALE) {
-			// Use the "md" breakpoint as the default Figma value
-			tokens.push(
-				...makeDualModeTokens(
-					`type/${step.name}/size`,
-					step.sizes.md,
-					"semantics",
-					darkMode,
-					{
-						type: "fontSize",
-						originalValue: `${step.sizes.md}px`,
-						description: `${step.name} font size`,
-					},
-				),
-			);
-			tokens.push(
-				...makeDualModeTokens(
-					`type/${step.name}/line-height`,
-					step.lineHeights.md,
-					"semantics",
-					darkMode,
-					{
-						type: "number",
-						originalValue: `${step.lineHeights.md}px`,
-						description: `${step.name} line height`,
-					},
-				),
-			);
-		}
+	const typeSteps = computeTypescale(config.typescale);
+	for (const step of typeSteps) {
+		tokens.push(
+			...makeDualModeTokens(
+				`type/${step.name}/size`,
+				step.size,
+				"semantics",
+				darkMode,
+				{
+					type: "fontSize",
+					originalValue: `${step.size}px`,
+					description: `${step.name} font size`,
+				},
+			),
+		);
+		tokens.push(
+			...makeDualModeTokens(
+				`type/${step.name}/line-height`,
+				step.lineHeight,
+				"semantics",
+				darkMode,
+				{
+					type: "number",
+					originalValue: `${step.lineHeight}px`,
+					description: `${step.name} line height`,
+				},
+			),
+		);
 	}
 
 	// Radius tokens (when not three-tier, put them in semantics directly)
-	if (
-		config.includeRadius !== false &&
-		(config.layers ?? "semantic") !== "three-tier"
-	) {
-		const radiusConfig = config.radius ?? DEFAULT_RADIUS;
-		const radiusScale = computeRadiusScale(radiusConfig);
+	if ((config.layers ?? "semantic") !== "three-tier") {
+		const radiusScale = computeRadiusScale(config.radius ?? DEFAULT_RADIUS.anchor);
 		for (const [size, px] of Object.entries(radiusScale)) {
 			tokens.push(
 				...makeDualModeTokens(`radius/${size}`, px, "semantics", darkMode, {
@@ -974,10 +950,7 @@ function generateSemantics(
 	}
 
 	// Duration semantic aliases (when not three-tier)
-	if (
-		config.includeDurations !== false &&
-		(config.layers ?? "semantic") !== "three-tier"
-	) {
+	if ((config.layers ?? "semantic") !== "three-tier") {
 		for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
 			const ref = `{primitives.duration.${rawKey}}`;
 			tokens.push(
@@ -1001,8 +974,7 @@ export function generateCss(config: BrandConfig): string {
 	const system = generateDesignSystem(config);
 	const grayName = config.grayName ?? "slate";
 	const radixGray = getRadixGray(grayName) ?? RADIX_GRAYS[0];
-	const radiusConfig = config.radius ?? DEFAULT_RADIUS;
-	const radiusScale = computeRadiusScale(radiusConfig);
+	const radiusScale = computeRadiusScale(config.radius ?? DEFAULT_RADIUS.anchor);
 	const darkMode = config.darkMode !== false;
 
 	const lines: string[] = [];
@@ -1053,41 +1025,32 @@ export function generateCss(config: BrandConfig): string {
 	}
 
 	// Spacing
-	if (config.includeSpacing !== false) {
-		for (const [key, px] of Object.entries(SPACING_SCALE)) {
-			lines.push(`  --spacing-${key}: ${px}px;`);
-		}
+	for (const [key, px] of Object.entries(SPACING_SCALE)) {
+		lines.push(`  --spacing-${key}: ${px}px;`);
 	}
 
 	// Radius
-	if (config.includeRadius !== false) {
-		for (const [size, px] of Object.entries(radiusScale)) {
-			lines.push(`  --radius-${size}: ${px}px;`);
-		}
+	for (const [size, px] of Object.entries(radiusScale)) {
+		lines.push(`  --radius-${size}: ${px}px;`);
 	}
 
 	// Shadows
-	if (config.includeShadows !== false) {
-		for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
-			lines.push(`  --shadow-${level}: ${shadowToCss(layers)};`);
-		}
+	for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
+		lines.push(`  --shadow-${level}: ${shadowToCss(layers)};`);
 	}
 
 	// Font families
-	if (config.includeFonts !== false) {
-		for (const [name, stack] of Object.entries(FONT_FAMILIES)) {
-			lines.push(`  --font-${name}: ${stack};`);
-		}
-		for (const [name, weight] of Object.entries(FONT_WEIGHTS)) {
-			lines.push(`  --font-weight-${name}: ${weight};`);
-		}
+	const fontStacks = buildFontFamilies(config.fonts);
+	for (const [name, stack] of Object.entries(fontStacks)) {
+		lines.push(`  --font-${name}: ${stack};`);
+	}
+	for (const [name, weight] of Object.entries(FONT_WEIGHTS)) {
+		lines.push(`  --font-weight-${name}: ${weight};`);
 	}
 
 	// Durations
-	if (config.includeDurations !== false) {
-		for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
-			lines.push(`  --duration-${name}: ${DURATION_RAW[rawKey]}ms;`);
-		}
+	for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
+		lines.push(`  --duration-${name}: ${DURATION_RAW[rawKey]}ms;`);
 	}
 
 	// Semantic color registrations for Tailwind (--color-X: var(--X))
@@ -1143,12 +1106,10 @@ export function generateCss(config: BrandConfig): string {
 		lines.push("}");
 	}
 
-	// Responsive typography (media queries + data-window-size)
-	if (config.includeTypography !== false) {
-		lines.push("");
-		lines.push("/* Responsive Typography */");
-		lines.push(generateResponsiveTypographyCss());
-	}
+	// Typography
+	lines.push("");
+	lines.push("/* Typography */");
+	lines.push(generateTypographyCss(computeTypescale(config.typescale)));
 
 	return lines.join("\n");
 }
@@ -1220,15 +1181,12 @@ export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 		semanticCount = semanticTokens.length;
 	}
 
-	const radiusConfig = config.radius ?? DEFAULT_RADIUS;
-
 	return {
 		tokens,
 		primitives: scales,
 		abstractions: abstractionMappings,
 		radixGray: radixGray ?? null,
-		radiusScale:
-			config.includeRadius !== false ? computeRadiusScale(radiusConfig) : null,
+		radiusScale: computeRadiusScale(config.radius ?? DEFAULT_RADIUS.anchor),
 		stats: {
 			primitiveCount,
 			abstractionCount,

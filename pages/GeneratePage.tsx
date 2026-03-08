@@ -14,6 +14,13 @@ import {
 	generateDesignSystem,
 	type LayerMode,
 } from "../generators/three-tier";
+import {
+	computeTypescale,
+	DEFAULT_TYPESCALE,
+	TYPESCALE_RATIOS,
+	type TypescaleConfig,
+	type FontOverrides,
+} from "../generators/token-presets";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type { ImportResults } from "../types/tokens";
 import styles from "./GeneratePage.module.css";
@@ -80,13 +87,8 @@ export function GeneratePage() {
 	const [layers, setLayers] = useState<LayerMode>("semantic");
 	const [darkMode, setDarkMode] = useState(true);
 	const [radiusAnchor, setRadiusAnchor] = useState(10);
-	const [radiusMultiplier, setRadiusMultiplier] = useState(1);
-	const [includeSpacing, setIncludeSpacing] = useState(true);
-	const [includeRadius, setIncludeRadius] = useState(true);
-	const [includeShadows, setIncludeShadows] = useState(true);
-	const [includeTypography, setIncludeTypography] = useState(true);
-	const [includeDurations, setIncludeDurations] = useState(true);
-	const [includeFonts, setIncludeFonts] = useState(true);
+	const [typescale, setTypescale] = useState<TypescaleConfig>({ ...DEFAULT_TYPESCALE });
+	const [fonts, setFonts] = useState<FontOverrides>({});
 	const [collectionName, setCollectionName] = useState("generated");
 
 	// Result state
@@ -94,8 +96,8 @@ export function GeneratePage() {
 
 	// Build config object (shared between preview and CSS export)
 	const brandConfig: BrandConfig | null = useMemo(() => {
-		if (!/^#[0-9a-fA-F]{6}$/.test(primaryColor)) return null;
-		if (hasSecondary && !/^#[0-9a-fA-F]{6}$/.test(secondaryColor)) return null;
+		if (!/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(primaryColor)) return null;
+		if (hasSecondary && !/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(secondaryColor)) return null;
 
 		return {
 			primary: primaryColor,
@@ -103,13 +105,9 @@ export function GeneratePage() {
 			grayName,
 			layers,
 			darkMode,
-			radius: { anchor: radiusAnchor, multiplier: radiusMultiplier },
-			includeSpacing,
-			includeRadius,
-			includeShadows,
-			includeTypography,
-			includeDurations,
-			includeFonts,
+			radius: radiusAnchor,
+			typescale,
+			fonts: (fonts.sans || fonts.serif || fonts.mono) ? fonts : undefined,
 		};
 	}, [
 		primaryColor,
@@ -119,13 +117,8 @@ export function GeneratePage() {
 		layers,
 		darkMode,
 		radiusAnchor,
-		radiusMultiplier,
-		includeSpacing,
-		includeRadius,
-		includeShadows,
-		includeTypography,
-		includeDurations,
-		includeFonts,
+		typescale,
+		fonts,
 	]);
 
 	// Generate preview
@@ -198,18 +191,28 @@ export function GeneratePage() {
 										className={styles.colorSwatch}
 										value={primaryColor}
 										onChange={(e) => setPrimaryColor(e.target.value)}
+										aria-label="Primary color picker"
 									/>
 									<Input
 										className={styles.colorHexInput}
 										value={primaryColor}
 										onChange={(e) => {
-											const v = e.target.value;
-											if (v.startsWith("#") && v.length <= 7)
-												setPrimaryColor(v);
+											let v = e.target.value;
+											if (!v.startsWith("#")) v = `#${v}`;
+											if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
+												setPrimaryColor(v.toUpperCase());
 										}}
 										placeholder="#3B82F6"
+										maxLength={7}
+										spellCheck={false}
+										autoComplete="off"
 									/>
 								</div>
+								{generated && (
+									<ColorRampPreview
+										scale={generated.primitives.find((s) => s.name === "brand")}
+									/>
+								)}
 							</div>
 
 							{/* Secondary color */}
@@ -221,24 +224,36 @@ export function GeneratePage() {
 									label="Secondary / accent color"
 								/>
 								{hasSecondary && (
-									<div className={styles.colorInputRow}>
-										<input
-											type="color"
-											className={styles.colorSwatch}
-											value={secondaryColor}
-											onChange={(e) => setSecondaryColor(e.target.value)}
-										/>
-										<Input
-											className={styles.colorHexInput}
-											value={secondaryColor}
-											onChange={(e) => {
-												const v = e.target.value;
-												if (v.startsWith("#") && v.length <= 7)
-													setSecondaryColor(v);
-											}}
-											placeholder="#10B981"
-										/>
-									</div>
+									<>
+										<div className={styles.colorInputRow}>
+											<input
+												type="color"
+												className={styles.colorSwatch}
+												value={secondaryColor}
+												onChange={(e) => setSecondaryColor(e.target.value)}
+												aria-label="Secondary color picker"
+											/>
+											<Input
+												className={styles.colorHexInput}
+												value={secondaryColor}
+												onChange={(e) => {
+													let v = e.target.value;
+													if (!v.startsWith("#")) v = `#${v}`;
+													if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
+														setSecondaryColor(v.toUpperCase());
+												}}
+												placeholder="#10B981"
+												maxLength={7}
+												spellCheck={false}
+												autoComplete="off"
+											/>
+										</div>
+										{generated && (
+											<ColorRampPreview
+												scale={generated.primitives.find((s) => s.name === "secondary")}
+											/>
+										)}
+									</>
 								)}
 							</div>
 
@@ -254,6 +269,8 @@ export function GeneratePage() {
 											data-selected={grayName === g.name}
 											onClick={() => setGrayName(g.name)}
 											title={g.label}
+											aria-pressed={grayName === g.name}
+											aria-label={`${g.label} neutral palette`}
 										>
 											<div className={styles.grayPreview}>
 												{[0, 2, 4, 7, 10, 11].map((i) => (
@@ -307,100 +324,246 @@ export function GeneratePage() {
 								</div>
 							</div>
 
-							{/* Token types */}
+							{/* Radius */}
 							<div className={styles.colorInputGroup}>
-								<label>Token types</label>
-								<div className={styles.tokenTypeGrid}>
-									<CheckboxWithLabel
-										id="include-spacing"
-										checked={includeSpacing}
-										onChange={setIncludeSpacing}
-										label="Spacing"
+								<label>Radius anchor (px)</label>
+								<div className={styles.radiusAnchorRow}>
+									<Input
+										type="number"
+										value={radiusAnchor}
+										onChange={(e) => {
+											const v = Number(e.target.value);
+											if (e.target.value !== "" && !Number.isNaN(v)) {
+												setRadiusAnchor(v);
+											}
+										}}
+										onBlur={() =>
+											setRadiusAnchor(Math.min(32, Math.max(0, radiusAnchor || 0)))
+										}
+										min={0}
+										max={32}
+										className={styles.radiusAnchorInput}
 									/>
-									<CheckboxWithLabel
-										id="include-radius"
-										checked={includeRadius}
-										onChange={setIncludeRadius}
-										label="Radius"
-									/>
-									<CheckboxWithLabel
-										id="include-shadows"
-										checked={includeShadows}
-										onChange={setIncludeShadows}
-										label="Shadows"
-									/>
-									<CheckboxWithLabel
-										id="include-typography"
-										checked={includeTypography}
-										onChange={setIncludeTypography}
-										label="Typography"
-									/>
-									<CheckboxWithLabel
-										id="include-durations"
-										checked={includeDurations}
-										onChange={setIncludeDurations}
-										label="Durations"
-									/>
-									<CheckboxWithLabel
-										id="include-fonts"
-										checked={includeFonts}
-										onChange={setIncludeFonts}
-										label="Fonts"
-									/>
+									<span className={styles.hint}>
+										Base "lg" — other sizes derived via offsets
+									</span>
 								</div>
+								{generated?.radiusScale && (
+									<RadiusPreview scale={generated.radiusScale} />
+								)}
 							</div>
 
-							{/* Radius config */}
-							{includeRadius && (
-								<div className={styles.colorInputGroup}>
-									<label>Radius</label>
-									<div className={styles.optionsRow}>
+							{/* Typescale */}
+							<div className={styles.colorInputGroup}>
+								<label>Typescale</label>
+								<div className={styles.typescaleConfig}>
+									<div className={styles.typescaleRow}>
 										<div className={styles.optionGroup}>
-											<label>Anchor (px)</label>
+											<label>Base (px)</label>
 											<Input
 												type="number"
-												value={radiusAnchor}
-												onChange={(e) =>
-													setRadiusAnchor(
-														Math.max(0, Number(e.target.value) || 0),
-													)
+												value={typescale.base}
+												onChange={(e) => {
+													const v = Number(e.target.value);
+													if (e.target.value !== "" && !Number.isNaN(v)) {
+														setTypescale({ ...typescale, base: v });
+													}
+												}}
+												onBlur={() =>
+													setTypescale({
+														...typescale,
+														base: Math.min(48, Math.max(8, typescale.base || 16)),
+													})
 												}
-												min={0}
-												max={32}
+												min={8}
+												max={48}
 											/>
 										</div>
 										<div className={styles.optionGroup}>
-											<label>Multiplier</label>
+											<label>Body LH (%)</label>
 											<Input
 												type="number"
-												value={radiusMultiplier}
-												onChange={(e) =>
-													setRadiusMultiplier(
-														Math.max(0, Number(e.target.value) || 0),
-													)
+												value={typescale.lineHeightBody}
+												onChange={(e) => {
+													const v = Number(e.target.value);
+													if (e.target.value !== "" && !Number.isNaN(v)) {
+														setTypescale({ ...typescale, lineHeightBody: v });
+													}
+												}}
+												onBlur={() =>
+													setTypescale({
+														...typescale,
+														lineHeightBody: Math.min(200, Math.max(100, typescale.lineHeightBody || 150)),
+													})
 												}
-												min={0}
-												max={3}
-												step={0.1}
+												min={100}
+												max={200}
+												step={5}
+											/>
+										</div>
+										<div className={styles.optionGroup}>
+											<label>Heading LH (%)</label>
+											<Input
+												type="number"
+												value={typescale.lineHeightHeading}
+												onChange={(e) => {
+													const v = Number(e.target.value);
+													if (e.target.value !== "" && !Number.isNaN(v)) {
+														setTypescale({ ...typescale, lineHeightHeading: v });
+													}
+												}}
+												onBlur={() =>
+													setTypescale({
+														...typescale,
+														lineHeightHeading: Math.min(175, Math.max(100, typescale.lineHeightHeading || 125)),
+													})
+												}
+												min={100}
+												max={175}
+												step={5}
 											/>
 										</div>
 									</div>
-									{/* Radius live preview */}
-									{generated?.radiusScale && (
-										<RadiusPreview scale={generated.radiusScale} />
-									)}
+
+									<div className={styles.optionGroup}>
+										<label>Scale ratio</label>
+										<div className={styles.ratioSelector}>
+											{Object.entries(TYPESCALE_RATIOS).map(([key, r]) => (
+												<button
+													key={key}
+													type="button"
+													className={styles.ratioOption}
+													data-selected={typescale.ratio === key}
+													aria-pressed={typescale.ratio === key}
+													onClick={() =>
+														setTypescale({ ...typescale, ratio: key })
+													}
+													title={`${r.label} (${r.value})`}
+												>
+													<span className={styles.ratioLabel}>{r.label}</span>
+													<span className={styles.ratioValue}>{r.value}</span>
+												</button>
+											))}
+										</div>
+									</div>
+
+									<div className={styles.typescaleRow}>
+										<div className={styles.optionGroup}>
+											<label>Steps up</label>
+											<Input
+												type="number"
+												value={typescale.stepsUp}
+												onChange={(e) => {
+													const v = Number(e.target.value);
+													if (e.target.value !== "" && !Number.isNaN(v)) {
+														setTypescale({ ...typescale, stepsUp: v });
+													}
+												}}
+												onBlur={() =>
+													setTypescale({
+														...typescale,
+														stepsUp: Math.min(7, Math.max(0, typescale.stepsUp || 0)),
+													})
+												}
+												min={0}
+												max={7}
+											/>
+										</div>
+										<div className={styles.optionGroup}>
+											<label>Steps down</label>
+											<Input
+												type="number"
+												value={typescale.stepsDown}
+												onChange={(e) => {
+													const v = Number(e.target.value);
+													if (e.target.value !== "" && !Number.isNaN(v)) {
+														setTypescale({ ...typescale, stepsDown: v });
+													}
+												}}
+												onBlur={() =>
+													setTypescale({
+														...typescale,
+														stepsDown: Math.min(4, Math.max(0, typescale.stepsDown || 0)),
+													})
+												}
+												min={0}
+												max={4}
+											/>
+										</div>
+										<div className={styles.optionGroup}>
+											<label>&nbsp;</label>
+											<CheckboxWithLabel
+												id="round-values"
+												checked={typescale.round}
+												onChange={(checked) =>
+													setTypescale({ ...typescale, round: checked })
+												}
+												label="Round"
+											/>
+										</div>
+									</div>
 								</div>
-							)}
+								<TypescalePreview config={typescale} />
+							</div>
+
+							{/* Font names */}
+							<div className={styles.colorInputGroup}>
+								<label>Fonts</label>
+								<div className={styles.fontInputs}>
+									<div className={styles.fontInputRow}>
+										<label>Sans</label>
+										<Input
+											value={fonts.sans ?? ""}
+											onChange={(e) =>
+												setFonts({ ...fonts, sans: e.target.value })
+											}
+											placeholder="System default"
+											maxLength={64}
+											spellCheck={false}
+											autoComplete="off"
+										/>
+									</div>
+									<div className={styles.fontInputRow}>
+										<label>Serif</label>
+										<Input
+											value={fonts.serif ?? ""}
+											onChange={(e) =>
+												setFonts({ ...fonts, serif: e.target.value })
+											}
+											placeholder="System default"
+											maxLength={64}
+											spellCheck={false}
+											autoComplete="off"
+										/>
+									</div>
+									<div className={styles.fontInputRow}>
+										<label>Mono</label>
+										<Input
+											value={fonts.mono ?? ""}
+											onChange={(e) =>
+												setFonts({ ...fonts, mono: e.target.value })
+											}
+											placeholder="System default"
+											maxLength={64}
+											spellCheck={false}
+											autoComplete="off"
+										/>
+									</div>
+								</div>
+							</div>
 
 							{/* Collection name */}
 							<div className={styles.colorInputGroup}>
 								<label>Collection name</label>
 								<Input
 									value={collectionName}
-									onChange={(e) =>
-										setCollectionName(e.target.value || "generated")
-									}
+									onChange={(e) => setCollectionName(e.target.value)}
+									onBlur={() => {
+										if (!collectionName.trim()) setCollectionName("generated");
+									}}
 									placeholder="generated"
+									maxLength={64}
+									spellCheck={false}
 								/>
 							</div>
 
@@ -500,9 +663,7 @@ export function GeneratePage() {
 							</div>
 
 							{/* Radius preview in preview step */}
-							{generated.radiusScale && (
-								<RadiusPreview scale={generated.radiusScale} />
-							)}
+							<RadiusPreview scale={generated.radiusScale} />
 
 							{/* Token list */}
 							<TokenPreviewList generated={generated} />
@@ -557,10 +718,38 @@ export function GeneratePage() {
 	return null;
 }
 
+// --- Inline color ramp preview ---
+
+function ColorRampPreview({
+	scale,
+}: {
+	scale: { hexValues: Record<number, string> } | undefined;
+}) {
+	if (!scale) return null;
+	return (
+		<div className={styles.colorRamp}>
+			<div className={styles.colorRampSwatches}>
+				{SHADE_STEPS.map((step) => (
+					<div
+						key={step}
+						className={styles.colorRampSwatch}
+						style={{ backgroundColor: scale.hexValues[step] }}
+						title={`${step}: ${scale.hexValues[step]}`}
+					/>
+				))}
+			</div>
+			<div className={styles.colorRampLabels}>
+				<span>50</span>
+				<span>500</span>
+				<span>950</span>
+			</div>
+		</div>
+	);
+}
+
 // --- Radius visual preview ---
 
 function RadiusPreview({ scale }: { scale: Record<string, number> }) {
-	// Filter out 'none' and 'full' for the visual
 	const entries = Object.entries(scale).filter(
 		([name]) => name !== "none" && name !== "full",
 	);
@@ -571,14 +760,45 @@ function RadiusPreview({ scale }: { scale: Record<string, number> }) {
 				<div key={name} className={styles.radiusItem}>
 					<div
 						className={styles.radiusSample}
-						style={{ borderRadius: `${Math.min(px, 20)}px` }}
+						style={{ borderRadius: `${Math.min(px, 24)}px` }}
 					/>
-					<span className={styles.radiusLabel}>
-						{name}
-						<span className={styles.radiusValue}>{px}px</span>
-					</span>
+					<span className={styles.radiusLabel}>{name}</span>
+					<span className={styles.radiusValue}>{px}px</span>
 				</div>
 			))}
+		</div>
+	);
+}
+
+// --- Typescale live preview ---
+
+function TypescalePreview({ config }: { config: TypescaleConfig }) {
+	const steps = useMemo(() => computeTypescale(config), [config]);
+
+	return (
+		<div className={styles.typescalePreview}>
+			{steps.map((step) => {
+				const clampedSize = Math.min(step.size, 48);
+				return (
+				<div key={step.name} className={styles.typescalePreviewRow}>
+					<span
+						className={styles.typescaleSample}
+						style={{
+							fontSize: `${clampedSize}px`,
+							lineHeight: `${Math.min(step.lineHeight, 64)}px`,
+						}}
+					>
+						Aa
+					</span>
+					<div className={styles.typescaleMeta}>
+						<span className={styles.typescaleName}>{step.name}</span>
+						<span className={styles.typescaleSize}>
+							{step.size}/{step.lineHeight}
+						</span>
+					</div>
+				</div>
+				);
+			})}
 		</div>
 	);
 }

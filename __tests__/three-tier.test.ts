@@ -10,17 +10,6 @@ const defaultConfig: BrandConfig = {
 	primary: "#3B82F6",
 };
 
-// Minimal config — colors only, no non-color tokens
-const minimalConfig: BrandConfig = {
-	primary: "#3B82F6",
-	includeSpacing: false,
-	includeRadius: false,
-	includeShadows: false,
-	includeTypography: false,
-	includeDurations: false,
-	includeFonts: false,
-};
-
 describe("generateDesignSystem", () => {
 	test("generates tokens for selected layers", () => {
 		const result = generateDesignSystem(defaultConfig);
@@ -66,7 +55,7 @@ describe("generateDesignSystem", () => {
 describe("primitives-only mode", () => {
 	test("generates only primitives", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			...defaultConfig,
 			layers: "primitives",
 		});
 		const categories = new Set(result.tokens.map((t) => t.category));
@@ -77,7 +66,7 @@ describe("primitives-only mode", () => {
 
 	test("includes destructive (red) primitive scale", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			...defaultConfig,
 			layers: "primitives",
 			darkMode: false,
 		});
@@ -89,7 +78,7 @@ describe("primitives-only mode", () => {
 
 	test("creates brand scale (50-950) and Radix gray (1-12)", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			...defaultConfig,
 			layers: "primitives",
 			darkMode: false,
 		});
@@ -108,7 +97,7 @@ describe("primitives-only mode", () => {
 
 	test("includes white/black alpha scales", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			...defaultConfig,
 			layers: "primitives",
 			darkMode: false,
 		});
@@ -119,7 +108,7 @@ describe("primitives-only mode", () => {
 
 	test("uses selected Radix gray palette", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			...defaultConfig,
 			layers: "primitives",
 			grayName: "mauve",
 			darkMode: false,
@@ -132,7 +121,7 @@ describe("primitives-only mode", () => {
 
 	test("Radix grays have Light/Dark mode tokens when darkMode enabled", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			...defaultConfig,
 			layers: "primitives",
 			grayName: "slate",
 			darkMode: true,
@@ -150,7 +139,7 @@ describe("primitives-only mode", () => {
 
 	test("primitive color values are direct colors, not references", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			...defaultConfig,
 			layers: "primitives",
 			darkMode: false,
 		});
@@ -171,19 +160,12 @@ describe("non-color tokens", () => {
 			primary: "#3B82F6",
 			layers: "primitives",
 			darkMode: false,
-			includeSpacing: true,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
 		});
 		const spacingTokens = result.tokens.filter((t) => t.type === "spacing");
 		expect(spacingTokens.length).toBeGreaterThan(0);
-		// All spacing values should be numbers
 		for (const token of spacingTokens) {
 			expect(typeof token.value).toBe("number");
 		}
-		// Should include standard Tailwind spacing
 		const names = spacingTokens.map((t) => t.figmaName);
 		expect(names).toContain("spacing/4");
 		expect(names).toContain("spacing/8");
@@ -194,14 +176,9 @@ describe("non-color tokens", () => {
 			primary: "#3B82F6",
 			layers: "primitives",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: true,
-			includeTypography: false,
-			includeDurations: false,
 		});
 		const shadowTokens = result.tokens.filter((t) => t.type === "boxShadow");
-		expect(shadowTokens.length).toBe(7); // 0-6
+		expect(shadowTokens.length).toBe(7);
 		for (const token of shadowTokens) {
 			expect(typeof token.value).toBe("string");
 		}
@@ -212,11 +189,6 @@ describe("non-color tokens", () => {
 			primary: "#3B82F6",
 			layers: "primitives",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: true,
 		});
 		const durationTokens = result.tokens.filter((t) => t.type === "duration");
 		expect(durationTokens.length).toBeGreaterThan(0);
@@ -230,11 +202,6 @@ describe("non-color tokens", () => {
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: true,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
 		});
 		const radiusTokens = result.tokens.filter((t) => t.type === "borderRadius");
 		expect(radiusTokens.length).toBeGreaterThan(0);
@@ -249,33 +216,21 @@ describe("non-color tokens", () => {
 			primary: "#3B82F6",
 			layers: "three-tier",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: true,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
 		});
 		const radiusTokens = result.tokens.filter((t) => t.type === "borderRadius");
 		expect(radiusTokens.length).toBeGreaterThan(0);
-		// In three-tier, radius lives in abstractions
 		const categories = new Set(radiusTokens.map((t) => t.category));
 		expect(categories).toContain("abstractions");
 	});
 
-	test("radius uses custom anchor and multiplier", () => {
+	test("radius uses custom anchor", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: true,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			radius: { anchor: 8, multiplier: 1 },
+			radius: 8,
 		});
 		const lgRadius = result.tokens.find((t) => t.figmaName === "radius/lg");
-		// lg = anchor + 0 offset = 8
 		expect(lgRadius?.value).toBe(8);
 	});
 
@@ -284,19 +239,14 @@ describe("non-color tokens", () => {
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: true,
-			includeDurations: false,
 		});
 		const typeTokens = result.tokens.filter(
 			(t) => t.type === "fontSize" || t.type === "number",
 		);
 		expect(typeTokens.length).toBeGreaterThan(0);
 		const names = typeTokens.map((t) => t.figmaName);
-		expect(names).toContain("type/body/size");
-		expect(names).toContain("type/body/line-height");
+		expect(names).toContain("type/base/size");
+		expect(names).toContain("type/base/line-height");
 	});
 
 	test("generates font family and weight tokens", () => {
@@ -304,12 +254,6 @@ describe("non-color tokens", () => {
 			primary: "#3B82F6",
 			layers: "primitives",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: true,
 		});
 		const fontTokens = result.tokens.filter(
 			(t) => t.type === "fontFamily" || t.type === "fontWeight",
@@ -322,15 +266,40 @@ describe("non-color tokens", () => {
 		expect(names).toContain("font-weight/normal");
 	});
 
-	test("can disable all non-color token types", () => {
+	test("custom font overrides prepend to system stacks", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			primary: "#3B82F6",
 			layers: "primitives",
 			darkMode: false,
+			fonts: { sans: "Inter" },
 		});
-		for (const token of result.tokens) {
-			expect(token.type).toBe("color");
-		}
+		const sansToken = result.tokens.find((t) => t.figmaName === "font/sans");
+		expect(sansToken?.value).toContain("'Inter'");
+		expect(sansToken?.value).toContain("ui-sans-serif");
+	});
+
+	test("different ratios produce different heading sizes", () => {
+		const smallRatio = generateDesignSystem({
+			primary: "#3B82F6",
+			layers: "semantic",
+			darkMode: false,
+			typescale: { base: 16, ratio: "minor-third", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2, round: true },
+		});
+		const largeRatio = generateDesignSystem({
+			primary: "#3B82F6",
+			layers: "semantic",
+			darkMode: false,
+			typescale: { base: 16, ratio: "golden-ratio", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2, round: true },
+		});
+
+		const smallXl = smallRatio.tokens.find(
+			(t) => t.figmaName === "type/xl/size" && t.type === "fontSize",
+		);
+		const largeXl = largeRatio.tokens.find(
+			(t) => t.figmaName === "type/xl/size" && t.type === "fontSize",
+		);
+		// Golden ratio xl should be much larger than minor third xl
+		expect(Number(largeXl?.value)).toBeGreaterThan(Number(smallXl?.value));
 	});
 });
 
@@ -340,7 +309,7 @@ describe("non-color tokens", () => {
 
 describe("semantic mode (default)", () => {
 	test("generates primitives and semantics, no abstractions", () => {
-		const result = generateDesignSystem(minimalConfig);
+		const result = generateDesignSystem(defaultConfig);
 		const categories = new Set(result.tokens.map((t) => t.category));
 		expect(categories).toContain("primitives");
 		expect(categories).toContain("semantics");
@@ -349,7 +318,7 @@ describe("semantic mode (default)", () => {
 	});
 
 	test("semantic color tokens reference primitives directly", () => {
-		const result = generateDesignSystem(minimalConfig);
+		const result = generateDesignSystem(defaultConfig);
 		const semantics = result.tokens.filter(
 			(t) => t.category === "semantics" && t.type === "color",
 		);
@@ -359,7 +328,7 @@ describe("semantic mode (default)", () => {
 	});
 
 	test("background/default references Radix gray step 1", () => {
-		const result = generateDesignSystem(minimalConfig);
+		const result = generateDesignSystem(defaultConfig);
 		const bgDefaults = result.tokens.filter(
 			(t) => t.category === "semantics" && t.figmaName === "background/default",
 		);
@@ -371,7 +340,7 @@ describe("semantic mode (default)", () => {
 	});
 
 	test("has Light/Dark mode entries by default", () => {
-		const result = generateDesignSystem(minimalConfig);
+		const result = generateDesignSystem(defaultConfig);
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
 		const lightTokens = semantics.filter(
 			(t) => (t as any).modeName === "Light",
@@ -383,7 +352,7 @@ describe("semantic mode (default)", () => {
 
 	test("single mode when darkMode is false", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			...defaultConfig,
 			darkMode: false,
 		});
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
@@ -393,7 +362,7 @@ describe("semantic mode (default)", () => {
 	});
 
 	test("includes card, popover, destructive, input, ring, status semantics", () => {
-		const result = generateDesignSystem(minimalConfig);
+		const result = generateDesignSystem(defaultConfig);
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
 		const names = semantics.map((t) => t.figmaName);
 		expect(names).toContain("card/default");
@@ -415,7 +384,7 @@ describe("semantic mode (default)", () => {
 
 	test("destructive semantics reference destructive primitive scale", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			...defaultConfig,
 			darkMode: false,
 		});
 		const destructiveDefault = result.tokens.find(
@@ -429,7 +398,7 @@ describe("semantic mode (default)", () => {
 
 	test("includes accent semantics when secondary provided", () => {
 		const result = generateDesignSystem({
-			...minimalConfig,
+			...defaultConfig,
 			secondary: "#10B981",
 		});
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
@@ -445,7 +414,7 @@ describe("semantic mode (default)", () => {
 
 describe("three-tier mode", () => {
 	const threeTierConfig: BrandConfig = {
-		...minimalConfig,
+		...defaultConfig,
 		layers: "three-tier",
 	};
 
@@ -528,7 +497,7 @@ describe("three-tier mode", () => {
 describe("generateCss", () => {
 	test("produces valid CSS output", () => {
 		const css = generateCss({
-			...minimalConfig,
+			...defaultConfig,
 			darkMode: false,
 		});
 		expect(css).toContain("@theme inline {");
@@ -555,13 +524,13 @@ describe("generateCss", () => {
 	});
 
 	test("includes dark mode when enabled", () => {
-		const css = generateCss(minimalConfig);
+		const css = generateCss(defaultConfig);
 		expect(css).toContain(".dark {");
 	});
 
 	test("no dark mode block when disabled", () => {
 		const css = generateCss({
-			...minimalConfig,
+			...defaultConfig,
 			darkMode: false,
 		});
 		expect(css).not.toContain(".dark {");
@@ -575,13 +544,12 @@ describe("generateCss", () => {
 		expect(css).toContain("--spacing-4:");
 		expect(css).toContain("--radius-lg:");
 		expect(css).toContain("--shadow-3:");
-		expect(css).toContain("--typography-body-font-size:");
+		expect(css).toContain("--typography-base-font-size:");
 		expect(css).toContain("--font-sans:");
 		expect(css).toContain("--font-weight-bold:");
 		expect(css).toContain("--duration-short:");
-		// Responsive typography
-		expect(css).toContain("@media (min-width: 40rem)");
-		expect(css).toContain('[data-window-size="md"]');
+		// Typography uses flat :root vars (no responsive breakpoints)
+		expect(css).toContain("--typography-base-line-height:");
 	});
 });
 

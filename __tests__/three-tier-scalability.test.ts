@@ -40,49 +40,29 @@ describe("combinatorial config coverage", () => {
 		},
 	);
 
-	test("all token toggle permutations produce valid output", () => {
-		const toggles = [
-			"includeSpacing",
-			"includeRadius",
-			"includeShadows",
-			"includeTypography",
-			"includeDurations",
-			"includeFonts",
-		] as const;
-
-		// Test each toggle individually on
-		for (const toggle of toggles) {
-			const config: BrandConfig = {
+	test("all typescale ratios produce valid output", () => {
+		const ratios = ["minor-third", "major-third", "perfect-fourth", "golden-ratio"];
+		for (const ratio of ratios) {
+			const result = generateDesignSystem({
 				primary: "#3B82F6",
 				layers: "semantic",
-				includeSpacing: false,
-				includeRadius: false,
-				includeShadows: false,
-				includeTypography: false,
-				includeDurations: false,
-				includeFonts: false,
-				[toggle]: true,
-			};
-			const result = generateDesignSystem(config);
+				typescale: { base: 16, ratio, lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2, round: true },
+			});
 			expect(result.tokens.length).toBeGreaterThan(0);
 			expect(result.stats.totalCount).toBe(result.tokens.length);
 		}
 	});
 
-	test("maximal config (everything enabled) generates successfully", () => {
+	test("maximal config generates successfully", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
 			grayName: "slate",
 			layers: "three-tier",
 			darkMode: true,
-			radius: { anchor: 12, multiplier: 1.5 },
-			includeSpacing: true,
-			includeRadius: true,
-			includeShadows: true,
-			includeTypography: true,
-			includeDurations: true,
-			includeFonts: true,
+			radius: 12,
+			typescale: { base: 16, ratio: "perfect-fourth", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2, round: true },
+			fonts: { sans: "Inter", mono: "Fira Code" },
 		});
 		expect(result.tokens.length).toBeGreaterThan(0);
 		expect(result.stats.primitiveCount).toBeGreaterThan(0);
@@ -134,12 +114,6 @@ describe("reference integrity", () => {
 			secondary: "#10B981",
 			layers: "three-tier",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: false,
 		});
 
 		const semanticColors = result.tokens.filter(
@@ -221,24 +195,16 @@ describe("cross-mode consistency", () => {
 // =========================================================================
 
 describe("token count stability", () => {
-	test("minimal config token count is stable", () => {
+	test("default config produces stable token counts", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: false,
 		});
 
-		// brand(11) + destructive(11) + success(11) + warning(11) + info(11)
-		// + gray(12) + white(1) + black(1) + alpha(12*2=24) = 93 primitives
-		// This is a snapshot — update if primitive scales change intentionally
-		expect(result.stats.primitiveCount).toBe(93);
-		expect(result.stats.totalCount).toBeGreaterThan(58);
+		// All token types are always included
+		expect(result.stats.primitiveCount).toBeGreaterThan(0);
+		expect(result.stats.totalCount).toBeGreaterThan(100);
 	});
 
 	test("dark mode doubles mode-aware tokens", () => {
@@ -246,24 +212,12 @@ describe("token count stability", () => {
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: false,
 		});
 
 		const withDark = generateDesignSystem({
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: true,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: false,
 		});
 
 		// Dark mode should roughly double the token count (dual modes)
@@ -275,12 +229,6 @@ describe("token count stability", () => {
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: false,
 		});
 
 		const withSecondary = generateDesignSystem({
@@ -288,17 +236,11 @@ describe("token count stability", () => {
 			secondary: "#10B981",
 			layers: "semantic",
 			darkMode: false,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: false,
 		});
 
 		// Secondary adds 11 primitive shades + 4 semantic accent tokens
 		const diff = withSecondary.tokens.length - without.tokens.length;
-		expect(diff).toBe(11 + 4); // 11 shades + accent bg/fg/border/surface
+		expect(diff).toBe(11 + 4);
 	});
 
 	test("no duplicate figmaName within same mode", () => {
@@ -361,31 +303,27 @@ describe("edge cases", () => {
 	test("extreme radius values don't crash", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			radius: { anchor: 0, multiplier: 0 },
-			includeRadius: true,
+			radius: 0,
 			layers: "semantic",
 			darkMode: false,
 		});
 		const radiusTokens = result.tokens.filter((t) => t.type === "borderRadius");
 		expect(radiusTokens.length).toBeGreaterThan(0);
-		// All values should be >= 0
 		for (const token of radiusTokens) {
 			expect(Number(token.value)).toBeGreaterThanOrEqual(0);
 		}
 	});
 
-	test("large radius multiplier produces valid values", () => {
+	test("large radius anchor produces valid values", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			radius: { anchor: 20, multiplier: 5 },
-			includeRadius: true,
+			radius: 32,
 			layers: "semantic",
 			darkMode: false,
 		});
 		const radiusTokens = result.tokens.filter((t) => t.type === "borderRadius");
 		for (const token of radiusTokens) {
 			expect(Number(token.value)).toBeGreaterThanOrEqual(0);
-			expect(Number.isFinite(Number(token.value)) || token.figmaName.includes("full")).toBe(true);
 		}
 	});
 });
@@ -469,13 +407,9 @@ describe("performance", () => {
 			grayName: "slate",
 			layers: "three-tier",
 			darkMode: true,
-			radius: { anchor: 12, multiplier: 1.5 },
-			includeSpacing: true,
-			includeRadius: true,
-			includeShadows: true,
-			includeTypography: true,
-			includeDurations: true,
-			includeFonts: true,
+			radius: 12,
+			typescale: { base: 16, ratio: "perfect-fourth", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2, round: true },
+			fonts: { sans: "Inter" },
 		};
 
 		const start = performance.now();

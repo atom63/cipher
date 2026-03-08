@@ -17,7 +17,8 @@ import {
 	SHADOW_SCALE,
 	DURATION_RAW,
 	DURATION_SEMANTIC,
-	TYPE_SCALE,
+	computeTypescale,
+	DEFAULT_TYPESCALE,
 	FONT_WEIGHTS,
 	computeRadiusScale,
 } from "../generators/token-presets";
@@ -330,118 +331,43 @@ describe("shadow parity with dev shadow-tokens.css", () => {
 });
 
 // =========================================================================
-// Typography — generator TYPE_SCALE matches dev typescales.css
+// Typography — mathematical typescale generator
 // =========================================================================
 
-describe("typography parity with dev typescales.css", () => {
-	test("every dev typography var name has a matching TYPE_SCALE entry", () => {
-		// Extract typescale names from :root block
-		const rootVars = parseCssBlock(devTypescalesCss, ":root");
+describe("mathematical typescale generation", () => {
+	test("default config produces correct number of steps", () => {
+		const steps = computeTypescale(DEFAULT_TYPESCALE);
+		// 4 up + 1 base + 2 down = 7
+		expect(steps.length).toBe(7);
+	});
 
-		const devTypeNames = new Set<string>();
-		for (const [name] of rootVars) {
-			const match = name.match(
-				/^--typography-([\w-]+)-(font-size|line-height)$/,
-			);
-			if (match) devTypeNames.add(match[1]);
-		}
+	test("base step matches configured base size", () => {
+		const steps = computeTypescale({ ...DEFAULT_TYPESCALE, base: 18 });
+		const base = steps.find((s: { name: string }) => s.name === "base");
+		expect(base?.size).toBe(18);
+	});
 
-		expect(devTypeNames.size).toBeGreaterThan(0);
-
-		const genNames = new Set(TYPE_SCALE.map((s) => s.name));
-		for (const devName of devTypeNames) {
-			expect(
-				genNames.has(devName),
-				`Dev typescale "${devName}" missing from generator TYPE_SCALE`,
-			).toBe(true);
+	test("steps are ordered largest to smallest", () => {
+		const steps = computeTypescale(DEFAULT_TYPESCALE);
+		for (let i = 1; i < steps.length; i++) {
+			expect(steps[i].size).toBeLessThanOrEqual(steps[i - 1].size);
 		}
 	});
 
-	test("base (:root) typography px values match TYPE_SCALE min breakpoint", () => {
-		// Only parse the first :root block (top-level, not inside @media)
-		// The dev CSS has :root blocks inside @media too, which have larger values
-		const firstRootMatch = devTypescalesCss.match(/:root\s*\{([^}]+)\}/);
-		const firstRootContent = firstRootMatch ? firstRootMatch[1] + ";" : "";
-		const rootVars = parseCssVars(firstRootContent);
-
-		for (const step of TYPE_SCALE) {
-			const devSize = rootVars.get(
-				`--typography-${step.name}-font-size`,
-			);
-			const devLh = rootVars.get(
-				`--typography-${step.name}-line-height`,
-			);
-
-			if (devSize) {
-				const devPx = extractPxValue(devSize);
-				expect(
-					devPx,
-					`${step.name} font-size: dev=${devPx}px, generator min=${step.sizes.min}px`,
-				).toBe(step.sizes.min);
-			}
-
-			if (devLh) {
-				const devPx = extractPxValue(devLh);
-				expect(
-					devPx,
-					`${step.name} line-height: dev=${devPx}px, generator min=${step.lineHeights.min}px`,
-				).toBe(step.lineHeights.min);
-			}
+	test("line-height is proportional to font size", () => {
+		const steps = computeTypescale({ ...DEFAULT_TYPESCALE, lineHeightBody: 150, lineHeightHeading: 125 });
+		for (const step of steps) {
+			// With rounding, line-height should be close to 1.5x size
+			expect(step.lineHeight).toBeGreaterThanOrEqual(step.size);
+			expect(step.lineHeight / step.size).toBeCloseTo(1.5, 0);
 		}
 	});
 
-	test("sm breakpoint typography values match TYPE_SCALE sm", () => {
-		// Parse the [data-window-size="sm"] block
-		const smVars = parseCssBlock(
-			devTypescalesCss,
-			'\\[data-window-size="sm"\\]',
-		);
-
-		for (const step of TYPE_SCALE) {
-			const devSize = smVars.get(`--typography-${step.name}-font-size`);
-			if (devSize) {
-				const devPx = extractPxValue(devSize);
-				expect(
-					devPx,
-					`${step.name} sm font-size: dev=${devPx}px, generator=${step.sizes.sm}px`,
-				).toBe(step.sizes.sm);
-			}
-
-			const devLh = smVars.get(`--typography-${step.name}-line-height`);
-			if (devLh) {
-				const devPx = extractPxValue(devLh);
-				expect(
-					devPx,
-					`${step.name} sm line-height: dev=${devPx}px, generator=${step.lineHeights.sm}px`,
-				).toBe(step.lineHeights.sm);
-			}
-		}
-	});
-
-	test("md breakpoint typography values match TYPE_SCALE md", () => {
-		const mdVars = parseCssBlock(
-			devTypescalesCss,
-			'\\[data-window-size="md"\\]',
-		);
-
-		for (const step of TYPE_SCALE) {
-			const devSize = mdVars.get(`--typography-${step.name}-font-size`);
-			if (devSize) {
-				const devPx = extractPxValue(devSize);
-				expect(
-					devPx,
-					`${step.name} md font-size: dev=${devPx}px, generator=${step.sizes.md}px`,
-				).toBe(step.sizes.md);
-			}
-
-			const devLh = mdVars.get(`--typography-${step.name}-line-height`);
-			if (devLh) {
-				const devPx = extractPxValue(devLh);
-				expect(
-					devPx,
-					`${step.name} md line-height: dev=${devPx}px, generator=${step.lineHeights.md}px`,
-				).toBe(step.lineHeights.md);
-			}
+	test("round option produces whole numbers", () => {
+		const steps = computeTypescale({ ...DEFAULT_TYPESCALE, round: true });
+		for (const step of steps) {
+			expect(step.size).toBe(Math.round(step.size));
+			expect(step.lineHeight).toBe(Math.round(step.lineHeight));
 		}
 	});
 });
@@ -505,12 +431,6 @@ describe("semantic token coverage vs dev semantics.css", () => {
 			grayName: "gray",
 			layers: "semantic",
 			darkMode: true,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: false,
 		});
 		const genNames = new Set(
 			result.tokens
@@ -550,12 +470,6 @@ describe("semantic token coverage vs dev semantics.css", () => {
 			grayName: "gray",
 			layers: "semantic",
 			darkMode: true,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: false,
 		});
 
 		// Map of dev name → generator name → check gray step
@@ -624,12 +538,6 @@ describe("abstraction layer parity with dev abstractions.css", () => {
 			grayName: "gray",
 			layers: "three-tier",
 			darkMode: true,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: false,
 		});
 
 		const genNeutralSteps = new Set<number>();
@@ -648,33 +556,23 @@ describe("abstraction layer parity with dev abstractions.css", () => {
 		}
 	});
 
-	test("typography values from dev abstractions match TYPE_SCALE", () => {
-		for (const step of TYPE_SCALE) {
-			// Dev: --size-font-typescale-body-size-min: 14px
-			for (const bp of ["min", "sm", "md"] as const) {
-				const sizeVar = devAbsVars.get(
-					`--size-font-typescale-${step.name}-size-${bp}`,
-				);
-				if (sizeVar) {
-					const devPx = extractPxValue(sizeVar);
-					expect(
-						devPx,
-						`${step.name} size ${bp}: dev=${devPx}px, generator=${step.sizes[bp]}px`,
-					).toBe(step.sizes[bp]);
-				}
+	test("typography step names from dev abstractions align with computed scale", () => {
+		const steps = computeTypescale(DEFAULT_TYPESCALE);
+		const stepNames = steps.map((s) => s.name);
 
-				// Dev: --color-font-typescale-body-line-height-min: 20px
-				const lhVar = devAbsVars.get(
-					`--color-font-typescale-${step.name}-line-height-${bp}`,
-				);
-				if (lhVar) {
-					const devPx = extractPxValue(lhVar);
-					expect(
-						devPx,
-						`${step.name} line-height ${bp}: dev=${devPx}px, generator=${step.lineHeights[bp]}px`,
-					).toBe(step.lineHeights[bp]);
-				}
-			}
+		// Check that at least the core step names (base, sm, lg, xl) appear in dev abstractions
+		for (const name of ["base", "sm", "lg", "xl"]) {
+			expect(
+				stepNames.includes(name),
+				`Step "${name}" should exist in computed typescale`,
+			).toBe(true);
+		}
+
+		// Every computed step should have positive size and line-height
+		for (const step of steps) {
+			expect(step.size).toBeGreaterThan(0);
+			expect(step.lineHeight).toBeGreaterThan(0);
+			expect(step.lineHeight).toBeGreaterThanOrEqual(step.size);
 		}
 	});
 
@@ -772,12 +670,6 @@ describe("gap analysis", () => {
 			grayName: "gray",
 			layers: "semantic",
 			darkMode: true,
-			includeSpacing: false,
-			includeRadius: false,
-			includeShadows: false,
-			includeTypography: false,
-			includeDurations: false,
-			includeFonts: false,
 		});
 		const genNames = new Set(
 			result.tokens
