@@ -614,9 +614,9 @@ export function StylesPage() {
 				<SectionHeader
 					variant="primary"
 					title="Styles"
-					description="Loading styles from Figma..."
+					description="Loading styles from Figma…"
 				/>
-				<LoadingState message="Loading styles..." />
+				<LoadingState message="Loading styles…" />
 			</div>
 		);
 	}
@@ -640,7 +640,7 @@ export function StylesPage() {
 						<Search size={14} />
 						<input
 							type="text"
-							placeholder="Search styles..."
+							placeholder="Search styles…"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
@@ -736,7 +736,7 @@ export function StylesPage() {
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								setFindText(e.target.value)
 							}
-							placeholder="Text to find..."
+							placeholder="Text to find…"
 						/>
 						<Input
 							label="Replace"
@@ -744,7 +744,7 @@ export function StylesPage() {
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								setReplaceText(e.target.value)
 							}
-							placeholder="Replace with..."
+							placeholder="Replace with…"
 						/>
 					</div>
 
@@ -764,7 +764,7 @@ export function StylesPage() {
 								))}
 								{renamePreview.length > 10 && (
 									<div className="manage-rename-preview-more">
-										...and {renamePreview.length - 10} more
+										…and {renamePreview.length - 10} more
 									</div>
 								)}
 							</div>

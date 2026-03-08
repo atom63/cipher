@@ -48,7 +48,7 @@
   font-weight: var(--font-medium);
   color: var(--muted-foreground);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background-color var(--transition), color var(--transition);
   text-align: left;
   width: 100%;
   position: relative;
@@ -123,7 +123,7 @@
   color: var(--muted-foreground);
   cursor: pointer;
   font-size: var(--text-xl);
-  transition: all var(--transition);
+  transition: background-color var(--transition), color var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;

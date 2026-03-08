@@ -284,7 +284,7 @@ export function StyleguidePage() {
 						<div className={styles.column}>
 							<Input
 								label="Default Input"
-								placeholder="Enter text..."
+								placeholder="Enter text…"
 								type="text"
 							/>
 							<Input
@@ -311,12 +311,12 @@ export function StyleguidePage() {
 						<div className={styles.column}>
 							<Textarea
 								label="Description"
-								placeholder="Enter description..."
+								placeholder="Enter description…"
 							/>
 							<Textarea
 								label="With Description"
 								description="Maximum 500 characters"
-								placeholder="Type here..."
+								placeholder="Type here…"
 							/>
 						</div>
 					</div>
@@ -759,7 +759,7 @@ export function StyleguidePage() {
 
 					<div className={styles.componentGroup}>
 						<h4>Loading State</h4>
-						<LoadingState message="Loading components..." />
+						<LoadingState message="Loading components…" />
 					</div>
 				</Card>
 			</section>

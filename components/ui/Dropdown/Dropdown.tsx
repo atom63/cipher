@@ -199,7 +199,7 @@ export function Dropdown({
 									} ${option.danger ? styles.menuItemDanger : ""}`}
 								>
 									{option.icon && (
-										<span className={styles.menuItemIcon}>{option.icon}</span>
+										<span className={styles.menuItemIcon} aria-hidden="true">{option.icon}</span>
 									)}
 									<span className={styles.menuItemLabel}>{option.label}</span>
 								</button>

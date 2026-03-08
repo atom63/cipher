@@ -37,6 +37,12 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
 /* Variants */
 .info {
   border-left: 3px solid var(--figma-color-icon-brand);

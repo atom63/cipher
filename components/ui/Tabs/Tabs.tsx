@@ -103,7 +103,7 @@ export function Tabs({
 						onClick={() => handleTabClick(tab.id)}
 						disabled={tab.disabled}
 					>
-						{tab.icon && <span className={styles.tabIcon}>{tab.icon}</span>}
+						{tab.icon && <span className={styles.tabIcon} aria-hidden="true">{tab.icon}</span>}
 						<span className={styles.tabLabel}>{tab.label}</span>
 					</button>
 				))}

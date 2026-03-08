@@ -368,7 +368,7 @@ export function ExportPage() {
 	if (loading) {
 		return (
 			<div className="page-content">
-				<LoadingState message="Loading..." />
+				<LoadingState message="Loading…" />
 			</div>
 		);
 	}
@@ -378,7 +378,7 @@ export function ExportPage() {
 			<div className="page-content">
 				<LoadingState
 					message={
-						exportResult ? "Exporting variables..." : "Exporting styles..."
+						exportResult ? "Exporting variables…" : "Exporting styles…"
 					}
 				/>
 			</div>

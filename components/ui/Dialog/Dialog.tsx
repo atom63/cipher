@@ -130,7 +130,7 @@ export function Dialog({
 							onClick={onClose}
 							aria-label="Close dialog"
 						>
-							<X size={18} />
+							<X size={18} aria-hidden="true" />
 						</button>
 					)}
 				</div>

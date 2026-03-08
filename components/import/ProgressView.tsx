@@ -10,8 +10,8 @@ interface ProgressViewProps {
 export function ProgressView({ message }: ProgressViewProps) {
 	return (
 		<LoadingState
-			message={message || "Importing Tokens..."}
-			hint="This may take a few moments..."
+			message={message || "Importing Tokens…"}
+			hint="This may take a few moments…"
 		>
 			<Spinner size="lg" />
 		</LoadingState>
@@ -166,7 +166,7 @@ export function SuccessView({
 									))}
 									{changedTokens.length > 20 && (
 										<li className={styles.changeMore}>
-											... and {changedTokens.length - 20} more changes
+											…and {changedTokens.length - 20} more changes
 										</li>
 									)}
 								</ul>

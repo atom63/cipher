@@ -107,7 +107,7 @@ export function Sidebar({
 				title={collapsed ? item.label : !item.enabled ? "Coming soon" : ""}
 				type="button"
 			>
-				<span className={styles.sidebarIcon}>
+				<span className={styles.sidebarIcon} aria-hidden="true">
 					<Icon size={16} />
 				</span>
 				{!collapsed && (
@@ -142,9 +142,10 @@ export function Sidebar({
 				className={styles.sidebarCollapseToggle}
 				onClick={onToggleCollapse}
 				title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+				aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
 				type="button"
 			>
-				{collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+				{collapsed ? <ChevronRight size={18} aria-hidden="true" /> : <ChevronLeft size={18} aria-hidden="true" />}
 			</button>
 		</aside>
 	);

@@ -22,7 +22,7 @@
   padding: var(--spacing-3xl) var(--spacing-xl);
   text-align: center;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), background-color var(--transition);
   margin-bottom: var(--spacing-xl);
 }
 

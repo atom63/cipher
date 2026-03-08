@@ -531,7 +531,7 @@ export function GeneratePage() {
 	if (view === "progress") {
 		return (
 			<div className={styles.page}>
-				<ProgressView message="Creating variables in Figma..." />
+				<ProgressView message="Creating variables in Figma…" />
 			</div>
 		);
 	}

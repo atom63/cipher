@@ -637,9 +637,9 @@ export function ManagePage() {
 				<SectionHeader
 					variant="primary"
 					title="Manage Variables"
-					description="Loading variables from Figma..."
+					description="Loading variables from Figma…"
 				/>
-				<LoadingState message="Loading variables..." />
+				<LoadingState message="Loading variables…" />
 			</div>
 		);
 	}
@@ -659,7 +659,7 @@ export function ManagePage() {
 						<Search size={14} />
 						<input
 							type="text"
-							placeholder="Search variables..."
+							placeholder="Search variables…"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
@@ -780,7 +780,7 @@ export function ManagePage() {
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								setFindText(e.target.value)
 							}
-							placeholder="Text to find..."
+							placeholder="Text to find…"
 						/>
 						<Input
 							label="Replace"
@@ -788,7 +788,7 @@ export function ManagePage() {
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								setReplaceText(e.target.value)
 							}
-							placeholder="Replace with..."
+							placeholder="Replace with…"
 						/>
 						<label
 							className="manage-regex-toggle"
@@ -826,7 +826,7 @@ export function ManagePage() {
 								))}
 								{renamePreview.length > 10 && (
 									<div className="manage-rename-preview-more">
-										...and {renamePreview.length - 10} more
+										…and {renamePreview.length - 10} more
 									</div>
 								)}
 							</div>
@@ -964,7 +964,7 @@ export function ManagePage() {
 														<div className="manage-edit-alias-search">
 															<input
 																type="text"
-																placeholder="Search variables..."
+																placeholder="Search variables…"
 																value={aliasSearch}
 																onChange={(e) => setAliasSearch(e.target.value)}
 																className="manage-edit-alias-input"

@@ -122,7 +122,7 @@ export function FileImport({
 				/>
 
 				{isLoading ? (
-					<LoadingState message="Reading file..." />
+					<LoadingState message="Reading file…" />
 				) : (
 					<>
 						<div className={styles.uploadIcon}>📁</div>

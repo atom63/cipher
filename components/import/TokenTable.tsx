@@ -384,7 +384,7 @@ export function TokenTable({
 						))}
 						{validation.issues.length > 5 && (
 							<li>
-								...and {validation.issues.length - 5} more issue
+								…and {validation.issues.length - 5} more issue
 								{validation.issues.length - 5 !== 1 ? "s" : ""}
 							</li>
 						)}

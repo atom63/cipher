@@ -222,3 +222,40 @@
 :global(.stagger-6) { animation-delay: 300ms; }
 :global(.stagger-7) { animation-delay: 350ms; }
 :global(.stagger-8) { animation-delay: 400ms; }
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .fadeIn,
+  .fadeIn-up,
+  .fadeIn-down,
+  .fadeIn-left,
+  .fadeIn-right,
+  .fadeIn-none,
+  .scaleIn,
+  .slideIn,
+  .slideIn-left,
+  .slideIn-right,
+  .slideIn-top,
+  .slideIn-bottom {
+    animation: none;
+    opacity: 1;
+  }
+
+  .pulse {
+    animation: none;
+  }
+
+  :global(.animate-fade-in),
+  :global(.animate-fade-in-up),
+  :global(.animate-scale-in) {
+    animation: none;
+    opacity: 1;
+  }
+
+  :global(.animate-pulse) {
+    animation: none;
+  }
+}

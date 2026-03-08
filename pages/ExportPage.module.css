@@ -26,7 +26,7 @@
   background: var(--muted);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  transition: all var(--transition);
+  transition: border-color var(--transition), background-color var(--transition), opacity var(--transition);
   cursor: pointer;
 }
 
@@ -108,7 +108,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), background-color var(--transition), opacity var(--transition);
 }
 
 .styleGroupItem:hover {
@@ -198,6 +198,7 @@
 .successStatValue {
   color: var(--foreground);
   font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
 }
 
 .successActions {

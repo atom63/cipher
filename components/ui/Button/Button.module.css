@@ -250,3 +250,13 @@
     transform: rotate(360deg);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .loading::before {
+    animation-duration: 1.5s;
+  }
+}

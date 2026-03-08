@@ -14,6 +14,7 @@
   justify-content: center;
   z-index: var(--z-modal, 1000);
   padding: var(--spacing-xl);
+  overscroll-behavior: contain;
   animation: overlay-fade-in 0.2s ease-out;
 }
 
@@ -243,6 +244,20 @@
 
 .dialog[data-variant="danger"] .header h3 {
   color: var(--destructive);
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay {
+    animation: none;
+  }
+
+  .dialog {
+    animation: none;
+  }
 }
 
 /* Success dialog */

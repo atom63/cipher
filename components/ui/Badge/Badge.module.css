@@ -262,3 +262,21 @@
   padding-right: var(--spacing-xs);
   font-weight: var(--font-semibold);
 }
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .badge {
+    transition: none;
+  }
+
+  .dot {
+    animation: none;
+  }
+
+  .removeButton {
+    transition: none;
+  }
+}

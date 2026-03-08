@@ -70,7 +70,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 				data-success={hasSuccess || undefined}
 				data-disabled={disabled || undefined}
 			>
-				{leftIcon && <span className={styles.leftIcon}>{leftIcon}</span>}
+				{leftIcon && <span className={styles.leftIcon} aria-hidden="true">{leftIcon}</span>}
 				<input
 					ref={ref}
 					id={inputId}
@@ -88,7 +88,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 					}
 					{...props}
 				/>
-				{rightIcon && <span className={styles.rightIcon}>{rightIcon}</span>}
+				{rightIcon && <span className={styles.rightIcon} aria-hidden="true">{rightIcon}</span>}
 				{hasError && !rightIcon && (
 					<span className={styles.stateIcon} aria-hidden="true">
 						<AlertCircle size={16} />

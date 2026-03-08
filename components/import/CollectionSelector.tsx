@@ -173,7 +173,7 @@ export function CollectionSelector({
 			/>
 
 			{loading ? (
-				<LoadingState message="Loading collections..." />
+				<LoadingState message="Loading collections…" />
 			) : isMultiCollection ? (
 				<>
 					<div className={styles.collectionForm}>
