@@ -39,6 +39,8 @@
 	--color-gray-dark-11: rgba(180, 180, 180, 1);
 	--color-gray-dark-12: rgba(238, 238, 238, 1);
 
+  
+
 	--color-accent-primary-500: rgba(247, 107, 21, 1);
 
 
@@ -344,25 +346,6 @@ body {
   width: 100%;
   overflow: hidden;
 }
-
-/* === View Mode Toggle === */
-.view-mode-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--muted);
-  color: var(--foreground);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-
-  h1 {
-    font-size: var(--text-md);
-    font-weight: var(--font-semibold);
-    margin: 0;
-  }
-}
-
 
 /* === Layout with Sidebar === */
 .plugin-layout {
@@ -1518,20 +1501,6 @@ body {
   opacity: 0.7;
 }
 
-.manage-color-swatch {
-  width: 20px;
-  height: 20px;
-  border-radius: var(--radius-sm);
-  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
-  flex-shrink: 0;
-  display: inline-block;
-}
-
-.manage-name-swatches .manage-color-swatch {
-  width: 14px;
-  height: 14px;
-  border-radius: var(--radius-xs);
-}
 
 .manage-value {
   display: flex;
@@ -1599,10 +1568,6 @@ body {
   gap: var(--spacing-xs);
 }
 
-.styles-gradient-swatch {
-  width: 24px !important;
-  border-radius: 3px !important;
-}
 
 .styles-gradient-layer {
   align-items: flex-start;

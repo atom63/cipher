@@ -3,12 +3,10 @@
  * Author: You Zhang (ATOM63)
  */
 
-import { Columns2, Square } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { type PageId, Sidebar } from "./components/layout";
+import { AppHeader, type PageId, Sidebar, type ViewMode } from "./components/layout";
 import {
-	Button,
 	ErrorBoundary,
 	PageErrorBoundary,
 	ToastProvider,
@@ -28,7 +26,8 @@ import { applyTheme } from "./utils/theme";
 function App() {
 	const [activePage, setActivePage] = useState<PageId>("manage");
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-	const [viewMode, setViewMode] = useState<"default" | "compact">("default");
+	const [viewMode, setViewMode] = useState<ViewMode>("default");
+	const [isDark, setIsDark] = useState(false);
 	const postMessage = usePostMessage();
 
 	// Load theme on startup
@@ -38,7 +37,9 @@ function App() {
 
 	useFigmaMessage((msg) => {
 		if (msg.type === "settings-loaded" && msg.data?.theme) {
-			applyTheme(msg.data.theme as PluginSettings["theme"]);
+			const t = msg.data.theme as PluginSettings["theme"];
+			setIsDark(t === "dark");
+			applyTheme(t);
 		}
 	});
 
@@ -46,6 +47,13 @@ function App() {
 		const newMode = viewMode === "default" ? "compact" : "default";
 		setViewMode(newMode);
 		postMessage({ type: "resize-window", data: { mode: newMode } });
+	};
+
+	const toggleTheme = () => {
+		const next = isDark ? "light" : "dark";
+		setIsDark(!isDark);
+		applyTheme(next);
+		postMessage({ type: "save-settings", data: { theme: next } });
 	};
 
 	const renderPage = () => {
@@ -103,23 +111,12 @@ function App() {
 
 	return (
 		<div className="plugin-container">
-			{/* Header with View Mode Toggle */}
-			<div className="view-mode-header">
-				<h1>Cipher</h1>
-				<Button
-					variant="soft"
-					size="sm"
-					onClick={toggleViewMode}
-					title={
-						viewMode === "default"
-							? "Switch to Compact Mode"
-							: "Switch to Default Mode"
-					}
-				>
-					{viewMode === "default" ? <Columns2 size={14} /> : <Square size={14} />}
-					{viewMode === "default" ? "Compact" : "Expand"}
-				</Button>
-			</div>
+			<AppHeader
+				viewMode={viewMode}
+				onToggleViewMode={toggleViewMode}
+				isDark={isDark}
+				onToggleTheme={toggleTheme}
+			/>
 
 			{/* Main Layout with Sidebar */}
 			<div className="plugin-layout">

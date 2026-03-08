@@ -1,0 +1,54 @@
+/* Color Swatch Component Styles */
+
+.swatch {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  overflow: hidden;
+}
+
+/* Checker background for transparency */
+.swatch::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--background);
+  background-image:
+    linear-gradient(45deg, var(--muted-foreground) 25%, transparent 25%),
+    linear-gradient(135deg, var(--muted-foreground) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--muted-foreground) 75%),
+    linear-gradient(135deg, transparent 75%, var(--muted-foreground) 75%);
+  background-position:
+    0 0,
+    4px 0,
+    4px -4px,
+    0 4px;
+  background-size: 8px 8px;
+  opacity: 0.15;
+}
+
+/* Color fill on top of checker */
+.fill {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Sizes */
+.sm {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-xs);
+}
+
+.md {
+  width: 20px;
+  height: 20px;
+}
+
+.lg {
+  width: 28px;
+  height: 28px;
+}

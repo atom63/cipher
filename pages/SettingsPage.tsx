@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Button, RadioGroup, SectionHeader, useToast } from "../components/ui";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type { PluginSettings } from "../types/messages";
-import { applyTheme } from "../utils/theme";
 
 const DEFAULT_SETTINGS: PluginSettings = {
 	colorFormat: "oklch",
@@ -25,20 +24,17 @@ export function SettingsPage() {
 		if (msg.type === "settings-loaded") {
 			const loaded = { ...DEFAULT_SETTINGS, ...msg.data };
 			setSettings(loaded);
-			applyTheme(loaded.theme);
 		}
 	});
 
 	const handleSave = () => {
 		postMessage({ type: "save-settings", data: settings });
-		applyTheme(settings.theme);
 		showSuccess("Settings saved");
 	};
 
 	const handleReset = () => {
 		setSettings(DEFAULT_SETTINGS);
 		postMessage({ type: "save-settings", data: DEFAULT_SETTINGS });
-		applyTheme(DEFAULT_SETTINGS.theme);
 		showSuccess("Settings reset to defaults");
 	};
 
@@ -51,40 +47,6 @@ export function SettingsPage() {
 			/>
 
 			<div className="settings-content">
-				{/* Theme */}
-				<section className="settings-section">
-					<h3>Appearance</h3>
-
-					<RadioGroup
-						label="Theme"
-						description="Controls light and dark mode for the plugin UI"
-						name="theme"
-						value={settings.theme}
-						onChange={(value: string) => {
-							const theme = value as PluginSettings["theme"];
-							setSettings({ ...settings, theme });
-							applyTheme(theme);
-						}}
-						options={[
-							{
-								value: "system",
-								label: "System",
-								description: "Follow Figma's theme preference",
-							},
-							{
-								value: "light",
-								label: "Light",
-								description: "Always use light mode",
-							},
-							{
-								value: "dark",
-								label: "Dark",
-								description: "Always use dark mode",
-							},
-						]}
-					/>
-				</section>
-
 				{/* Color Format */}
 				<section className="settings-section">
 					<h3>Export</h3>

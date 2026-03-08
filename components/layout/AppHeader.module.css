@@ -1,0 +1,18 @@
+/* App Header Component Styles */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--muted);
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}

@@ -20,15 +20,20 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Badge,
 	Button,
+	ColorSwatch,
 	ConfirmDialog,
 	EmptyState,
-	Input,
+	GradientSwatch,
 	LoadingState,
+	RenameDialog,
 	SectionHeader,
 	useToast,
 } from "../components/ui";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
+import { useListKeyboard } from "../hooks/useListKeyboard";
+import { useRename } from "../hooks/useRename";
+import { useSelection } from "../hooks/useSelection";
 import type {
 	EffectInfo,
 	PaintInfo,
@@ -98,23 +103,16 @@ export function StylesPage() {
 	const [counts, setCounts] = useState<StyleCounts | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [search, setSearch] = useState("");
-	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [filterCategory, setFilterCategory] = useState<CategoryFilter>("all");
 	const [sortField, setSortField] = useState<SortField>("name");
 	const [sortDir, setSortDir] = useState<SortDir>("asc");
 	const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
 		new Set(),
 	);
-	const [lastClickedId, setLastClickedId] = useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search, 150);
 
 	// Action panels
 	const [showRename, setShowRename] = useState(false);
-	const [findText, setFindText] = useState("");
-	const [replaceText, setReplaceText] = useState("");
-	const [useRegex, setUseRegex] = useState(false);
-	const [renamePrefix, setRenamePrefix] = useState("");
-	const [renameSuffix, setRenameSuffix] = useState("");
 	const [pendingDelete, setPendingDelete] = useState(false);
 	const [operationPending, setOperationPending] = useState(false);
 	const [showRebind, setShowRebind] = useState(false);
@@ -163,10 +161,15 @@ export function StylesPage() {
 			}
 		} else if (msg.type === "styles-renamed") {
 			const { success, failed } = msg.data;
-			// Capture current rename preview for undo before clearing state
-			const undoRenames = renamePreview.map((r) => ({
+			// Capture undo data before clearing state
+			const styleMap = new Map(styles.map((s) => [s.id, s]));
+			const undoRenames = rename.changes.map((r) => ({
 				id: r.id,
-				category: r.category as "paint" | "text" | "effect" | "grid",
+				category: (styleMap.get(r.id)?.category ?? "paint") as
+					| "paint"
+					| "text"
+					| "effect"
+					| "grid",
 				newName: r.oldName,
 			}));
 			if (failed > 0) showError(`${failed} rename(s) failed`);
@@ -186,8 +189,7 @@ export function StylesPage() {
 						: undefined,
 				);
 			setShowRename(false);
-			setFindText("");
-			setReplaceText("");
+			rename.reset();
 			loadStyles();
 		} else if (msg.type === "styles-deleted") {
 			const { success, failed } = msg.data;
@@ -276,87 +278,33 @@ export function StylesPage() {
 		return new Map(sorted);
 	}, [filtered]);
 
-	// Keyboard shortcuts
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			const target = e.target as HTMLElement;
-			if (
-				target.tagName === "INPUT" ||
-				target.tagName === "TEXTAREA" ||
-				target.tagName === "SELECT"
-			)
-				return;
-
-			if (e.key === "Escape") {
-				if (showRename) {
-					setShowRename(false);
-					return;
-				}
-				if (showRebind) {
-					setShowRebind(false);
-					setRebindSuggestions([]);
-					return;
-				}
-				if (selectedIds.size > 0) {
-					setSelectedIds(new Set());
-					return;
-				}
-				return;
-			}
-
-			if ((e.metaKey || e.ctrlKey) && e.key === "a") {
-				e.preventDefault();
-				setSelectedIds(new Set(filtered.map((s) => s.id)));
-				return;
-			}
-
-			if (e.key === "Delete" || e.key === "Backspace") {
-				if (selectedIds.size > 0 && !showRename && !showRebind) {
-					e.preventDefault();
-					setPendingDelete(true);
-				}
-				return;
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [selectedIds, filtered, showRename, showRebind]);
-
 	// Selection
-	const toggleSelect = useCallback(
-		(id: string, event?: React.MouseEvent) => {
-			setSelectedIds((prev) => {
-				const next = new Set(prev);
-				if (event?.shiftKey && lastClickedId) {
-					const allIds = filtered.map((s) => s.id);
-					const start = allIds.indexOf(lastClickedId);
-					const end = allIds.indexOf(id);
-					if (start !== -1 && end !== -1) {
-						const [from, to] = start < end ? [start, end] : [end, start];
-						for (let i = from; i <= to; i++) next.add(allIds[i]);
-						return next;
-					}
-				}
-				if (next.has(id)) next.delete(id);
-				else next.add(id);
-				return next;
-			});
-			setLastClickedId(id);
-		},
-		[filtered, lastClickedId],
-	);
+	const filteredIds = useMemo(() => filtered.map((s) => s.id), [filtered]);
+	const {
+		selectedIds,
+		setSelectedIds,
+		toggleSelect,
+		selectAll,
+		selectNone,
+		contextSelect,
+	} = useSelection({ allIds: filteredIds });
 
-	const selectAll = useCallback(
-		() => setSelectedIds(new Set(filtered.map((s) => s.id))),
-		[filtered],
-	);
-	const selectNone = useCallback(() => setSelectedIds(new Set()), []);
-
-	const contextSelect = useCallback((id: string) => {
-		setSelectedIds(new Set([id]));
-		setLastClickedId(id);
-	}, []);
+	// Keyboard shortcuts
+	useListKeyboard({
+		selectedIds,
+		allIds: filteredIds,
+		isPanelOpen: showRename || showRebind,
+		setSelectedIds,
+		onClosePanel: useCallback(() => {
+			if (showRename) {
+				setShowRename(false);
+			} else if (showRebind) {
+				setShowRebind(false);
+				setRebindSuggestions([]);
+			}
+		}, [showRename, showRebind]),
+		onDelete: useCallback(() => setPendingDelete(true), []),
+	});
 
 	const toggleGroup = useCallback((groupKey: string) => {
 		setCollapsedGroups((prev) => {
@@ -367,71 +315,32 @@ export function StylesPage() {
 		});
 	}, []);
 
-	// Rename preview
-	const renamePreview = useMemo(() => {
-		if (!findText || selectedIds.size === 0) return [];
-		const selected = styles.filter((s) => selectedIds.has(s.id));
-		try {
-			const pattern = useRegex ? new RegExp(findText, "g") : null;
-			return selected
-				.map((s) => {
-					const newName = pattern
-						? s.name.replace(pattern, replaceText)
-						: s.name.replaceAll(findText, replaceText);
-					return newName !== s.name
-						? { id: s.id, category: s.category, oldName: s.name, newName }
-						: null;
-				})
-				.filter(Boolean) as {
-				id: string;
-				category: string;
-				oldName: string;
-				newName: string;
-			}[];
-		} catch {
-			return [];
-		}
-	}, [findText, replaceText, useRegex, selectedIds, styles]);
+	// Rename
+	const selectedItems = useMemo(
+		() => styles.filter((s) => selectedIds.has(s.id)),
+		[styles, selectedIds],
+	);
+	const rename = useRename({ items: selectedItems });
 
 	const handleRename = () => {
-		if (renamePreview.length === 0 || operationPending) return;
+		if (rename.changes.length === 0 || operationPending) return;
 		setOperationPending(true);
+		// Look up category from styles for each renamed item
+		const styleMap = new Map(styles.map((s) => [s.id, s]));
 		postMessage({
 			type: "rename-styles",
 			data: {
-				renames: renamePreview.map((r) => ({
+				renames: rename.changes.map((r) => ({
 					id: r.id,
-					category: r.category as "paint" | "text" | "effect" | "grid",
+					category: (styleMap.get(r.id)?.category ?? "paint") as
+						| "paint"
+						| "text"
+						| "effect"
+						| "grid",
 					newName: r.newName,
 				})),
 			},
 		});
-	};
-
-	const handleApplyPrefix = () => {
-		if (!renamePrefix || operationPending) return;
-		const selected = styles.filter((s) => selectedIds.has(s.id));
-		const renames = selected.map((s) => ({
-			id: s.id,
-			category: s.category as "paint" | "text" | "effect" | "grid",
-			newName: `${renamePrefix}/${s.name}`,
-		}));
-		if (renames.length === 0) return;
-		setOperationPending(true);
-		postMessage({ type: "rename-styles", data: { renames } });
-	};
-
-	const handleApplySuffix = () => {
-		if (!renameSuffix || operationPending) return;
-		const selected = styles.filter((s) => selectedIds.has(s.id));
-		const renames = selected.map((s) => ({
-			id: s.id,
-			category: s.category as "paint" | "text" | "effect" | "grid",
-			newName: `${s.name}/${renameSuffix}`,
-		}));
-		if (renames.length === 0) return;
-		setOperationPending(true);
-		postMessage({ type: "rename-styles", data: { renames } });
 	};
 
 	const handleDelete = () => {
@@ -509,13 +418,10 @@ export function StylesPage() {
 	// Render a single paint layer
 	const renderPaintLayer = (paint: PaintInfo, i: number) => {
 		if (paint.paintType === "SOLID") {
-			const gradientBg = paint.color || "#000";
+			const solidColor = paint.color || "#000";
 			return (
 				<span key={i} className="styles-paint-layer">
-					<span
-						className="manage-color-swatch"
-						style={{ backgroundColor: gradientBg, opacity: paint.opacity }}
-					/>
+					<ColorSwatch color={solidColor} opacity={paint.opacity} />
 					<span className="styles-preview-text">
 						{paint.colorVariable ? (
 							<span
@@ -553,17 +459,11 @@ export function StylesPage() {
 			const gradientBg = `linear-gradient(90deg, ${gradientColors})`;
 			return (
 				<span key={i} className="styles-paint-layer styles-gradient-layer">
-					<span
-						className="manage-color-swatch styles-gradient-swatch"
-						style={{ background: gradientBg, opacity: paint.opacity }}
-					/>
+					<GradientSwatch gradient={gradientBg} opacity={paint.opacity} />
 					<span className="styles-gradient-stops">
 						{stops.map((s, j) => (
 							<span key={j} className="styles-gradient-stop">
-								<span
-									className="manage-color-swatch"
-									style={{ backgroundColor: s.color }}
-								/>
+								<ColorSwatch color={s.color} size="sm" />
 								{s.variable ? (
 									<span className="styles-var-ref" data-tooltip={s.variable}>
 										<Link size={10} /> {s.variable.split("/").pop()}
@@ -618,12 +518,7 @@ export function StylesPage() {
 			effect.colorVariable || effect.radiusVariable || effect.spreadVariable;
 		return (
 			<span key={i} className="styles-effect-layer">
-				{effect.color && (
-					<span
-						className="manage-color-swatch"
-						style={{ backgroundColor: effect.color }}
-					/>
-				)}
+				{effect.color && <ColorSwatch color={effect.color} />}
 				<span className="styles-preview-text">{effect.description}</span>
 				{hasVars && (
 					<span className="styles-var-refs">
@@ -810,138 +705,15 @@ export function StylesPage() {
 				</div>
 			)}
 
-			{/* Rename panel */}
-			{showRename && selectedIds.size > 0 && (
-				<div className="manage-action-panel">
-					<div className="manage-action-panel-header">
-						<span>Rename — find & replace in style names</span>
-						<button
-							type="button"
-							className="manage-panel-close"
-							onClick={() => setShowRename(false)}
-							data-tooltip="Close panel"
-						>
-							<X size={14} />
-						</button>
-					</div>
-					{/* Quick prefix/suffix actions */}
-					<div className="manage-rename-quick">
-						<div className="manage-rename-quick-row">
-							<Input
-								label="Add prefix"
-								value={renamePrefix}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setRenamePrefix(e.target.value)
-								}
-								placeholder="e.g. brand"
-							/>
-							<Button
-								variant="ghost"
-								onClick={handleApplyPrefix}
-								disabled={!renamePrefix || operationPending}
-							>
-								Apply
-							</Button>
-						</div>
-						<div className="manage-rename-quick-row">
-							<Input
-								label="Add suffix"
-								value={renameSuffix}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setRenameSuffix(e.target.value)
-								}
-								placeholder="e.g. dark"
-							/>
-							<Button
-								variant="ghost"
-								onClick={handleApplySuffix}
-								disabled={!renameSuffix || operationPending}
-							>
-								Apply
-							</Button>
-						</div>
-					</div>
-
-					<div className="manage-rename-divider">
-						<span>or use find & replace</span>
-					</div>
-
-					<div className="manage-rename-inputs">
-						<Input
-							label="Find text"
-							value={findText}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-								setFindText(e.target.value)
-							}
-							placeholder="Text to find…"
-						/>
-						<Input
-							label="Replace with"
-							value={replaceText}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-								setReplaceText(e.target.value)
-							}
-							placeholder="Replace with…"
-						/>
-						<label
-							className="manage-regex-toggle"
-							title="Use regular expressions for advanced pattern matching (e.g. color/(\w+) → colour/$1)"
-						>
-							<input
-								type="checkbox"
-								checked={useRegex}
-								onChange={(e) => setUseRegex(e.target.checked)}
-							/>
-							Regex
-							<span className="manage-regex-hint">.*</span>
-						</label>
-					</div>
-
-					<div className="manage-rename-hint">
-						{useRegex
-							? "Using regex patterns. Use capture groups like (\\w+) and reference them with $1, $2 in replace."
-							: "Replaces all exact matches of the find text in each style name."}
-					</div>
-
-					{renamePreview.length > 0 && (
-						<div className="manage-rename-preview">
-							<div className="manage-rename-preview-header">
-								{renamePreview.length} style
-								{renamePreview.length !== 1 ? "s" : ""} will be renamed:
-							</div>
-							<div className="manage-rename-preview-list">
-								{renamePreview.slice(0, 10).map((r) => (
-									<div key={r.id} className="manage-rename-preview-item">
-										<span className="manage-rename-old">{r.oldName}</span>
-										<span className="manage-rename-arrow">
-											<ArrowRight size={12} />
-										</span>
-										<span className="manage-rename-new">{r.newName}</span>
-									</div>
-								))}
-								{renamePreview.length > 10 && (
-									<div className="manage-rename-preview-more">
-										…and {renamePreview.length - 10} more
-									</div>
-								)}
-							</div>
-							<div className="manage-panel-actions">
-								<Button variant="ghost" onClick={() => setShowRename(false)}>
-									Cancel
-								</Button>
-								<Button
-									variant="primary"
-									onClick={handleRename}
-									disabled={operationPending}
-								>
-									<Check size={14} />
-									Rename {renamePreview.length}
-								</Button>
-							</div>
-						</div>
-					)}
-				</div>
-			)}
+			{/* Rename dialog */}
+			<RenameDialog
+				isOpen={showRename && selectedIds.size > 0}
+				onClose={() => setShowRename(false)}
+				itemLabel={`${selectedIds.size} ${selectedIds.size === 1 ? "style" : "styles"}`}
+				rename={rename}
+				onApply={handleRename}
+				disabled={operationPending}
+			/>
 
 			{/* Rebind panel */}
 			{showRebind && (
@@ -983,10 +755,7 @@ export function StylesPage() {
 											checked={!rebindExcluded.has(i)}
 											onChange={() => toggleRebindExclude(i)}
 										/>
-										<span
-											className="manage-color-swatch"
-											style={{ backgroundColor: s.currentColor }}
-										/>
+										<ColorSwatch color={s.currentColor} />
 										<span
 											className="styles-rebind-style-name"
 											title={s.styleName}
@@ -1130,22 +899,25 @@ export function StylesPage() {
 									)}
 									{CATEGORY_ICONS[cat]}
 									<span className="manage-group-name">{groupLabel}</span>
-									<Badge>{groupStyles.length}</Badge>
+									<Badge variant="outline">{groupStyles.length}</Badge>
 									{groupSelected > 0 && (
 										<Badge variant="info">{groupSelected} selected</Badge>
 									)}
 								</div>
-								{!isCollapsed &&
-									groupStyles.map((s) => (
-										<StyleRow
-											key={s.id}
-											style={s}
-											isSelected={selectedIds.has(s.id)}
-											onToggleSelect={toggleSelect}
-											onContextSelect={contextSelect}
-											renderPreview={renderPreview}
-										/>
-									))}
+								{!isCollapsed && (
+									<div className="manage-subgroup">
+										{groupStyles.map((s) => (
+											<StyleRow
+												key={s.id}
+												style={s}
+												isSelected={selectedIds.has(s.id)}
+												onToggleSelect={toggleSelect}
+												onContextSelect={contextSelect}
+												renderPreview={renderPreview}
+											/>
+										))}
+									</div>
+								)}
 							</div>
 						);
 					})}

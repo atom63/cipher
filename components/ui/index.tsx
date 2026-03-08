@@ -5,6 +5,7 @@ export { Alert } from "./Alert";
 export { Badge, CountBadge, StatusBadge } from "./Badge";
 // Form Components
 export { Button } from "./Button";
+export { ColorSwatch, GradientSwatch } from "./ColorSwatch";
 export {
 	Card,
 	CardContent,
@@ -26,6 +27,7 @@ export { ErrorBoundary, PageErrorBoundary } from "./ErrorBoundary";
 export { Input } from "./Input";
 export { Radio, RadioCard, RadioWithHelper, RadioWithLabel } from "./Radio";
 export { RadioGroup } from "./RadioGroup";
+export { RenameDialog } from "./RenameDialog";
 // Layout Components
 export { SectionHeader } from "./SectionHeader";
 // Skeleton Components

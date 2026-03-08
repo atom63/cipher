@@ -22,23 +22,28 @@ import React, {
 	useRef,
 	useState,
 } from "react";
+import { FirstRunWizard } from "../components/manage";
 import {
 	Badge,
 	Button,
 	Checkbox,
+	ColorSwatch,
 	ConfirmDialog,
 	Dialog,
 	DialogActions,
 	EmptyState,
 	Input,
 	LoadingState,
+	RenameDialog,
 	SectionHeader,
 	Tabs,
 	useToast,
 } from "../components/ui";
-import { FirstRunWizard } from "../components/manage";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
+import { useListKeyboard } from "../hooks/useListKeyboard";
+import { useRename } from "../hooks/useRename";
+import { useSelection } from "../hooks/useSelection";
 import type {
 	CollectionInfo,
 	DeletedVariableSnapshot,
@@ -76,10 +81,10 @@ const VariableRow = React.memo(function VariableRow({
 		return (
 			<span className="manage-name-swatches">
 				{colorEntries.map(([mode, val]) => (
-					<span
+					<ColorSwatch
 						key={mode}
-						className="manage-color-swatch"
-						style={{ backgroundColor: val }}
+						color={val}
+						size="sm"
 						title={`${mode}: ${val}`}
 					/>
 				))}
@@ -95,11 +100,7 @@ const VariableRow = React.memo(function VariableRow({
 			const [, val] = entries[0];
 			if (isReference(val)) {
 				return (
-					<Badge
-						variant="outline"
-						size="sm"
-						icon={<Link size={10} />}
-					>
+					<Badge variant="outline" size="sm" icon={<Link size={10} />}>
 						{val.slice(1, -1)}
 					</Badge>
 				);
@@ -122,7 +123,9 @@ const VariableRow = React.memo(function VariableRow({
 						className="manage-mode-chip"
 						title={`${mode}: ${val}`}
 					>
-						<Badge variant="secondary" size="sm">{mode}</Badge>
+						<Badge variant="secondary" size="sm">
+							{mode}
+						</Badge>
 						{isReference(val) ? (
 							<Badge variant="outline" size="sm" icon={<Link size={10} />}>
 								{val.slice(1, -1)}
@@ -193,12 +196,15 @@ type ActionPanel = "rename" | "move" | "edit" | "scale" | null;
 /** Per-variable, per-mode edit values. Key = variableId, value = { modeName: editedValue } */
 type EditValuesMap = Record<string, Record<string, string>>;
 
-export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void }) {
+export function ManagePage({
+	onNavigate,
+}: {
+	onNavigate?: (page: string) => void;
+}) {
 	const [variables, setVariables] = useState<VariableInfo[]>([]);
 	const [collections, setCollections] = useState<CollectionInfo[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [search, setSearch] = useState("");
-	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [filterCollection, setFilterCollection] = useState<string>("all");
 	const [filterType, setFilterType] = useState<string>("all");
 	const [sortField, setSortField] = useState<SortField>("name");
@@ -207,28 +213,20 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 		new Set(),
 	);
 	const isInitialLoad = useRef(true);
-	const [lastClickedId, setLastClickedId] = useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search, 150);
 	const listRef = useRef<HTMLDivElement>(null);
 
 	// Action panels
 	const [activePanel, setActivePanel] = useState<ActionPanel>(null);
 
-	// Rename state
-	const [renameMode, setRenameMode] = useState<"find-replace" | "prefix" | "suffix">("find-replace");
-	const [findText, setFindText] = useState("");
-	const [replaceText, setReplaceText] = useState("");
-	const [useRegex, setUseRegex] = useState(false);
-	const [renamePrefix, setRenamePrefix] = useState("");
-	const [renameSuffix, setRenameSuffix] = useState("");
-
 	// Move state
 	const [moveTargetId, setMoveTargetId] = useState<string>("");
 
-
 	// Scale state
 	const [scaleFactor, setScaleFactor] = useState<string>("2");
-	const [scaleOperation, setScaleOperation] = useState<"multiply" | "divide">("multiply");
+	const [scaleOperation, setScaleOperation] = useState<"multiply" | "divide">(
+		"multiply",
+	);
 
 	// Edit values state: { [variableId]: { [modeName]: value } }
 	const [editValues, setEditValues] = useState<EditValuesMap>({});
@@ -236,7 +234,9 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 	const [aliasPickField, setAliasPickField] = useState<string | null>(null);
 	const [aliasSearch, setAliasSearch] = useState("");
 	// Active mode tab per collection in edit dialog
-	const [editActiveModes, setEditActiveModes] = useState<Record<string, string>>({});
+	const [editActiveModes, setEditActiveModes] = useState<
+		Record<string, string>
+	>({});
 
 	// Delete confirmation
 	const [pendingDelete, setPendingDelete] = useState(false);
@@ -301,8 +301,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 				);
 			}
 			setActivePanel(null);
-			setFindText("");
-			setReplaceText("");
+			rename.reset();
 			loadVariables();
 		} else if (msg.type === "variables-deleted") {
 			const { success, failed, snapshots } = msg.data as {
@@ -311,7 +310,9 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 				snapshots: DeletedVariableSnapshot[];
 			};
 			if (failed > 0) {
-				showError(`${failed} ${failed === 1 ? "deletion" : "deletions"} failed`);
+				showError(
+					`${failed} ${failed === 1 ? "deletion" : "deletions"} failed`,
+				);
 			} else {
 				showSuccess(
 					`Deleted ${success} variable${success !== 1 ? "s" : ""}`,
@@ -332,7 +333,9 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 			loadVariables();
 		} else if (msg.type === "variables-restored") {
 			if (msg.data.failed > 0) {
-				showError(`${msg.data.failed} ${msg.data.failed === 1 ? "restore" : "restores"} failed`);
+				showError(
+					`${msg.data.failed} ${msg.data.failed === 1 ? "restore" : "restores"} failed`,
+				);
 			} else {
 				showSuccess(
 					`Restored ${msg.data.success} variable${msg.data.success !== 1 ? "s" : ""}`,
@@ -402,7 +405,9 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 		} else if (msg.type === "variables-duplicated") {
 			const { success, failed, newVariableIds } = msg.data;
 			if (failed > 0) {
-				showError(`${failed} ${failed === 1 ? "duplication" : "duplications"} failed`);
+				showError(
+					`${failed} ${failed === 1 ? "duplication" : "duplications"} failed`,
+				);
 			} else {
 				showSuccess(
 					`Duplicated ${success} variable${success !== 1 ? "s" : ""}`,
@@ -501,7 +506,14 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 		});
 
 		return result;
-	}, [variables, filterCollection, filterType, debouncedSearch, sortField, sortDir]);
+	}, [
+		variables,
+		filterCollection,
+		filterType,
+		debouncedSearch,
+		sortField,
+		sortDir,
+	]);
 
 	// Group by collection → first path segment
 	const grouped = useMemo(() => {
@@ -544,42 +556,16 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 		return Array.from(types).sort();
 	}, [variables]);
 
-	// Selection helpers
-	const toggleSelect = useCallback(
-		(id: string, event?: React.MouseEvent) => {
-			setSelectedIds((prev) => {
-				const next = new Set(prev);
-				if (event?.shiftKey && lastClickedId) {
-					const allIds = filtered.map((v) => v.id);
-					const start = allIds.indexOf(lastClickedId);
-					const end = allIds.indexOf(id);
-					if (start !== -1 && end !== -1) {
-						const [from, to] = start < end ? [start, end] : [end, start];
-						for (let i = from; i <= to; i++) {
-							next.add(allIds[i]);
-						}
-						return next;
-					}
-				}
-				if (next.has(id)) next.delete(id);
-				else next.add(id);
-				return next;
-			});
-			setLastClickedId(id);
-		},
-		[filtered, lastClickedId],
-	);
-
-	const selectAll = useCallback(
-		() => setSelectedIds(new Set(filtered.map((v) => v.id))),
-		[filtered],
-	);
-	const selectNone = useCallback(() => setSelectedIds(new Set()), []);
-
-	const contextSelect = useCallback((id: string) => {
-		setSelectedIds(new Set([id]));
-		setLastClickedId(id);
-	}, []);
+	// Selection
+	const filteredIds = useMemo(() => filtered.map((v) => v.id), [filtered]);
+	const {
+		selectedIds,
+		setSelectedIds,
+		toggleSelect,
+		selectAll,
+		selectNone,
+		contextSelect,
+	} = useSelection({ allIds: filteredIds });
 
 	const toggleGroup = useCallback((collectionName: string) => {
 		setCollapsedGroups((prev) => {
@@ -590,93 +576,41 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 		});
 	}, []);
 
-	// Rename preview — always shows all selected variables, newName is null when unchanged
-	const renamePreview = useMemo(() => {
-		if (selectedIds.size === 0) return [];
-		const selected = variables.filter((v) => selectedIds.has(v.id));
-
-		return selected.map((v) => {
-			let newName: string | null = null;
-
-			if (renameMode === "prefix" && renamePrefix) {
-				newName = `${renamePrefix}/${v.name}`;
-			} else if (renameMode === "suffix" && renameSuffix) {
-				newName = `${v.name}/${renameSuffix}`;
-			} else if (renameMode === "find-replace" && findText) {
-				try {
-					const pattern = useRegex ? new RegExp(findText, "g") : null;
-					const result = pattern
-						? v.name.replace(pattern, replaceText)
-						: v.name.replaceAll(findText, replaceText);
-					if (result !== v.name) newName = result;
-				} catch {
-					// invalid regex
-				}
-			}
-
-			return { id: v.id, oldName: v.name, newName };
-		});
-	}, [renameMode, findText, replaceText, useRegex, renamePrefix, renameSuffix, selectedIds, variables]);
-
-	const renameChanges = useMemo(
-		() => renamePreview.filter((r) => r.newName !== null) as { id: string; oldName: string; newName: string }[],
-		[renamePreview],
+	// Rename
+	const selectedItems = useMemo(
+		() => variables.filter((v) => selectedIds.has(v.id)),
+		[variables, selectedIds],
 	);
+	const rename = useRename({ items: selectedItems });
 
 	// Keyboard shortcuts
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			const target = e.target as HTMLElement;
-			if (
-				target.tagName === "INPUT" ||
-				target.tagName === "TEXTAREA" ||
-				target.tagName === "SELECT"
-			)
-				return;
-
-			if (e.key === "Escape") {
-				if (activePanel) {
-					setActivePanel(null);
-				} else if (selectedIds.size > 0) {
-					setSelectedIds(new Set());
-				}
-				return;
-			}
-
-			if ((e.metaKey || e.ctrlKey) && e.key === "a") {
-				e.preventDefault();
-				setSelectedIds(new Set(filtered.map((v) => v.id)));
-				return;
-			}
-
-			if (e.key === "Delete" || e.key === "Backspace") {
-				if (selectedIds.size > 0 && !activePanel) {
-					e.preventDefault();
-					postMessage({
-						type: "check-dependencies",
-						data: { variableIds: Array.from(selectedIds) },
-					});
-				}
-				return;
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [selectedIds, filtered, activePanel]);
+	useListKeyboard({
+		selectedIds,
+		allIds: filteredIds,
+		isPanelOpen: !!activePanel,
+		setSelectedIds,
+		onClosePanel: useCallback(() => setActivePanel(null), []),
+		onDelete: useCallback(
+			() =>
+				postMessage({
+					type: "check-dependencies",
+					data: { variableIds: Array.from(selectedIds) },
+				}),
+			[postMessage, selectedIds],
+		),
+	});
 
 	// Actions (guarded against double-submit)
 	const handleRename = () => {
-		if (renameChanges.length === 0 || operationPending) return;
+		if (rename.changes.length === 0 || operationPending) return;
 		setOperationPending(true);
 		postMessage({
 			type: "rename-variables",
 			data: {
-				renames: renameChanges.map((r) => ({ id: r.id, newName: r.newName })),
+				renames: rename.changes.map((r) => ({ id: r.id, newName: r.newName })),
 			},
 		});
 	};
-
 
 	const handleScale = () => {
 		const factor = parseFloat(scaleFactor);
@@ -1031,134 +965,14 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 			</div>
 
 			{/* Rename dialog */}
-			<Dialog
+			<RenameDialog
 				isOpen={activePanel === "rename" && selectedIds.size > 0}
 				onClose={() => setActivePanel(null)}
-				title={`Rename ${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
-				maxWidth="md"
-				footer={
-					<DialogActions>
-						<Button variant="outline" onClick={() => setActivePanel(null)}>
-							Cancel
-						</Button>
-						<Button variant="primary" onClick={handleRename} disabled={renameChanges.length === 0 || operationPending}>
-							<Check size={14} />
-							Rename{renameChanges.length > 0 ? ` ${renameChanges.length}` : ""}
-						</Button>
-					</DialogActions>
-				}
-			>
-				{/* Mode selector */}
-				<div className="manage-rename-modes">
-					<button
-						type="button"
-						className={`manage-rename-mode-btn ${renameMode === "find-replace" ? "active" : ""}`}
-						onClick={() => setRenameMode("find-replace")}
-					>
-						Replace
-					</button>
-					<button
-						type="button"
-						className={`manage-rename-mode-btn ${renameMode === "prefix" ? "active" : ""}`}
-						onClick={() => setRenameMode("prefix")}
-					>
-						Prefix
-					</button>
-					<button
-						type="button"
-						className={`manage-rename-mode-btn ${renameMode === "suffix" ? "active" : ""}`}
-						onClick={() => setRenameMode("suffix")}
-					>
-						Suffix
-					</button>
-				</div>
-
-				{/* Mode-specific inputs */}
-				<div className="manage-rename-inputs">
-					{renameMode === "find-replace" && (
-						<>
-							<Input
-								label="Find"
-								value={findText}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setFindText(e.target.value)
-								}
-								placeholder="Text to find…"
-							/>
-							<Input
-								label="Replace with"
-								value={replaceText}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setReplaceText(e.target.value)
-								}
-								placeholder="Replace with…"
-							/>
-							<label
-								className="manage-regex-toggle"
-								title="Use regular expressions (e.g. color/(\w+) → colour/$1)"
-							>
-								<Checkbox
-									id="use-regex"
-									checked={useRegex}
-									size="sm"
-									onChange={(e) => setUseRegex(e.target.checked)}
-								/>
-								Regex
-							</label>
-						</>
-					)}
-					{renameMode === "prefix" && (
-						<Input
-							label="Prefix"
-							value={renamePrefix}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-								setRenamePrefix(e.target.value)
-							}
-							placeholder="e.g. brand/"
-						/>
-					)}
-					{renameMode === "suffix" && (
-						<Input
-							label="Suffix"
-							value={renameSuffix}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-								setRenameSuffix(e.target.value)
-							}
-							placeholder="e.g. /dark"
-						/>
-					)}
-				</div>
-
-				{/* Preview */}
-				{renamePreview.length > 0 && (
-					<div className="manage-rename-preview">
-						<div className="manage-rename-preview-header">
-							{renameChanges.length > 0
-								? `${renameChanges.length} of ${renamePreview.length} will change`
-								: `${renamePreview.length} ${renamePreview.length === 1 ? "variable" : "variables"} selected`
-							}
-						</div>
-						<div className="manage-rename-preview-list">
-							{renamePreview.slice(0, 15).map((r) => (
-								<div key={r.id} className={`manage-rename-preview-item ${r.newName === null ? "unchanged" : ""}`}>
-									<span className={r.newName !== null ? "manage-rename-old" : "manage-rename-unchanged"}>{r.oldName}</span>
-									{r.newName !== null && (
-										<>
-											<span className="manage-rename-arrow"><ArrowRight size={12} /></span>
-											<span className="manage-rename-new">{r.newName}</span>
-										</>
-									)}
-								</div>
-							))}
-							{renamePreview.length > 15 && (
-								<div className="manage-rename-preview-more">
-									…and {renamePreview.length - 15} more
-								</div>
-							)}
-						</div>
-					</div>
-				)}
-			</Dialog>
+				itemLabel={`${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
+				rename={rename}
+				onApply={handleRename}
+				disabled={operationPending}
+			/>
 
 			{/* Move dialog */}
 			<Dialog
@@ -1200,9 +1014,14 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							/>
 							<span className="manage-move-name">{c.name}</span>
 							<span className="manage-move-count">
-								{c.variableCount} {c.variableCount === 1 ? "variable" : "variables"}
+								{c.variableCount}{" "}
+								{c.variableCount === 1 ? "variable" : "variables"}
 							</span>
-							{c.isCurrent && <Badge variant="secondary" size="sm">current</Badge>}
+							{c.isCurrent && (
+								<Badge variant="secondary" size="sm">
+									current
+								</Badge>
+							)}
 						</label>
 					))}
 				</div>
@@ -1233,20 +1052,28 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 			>
 				<div className="manage-edit-table">
 					{editGroups.map((group) => {
-						const activeMode = editActiveModes[group.collectionName] || group.modes[0];
+						const activeMode =
+							editActiveModes[group.collectionName] || group.modes[0];
 						return (
 							<div key={group.collectionName} className="manage-edit-group">
 								{/* Collection label + mode tabs */}
 								{(editGroups.length > 1 || group.modes.length > 1) && (
 									<div className="manage-edit-group-bar">
 										{editGroups.length > 1 && (
-											<span className="manage-edit-group-label">{group.collectionName}</span>
+											<span className="manage-edit-group-label">
+												{group.collectionName}
+											</span>
 										)}
 										{group.modes.length > 1 && (
 											<Tabs
 												tabs={group.modes.map((m) => ({ id: m, label: m }))}
 												activeTab={activeMode}
-												onTabChange={(id) => setEditActiveModes((prev) => ({ ...prev, [group.collectionName]: id }))}
+												onTabChange={(id) =>
+													setEditActiveModes((prev) => ({
+														...prev,
+														[group.collectionName]: id,
+													}))
+												}
 												variant="default"
 												size="sm"
 												className="manage-edit-mode-tabs"
@@ -1281,30 +1108,38 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 																	type="text"
 																	placeholder="Search variables…"
 																	value={aliasSearch}
-																	onChange={(e) => setAliasSearch(e.target.value)}
+																	onChange={(e) =>
+																		setAliasSearch(e.target.value)
+																	}
 																	className="manage-edit-alias-input"
 																	autoFocus
 																/>
 																<div className="manage-edit-alias-list">
 																	{filteredAliasOptions.map((opt) => {
-																		const optVal = Object.values(opt.valuesByMode)[0] || "";
+																		const optVal =
+																			Object.values(opt.valuesByMode)[0] || "";
 																		return (
 																			<button
 																				key={opt.id}
 																				type="button"
 																				className={`manage-edit-alias-option ${val === `{${opt.name}}` ? "active" : ""}`}
 																				onClick={() => {
-																					setEditField(v.id, activeMode, `{${opt.name}}`);
+																					setEditField(
+																						v.id,
+																						activeMode,
+																						`{${opt.name}}`,
+																					);
 																					setAliasPickField(null);
 																					setAliasSearch("");
 																				}}
 																			>
-																				{opt.resolvedType === "COLOR" && isColorValue(optVal) && (
-																					<span
-																						className="manage-color-swatch"
-																						style={{ backgroundColor: optVal }}
-																					/>
-																				)}
+																				{opt.resolvedType === "COLOR" &&
+																					isColorValue(optVal) && (
+																						<ColorSwatch
+																							color={optVal}
+																							size="sm"
+																						/>
+																					)}
 																				<span className="manage-edit-alias-name">
 																					{opt.name}
 																				</span>
@@ -1334,7 +1169,11 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 														</div>
 													) : isAlias ? (
 														<div className="manage-edit-alias-display">
-															<Badge variant="outline" size="sm" icon={<Link size={10} />}>
+															<Badge
+																variant="outline"
+																size="sm"
+																icon={<Link size={10} />}
+															>
 																{val.slice(1, -1)}
 															</Badge>
 															<Button
@@ -1352,7 +1191,9 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 																variant="destructive-soft"
 																size="icon-xs"
 																data-tooltip="Remove reference"
-																onClick={() => setEditField(v.id, activeMode, "")}
+																onClick={() =>
+																	setEditField(v.id, activeMode, "")
+																}
 															>
 																<X size={12} />
 															</Button>
@@ -1370,7 +1211,11 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 																				: "#000000"
 																		}
 																		onChange={(e) =>
-																			setEditField(v.id, activeMode, e.target.value)
+																			setEditField(
+																				v.id,
+																				activeMode,
+																				e.target.value,
+																			)
 																		}
 																	/>
 																)}
@@ -1379,7 +1224,11 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 																	className="manage-filter-select"
 																	value={val || "false"}
 																	onChange={(e) =>
-																		setEditField(v.id, activeMode, e.target.value)
+																		setEditField(
+																			v.id,
+																			activeMode,
+																			e.target.value,
+																		)
 																	}
 																>
 																	<option value="true">true</option>
@@ -1388,12 +1237,18 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 															) : (
 																<input
 																	type={
-																		v.resolvedType === "FLOAT" ? "number" : "text"
+																		v.resolvedType === "FLOAT"
+																			? "number"
+																			: "text"
 																	}
 																	className="manage-edit-input"
 																	value={val}
 																	onChange={(e) =>
-																		setEditField(v.id, activeMode, e.target.value)
+																		setEditField(
+																			v.id,
+																			activeMode,
+																			e.target.value,
+																		)
 																	}
 																	placeholder={
 																		v.resolvedType === "COLOR"
@@ -1430,11 +1285,12 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 				</div>
 			</Dialog>
 
-	
 			{/* Scale numeric values dialog */}
 			{(() => {
 				const selectedVars = variables.filter((v) => selectedIds.has(v.id));
-				const floatVars = selectedVars.filter((v) => v.resolvedType === "FLOAT");
+				const floatVars = selectedVars.filter(
+					(v) => v.resolvedType === "FLOAT",
+				);
 				const factor = parseFloat(scaleFactor);
 				const validFactor = !Number.isNaN(factor) && factor !== 0;
 
@@ -1447,13 +1303,18 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 						footer={
 							floatVars.length > 0 ? (
 								<DialogActions>
-									<Button variant="outline" onClick={() => setActivePanel(null)}>
+									<Button
+										variant="outline"
+										onClick={() => setActivePanel(null)}
+									>
 										Cancel
 									</Button>
 									<Button
 										variant="primary"
 										onClick={handleScale}
-										disabled={!validFactor || floatVars.length === 0 || operationPending}
+										disabled={
+											!validFactor || floatVars.length === 0 || operationPending
+										}
 									>
 										<Check size={14} />
 										Scale {floatVars.length}
@@ -1464,7 +1325,8 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 					>
 						{floatVars.length === 0 ? (
 							<div className="manage-rename-hint">
-								No numeric variables in selection. Scale works on number values only.
+								No numeric variables in selection. Scale works on number values
+								only.
 							</div>
 						) : (
 							<>
@@ -1508,17 +1370,25 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 											{floatVars.slice(0, 10).map((v) => {
 												const firstMode = Object.keys(v.valuesByMode)[0];
 												const original = parseFloat(v.valuesByMode[firstMode]);
-												const result = scaleOperation === "multiply"
-													? original * factor
-													: original / factor;
+												const result =
+													scaleOperation === "multiply"
+														? original * factor
+														: original / factor;
 												return (
-													<div key={v.id} className="manage-rename-preview-item">
+													<div
+														key={v.id}
+														className="manage-rename-preview-item"
+													>
 														<span className="manage-rename-old">
 															{v.name}: {original}
 														</span>
-														<span className="manage-rename-arrow"><ArrowRight size={12} /></span>
+														<span className="manage-rename-arrow">
+															<ArrowRight size={12} />
+														</span>
 														<span className="manage-rename-new">
-															{Number.isInteger(result) ? result : result.toFixed(2)}
+															{Number.isInteger(result)
+																? result
+																: result.toFixed(2)}
 														</span>
 													</div>
 												);
@@ -1566,8 +1436,12 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 						<div className="manage-col-check">
 							<Checkbox
 								id="select-all"
-								checked={selectedIds.size === filtered.length && filtered.length > 0}
-								indeterminate={selectedIds.size > 0 && selectedIds.size < filtered.length}
+								checked={
+									selectedIds.size === filtered.length && filtered.length > 0
+								}
+								indeterminate={
+									selectedIds.size > 0 && selectedIds.size < filtered.length
+								}
 								size="sm"
 								onChange={() =>
 									selectedIds.size === filtered.length
@@ -1580,11 +1454,28 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							className="manage-col-name manage-sortable"
 							role="columnheader"
 							tabIndex={0}
-							aria-sort={sortField === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+							aria-sort={
+								sortField === "name"
+									? sortDir === "asc"
+										? "ascending"
+										: "descending"
+									: "none"
+							}
 							onClick={() => handleSort("name")}
-							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("name"); } }}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									handleSort("name");
+								}
+							}}
 						>
-							Name {sortField === "name" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+							Name{" "}
+							{sortField === "name" &&
+								(sortDir === "asc" ? (
+									<ChevronUp size={12} />
+								) : (
+									<ChevronDown size={12} />
+								))}
 						</div>
 						<div className="manage-col-value">Value</div>
 					</div>
@@ -1619,11 +1510,10 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 									)}
 									<span className="manage-group-name">{collectionName}</span>
 									<Badge variant="outline">{allVars.length}</Badge>
-									{groupSelected > 0 && (
-										<Badge>{groupSelected} selected</Badge>
-									)}
+									{groupSelected > 0 && <Badge>{groupSelected} selected</Badge>}
 								</div>
-								{!isCollapsed && hasSubGroups &&
+								{!isCollapsed &&
+									hasSubGroups &&
 									Array.from(subGroups.entries()).map(([subKey, vars]) => {
 										const subGroupKey = `${collectionName}/${subKey}`;
 										const isSubCollapsed = collapsedGroups.has(subGroupKey);
@@ -1654,7 +1544,9 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 														<ChevronDown size={12} />
 													)}
 													<span className="manage-subgroup-name">{subKey}</span>
-													<span className="manage-subgroup-count">{vars.length}</span>
+													<span className="manage-subgroup-count">
+														{vars.length}
+													</span>
 													{subSelected > 0 && (
 														<Badge>{subSelected} selected</Badge>
 													)}
