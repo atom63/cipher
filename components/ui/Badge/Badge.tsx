@@ -59,7 +59,11 @@ export function Badge({
 					aria-hidden="true"
 				/>
 			)}
-			{icon && <span className={styles.icon} aria-hidden="true">{icon}</span>}
+			{icon && (
+				<span className={styles.icon} aria-hidden="true">
+					{icon}
+				</span>
+			)}
 			<span className={styles.text}>{children}</span>
 			{removable && (
 				<button

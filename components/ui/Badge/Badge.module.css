@@ -12,6 +12,7 @@
   user-select: none;
   white-space: nowrap;
   line-height: 1;
+  max-width: 100%;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease,
@@ -208,6 +209,8 @@
 
 .text {
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ============================================

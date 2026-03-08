@@ -26,6 +26,7 @@ import React, {
 import {
 	Badge,
 	Button,
+	Checkbox,
 	ConfirmDialog,
 	EmptyState,
 	Input,
@@ -97,7 +98,7 @@ const VariableRow = React.memo(function VariableRow({
 						size="sm"
 						icon={<Link size={10} />}
 					>
-						{val.slice(1, -1).split("/").pop()}
+						{val.slice(1, -1)}
 					</Badge>
 				);
 			}
@@ -111,10 +112,8 @@ const VariableRow = React.memo(function VariableRow({
 			return <span className="manage-value">{val}</span>;
 		}
 
-		const isTwoModeColor = isColor && entries.length === 2;
-
 		return (
-			<div className={`manage-value-modes ${isTwoModeColor ? "manage-value-modes-inline" : ""}`}>
+			<div className="manage-value-modes">
 				{entries.map(([mode, val]) => (
 					<div
 						key={mode}
@@ -124,7 +123,7 @@ const VariableRow = React.memo(function VariableRow({
 						<Badge variant="secondary" size="sm">{mode}</Badge>
 						{isReference(val) ? (
 							<Badge variant="outline" size="sm" icon={<Link size={10} />}>
-								{val.slice(1, -1).split("/").pop()}
+								{val.slice(1, -1)}
 							</Badge>
 						) : isColor && isColorValue(val) ? (
 							<Badge variant="outline" size="sm" dot dotColor={val}>
@@ -158,9 +157,10 @@ const VariableRow = React.memo(function VariableRow({
 			}}
 		>
 			<div className="manage-col-check">
-				<input
-					type="checkbox"
+				<Checkbox
+					id={`var-${variable.id}`}
 					checked={isSelected}
+					size="sm"
 					onChange={() => {}}
 				/>
 			</div>
@@ -942,91 +942,106 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 						variant="ghost"
 						onClick={loadVariables}
 						data-tooltip="Refresh"
+						aria-label="Refresh variables"
 					>
 						<RefreshCw size={14} />
 					</Button>
 				</div>
 			</div>
 
-			{/* Selection bar */}
-			{selectedIds.size > 0 && (
-				<div className="manage-selection-bar">
-					<span>{selectedIds.size} selected</span>
-					<div className="manage-selection-actions">
+			{/* Action bar */}
+			<div className="manage-actionbar">
+				<div className="manage-actionbar-row">
+					<span className="manage-selection-count">
+						{selectedIds.size} selected
+					</span>
+					<div className="manage-actionbar-actions">
 						<Button
-							variant="ghost"
+							variant="outline"
+							size="sm"
 							onClick={() => openPanel("rename")}
-							title="Rename (find/replace)"
+							disabled={selectedIds.size === 0}
 						>
 							<PenLine size={14} />
 							Rename
 						</Button>
 						<Button
-							variant="ghost"
+							variant="outline"
+							size="sm"
+							onClick={() => openPanel("edit")}
+							disabled={selectedIds.size === 0}
+						>
+							<Pencil size={14} />
+							Edit
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
 							onClick={() => openPanel("move")}
-							title="Move to collection"
+							disabled={selectedIds.size === 0}
 						>
 							<FolderInput size={14} />
 							Move
 						</Button>
 						<Button
-							variant="ghost"
-							onClick={() => openPanel("edit")}
-							title="Edit values"
-						>
-							<Pencil size={14} />
-							Edit
-						</Button>
-						<span className="manage-action-separator" />
-						<Button
-							variant="ghost"
-							onClick={() => openPanel("swap")}
-							title="Swap variable references"
-						>
-							<ArrowLeftRight size={14} />
-							Swap
-						</Button>
-						<Button
-							variant="ghost"
-							onClick={() => openPanel("scale")}
-							title="Scale numeric values"
-						>
-							<ArrowUpDown size={14} />
-							Scale
-						</Button>
-						<Button
-							variant="ghost"
+							variant="outline"
+							size="sm"
 							onClick={handleDuplicate}
-							disabled={operationPending}
-							title="Duplicate selected"
+							disabled={operationPending || selectedIds.size === 0}
 						>
 							<Copy size={14} />
 							Duplicate
 						</Button>
-						<span className="manage-action-separator" />
 						<Button
-							variant="ghost"
+							variant="outline"
+							size="sm"
 							onClick={() => {
 								postMessage({
 									type: "check-dependencies",
 									data: { variableIds: Array.from(selectedIds) },
 								});
 							}}
-							title="Delete (Del)"
+							disabled={selectedIds.size === 0}
 						>
 							<Trash2 size={14} />
 							Delete
 						</Button>
 						<Button
-							variant="ghost"
+							variant="outline"
+							size="sm"
 							onClick={selectNone}
+							disabled={selectedIds.size === 0}
 							data-tooltip="Clear selection (Esc)"
+							aria-label="Clear selection"
 						>
 							<X size={14} />
 						</Button>
 					</div>
 				</div>
-			)}
+				<div className="manage-actionbar-row">
+					<span className="manage-actionbar-label">Transform</span>
+					<div className="manage-actionbar-actions">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => openPanel("swap")}
+							disabled={selectedIds.size === 0}
+						>
+							<ArrowLeftRight size={14} />
+							Swap Refs
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => openPanel("scale")}
+							disabled={selectedIds.size === 0}
+						>
+							<ArrowUpDown size={14} />
+							Scale
+						</Button>
+					</div>
+				</div>
+			</div>
 
 			{/* Rename panel */}
 			{activePanel === "rename" && selectedIds.size > 0 && (
@@ -1674,11 +1689,11 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 					{/* Header */}
 					<div className="manage-list-header">
 						<div className="manage-col-check">
-							<input
-								type="checkbox"
-								checked={
-									selectedIds.size === filtered.length && filtered.length > 0
-								}
+							<Checkbox
+								id="select-all"
+								checked={selectedIds.size === filtered.length && filtered.length > 0}
+								indeterminate={selectedIds.size > 0 && selectedIds.size < filtered.length}
+								size="sm"
 								onChange={() =>
 									selectedIds.size === filtered.length
 										? selectNone()
@@ -1728,9 +1743,9 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 										<ChevronDown size={14} />
 									)}
 									<span className="manage-group-name">{collectionName}</span>
-									<Badge>{allVars.length}</Badge>
+									<Badge variant="outline">{allVars.length}</Badge>
 									{groupSelected > 0 && (
-										<Badge variant="info">{groupSelected} selected</Badge>
+										<Badge>{groupSelected} selected</Badge>
 									)}
 								</div>
 								{!isCollapsed && hasSubGroups &&
@@ -1766,7 +1781,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 													<span className="manage-subgroup-name">{subKey}</span>
 													<span className="manage-subgroup-count">{vars.length}</span>
 													{subSelected > 0 && (
-														<Badge variant="info">{subSelected} selected</Badge>
+														<Badge>{subSelected} selected</Badge>
 													)}
 												</div>
 												{!isSubCollapsed &&
@@ -1782,16 +1797,19 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 											</div>
 										);
 									})}
-								{!isCollapsed && !hasSubGroups &&
-									allVars.map((v) => (
-										<VariableRow
-											key={v.id}
-											variable={v}
-											isSelected={selectedIds.has(v.id)}
-											onToggleSelect={toggleSelect}
-											onContextSelect={contextSelect}
-										/>
-									))}
+								{!isCollapsed && !hasSubGroups && (
+									<div className="manage-subgroup">
+										{allVars.map((v) => (
+											<VariableRow
+												key={v.id}
+												variable={v}
+												isSelected={selectedIds.has(v.id)}
+												onToggleSelect={toggleSelect}
+												onContextSelect={contextSelect}
+											/>
+										))}
+									</div>
+								)}
 							</div>
 						);
 					})}
