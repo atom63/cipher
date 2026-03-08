@@ -42,6 +42,16 @@
 	border: 1px solid var(--border);
 	cursor: pointer;
 	flex-shrink: 0;
+	transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.colorSwatch:hover {
+	border-color: var(--primary);
+}
+
+.colorSwatch:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
 .colorSwatch::-webkit-color-swatch-wrapper {
@@ -63,6 +73,7 @@
 	gap: var(--spacing-xs);
 	flex: 1;
 	min-width: 60px;
+	justify-content: flex-end;
 }
 
 .optionGroup label {
@@ -99,6 +110,10 @@
 .grayOption:focus-visible {
 	outline: none;
 	box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+}
+
+.grayOption:active {
+	transform: scale(0.97);
 }
 
 .grayOption[data-selected="true"] {
@@ -223,7 +238,14 @@
 	position: relative;
 }
 
+.scaleSwatch::after {
+	content: "";
+	opacity: 0;
+	transition: opacity var(--transition);
+}
+
 .scaleSwatch:hover::after {
+	opacity: 1;
 	content: attr(title);
 	position: absolute;
 	bottom: 100%;
@@ -259,7 +281,14 @@
 	position: relative;
 }
 
+.colorRampSwatch::after {
+	content: "";
+	opacity: 0;
+	transition: opacity var(--transition);
+}
+
 .colorRampSwatch:hover::after {
+	opacity: 1;
 	content: attr(title);
 	position: absolute;
 	bottom: 100%;
@@ -359,6 +388,10 @@
 .ratioOption:focus-visible {
 	outline: none;
 	box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+}
+
+.ratioOption:active {
+	transform: scale(0.97);
 }
 
 .ratioOption[data-selected="true"] {

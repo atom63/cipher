@@ -23,7 +23,7 @@ import {
 	type FontOverrides,
 } from "../generators/token-presets";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
-import type { ImportResults } from "../types/tokens";
+import type { DesignToken, ImportResults } from "../types/tokens";
 import styles from "./GeneratePage.module.css";
 
 type ViewState = "config" | "preview" | "progress" | "success";
@@ -130,13 +130,14 @@ export function GeneratePage() {
 
 	// Listen for import result
 	useFigmaMessage(
-		useCallback((msg: any) => {
+		useCallback((msg) => {
 			if (msg.type === "import-complete" || msg.type === "variables-created") {
-				setResult(msg.data);
+				setResult(msg.data as ImportResults);
 				setView("success");
 			}
 			if (msg.type === "error") {
-				showError(msg.data?.message || "Generation failed");
+				const errData = msg.data as { message?: string } | undefined;
+				showError(errData?.message || "Generation failed");
 				setView("preview");
 			}
 		}, [showError]),
@@ -370,7 +371,7 @@ export function GeneratePage() {
 											/>
 										</div>
 										<div className={styles.optionGroup}>
-											<label>Body LH (%)</label>
+											<label>Body line height (%)</label>
 											<Input
 												type="number"
 												value={typescale.lineHeightBody}
@@ -392,7 +393,7 @@ export function GeneratePage() {
 											/>
 										</div>
 										<div className={styles.optionGroup}>
-											<label>Heading LH (%)</label>
+											<label>Heading line height (%)</label>
 											<Input
 												type="number"
 												value={typescale.lineHeightHeading}
@@ -481,14 +482,13 @@ export function GeneratePage() {
 											/>
 										</div>
 										<div className={styles.optionGroup}>
-											<label>&nbsp;</label>
 											<CheckboxWithLabel
 												id="round-values"
 												checked={typescale.round}
 												onChange={(checked) =>
 													setTypescale({ ...typescale, round: checked })
 												}
-												label="Round"
+												label="Round values"
 											/>
 										</div>
 									</div>
@@ -770,23 +770,23 @@ function TypescalePreview({ config }: { config: TypescaleConfig }) {
 			{steps.map((step) => {
 				const clampedSize = Math.min(step.size, 48);
 				return (
-				<div key={step.name} className={styles.typescalePreviewRow}>
-					<span
-						className={styles.typescaleSample}
-						style={{
-							fontSize: `${clampedSize}px`,
-							lineHeight: `${Math.min(step.lineHeight, 64)}px`,
-						}}
-					>
-						Aa
-					</span>
-					<div className={styles.typescaleMeta}>
-						<span className={styles.typescaleName}>{step.name}</span>
-						<span className={styles.typescaleSize}>
-							{step.size}/{step.lineHeight}
+					<div key={step.name} className={styles.typescalePreviewRow}>
+						<span
+							className={styles.typescaleSample}
+							style={{
+								fontSize: `${clampedSize}px`,
+								lineHeight: `${Math.min(step.lineHeight, 64)}px`,
+							}}
+						>
+							Aa
 						</span>
+						<div className={styles.typescaleMeta}>
+							<span className={styles.typescaleName}>{step.name}</span>
+							<span className={styles.typescaleSize}>
+								{step.size}/{step.lineHeight}
+							</span>
+						</div>
 					</div>
-				</div>
 				);
 			})}
 		</div>
@@ -840,7 +840,7 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 			);
 
 			return { cat, unique, sortedGroups };
-		}).filter(Boolean) as { cat: string; unique: any[]; sortedGroups: { group: string; tokens: any[] }[] }[];
+		}).filter(Boolean) as { cat: string; unique: DesignToken[]; sortedGroups: { group: string; tokens: DesignToken[] }[] }[];
 	}, [generated.tokens]);
 
 	const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
@@ -900,7 +900,7 @@ const NON_COLOR_DOT_STYLE = {
 	border: "1px dashed var(--border)",
 } as const;
 
-const TokenIndicator = React.memo(function TokenIndicator({ token }: { token: { type: string; value: any } }) {
+const TokenIndicator = React.memo(function TokenIndicator({ token }: { token: Pick<DesignToken, "type" | "value"> }) {
 	if (
 		token.type === "color" &&
 		typeof token.value === "object" &&
