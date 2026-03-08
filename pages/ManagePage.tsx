@@ -90,41 +90,49 @@ const VariableRow = React.memo(function VariableRow({
 
 		if (entries.length === 1) {
 			const [, val] = entries[0];
-			return (
-				<span className="manage-value">
-					{isColor && isColorValue(val) && (
-						<span
-							className="manage-color-swatch"
-							style={{ backgroundColor: val }}
-						/>
-					)}
-					<span className={isReference(val) ? "manage-ref-value" : ""}>
+			if (isReference(val)) {
+				return (
+					<Badge
+						variant="outline"
+						size="sm"
+						icon={<Link size={10} />}
+					>
+						{val.slice(1, -1).split("/").pop()}
+					</Badge>
+				);
+			}
+			if (isColor && isColorValue(val)) {
+				return (
+					<Badge variant="outline" size="sm" dot dotColor={val}>
 						{val}
-					</span>
-				</span>
-			);
+					</Badge>
+				);
+			}
+			return <span className="manage-value">{val}</span>;
 		}
 
+		const isTwoModeColor = isColor && entries.length === 2;
+
 		return (
-			<div className="manage-value-modes">
+			<div className={`manage-value-modes ${isTwoModeColor ? "manage-value-modes-inline" : ""}`}>
 				{entries.map(([mode, val]) => (
 					<div
 						key={mode}
 						className="manage-mode-chip"
 						title={`${mode}: ${val}`}
 					>
-						<span className="manage-mode-label">{mode}</span>
-						{isColor && isColorValue(val) && (
-							<span
-								className="manage-color-swatch"
-								style={{ backgroundColor: val }}
-							/>
+						<Badge variant="secondary" size="sm">{mode}</Badge>
+						{isReference(val) ? (
+							<Badge variant="outline" size="sm" icon={<Link size={10} />}>
+								{val.slice(1, -1).split("/").pop()}
+							</Badge>
+						) : isColor && isColorValue(val) ? (
+							<Badge variant="outline" size="sm" dot dotColor={val}>
+								{val}
+							</Badge>
+						) : (
+							<span className="manage-mode-val">{val}</span>
 						)}
-						<span
-							className={`manage-mode-val ${isReference(val) ? "manage-ref-value" : ""}`}
-						>
-							{val}
-						</span>
 					</div>
 				))}
 			</div>
@@ -159,7 +167,16 @@ const VariableRow = React.memo(function VariableRow({
 			<div className="manage-col-name">
 				{renderNameSwatches()}
 				<span className="manage-var-name" title={variable.name}>
-					{variable.name}
+					{variable.name.includes("/") ? (
+						<>
+							<span className="manage-var-path">
+								{variable.name.substring(0, variable.name.lastIndexOf("/") + 1)}
+							</span>
+							{variable.name.substring(variable.name.lastIndexOf("/") + 1)}
+						</>
+					) : (
+						variable.name
+					)}
 				</span>
 			</div>
 			<div className="manage-col-value">{renderValue()}</div>
@@ -484,27 +501,40 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 		return result;
 	}, [variables, filterCollection, filterType, debouncedSearch, sortField, sortDir]);
 
-	// Group by collection, preserving sort order within groups
+	// Group by collection → first path segment
 	const grouped = useMemo(() => {
-		const groups = new Map<string, VariableInfo[]>();
+		const collections = new Map<string, Map<string, VariableInfo[]>>();
 		for (const v of filtered) {
-			const key = v.collectionName;
-			if (!groups.has(key)) groups.set(key, []);
-			groups.get(key)?.push(v);
+			if (!collections.has(v.collectionName))
+				collections.set(v.collectionName, new Map());
+			const subGroups = collections.get(v.collectionName)!;
+			const parts = v.name.split("/");
+			const subKey = parts.length > 1 ? parts[0] : "Other";
+			if (!subGroups.has(subKey)) subGroups.set(subKey, []);
+			subGroups.get(subKey)!.push(v);
 		}
-		// Sort groups by collection name
-		const sortedEntries = Array.from(groups.entries()).sort(([a], [b]) => {
-			const cmp = a.localeCompare(b, undefined, {
-				numeric: true,
-				sensitivity: "base",
-			});
-			return sortField === "collection"
-				? sortDir === "asc"
-					? cmp
-					: -cmp
-				: cmp;
-		});
-		return new Map(sortedEntries);
+		// Sort collections
+		const naturalCompare = (a: string, b: string) =>
+			a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+		const sortedCollections = Array.from(collections.entries()).sort(
+			([a], [b]) => {
+				const cmp = naturalCompare(a, b);
+				return sortField === "collection"
+					? sortDir === "asc"
+						? cmp
+						: -cmp
+					: cmp;
+			},
+		);
+		// Sort sub-groups within each collection
+		return new Map(
+			sortedCollections.map(([name, subs]) => [
+				name,
+				new Map(
+					Array.from(subs.entries()).sort(([a], [b]) => naturalCompare(a, b)),
+				),
+			]),
+		);
 	}, [filtered, sortField, sortDir]);
 
 	const uniqueTypes = useMemo(() => {
@@ -1670,11 +1700,13 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 					</div>
 
 					{/* Grouped rows */}
-					{Array.from(grouped.entries()).map(([collectionName, vars]) => {
+					{Array.from(grouped.entries()).map(([collectionName, subGroups]) => {
 						const isCollapsed = collapsedGroups.has(collectionName);
-						const groupSelected = vars.filter((v) =>
+						const allVars = Array.from(subGroups.values()).flat();
+						const groupSelected = allVars.filter((v) =>
 							selectedIds.has(v.id),
 						).length;
+						const hasSubGroups = subGroups.size > 1 || !subGroups.has("Other");
 						return (
 							<div key={collectionName} className="manage-group">
 								<div
@@ -1696,13 +1728,62 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 										<ChevronDown size={14} />
 									)}
 									<span className="manage-group-name">{collectionName}</span>
-									<Badge>{vars.length}</Badge>
+									<Badge>{allVars.length}</Badge>
 									{groupSelected > 0 && (
 										<Badge variant="info">{groupSelected} selected</Badge>
 									)}
 								</div>
-								{!isCollapsed &&
-									vars.map((v) => (
+								{!isCollapsed && hasSubGroups &&
+									Array.from(subGroups.entries()).map(([subKey, vars]) => {
+										const subGroupKey = `${collectionName}/${subKey}`;
+										const isSubCollapsed = collapsedGroups.has(subGroupKey);
+										const subSelected = vars.filter((v) =>
+											selectedIds.has(v.id),
+										).length;
+										return (
+											<div key={subGroupKey} className="manage-subgroup">
+												<div
+													className="manage-subgroup-header"
+													role="button"
+													tabIndex={0}
+													aria-expanded={!isSubCollapsed}
+													onClick={(e) => {
+														e.stopPropagation();
+														toggleGroup(subGroupKey);
+													}}
+													onKeyDown={(e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault();
+															toggleGroup(subGroupKey);
+														}
+													}}
+												>
+													{isSubCollapsed ? (
+														<ChevronRight size={12} />
+													) : (
+														<ChevronDown size={12} />
+													)}
+													<span className="manage-subgroup-name">{subKey}</span>
+													<span className="manage-subgroup-count">{vars.length}</span>
+													{subSelected > 0 && (
+														<Badge variant="info">{subSelected} selected</Badge>
+													)}
+												</div>
+												{!isSubCollapsed &&
+													vars.map((v) => (
+														<VariableRow
+															key={v.id}
+															variable={v}
+															isSelected={selectedIds.has(v.id)}
+															onToggleSelect={toggleSelect}
+															onContextSelect={contextSelect}
+														/>
+													))}
+											</div>
+										);
+									})}
+								{!isCollapsed && !hasSubGroups &&
+									allVars.map((v) => (
 										<VariableRow
 											key={v.id}
 											variable={v}
