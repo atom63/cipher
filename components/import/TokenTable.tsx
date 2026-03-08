@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Search, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Link, Lightbulb, Package, Palette, Pencil, Ruler, Search, Sparkles, Square, Type, X } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import {
 	type ValidationResult,
@@ -167,7 +167,7 @@ const TokenRow = React.memo(function TokenRow({
 					<Badge variant={getTypeBadgeVariant(token.type)} size="sm">
 						{typeDisplayText}
 					</Badge>
-					<span className={styles.arrow}>→</span>
+					<span className={styles.arrow}><ArrowRight size={12} /></span>
 					{isEditing && editing.field === "figmaName" ? (
 						<input
 							autoFocus
@@ -195,7 +195,7 @@ const TokenRow = React.memo(function TokenRow({
 							}
 							title="Click to edit"
 						>
-							{token.figmaName} ✎
+							{token.figmaName} <Pencil size={10} />
 						</span>
 					)}
 				</div>
@@ -252,13 +252,13 @@ const TokenRow = React.memo(function TokenRow({
 				<Dropdown
 					trigger={
 						token.action === "import"
-							? "✓ Import"
+							? "Import"
 							: token.action === "skip"
 								? "Skip"
 								: "Overwrite"
 					}
 					options={[
-						{ value: "import", label: "✓ Import" },
+						{ value: "import", label: "Import" },
 						{ value: "skip", label: "Skip" },
 						{ value: "overwrite", label: "Overwrite" },
 					]}
@@ -438,22 +438,23 @@ export function TokenTable({
 	);
 
 	// Get icon for token category
-	const getCategoryIcon = (category: string): string => {
-		const iconMap: Record<string, string> = {
-			colors: "🎨",
-			primitives: "🎨",
-			spacing: "📏",
-			radius: "⬜",
-			sizes: "📐",
-			sizing: "📐",
-			abstractions: "🔗",
-			semantic: "💡",
-			typography: "✍️",
-			effects: "✨",
-			borders: "🔲",
-			other: "📦",
+	const getCategoryIcon = (category: string): React.ReactNode => {
+		const key = category.toLowerCase();
+		const iconMap: Record<string, React.ReactNode> = {
+			colors: <Palette size={12} />,
+			primitives: <Palette size={12} />,
+			spacing: <Ruler size={12} />,
+			radius: <Square size={12} />,
+			sizes: <Ruler size={12} />,
+			sizing: <Ruler size={12} />,
+			abstractions: <Link size={12} />,
+			semantic: <Lightbulb size={12} />,
+			typography: <Type size={12} />,
+			effects: <Sparkles size={12} />,
+			borders: <Square size={12} />,
+			other: <Package size={12} />,
 		};
-		return iconMap[category.toLowerCase()] || "📦";
+		return iconMap[key] || <Package size={12} />;
 	};
 
 	// Get display name for category
@@ -507,7 +508,7 @@ export function TokenTable({
 				const actualType = resolveReferenceType(token);
 				map.set(
 					token.id,
-					actualType ? `reference → ${actualType}` : "reference",
+					actualType ? `ref: ${actualType}` : "reference",
 				);
 			} else {
 				map.set(token.id, token.type);

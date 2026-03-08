@@ -3,10 +3,12 @@
  * Author: You Zhang (ATOM63)
  */
 
+import { Columns2, Square } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { type PageId, Sidebar } from "./components/layout";
 import {
+	Button,
 	ErrorBoundary,
 	PageErrorBoundary,
 	ToastProvider,
@@ -104,19 +106,19 @@ function App() {
 			{/* Header with View Mode Toggle */}
 			<div className="view-mode-header">
 				<h1>Cipher</h1>
-				<button
-					className="view-mode-toggle"
+				<Button
+					variant="soft"
+					size="sm"
 					onClick={toggleViewMode}
 					title={
 						viewMode === "default"
 							? "Switch to Compact Mode"
 							: "Switch to Default Mode"
 					}
-					type="button"
 				>
-					{viewMode === "default" ? "◧" : "◨"}{" "}
+					{viewMode === "default" ? <Columns2 size={14} /> : <Square size={14} />}
 					{viewMode === "default" ? "Compact" : "Expand"}
-				</button>
+				</Button>
 			</div>
 
 			{/* Main Layout with Sidebar */}

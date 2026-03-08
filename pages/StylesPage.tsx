@@ -1,7 +1,9 @@
 import {
+	ArrowRight,
 	Check,
 	ChevronDown,
 	ChevronRight,
+	ChevronUp,
 	Grid,
 	Link,
 	Palette,
@@ -830,7 +832,7 @@ export function StylesPage() {
 								{renamePreview.slice(0, 10).map((r) => (
 									<div key={r.id} className="manage-rename-preview-item">
 										<span className="manage-rename-old">{r.oldName}</span>
-										<span className="manage-rename-arrow">→</span>
+										<span className="manage-rename-arrow"><ArrowRight size={12} /></span>
 										<span className="manage-rename-new">{r.newName}</span>
 									</div>
 								))}
@@ -911,7 +913,7 @@ export function StylesPage() {
 														: ""}
 											</span>
 										</span>
-										<span className="manage-rename-arrow">→</span>
+										<span className="manage-rename-arrow"><ArrowRight size={12} /></span>
 										<span className="styles-var-ref">
 											<Link size={10} /> {s.suggestedVariableName}
 										</span>
@@ -985,7 +987,7 @@ export function StylesPage() {
 							onClick={() => handleSort("name")}
 							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("name"); } }}
 						>
-							Name {sortField === "name" && (sortDir === "asc" ? "↑" : "↓")}
+							Name {sortField === "name" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
 						</div>
 						<div className="manage-col-value">Preview</div>
 						<div
@@ -996,7 +998,7 @@ export function StylesPage() {
 							onClick={() => handleSort("category")}
 							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("category"); } }}
 						>
-							Type {sortField === "category" && (sortDir === "asc" ? "↑" : "↓")}
+							Type {sortField === "category" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
 						</div>
 					</div>
 

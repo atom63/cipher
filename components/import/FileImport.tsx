@@ -1,4 +1,4 @@
-import { FileText } from "lucide-react";
+import { FileText, FolderOpen } from "lucide-react";
 import type React from "react";
 import { useRef, useState } from "react";
 import { usePostMessage } from "../../hooks/useFigmaMessage";
@@ -161,7 +161,7 @@ export function FileImport({
 					<LoadingState message="Reading file…" />
 				) : (
 					<>
-						<div className={styles.uploadIcon}>📁</div>
+						<div className={styles.uploadIcon}><FolderOpen size={32} /></div>
 						<p className={styles.dropZonePrimary}>
 							Drop a file here or click to browse
 						</p>

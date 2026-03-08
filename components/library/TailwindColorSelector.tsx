@@ -3,6 +3,7 @@
  * Select individual Tailwind color palettes to import
  */
 
+import { ArrowRight, ChevronLeft } from "lucide-react";
 import { useState } from "react";
 import {
 	generateTailwindColorTokens,
@@ -78,7 +79,7 @@ export function TailwindColorSelector({
 					onClick={onBack}
 					className={styles.backButton}
 				>
-					← Back
+					<ChevronLeft size={14} /> Back
 				</Button>
 				<div>
 					<h2 className={styles.title}>Tailwind Colors</h2>
@@ -235,7 +236,7 @@ export function TailwindColorSelector({
 						onClick={handleGenerate}
 						disabled={selectedPalettes.length === 0}
 					>
-						Preview {tokenCount} Tokens →
+						Preview {tokenCount} Tokens <ArrowRight size={14} />
 					</Button>
 				</div>
 			</div>

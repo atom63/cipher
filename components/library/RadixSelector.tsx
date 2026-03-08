@@ -3,6 +3,7 @@
  * Select Radix color palettes to import
  */
 
+import { ArrowRight, ChevronLeft } from "lucide-react";
 import { useState } from "react";
 import {
 	generateRadixTokens,
@@ -75,7 +76,7 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 					onClick={onBack}
 					className={styles.backButton}
 				>
-					← Back
+					<ChevronLeft size={14} /> Back
 				</Button>
 				<div>
 					<h2 className={styles.title}>Radix Colors</h2>
@@ -240,7 +241,7 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 						onClick={handleGenerate}
 						disabled={selectedPalettes.length === 0}
 					>
-						Preview {tokenCount} Tokens →
+						Preview {tokenCount} Tokens <ArrowRight size={14} />
 					</Button>
 				</div>
 			</div>

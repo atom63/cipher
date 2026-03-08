@@ -1,9 +1,11 @@
 import {
 	ArrowLeftRight,
+	ArrowRight,
 	ArrowUpDown,
 	Check,
 	ChevronDown,
 	ChevronRight,
+	ChevronUp,
 	Copy,
 	FolderInput,
 	Link,
@@ -1102,7 +1104,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 								{renamePreview.slice(0, 10).map((r) => (
 									<div key={r.id} className="manage-rename-preview-item">
 										<span className="manage-rename-old">{r.oldName}</span>
-										<span className="manage-rename-arrow">→</span>
+										<span className="manage-rename-arrow"><ArrowRight size={12} /></span>
 										<span className="manage-rename-new">{r.newName}</span>
 									</div>
 								))}
@@ -1665,7 +1667,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							onClick={() => handleSort("name")}
 							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("name"); } }}
 						>
-							Name {sortField === "name" && (sortDir === "asc" ? "↑" : "↓")}
+							Name {sortField === "name" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
 						</div>
 						<div className="manage-col-value">Value</div>
 						<div
@@ -1676,7 +1678,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							onClick={() => handleSort("type")}
 							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("type"); } }}
 						>
-							Type {sortField === "type" && (sortDir === "asc" ? "↑" : "↓")}
+							Type {sortField === "type" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
 						</div>
 					</div>
 

@@ -1,4 +1,4 @@
-import { Plus, Undo2, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, CheckCircle, FileText, Plus, Undo2, X, XCircle } from "lucide-react";
 import type { ImportUndoEntry } from "../../types/tokens";
 import { Button, LoadingState, Spinner } from "../ui";
 import styles from "./ProgressView.module.css";
@@ -93,7 +93,7 @@ export function SuccessView({
 							: "var(--success)",
 				}}
 			>
-				{allFailed ? "✗" : hasErrors ? "⚠" : "✓"}
+				{allFailed ? <X size={24} /> : hasErrors ? <AlertTriangle size={24} /> : <Check size={24} />}
 			</div>
 			<h2>
 				{allFailed
@@ -106,7 +106,7 @@ export function SuccessView({
 			<div className={styles.successStats}>
 				{success > 0 && (
 					<p className={styles.successStat}>
-						<span>✅</span>
+						<CheckCircle size={14} />
 						<span>
 							Successfully {actionVerbPast}: <strong>{success}</strong> token
 							{success !== 1 ? "s" : ""}
@@ -117,7 +117,7 @@ export function SuccessView({
 					<p
 						className={isOverrideMode ? styles.skippedStat : styles.failedStat}
 					>
-						<span>{isOverrideMode ? "⚠️" : "❌"}</span>
+						{isOverrideMode ? <AlertTriangle size={14} /> : <XCircle size={14} />}
 						<span>
 							{isOverrideMode ? "Skipped" : "Failed"}: <strong>{failed}</strong>{" "}
 							token{failed !== 1 ? "s" : ""}
@@ -130,7 +130,7 @@ export function SuccessView({
 			{/* Changes Summary - Show when in override mode with changes */}
 			{isOverrideMode && hasChanges && (
 				<details className={styles.changesDetails} open={true}>
-					<summary>📝 Changes Summary ({changedTokens.length} updated)</summary>
+					<summary><FileText size={14} /> Changes Summary ({changedTokens.length} updated)</summary>
 					<div className={styles.changesDetailsContent}>
 						<div className={styles.changesSummary}>
 							<p>
@@ -157,7 +157,7 @@ export function SuccessView({
 												<span className={styles.oldValue}>
 													{change.oldValue}
 												</span>
-												<span className={styles.changeArrow}>→</span>
+												<span className={styles.changeArrow}><ArrowRight size={12} /></span>
 												<span className={styles.newValue}>
 													{change.newValue}
 												</span>
@@ -184,8 +184,8 @@ export function SuccessView({
 				>
 					<summary>
 						{allFailed
-							? `⚠️ ${isOverrideMode ? "Skip" : "Error"} Details`
-							: `⚠️ View ${isOverrideMode ? "Skipped Tokens" : "Error Details"} (${errors.length})`}
+							? <><AlertTriangle size={14} /> {isOverrideMode ? "Skip" : "Error"} Details</>
+							: <><AlertTriangle size={14} /> View {isOverrideMode ? "Skipped Tokens" : "Error Details"} ({errors.length})</>}
 					</summary>
 					<div className={styles.errorDetailsContent}>
 						{/* Error Summary */}

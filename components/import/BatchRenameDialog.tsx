@@ -1,3 +1,4 @@
+import { ArrowDown, ArrowRight, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DesignToken } from "../../types/tokens";
 import { Button, Dialog, DialogActions, Input, RadioGroup } from "../ui";
@@ -54,7 +55,7 @@ export function BatchRenameDialog({
 
 			if (scope === "all" || scope === "path") {
 				if (scope === "all" && before) {
-					before += ` → ${token.figmaName}`;
+					before += ` / ${token.figmaName}`;
 					after += ` → ${token.figmaName.replace(regex, replace)}`;
 				} else {
 					before = token.figmaName;
@@ -155,7 +156,7 @@ export function BatchRenameDialog({
 
 					{affectedCount > 0 && (
 						<div className={styles.affectedCount}>
-							✨ Will affect <strong>{affectedCount}</strong> token
+							<Sparkles size={14} /> Will affect <strong>{affectedCount}</strong> token
 							{affectedCount !== 1 ? "s" : ""}
 						</div>
 					)}
@@ -180,7 +181,7 @@ export function BatchRenameDialog({
 														key={token.id}
 													>
 														<span className={styles.refName}>{token.name}</span>
-														<span className={styles.refArrow}>→</span>
+														<span className={styles.refArrow}><ArrowRight size={10} /></span>
 														<span className={styles.refPath}>
 															{token.figmaName}
 														</span>
@@ -214,7 +215,7 @@ export function BatchRenameDialog({
 													<div className={styles.previewBefore}>
 														{item.before}
 													</div>
-													<div className={styles.previewArrow}>↓</div>
+													<div className={styles.previewArrow}><ArrowDown size={12} /></div>
 													<div className={styles.previewAfter}>
 														{item.after}
 													</div>

@@ -1,6 +1,7 @@
 import {
 	Archive,
 	Check,
+	CircleOff,
 	ChevronDown,
 	ChevronRight,
 	Code,
@@ -600,7 +601,7 @@ export function ExportPage() {
 				<TabPanel id="variables" activeTab={activeTab}>
 					{collections.length === 0 ? (
 						<EmptyState
-							icon="📦"
+							icon={<CircleOff size={32} />}
 							title="No Variable Collections"
 							description="This file has no variable collections. Try the Styles tab to export Figma Styles instead."
 						/>
@@ -707,7 +708,7 @@ export function ExportPage() {
 				<TabPanel id="css" activeTab={activeTab}>
 					{collections.length === 0 ? (
 						<EmptyState
-							icon="📦"
+							icon={<CircleOff size={32} />}
 							title="No Variable Collections"
 							description="This file has no variable collections to generate CSS from."
 						/>
@@ -833,7 +834,7 @@ export function ExportPage() {
 				<TabPanel id="styles" activeTab={activeTab}>
 					{Object.values(stylesByCategory).every((cat) => cat.length === 0) ? (
 						<EmptyState
-							icon="🎨"
+							icon={<CircleOff size={32} />}
 							title="No Styles Found"
 							description="This file has no Figma Styles. Modern files typically use Variables instead."
 						/>

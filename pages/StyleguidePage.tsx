@@ -9,6 +9,10 @@ import {
 	Star,
 	User,
 	Zap,
+	Search as SearchIcon,
+	Pencil,
+	Copy,
+	Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -266,7 +270,7 @@ export function StyleguidePage() {
 							<Button size="sm">Small</Button>
 							<Button size="md">Medium</Button>
 							<Button size="lg">Large</Button>
-							<Button size="icon">🔍</Button>
+							<Button size="icon"><SearchIcon size={14} /></Button>
 						</div>
 					</div>
 
@@ -359,12 +363,12 @@ export function StyleguidePage() {
 							<Dropdown
 								trigger="Actions"
 								options={[
-									{ value: "edit", label: "Edit", icon: <span>✏️</span> },
-									{ value: "copy", label: "Copy", icon: <span>📋</span> },
+									{ value: "edit", label: "Edit", icon: <Pencil size={14} /> },
+									{ value: "copy", label: "Copy", icon: <Copy size={14} /> },
 									{
 										value: "delete",
 										label: "Delete",
-										icon: <span>🗑️</span>,
+										icon: <Trash2 size={14} />,
 										danger: true,
 									},
 								]}
@@ -997,7 +1001,7 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>Compact Variant</h4>
 						<EmptyState
-							icon="🔍"
+							icon={<SearchIcon size={24} />}
 							title="No results"
 							description="Try adjusting your search or filters."
 							variant="compact"

@@ -3,6 +3,8 @@
  * Main screen for choosing a design library to import
  */
 
+import { ArrowRight, Lightbulb, Palette, Sparkles } from "lucide-react";
+import type React from "react";
 import { useState } from "react";
 import {
 	Badge,
@@ -18,7 +20,7 @@ export type LibraryType = "radix" | "tailwind" | "custom" | "json";
 
 interface LibraryOption {
 	id: LibraryType;
-	icon: string;
+	icon: React.ReactNode;
 	title: string;
 	description: string;
 	tokenCount: string;
@@ -33,7 +35,7 @@ interface LibrarySelectorProps {
 const LIBRARY_OPTIONS: LibraryOption[] = [
 	{
 		id: "radix",
-		icon: "🎨",
+		icon: <Palette size={20} />,
 		title: "Radix Colors",
 		description: "Modern, accessible color palettes",
 		tokenCount: "300+ tokens",
@@ -41,7 +43,7 @@ const LIBRARY_OPTIONS: LibraryOption[] = [
 	},
 	{
 		id: "tailwind",
-		icon: "🎨",
+		icon: <Palette size={20} />,
 		title: "Tailwind CSS",
 		description: "Popular utility-first framework",
 		tokenCount: "335+ tokens",
@@ -49,7 +51,7 @@ const LIBRARY_OPTIONS: LibraryOption[] = [
 	},
 	{
 		id: "custom",
-		icon: "✨",
+		icon: <Sparkles size={20} />,
 		title: "Custom Palette",
 		description: "Generate from your colors",
 		tokenCount: "Smart algorithm",
@@ -98,7 +100,7 @@ export function LibrarySelector({ onSelect }: LibrarySelectorProps) {
 
 						<CardFooter className={styles.footer}>
 							<span className={styles.tokenCount}>{option.tokenCount}</span>
-							{!option.disabled && <span className={styles.arrow}>→</span>}
+							{!option.disabled && <span className={styles.arrow}><ArrowRight size={12} /></span>}
 						</CardFooter>
 					</Card>
 				))}
@@ -106,7 +108,7 @@ export function LibrarySelector({ onSelect }: LibrarySelectorProps) {
 
 			<div className={styles.footer}>
 				<p className={styles.footerText}>
-					💡 <strong>Tip:</strong> Use the <strong>Import</strong> tab in the
+					<Lightbulb size={14} /> <strong>Tip:</strong> Use the <strong>Import</strong> tab in the
 					sidebar to upload JSON token files.
 				</p>
 			</div>

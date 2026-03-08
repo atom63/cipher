@@ -3,6 +3,7 @@
  * Select Tailwind token categories to import
  */
 
+import { ArrowRight, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react";
 import { useState } from "react";
 import {
 	generateTailwindTokens,
@@ -82,7 +83,7 @@ export function TailwindSelector({
 					onClick={onBack}
 					className={styles.backButton}
 				>
-					← Back
+					<ChevronLeft size={14} /> Back
 				</Button>
 				<div>
 					<h2 className={styles.title}>Tailwind CSS</h2>
@@ -150,7 +151,7 @@ export function TailwindSelector({
 											))}
 										</div>
 										<div className={styles.colorHint}>
-											Click to select individual palettes →
+											Click to select individual palettes <ChevronRight size={12} />
 										</div>
 									</CardContent>
 								)}
@@ -168,7 +169,7 @@ export function TailwindSelector({
 				{/* Info Box */}
 				<div className={styles.infoBox}>
 					<p className={styles.infoText}>
-						💡 <strong>Tip:</strong> Tailwind tokens match your development
+						<Lightbulb size={14} /> <strong>Tip:</strong> Tailwind tokens match your development
 						environment exactly. All values are converted to pixels (assuming
 						1rem = 16px).
 					</p>
@@ -194,7 +195,7 @@ export function TailwindSelector({
 						onClick={handleGenerate}
 						disabled={selectedCategories.length === 0}
 					>
-						Preview {tokenCount} Tokens →
+						Preview {tokenCount} Tokens <ArrowRight size={14} />
 					</Button>
 				</div>
 			</div>

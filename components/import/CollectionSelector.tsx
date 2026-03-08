@@ -1,4 +1,4 @@
-import { ArrowRight, FolderOpen, FolderPlus } from "lucide-react";
+import { ArrowRight, FolderOpen, FolderPlus, Lightbulb } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFigmaMessage, usePostMessage } from "../../hooks/useFigmaMessage";
 import {
@@ -185,7 +185,7 @@ export function CollectionSelector({
 								className={styles.previewNote}
 								style={{ marginBottom: "var(--spacing-lg)" }}
 							>
-								<strong>💡 Tip:</strong> We detected existing collections with
+								<Lightbulb size={14} /> <strong>Tip:</strong> We detected existing collections with
 								matching names.
 								<strong> Override mode</strong> is recommended for updating them
 								safely.
@@ -285,7 +285,7 @@ export function CollectionSelector({
 								className={styles.previewNote}
 								style={{ marginBottom: "var(--spacing-lg)" }}
 							>
-								<strong>💡 Tip:</strong> We detected existing collections with
+								<Lightbulb size={14} /> <strong>Tip:</strong> We detected existing collections with
 								matching names.
 								<strong> Override mode</strong> is recommended for updating them
 								safely.
