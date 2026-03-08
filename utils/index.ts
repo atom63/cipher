@@ -5,3 +5,4 @@
 
 export * from "./error-handler";
 export * from "./theme";
+export * from "./zip-download";

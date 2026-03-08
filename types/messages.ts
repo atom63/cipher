@@ -357,6 +357,14 @@ export interface RenameVariablesMessage {
 	};
 }
 
+/** Check if variables have dependencies before deleting */
+export interface CheckDependenciesMessage {
+	type: "check-dependencies";
+	data: {
+		variableIds: string[];
+	};
+}
+
 /** Delete variables in bulk */
 export interface DeleteVariablesMessage {
 	type: "delete-variables";
@@ -489,6 +497,57 @@ export interface ImportUndoneMessage {
 	};
 }
 
+/** Swap all references from one variable to another */
+export interface SwapReferencesMessage {
+	type: "swap-references";
+	data: {
+		sourceId: string;
+		targetId: string;
+	};
+}
+
+/** References swapped result */
+export interface ReferencesSwappedMessage {
+	type: "references-swapped";
+	data: {
+		success: number;
+		failed: number;
+	};
+}
+
+/** Scale numeric variable values by a factor */
+export interface ScaleVariableValuesMessage {
+	type: "scale-variable-values";
+	data: {
+		variableIds: string[];
+		factor: number;
+		operation: "multiply" | "divide";
+	};
+}
+
+/** Scale variable values result */
+export interface VariableValuesScaledMessage {
+	type: "variable-values-scaled";
+	data: {
+		success: number;
+		failed: number;
+		previousValues: {
+			id: string;
+			valuesByMode: Record<string, any>;
+		}[];
+	};
+}
+
+/** Check for import conflicts (existing variables with same name) */
+export interface CheckImportConflictsMessage {
+	type: "check-import-conflicts";
+	data: {
+		tokens: DesignToken[];
+		collectionName: string;
+		selectedCollections?: string[];
+	};
+}
+
 /** Close the plugin */
 export interface CloseMessage {
 	type: "close";
@@ -527,6 +586,7 @@ export type UIToMainMessage =
 	| DeleteStylesMessage
 	| RenameStylesMessage
 	| RenameVariablesMessage
+	| CheckDependenciesMessage
 	| DeleteVariablesMessage
 	| RestoreVariablesMessage
 	| MoveVariablesMessage
@@ -536,6 +596,9 @@ export type UIToMainMessage =
 	| ApplyRebindMessage
 	| UndoRebindMessage
 	| UndoImportMessage
+	| SwapReferencesMessage
+	| ScaleVariableValuesMessage
+	| CheckImportConflictsMessage
 	| ResizeWindowMessage
 	| LoadSettingsMessage
 	| SaveSettingsMessage
@@ -634,6 +697,31 @@ export interface ErrorMessage {
 	};
 }
 
+/** Result of dependency check before deletion */
+export interface DependencyCheckResultMessage {
+	type: "dependency-check-result";
+	data: {
+		dependencies: {
+			[variableId: string]: {
+				name: string;
+				referencedBy: { id: string; name: string; collectionName: string }[];
+			};
+		};
+	};
+}
+
+/** Result of import conflict check */
+export interface ImportConflictsResultMessage {
+	type: "import-conflicts-result";
+	data: {
+		conflicts: {
+			tokenId: string;
+			existingValues: Record<string, string>;
+			existingId: string;
+		}[];
+	};
+}
+
 /** Settings loaded from clientStorage */
 export interface SettingsLoadedMessage {
 	type: "settings-loaded";
@@ -664,8 +752,12 @@ export type MainToUIMessage =
 	| RebindAppliedMessage
 	| RebindUndoneMessage
 	| ImportUndoneMessage
+	| ReferencesSwappedMessage
+	| VariableValuesScaledMessage
+	| ImportConflictsResultMessage
 	| ExportErrorMessage
 	| ProgressUpdateMessage
+	| DependencyCheckResultMessage
 	| ErrorMessage
 	| SettingsLoadedMessage;
 
@@ -707,6 +799,7 @@ export function isUIToMainMessage(msg: unknown): msg is UIToMainMessage {
 		"delete-styles",
 		"rename-styles",
 		"rename-variables",
+		"check-dependencies",
 		"delete-variables",
 		"restore-variables",
 		"move-variables",
@@ -716,6 +809,9 @@ export function isUIToMainMessage(msg: unknown): msg is UIToMainMessage {
 		"apply-rebind",
 		"undo-rebind",
 		"undo-import",
+		"swap-references",
+		"scale-variable-values",
+		"check-import-conflicts",
 		"resize-window",
 		"load-settings",
 		"save-settings",
@@ -749,7 +845,11 @@ export function isMainToUIMessage(msg: unknown): msg is MainToUIMessage {
 		"rebind-applied",
 		"rebind-undone",
 		"import-undone",
+		"references-swapped",
+		"variable-values-scaled",
+		"import-conflicts-result",
 		"styles-renamed",
+		"dependency-check-result",
 		"export-error",
 		"progress-update",
 		"error",

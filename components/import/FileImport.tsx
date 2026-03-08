@@ -2,6 +2,7 @@ import { FileText } from "lucide-react";
 import type React from "react";
 import { useRef, useState } from "react";
 import { usePostMessage } from "../../hooks/useFigmaMessage";
+import { parseCSS } from "../../parsers/css-parser";
 import type { ParsedTokens } from "../../types/tokens";
 import { getErrorMessage } from "../../utils/error-handler";
 import { Button, LoadingState, SectionHeader, Textarea, useToast } from "../ui";
@@ -27,7 +28,7 @@ export function FileImport({
 		setIsLoading(true);
 		try {
 			const content = await file.text();
-			parseContent(content);
+			parseContent(content, file.name);
 		} catch (error) {
 			showError(`Error reading file: ${getErrorMessage(error)}`);
 		} finally {
@@ -35,7 +36,42 @@ export function FileImport({
 		}
 	};
 
-	const parseContent = (content: string) => {
+	const parseContent = (content: string, fileName?: string) => {
+		// Detect CSS files by extension or content pattern
+		const isCSS =
+			fileName?.endsWith(".css") ||
+			(!content.trimStart().startsWith("{") &&
+				content.includes("--") &&
+				content.includes("{"));
+
+		if (isCSS) {
+			const result = parseCSS(content);
+			if (result.errors.length > 0) {
+				showError(
+					`CSS parse errors: ${result.errors.map((e) => e.message).join(", ")}`,
+				);
+			}
+			if (result.tokens.length > 0) {
+				_onTokensParsed({
+					tokens: result.tokens,
+					stats: {
+						total: result.tokens.length,
+						byCategory: {},
+						conflicts: 0,
+						errors: result.errors.length,
+					},
+					errors: result.errors.map((e) => ({
+						message: e.message,
+						line: e.line,
+						severity: "error" as const,
+					})),
+				});
+			} else {
+				showError("No CSS custom properties found in the file");
+			}
+			return;
+		}
+
 		// Try to parse as JSON first to detect file type
 		try {
 			const data = JSON.parse(content);
@@ -114,7 +150,7 @@ export function FileImport({
 				aria-label="Drop a file here or click to browse"
 			>
 				<input
-					accept=".json"
+					accept=".json,.css"
 					onChange={handleFileSelect}
 					ref={fileInputRef}
 					style={{ display: "none" }}
@@ -130,7 +166,7 @@ export function FileImport({
 							Drop a file here or click to browse
 						</p>
 						<p className={styles.dropZoneSecondary}>
-							Supports JSON files with design tokens
+							Supports JSON and CSS files with design tokens
 						</p>
 					</>
 				)}

@@ -840,6 +840,69 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			break;
 		}
 
+		case "check-dependencies": {
+			const { variableIds } = msg.data;
+			const targetIds = new Set(variableIds);
+			const dependencies: Record<
+				string,
+				{
+					name: string;
+					referencedBy: { id: string; name: string; collectionName: string }[];
+				}
+			> = {};
+
+			// Initialize entries for each target variable
+			for (const id of variableIds) {
+				const variable = figma.variables.getVariableById(id);
+				if (variable) {
+					dependencies[id] = {
+						name: variable.name,
+						referencedBy: [],
+					};
+				}
+			}
+
+			// Scan all variables to find references
+			const allCollections =
+				figma.variables.getLocalVariableCollections();
+			for (const collection of allCollections) {
+				for (const varId of collection.variableIds) {
+					const variable = figma.variables.getVariableById(varId);
+					if (!variable) continue;
+					for (const [, value] of Object.entries(variable.valuesByMode)) {
+						if (
+							value &&
+							typeof value === "object" &&
+							"type" in value &&
+							(value as any).type === "VARIABLE_ALIAS" &&
+							targetIds.has((value as any).id)
+						) {
+							const refId = (value as any).id as string;
+							if (dependencies[refId]) {
+								// Avoid duplicate entries
+								const already = dependencies[refId].referencedBy.some(
+									(r) => r.id === varId,
+								);
+								if (!already) {
+									dependencies[refId].referencedBy.push({
+										id: varId,
+										name: variable.name,
+										collectionName: collection.name,
+									});
+								}
+							}
+						}
+					}
+				}
+			}
+
+			figma.ui.postMessage({
+				type: "dependency-check-result",
+				data: { dependencies },
+			});
+			break;
+		}
+
 		case "delete-variables": {
 			const { variableIds } = msg.data;
 			let success = 0;
@@ -1193,6 +1256,100 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			break;
 		}
 
+		case "check-import-conflicts": {
+			const { tokens, collectionName, selectedCollections } = msg.data;
+			const conflicts: {
+				tokenId: string;
+				existingValues: Record<string, string>;
+				existingId: string;
+			}[] = [];
+
+			// Find the target collection(s)
+			const allCollections = figma.variables.getLocalVariableCollections();
+			const targetCollections = allCollections.filter((c) => {
+				if (selectedCollections && selectedCollections.length > 0) {
+					return selectedCollections.includes(c.name);
+				}
+				return c.name === collectionName;
+			});
+
+			if (targetCollections.length > 0) {
+				// Build a map of existing variable names to their info
+				const existingVarMap = new Map<
+					string,
+					{ id: string; valuesByMode: Record<string, string> }
+				>();
+
+				for (const collection of targetCollections) {
+					const modeNames = new Map(
+						collection.modes.map((m) => [m.modeId, m.name]),
+					);
+					for (const varId of collection.variableIds) {
+						const variable = figma.variables.getVariableById(varId);
+						if (!variable) continue;
+
+						const valuesByMode: Record<string, string> = {};
+						for (const [modeId, value] of Object.entries(
+							variable.valuesByMode,
+						)) {
+							const modeName = modeNames.get(modeId) || modeId;
+							if (
+								typeof value === "object" &&
+								value !== null &&
+								"type" in value &&
+								value.type === "VARIABLE_ALIAS"
+							) {
+								const refVar = figma.variables.getVariableById(
+									(value as VariableAlias).id,
+								);
+								valuesByMode[modeName] = refVar
+									? `{${refVar.name}}`
+									: String(value);
+							} else if (
+								typeof value === "object" &&
+								value !== null &&
+								"r" in value
+							) {
+								const c = value as RGBA;
+								const r = Math.round(c.r * 255);
+								const g = Math.round(c.g * 255);
+								const b = Math.round(c.b * 255);
+								valuesByMode[modeName] =
+									c.a < 1
+										? `rgba(${r}, ${g}, ${b}, ${c.a.toFixed(2)})`
+										: `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+							} else {
+								valuesByMode[modeName] = String(value);
+							}
+						}
+
+						existingVarMap.set(variable.name, {
+							id: variable.id,
+							valuesByMode,
+						});
+					}
+				}
+
+				// Check each token for conflicts
+				for (const token of tokens) {
+					const existing = existingVarMap.get(token.figmaName);
+					if (existing) {
+						conflicts.push({
+							tokenId: token.id,
+							existingValues: existing.valuesByMode,
+							existingId: existing.id,
+						});
+					}
+				}
+			}
+
+			figma.ui.postMessage({
+				type: "import-conflicts-result",
+				data: { conflicts },
+			});
+			break;
+		}
+
 		case "create-variables": {
 			const { tokens, collectionName, importMode = "import" } = msg.data;
 			// Note: tokens are already filtered by selected collections in the UI
@@ -1274,6 +1431,107 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			});
 			figma.notify(
 				`Undo: reverted ${success} variable${success !== 1 ? "s" : ""}${failed > 0 ? ` (${failed} failed)` : ""}`,
+			);
+			break;
+		}
+
+		case "swap-references": {
+			const { sourceId, targetId } = msg.data;
+			let success = 0;
+			let failed = 0;
+
+			const allCollections = figma.variables.getLocalVariableCollections();
+			for (const collection of allCollections) {
+				for (const varId of collection.variableIds) {
+					const variable = figma.variables.getVariableById(varId);
+					if (!variable) continue;
+					for (const [modeId, value] of Object.entries(variable.valuesByMode)) {
+						if (
+							value &&
+							typeof value === "object" &&
+							"type" in value &&
+							(value as any).type === "VARIABLE_ALIAS" &&
+							(value as any).id === sourceId
+						) {
+							try {
+								const targetVar = figma.variables.getVariableById(targetId);
+								if (targetVar) {
+									const alias = figma.variables.createVariableAlias(targetVar);
+									variable.setValueForMode(modeId, alias);
+									success++;
+								} else {
+									failed++;
+								}
+							} catch {
+								failed++;
+							}
+						}
+					}
+				}
+			}
+
+			figma.ui.postMessage({
+				type: "references-swapped",
+				data: { success, failed },
+			});
+			figma.notify(
+				`Swapped ${success} reference${success !== 1 ? "s" : ""}${failed > 0 ? ` (${failed} failed)` : ""}`,
+			);
+			break;
+		}
+
+		case "scale-variable-values": {
+			const { variableIds, factor, operation } = msg.data;
+			let success = 0;
+			let failed = 0;
+			const previousValues: { id: string; valuesByMode: Record<string, any> }[] = [];
+
+			for (const id of variableIds) {
+				try {
+					const variable = figma.variables.getVariableById(id);
+					if (!variable || variable.resolvedType !== "FLOAT") {
+						failed++;
+						continue;
+					}
+
+					const collection = figma.variables.getVariableCollectionById(
+						variable.variableCollectionId,
+					);
+					if (!collection) {
+						failed++;
+						continue;
+					}
+
+					// Snapshot previous values (using mode names for undo roundtrip)
+					const modeIdToName = new Map(
+						collection.modes.map((m) => [m.modeId, m.name]),
+					);
+					const prevValues: Record<string, any> = {};
+					for (const [modeId, value] of Object.entries(variable.valuesByMode)) {
+						const modeName = modeIdToName.get(modeId) || modeId;
+						prevValues[modeName] = value;
+					}
+					previousValues.push({ id, valuesByMode: prevValues });
+
+					// Apply scale
+					for (const [modeId, value] of Object.entries(variable.valuesByMode)) {
+						if (typeof value === "number") {
+							const newValue = operation === "multiply" ? value * factor : value / factor;
+							variable.setValueForMode(modeId, newValue);
+						}
+					}
+					success++;
+				} catch {
+					failed++;
+				}
+			}
+
+			figma.ui.postMessage({
+				type: "variable-values-scaled",
+				data: { success, failed, previousValues },
+			});
+			figma.notify(
+				`Scaled ${success} variable${success !== 1 ? "s" : ""}${failed > 0 ? ` (${failed} failed)` : ""}`,
 			);
 			break;
 		}

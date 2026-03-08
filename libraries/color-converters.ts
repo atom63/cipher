@@ -84,3 +84,13 @@ export function convertColor(color: RGB | RGBA, format: string): string {
 			return rgbToOklch(color);
 	}
 }
+
+// Convert RGB/RGBA to specified format, stripping alpha (always fully opaque)
+// Used for color-mix() output where opacity is handled externally
+export function convertColorOpaque(
+	color: RGB | RGBA,
+	format: string,
+): string {
+	const opaque = { r: color.r, g: color.g, b: color.b, a: 1 };
+	return convertColor(opaque, format);
+}

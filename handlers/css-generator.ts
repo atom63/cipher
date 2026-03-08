@@ -3,7 +3,7 @@
 
 /// <reference types="@figma/plugin-typings" />
 
-import { convertColor } from "../libraries/color-converters";
+import { convertColor, convertColorOpaque } from "../libraries/color-converters";
 import {
 	isVariableAlias,
 	resolveVariableReference,
@@ -87,6 +87,7 @@ function valueToCSS(
 	value: VariableValue,
 	variable: Variable,
 	colorFormat: ColorFormat,
+	includeColorMix: boolean = false,
 ): string {
 	if (isVariableAlias(value)) {
 		const ref = resolveVariableReference((value as VariableAlias).id);
@@ -105,7 +106,14 @@ function valueToCSS(
 	switch (variable.resolvedType) {
 		case "COLOR":
 			if (typeof value === "object" && value !== null && "r" in value) {
-				return convertColor(value as RGB, colorFormat);
+				const color = value as RGB & { a?: number };
+				const alpha = "a" in color && color.a !== undefined ? color.a : 1;
+				if (includeColorMix && alpha < 1) {
+					const opaqueColor = convertColorOpaque(color, colorFormat);
+					const percentage = Math.round(alpha * 100);
+					return `color-mix(in oklch, ${opaqueColor} ${percentage}%, transparent)`;
+				}
+				return convertColor(color, colorFormat);
 			}
 			return String(value);
 		case "FLOAT":
@@ -136,23 +144,57 @@ function generateCollectionCSS(
 	lines.push("");
 
 	if (hasModes) {
-		// Multi-mode: generate :root for first mode, selectors for rest
+		// Multi-mode: generate :root for first mode, selectors/media queries for rest
 		for (let i = 0; i < collection.modes.length; i++) {
 			const mode = collection.modes[i];
-			const selector = i === 0 ? ":root" : modeToSelector(mode.name);
 
-			lines.push(`${selector} {`);
+			if (i === 0) {
+				// First mode always goes under :root
+				lines.push(":root {");
 
-			for (const variable of variables) {
-				const value = variable.valuesByMode[mode.modeId];
-				if (value === undefined) continue;
-				const varName = toVarName(variable.name, variable.resolvedType);
-				const cssValue = valueToCSS(value, variable, colorFormat);
-				lines.push(`  ${varName}: ${cssValue};`);
+				for (const variable of variables) {
+					const value = variable.valuesByMode[mode.modeId];
+					if (value === undefined) continue;
+					const varName = toVarName(variable.name, variable.resolvedType);
+					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix);
+					lines.push(`  ${varName}: ${cssValue};`);
+				}
+
+				lines.push("}");
+				lines.push("");
+			} else if (isResponsiveMode(mode.name)) {
+				// Responsive mode: wrap variables in a media query with :root inside
+				const mediaQuery = modeToMediaQuery(mode.name)!;
+				lines.push(`${mediaQuery} {`);
+				lines.push("  :root {");
+
+				for (const variable of variables) {
+					const value = variable.valuesByMode[mode.modeId];
+					if (value === undefined) continue;
+					const varName = toVarName(variable.name, variable.resolvedType);
+					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix);
+					lines.push(`    ${varName}: ${cssValue};`);
+				}
+
+				lines.push("  }");
+				lines.push("}");
+				lines.push("");
+			} else {
+				// Non-responsive mode: use selector approach
+				const selector = modeToSelector(mode.name);
+				lines.push(`${selector} {`);
+
+				for (const variable of variables) {
+					const value = variable.valuesByMode[mode.modeId];
+					if (value === undefined) continue;
+					const varName = toVarName(variable.name, variable.resolvedType);
+					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix);
+					lines.push(`  ${varName}: ${cssValue};`);
+				}
+
+				lines.push("}");
+				lines.push("");
 			}
-
-			lines.push("}");
-			lines.push("");
 		}
 	} else {
 		// Single mode: everything under :root
@@ -163,7 +205,7 @@ function generateCollectionCSS(
 			const value = variable.valuesByMode[mode.modeId];
 			if (value === undefined) continue;
 			const varName = toVarName(variable.name, variable.resolvedType);
-			const cssValue = valueToCSS(value, variable, colorFormat);
+			const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix);
 			lines.push(`  ${varName}: ${cssValue};`);
 		}
 
@@ -183,11 +225,45 @@ function generateCollectionCSS(
 	};
 }
 
+// Responsive breakpoint mode names mapped to min-width values
+const RESPONSIVE_BREAKPOINTS: Record<string, string> = {
+	mobile: "640px",
+	sm: "640px",
+	small: "640px",
+	tablet: "768px",
+	md: "768px",
+	medium: "768px",
+	desktop: "1024px",
+	lg: "1024px",
+	large: "1024px",
+	xl: "1280px",
+	wide: "1280px",
+};
+
+// Check if a mode name corresponds to a responsive breakpoint
+function isResponsiveMode(modeName: string): boolean {
+	const lower = modeName.toLowerCase();
+	return lower in RESPONSIVE_BREAKPOINTS;
+}
+
+// Return a media query string for responsive mode names, or null
+function modeToMediaQuery(modeName: string): string | null {
+	const lower = modeName.toLowerCase();
+	const minWidth = RESPONSIVE_BREAKPOINTS[lower];
+	if (minWidth) {
+		return `@media (min-width: ${minWidth})`;
+	}
+	return null;
+}
+
 // Map mode names to CSS selectors
 function modeToSelector(modeName: string): string {
 	const lower = modeName.toLowerCase();
 	if (lower === "dark") return ".dark";
 	if (lower === "light") return ":root";
+	// Check for responsive mode names — return media query
+	const mediaQuery = modeToMediaQuery(modeName);
+	if (mediaQuery) return mediaQuery;
 	// data attribute for custom modes
 	return `[data-mode="${lower}"]`;
 }

@@ -51,7 +51,7 @@ function App() {
 			case "manage":
 				return (
 					<PageErrorBoundary pageName="Variables">
-						<ManagePage />
+						<ManagePage onNavigate={(page) => setActivePage(page as PageId)} />
 					</PageErrorBoundary>
 				);
 			case "styles":
@@ -93,7 +93,7 @@ function App() {
 			default:
 				return (
 					<PageErrorBoundary pageName="Manage">
-						<ManagePage />
+						<ManagePage onNavigate={(page) => setActivePage(page as PageId)} />
 					</PageErrorBoundary>
 				);
 		}

@@ -1,4 +1,5 @@
 import {
+	Archive,
 	Check,
 	ChevronDown,
 	ChevronRight,
@@ -28,6 +29,7 @@ import {
 } from "../components/ui";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type { CSSFileInfo } from "../types/messages";
+import { downloadAsZip } from "../utils/zip-download";
 import styles from "./ExportPage.module.css";
 
 interface Collection {
@@ -90,6 +92,7 @@ export function ExportPage() {
 	} | null>(null);
 	const [expandedCssFile, setExpandedCssFile] = useState<string | null>(null);
 	const [includeThemeInline, setIncludeThemeInline] = useState(false);
+	const [includeColorMix, setIncludeColorMix] = useState(false);
 
 	const postMessage = usePostMessage();
 	const { showSuccess, showError } = useToast();
@@ -306,7 +309,7 @@ export function ExportPage() {
 				collectionIds: selectedCollectionIds,
 				colorFormat,
 				includeThemeInline,
-				includeColorMix: false,
+				includeColorMix,
 			},
 		});
 	};
@@ -398,6 +401,18 @@ export function ExportPage() {
 					<Button variant="ghost" onClick={copyAllCSS}>
 						<Copy size={14} />
 						Copy All
+					</Button>
+					<Button
+						variant="ghost"
+						onClick={() =>
+							downloadAsZip(
+								cssFiles.map((f) => ({ name: f.name, content: f.content })),
+								"design-tokens-css",
+							)
+						}
+					>
+						<Archive size={14} />
+						Download ZIP
 					</Button>
 					<Button variant="ghost" onClick={handleExportAgain}>
 						<FileDown size={14} />
@@ -735,6 +750,15 @@ export function ExportPage() {
 									label="Include @theme inline (Tailwind CSS v4)"
 									checked={includeThemeInline}
 									onChange={() => setIncludeThemeInline(!includeThemeInline)}
+								/>
+							</div>
+
+							<div className={styles.selectAllSection}>
+								<CheckboxWithLabel
+									id="color-mix"
+									label="Use color-mix() for opacity"
+									checked={includeColorMix}
+									onChange={() => setIncludeColorMix(!includeColorMix)}
 								/>
 							</div>
 

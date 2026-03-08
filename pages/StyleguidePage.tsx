@@ -10,7 +10,7 @@ import {
 	User,
 	Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	Alert,
 	Badge,
@@ -64,6 +64,100 @@ export function StyleguidePage() {
 	const [checkboxCard3, setCheckboxCard3] = useState(true);
 	const [activeTab, setActiveTab] = useState("home");
 	const { showSuccess, showError, showWarning, showInfo } = useToast();
+
+	// --- Token Visualization: read CSS custom properties ---
+	const colorTokenGroups = useMemo(() => [
+		{
+			label: "Backgrounds",
+			tokens: ["--background", "--background-secondary", "--card", "--popover", "--muted"],
+		},
+		{
+			label: "Foregrounds",
+			tokens: ["--foreground", "--foreground-secondary", "--card-foreground", "--popover-foreground", "--muted-foreground"],
+		},
+		{
+			label: "Accents",
+			tokens: ["--primary", "--primary-foreground", "--secondary", "--secondary-foreground", "--accent", "--accent-foreground"],
+		},
+		{
+			label: "Status",
+			tokens: ["--destructive", "--destructive-foreground", "--success", "--warning", "--info"],
+		},
+	], []);
+
+	const [resolvedColors, setResolvedColors] = useState<Record<string, string>>({});
+
+	useEffect(() => {
+		const root = document.documentElement;
+		const computed = getComputedStyle(root);
+		const colors: Record<string, string> = {};
+		for (const group of colorTokenGroups) {
+			for (const token of group.tokens) {
+				const value = computed.getPropertyValue(token).trim();
+				if (value) colors[token] = value;
+			}
+		}
+		setResolvedColors(colors);
+	}, [colorTokenGroups]);
+
+	const spacingScale = [4, 8, 12, 16, 24, 32, 48, 64];
+	const typeScale = [12, 14, 16, 18, 20, 24, 32, 48];
+
+	// --- WCAG Contrast Checker ---
+	const [contrastFg, setContrastFg] = useState("#000000");
+	const [contrastBg, setContrastBg] = useState("#ffffff");
+
+	// Initialize from CSS variables
+	useEffect(() => {
+		const computed = getComputedStyle(document.documentElement);
+		const fg = computed.getPropertyValue("--foreground").trim();
+		const bg = computed.getPropertyValue("--background").trim();
+		if (fg) setContrastFg(fg);
+		if (bg) setContrastBg(bg);
+	}, []);
+
+	function hexToRgb(hex: string): [number, number, number] {
+		const h = hex.replace("#", "");
+		const full = h.length === 3 ? h.split("").map(c => c + c).join("") : h;
+		return [
+			parseInt(full.slice(0, 2), 16),
+			parseInt(full.slice(2, 4), 16),
+			parseInt(full.slice(4, 6), 16),
+		];
+	}
+
+	function getRelativeLuminance(r: number, g: number, b: number): number {
+		const [rs, gs, bs] = [r / 255, g / 255, b / 255].map(c =>
+			c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+		);
+		return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+	}
+
+	function getContrastRatio(hex1: string, hex2: string): number {
+		const [r1, g1, b1] = hexToRgb(hex1);
+		const [r2, g2, b2] = hexToRgb(hex2);
+		const l1 = getRelativeLuminance(r1, g1, b1);
+		const l2 = getRelativeLuminance(r2, g2, b2);
+		const lighter = Math.max(l1, l2);
+		const darker = Math.min(l1, l2);
+		return (lighter + 0.05) / (darker + 0.05);
+	}
+
+	const contrastRatio = useMemo(() => {
+		try {
+			return getContrastRatio(contrastFg, contrastBg);
+		} catch {
+			return 0;
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [contrastFg, contrastBg]);
+
+	const wcagResults = useMemo(() => [
+		{ label: "AA Normal", threshold: 4.5 },
+		{ label: "AA Large", threshold: 3 },
+		{ label: "AAA Normal", threshold: 7 },
+		{ label: "AAA Large", threshold: 4.5 },
+	], []);
 
 	return (
 		<div className={styles.styleguide}>
@@ -1130,6 +1224,199 @@ export function StyleguidePage() {
 								Semibold (600)
 							</p>
 							<p style={{ fontWeight: "var(--font-bold)" }}>Bold (700)</p>
+						</div>
+					</div>
+				</Card>
+			</section>
+			{/* Token Visualization */}
+			<section className={styles.section}>
+				<SectionHeader
+					variant="secondary"
+					title="Token Visualization"
+					description="Visual representation of design tokens from CSS custom properties"
+				/>
+
+				<Card>
+					<div className={styles.componentGroup}>
+						<h4>Color Swatches</h4>
+						{colorTokenGroups.map(group => (
+							<div key={group.label} style={{ marginBottom: 16 }}>
+								<p className={styles.componentDescription}>{group.label}</p>
+								<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
+									{group.tokens.map(token => {
+										const value = resolvedColors[token];
+										if (!value) return null;
+										return (
+											<div
+												key={token}
+												style={{
+													display: "flex",
+													flexDirection: "column",
+													alignItems: "center",
+													gap: 4,
+													padding: 8,
+													borderRadius: 6,
+													border: "1px solid var(--border)",
+												}}
+											>
+												<div
+													style={{
+														width: 48,
+														height: 48,
+														borderRadius: 6,
+														backgroundColor: value,
+														border: "1px solid var(--border)",
+													}}
+												/>
+												<span style={{ fontSize: "var(--text-xs)", fontWeight: "var(--font-medium)", textAlign: "center" }}>
+													{token}
+												</span>
+												<span style={{ fontSize: "var(--text-xs)", color: "var(--muted-foreground)" }}>
+													{value}
+												</span>
+											</div>
+										);
+									})}
+								</div>
+							</div>
+						))}
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Spacing Scale</h4>
+						<div className={styles.column}>
+							{spacingScale.map(size => (
+								<div key={size} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+									<span style={{ fontSize: "var(--text-xs)", width: 36, textAlign: "right", color: "var(--muted-foreground)" }}>
+										{size}px
+									</span>
+									<div
+										style={{
+											width: size,
+											height: 16,
+											borderRadius: 3,
+											backgroundColor: "var(--primary)",
+											transition: "width 0.2s ease",
+										}}
+									/>
+								</div>
+							))}
+						</div>
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Typography Scale</h4>
+						<div className={styles.column}>
+							{typeScale.map(size => (
+								<div key={size} style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+									<span style={{ fontSize: "var(--text-xs)", width: 36, textAlign: "right", color: "var(--muted-foreground)" }}>
+										{size}px
+									</span>
+									<span style={{ fontSize: size, lineHeight: 1.3 }}>
+										The quick brown fox
+									</span>
+								</div>
+							))}
+						</div>
+					</div>
+				</Card>
+			</section>
+
+			{/* Contrast Checker */}
+			<section className={styles.section}>
+				<SectionHeader
+					variant="secondary"
+					title="Contrast Checker"
+					description="WCAG contrast ratio checker for color accessibility"
+				/>
+
+				<Card>
+					<div className={styles.componentGroup}>
+						<h4>Color Inputs</h4>
+						<div className={styles.row}>
+							<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+								<label style={{ fontSize: "var(--text-xs)", fontWeight: "var(--font-medium)" }}>
+									Foreground
+								</label>
+								<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+									<input
+										type="color"
+										value={contrastFg}
+										onChange={e => setContrastFg(e.target.value)}
+										style={{ width: 36, height: 36, border: "none", cursor: "pointer", borderRadius: 4 }}
+									/>
+									<Input
+										value={contrastFg}
+										onChange={e => setContrastFg((e.target as HTMLInputElement).value)}
+										style={{ width: 100 }}
+										type="text"
+									/>
+								</div>
+							</div>
+							<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+								<label style={{ fontSize: "var(--text-xs)", fontWeight: "var(--font-medium)" }}>
+									Background
+								</label>
+								<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+									<input
+										type="color"
+										value={contrastBg}
+										onChange={e => setContrastBg(e.target.value)}
+										style={{ width: 36, height: 36, border: "none", cursor: "pointer", borderRadius: 4 }}
+									/>
+									<Input
+										value={contrastBg}
+										onChange={e => setContrastBg((e.target as HTMLInputElement).value)}
+										style={{ width: 100 }}
+										type="text"
+									/>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Preview</h4>
+						<div
+							style={{
+								backgroundColor: contrastBg,
+								color: contrastFg,
+								padding: 24,
+								borderRadius: 8,
+								border: "1px solid var(--border)",
+								textAlign: "center",
+							}}
+						>
+							<p style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
+								Large Text Sample
+							</p>
+							<p style={{ fontSize: 14 }}>
+								Normal text sample for contrast testing.
+							</p>
+						</div>
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>Contrast Ratio</h4>
+						<p style={{ fontSize: 32, fontWeight: 700, marginBottom: 8 }}>
+							{contrastRatio > 0 ? `${contrastRatio.toFixed(2)}:1` : "Invalid"}
+						</p>
+					</div>
+
+					<div className={styles.componentGroup}>
+						<h4>WCAG Compliance</h4>
+						<div className={styles.row}>
+							{wcagResults.map(({ label, threshold }) => {
+								const pass = contrastRatio >= threshold;
+								return (
+									<Badge
+										key={label}
+										variant={pass ? "success" : "destructive"}
+									>
+										{label} ({threshold}:1) {pass ? "Pass" : "Fail"}
+									</Badge>
+								);
+							})}
 						</div>
 					</div>
 				</Card>

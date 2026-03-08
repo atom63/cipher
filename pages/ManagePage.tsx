@@ -1,4 +1,6 @@
 import {
+	ArrowLeftRight,
+	ArrowUpDown,
 	Check,
 	ChevronDown,
 	ChevronRight,
@@ -29,6 +31,7 @@ import {
 	SectionHeader,
 	useToast,
 } from "../components/ui";
+import { FirstRunWizard } from "../components/manage";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type {
@@ -36,6 +39,7 @@ import type {
 	DeletedVariableSnapshot,
 	VariableInfo,
 } from "../types/messages";
+import type { DesignToken } from "../types/tokens";
 
 // Value rendering helpers (shared between row component and edit panel)
 const isColorValue = (val: string) =>
@@ -166,12 +170,12 @@ const VariableRow = React.memo(function VariableRow({
 
 type SortField = "name" | "collection" | "type";
 type SortDir = "asc" | "desc";
-type ActionPanel = "rename" | "move" | "edit" | null;
+type ActionPanel = "rename" | "move" | "edit" | "swap" | "scale" | null;
 
 /** Per-variable, per-mode edit values. Key = variableId, value = { modeName: editedValue } */
 type EditValuesMap = Record<string, Record<string, string>>;
 
-export function ManagePage() {
+export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void }) {
 	const [variables, setVariables] = useState<VariableInfo[]>([]);
 	const [collections, setCollections] = useState<CollectionInfo[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -195,9 +199,20 @@ export function ManagePage() {
 	const [findText, setFindText] = useState("");
 	const [replaceText, setReplaceText] = useState("");
 	const [useRegex, setUseRegex] = useState(false);
+	const [renamePrefix, setRenamePrefix] = useState("");
+	const [renameSuffix, setRenameSuffix] = useState("");
 
 	// Move state
 	const [moveTargetId, setMoveTargetId] = useState<string>("");
+
+	// Swap references state
+	const [swapSourceId, setSwapSourceId] = useState<string>("");
+	const [swapTargetId, setSwapTargetId] = useState<string>("");
+	const [swapTargetSearch, setSwapTargetSearch] = useState("");
+
+	// Scale state
+	const [scaleFactor, setScaleFactor] = useState<string>("2");
+	const [scaleOperation, setScaleOperation] = useState<"multiply" | "divide">("multiply");
 
 	// Edit values state: { [variableId]: { [modeName]: value } }
 	const [editValues, setEditValues] = useState<EditValuesMap>({});
@@ -207,6 +222,15 @@ export function ManagePage() {
 
 	// Delete confirmation
 	const [pendingDelete, setPendingDelete] = useState(false);
+	const [dependencyWarning, setDependencyWarning] = useState<{
+		deps: Record<
+			string,
+			{
+				name: string;
+				referencedBy: { id: string; name: string; collectionName: string }[];
+			}
+		>;
+	} | null>(null);
 
 	// Prevents double-submit on async operations
 	const [operationPending, setOperationPending] = useState(false);
@@ -365,6 +389,62 @@ export function ManagePage() {
 						: undefined,
 				);
 			}
+			loadVariables();
+		} else if (msg.type === "dependency-check-result") {
+			const { dependencies } = msg.data as {
+				dependencies: Record<
+					string,
+					{
+						name: string;
+						referencedBy: {
+							id: string;
+							name: string;
+							collectionName: string;
+						}[];
+					}
+				>;
+			};
+			const hasAnyDeps = Object.values(dependencies).some(
+				(d) => d.referencedBy.length > 0,
+			);
+			if (hasAnyDeps) {
+				setDependencyWarning({ deps: dependencies });
+			} else {
+				setPendingDelete(true);
+			}
+		} else if (msg.type === "references-swapped") {
+			const { success, failed } = msg.data;
+			if (failed > 0) {
+				showError(`${failed} reference swap${failed === 1 ? "" : "s"} failed`);
+			} else {
+				showSuccess(`Swapped ${success} reference${success !== 1 ? "s" : ""}`);
+			}
+			setActivePanel(null);
+			setSwapSourceId("");
+			setSwapTargetId("");
+			setSwapTargetSearch("");
+			loadVariables();
+		} else if (msg.type === "variable-values-scaled") {
+			const { success, failed, previousValues } = msg.data;
+			if (failed > 0) {
+				showError(`${failed} scale operation${failed === 1 ? "" : "s"} failed`);
+			} else {
+				showSuccess(
+					`Scaled ${success} variable${success !== 1 ? "s" : ""}`,
+					previousValues.length > 0
+						? {
+								label: "Undo",
+								onClick: () => {
+									postMessage({
+										type: "update-variable-values",
+										data: { updates: previousValues },
+									});
+								},
+							}
+						: undefined,
+				);
+			}
+			setActivePanel(null);
 			loadVariables();
 		}
 	});
@@ -531,7 +611,10 @@ export function ManagePage() {
 			if (e.key === "Delete" || e.key === "Backspace") {
 				if (selectedIds.size > 0 && !activePanel) {
 					e.preventDefault();
-					setPendingDelete(true);
+					postMessage({
+						type: "check-dependencies",
+						data: { variableIds: Array.from(selectedIds) },
+					});
 				}
 				return;
 			}
@@ -549,6 +632,53 @@ export function ManagePage() {
 			type: "rename-variables",
 			data: {
 				renames: renamePreview.map((r) => ({ id: r.id, newName: r.newName })),
+			},
+		});
+	};
+
+	const handleApplyPrefix = () => {
+		if (!renamePrefix || operationPending) return;
+		const selectedVars = variables.filter((v) => selectedIds.has(v.id));
+		const renames = selectedVars.map((v) => ({
+			id: v.id,
+			newName: `${renamePrefix}/${v.name}`,
+		}));
+		if (renames.length === 0) return;
+		setOperationPending(true);
+		postMessage({ type: "rename-variables", data: { renames } });
+	};
+
+	const handleApplySuffix = () => {
+		if (!renameSuffix || operationPending) return;
+		const selectedVars = variables.filter((v) => selectedIds.has(v.id));
+		const renames = selectedVars.map((v) => ({
+			id: v.id,
+			newName: `${v.name}/${renameSuffix}`,
+		}));
+		if (renames.length === 0) return;
+		setOperationPending(true);
+		postMessage({ type: "rename-variables", data: { renames } });
+	};
+
+	const handleSwapReferences = () => {
+		if (!swapSourceId || !swapTargetId || operationPending) return;
+		setOperationPending(true);
+		postMessage({
+			type: "swap-references",
+			data: { sourceId: swapSourceId, targetId: swapTargetId },
+		});
+	};
+
+	const handleScale = () => {
+		const factor = parseFloat(scaleFactor);
+		if (!factor || factor === 0 || operationPending) return;
+		setOperationPending(true);
+		postMessage({
+			type: "scale-variable-values",
+			data: {
+				variableIds: Array.from(selectedIds),
+				factor,
+				operation: scaleOperation,
 			},
 		});
 	};
@@ -700,6 +830,9 @@ export function ManagePage() {
 
 	const openPanel = (panel: ActionPanel) => {
 		setActivePanel((prev) => (prev === panel ? null : panel));
+		if (panel === "swap" && selectedIds.size === 1) {
+			setSwapSourceId(Array.from(selectedIds)[0]);
+		}
 	};
 
 	// Move target options (exclude collections that all selected vars are already in)
@@ -819,6 +952,22 @@ export function ManagePage() {
 						</Button>
 						<Button
 							variant="ghost"
+							onClick={() => openPanel("swap")}
+							title="Swap variable references"
+						>
+							<ArrowLeftRight size={14} />
+							Swap Refs
+						</Button>
+						<Button
+							variant="ghost"
+							onClick={() => openPanel("scale")}
+							title="Scale numeric values"
+						>
+							<ArrowUpDown size={14} />
+							Scale
+						</Button>
+						<Button
+							variant="ghost"
 							onClick={handleDuplicate}
 							disabled={operationPending}
 							title="Duplicate selected"
@@ -828,7 +977,12 @@ export function ManagePage() {
 						</Button>
 						<Button
 							variant="ghost"
-							onClick={() => setPendingDelete(true)}
+							onClick={() => {
+								postMessage({
+									type: "check-dependencies",
+									data: { variableIds: Array.from(selectedIds) },
+								});
+							}}
 							title="Delete (Del)"
 						>
 							<Trash2 size={14} />
@@ -859,6 +1013,48 @@ export function ManagePage() {
 							<X size={14} />
 						</button>
 					</div>
+					{/* Quick prefix/suffix actions */}
+					<div className="manage-rename-quick">
+						<div className="manage-rename-quick-row">
+							<Input
+								label="Add prefix"
+								value={renamePrefix}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setRenamePrefix(e.target.value)
+								}
+								placeholder="e.g. brand"
+							/>
+							<Button
+								variant="ghost"
+								onClick={handleApplyPrefix}
+								disabled={!renamePrefix || operationPending}
+							>
+								Apply
+							</Button>
+						</div>
+						<div className="manage-rename-quick-row">
+							<Input
+								label="Add suffix"
+								value={renameSuffix}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setRenameSuffix(e.target.value)
+								}
+								placeholder="e.g. dark"
+							/>
+							<Button
+								variant="ghost"
+								onClick={handleApplySuffix}
+								disabled={!renameSuffix || operationPending}
+							>
+								Apply
+							</Button>
+						</div>
+					</div>
+
+					<div className="manage-rename-divider">
+						<span>or use find & replace</span>
+					</div>
+
 					<div className="manage-rename-inputs">
 						<Input
 							label="Find text"
@@ -1219,16 +1415,231 @@ export function ManagePage() {
 				</div>
 			)}
 
+			{/* Swap references panel */}
+			{activePanel === "swap" && selectedIds.size > 0 && (
+				<div className="manage-action-panel">
+					<div className="manage-action-panel-header">
+						<span>Swap References</span>
+						<button
+							type="button"
+							className="manage-panel-close"
+							onClick={() => setActivePanel(null)}
+							data-tooltip="Close panel"
+						>
+							<X size={14} />
+						</button>
+					</div>
+					<div className="manage-rename-hint">
+						Replace all alias references pointing to the source variable with the target variable.
+					</div>
+					<div className="manage-rename-inputs">
+						<div>
+							<label className="manage-swap-label">Source variable</label>
+							<select
+								className="manage-filter-select"
+								value={swapSourceId}
+								onChange={(e) => setSwapSourceId(e.target.value)}
+							>
+								<option value="">Select source…</option>
+								{variables
+									.filter((v) => selectedIds.has(v.id))
+									.map((v) => (
+										<option key={v.id} value={v.id}>
+											{v.name} ({v.collectionName})
+										</option>
+									))}
+							</select>
+						</div>
+						<div>
+							<label className="manage-swap-label">Target variable</label>
+							<input
+								type="text"
+								className="manage-edit-input"
+								placeholder="Search target variable…"
+								value={swapTargetSearch}
+								onChange={(e) => {
+									setSwapTargetSearch(e.target.value);
+									setSwapTargetId("");
+								}}
+							/>
+							{swapTargetSearch && !swapTargetId && (
+								<div className="manage-edit-alias-list">
+									{variables
+										.filter(
+											(v) =>
+												v.id !== swapSourceId &&
+												(v.name.toLowerCase().includes(swapTargetSearch.toLowerCase()) ||
+													v.collectionName.toLowerCase().includes(swapTargetSearch.toLowerCase())),
+										)
+										.slice(0, 20)
+										.map((v) => (
+											<button
+												key={v.id}
+												type="button"
+												className="manage-edit-alias-option"
+												onClick={() => {
+													setSwapTargetId(v.id);
+													setSwapTargetSearch(v.name);
+												}}
+											>
+												<span className="manage-edit-alias-name">{v.name}</span>
+												<span className="manage-edit-alias-collection">
+													{v.collectionName}
+												</span>
+											</button>
+										))}
+								</div>
+							)}
+						</div>
+					</div>
+					<div className="manage-panel-actions">
+						<Button variant="ghost" onClick={() => setActivePanel(null)}>
+							Cancel
+						</Button>
+						<Button
+							variant="primary"
+							onClick={handleSwapReferences}
+							disabled={!swapSourceId || !swapTargetId || operationPending}
+						>
+							<ArrowLeftRight size={14} />
+							Swap
+						</Button>
+					</div>
+				</div>
+			)}
+
+			{/* Scale numeric values panel */}
+			{activePanel === "scale" && selectedIds.size > 0 && (() => {
+				const selectedVars = variables.filter((v) => selectedIds.has(v.id));
+				const floatVars = selectedVars.filter((v) => v.resolvedType === "FLOAT");
+				const factor = parseFloat(scaleFactor);
+				const validFactor = !Number.isNaN(factor) && factor !== 0;
+
+				return (
+					<div className="manage-action-panel">
+						<div className="manage-action-panel-header">
+							<span>
+								Scale {floatVars.length} numeric variable{floatVars.length !== 1 ? "s" : ""}
+							</span>
+							<button
+								type="button"
+								className="manage-panel-close"
+								onClick={() => setActivePanel(null)}
+								data-tooltip="Close panel"
+							>
+								<X size={14} />
+							</button>
+						</div>
+						{floatVars.length === 0 ? (
+							<div className="manage-rename-hint">
+								No FLOAT variables in selection. Scale only works on numeric variables.
+							</div>
+						) : (
+							<>
+								<div className="manage-rename-inputs">
+									<div className="manage-scale-controls">
+										<label className="manage-swap-label">Operation</label>
+										<div className="manage-scale-radio-group">
+											<label>
+												<input
+													type="radio"
+													name="scaleOp"
+													checked={scaleOperation === "multiply"}
+													onChange={() => setScaleOperation("multiply")}
+												/>
+												Multiply
+											</label>
+											<label>
+												<input
+													type="radio"
+													name="scaleOp"
+													checked={scaleOperation === "divide"}
+													onChange={() => setScaleOperation("divide")}
+												/>
+												Divide
+											</label>
+										</div>
+									</div>
+									<Input
+										label="Factor"
+										value={scaleFactor}
+										onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+											setScaleFactor(e.target.value)
+										}
+										placeholder="e.g. 2"
+									/>
+								</div>
+								{validFactor && floatVars.length > 0 && (
+									<div className="manage-rename-preview">
+										<div className="manage-rename-preview-header">Preview:</div>
+										<div className="manage-rename-preview-list">
+											{floatVars.slice(0, 10).map((v) => {
+												const firstMode = Object.keys(v.valuesByMode)[0];
+												const original = parseFloat(v.valuesByMode[firstMode]);
+												const result = scaleOperation === "multiply"
+													? original * factor
+													: original / factor;
+												return (
+													<div key={v.id} className="manage-rename-preview-item">
+														<span className="manage-rename-old">
+															{v.name}: {original}
+														</span>
+														<span className="manage-rename-arrow">&rarr;</span>
+														<span className="manage-rename-new">
+															{Number.isInteger(result) ? result : result.toFixed(2)}
+														</span>
+													</div>
+												);
+											})}
+											{floatVars.length > 10 && (
+												<div className="manage-rename-preview-more">
+													...and {floatVars.length - 10} more
+												</div>
+											)}
+										</div>
+									</div>
+								)}
+								<div className="manage-panel-actions">
+									<Button variant="ghost" onClick={() => setActivePanel(null)}>
+										Cancel
+									</Button>
+									<Button
+										variant="primary"
+										onClick={handleScale}
+										disabled={!validFactor || floatVars.length === 0 || operationPending}
+									>
+										<Check size={14} />
+										Apply Scale
+									</Button>
+								</div>
+							</>
+						)}
+					</div>
+				);
+			})()}
+
 			{/* Variable list */}
 			{filtered.length === 0 ? (
-				<EmptyState
-					title="No variables found"
-					description={
-						variables.length === 0
-							? "This file has no local variables. Import some tokens or create variables in Figma."
-							: "No variables match your current filters."
-					}
-				/>
+				variables.length === 0 ? (
+					<FirstRunWizard
+						onNavigate={(page) => onNavigate?.(page)}
+						onCreateTokens={(tokens: DesignToken[]) => {
+							postMessage({
+								type: "create-variables",
+								data: {
+									tokens,
+									collectionName: "Starter Kit",
+									importMode: "import",
+								},
+							});
+						}}
+					/>
+				) : (
+					<EmptyState
+						title="No variables found"
+						description="No variables match your current filters."
+					/>
+				)
 			) : (
 				<div className="manage-list">
 					{/* Header */}
@@ -1324,6 +1735,38 @@ export function ManagePage() {
 				title="Delete Variables"
 				message={`Are you sure you want to delete ${selectedIds.size} variable${selectedIds.size !== 1 ? "s" : ""}? This cannot be undone.`}
 				confirmText={`Delete ${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
+				cancelText="Cancel"
+			/>
+
+			<ConfirmDialog
+				isOpen={dependencyWarning !== null}
+				onClose={() => setDependencyWarning(null)}
+				onConfirm={() => {
+					setDependencyWarning(null);
+					handleDelete();
+				}}
+				title="Delete Variables with Dependencies"
+				message={(() => {
+					if (!dependencyWarning) return "";
+					const depsWithRefs = Object.values(dependencyWarning.deps).filter(
+						(d) => d.referencedBy.length > 0,
+					);
+					const count = depsWithRefs.length;
+					const lines = [
+						`${count} variable${count !== 1 ? "s are" : " is"} referenced by other variables:`,
+						"",
+						...depsWithRefs.flatMap((d) => [
+							`\u2022 "${d.name}" is referenced by:`,
+							...d.referencedBy.map(
+								(r) => `  \u2013 ${r.name} (${r.collectionName})`,
+							),
+						]),
+						"",
+						"Deleting will break these references. Continue?",
+					];
+					return lines.join("\n");
+				})()}
+				confirmText={`Delete anyway`}
 				cancelText="Cancel"
 			/>
 		</div>

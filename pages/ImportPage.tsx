@@ -33,6 +33,13 @@ import type {
 import exportStyles from "./ExportPage.module.css";
 import styles from "./ImportPage.module.css";
 
+/** A conflict detected when importing a token that already exists */
+export interface ImportConflict {
+	tokenId: string;
+	existingValues: Record<string, string>;
+	existingId: string;
+}
+
 type ImportViewState =
 	| "upload"
 	| "collection"
@@ -73,6 +80,7 @@ export function ImportPage() {
 	const [collectionName, setCollectionName] = useState("Design Tokens");
 	const [importMode, setImportMode] = useState<"import" | "override">("import");
 	const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+	const [conflicts, setConflicts] = useState<ImportConflict[]>([]);
 	const [result, setResult] = useState({
 		success: 0,
 		failed: 0,
@@ -134,6 +142,23 @@ export function ImportPage() {
 			}
 			// Clear undo data so button disappears
 			setResult((prev) => ({ ...prev, undoData: undefined }));
+		}
+
+		if (msg.type === "import-conflicts-result") {
+			const { conflicts: conflictData } = msg.data;
+			setConflicts(conflictData);
+
+			// Auto-set conflicting tokens to "skip" by default
+			if (conflictData.length > 0) {
+				const conflictIds = new Set(conflictData.map((c: ImportConflict) => c.tokenId));
+				setTokens((prev) =>
+					prev.map((t) =>
+						conflictIds.has(t.id) ? { ...t, action: "skip" as const } : t,
+					),
+				);
+			}
+
+			setView("review");
 		}
 
 		if (msg.type === "error") {
@@ -278,10 +303,20 @@ export function ImportPage() {
 		if (impMode) {
 			setImportMode(impMode);
 		}
-		if (collections && collections.length > 0) {
-			setSelectedCollections(collections);
+		const cols = collections && collections.length > 0 ? collections : [];
+		if (cols.length > 0) {
+			setSelectedCollections(cols);
 		}
-		setView("review");
+
+		// Check for conflicts before moving to review
+		postMessage({
+			type: "check-import-conflicts",
+			data: {
+				tokens,
+				collectionName: name,
+				selectedCollections: cols.length > 0 ? cols : undefined,
+			},
+		});
 	};
 
 	const handleToggleStyleGroup = (
@@ -381,6 +416,7 @@ export function ImportPage() {
 		setCollectionName("Design Tokens");
 		setImportMode("import");
 		setSelectedCollections([]);
+		setConflicts([]);
 	};
 
 	const handleBackToCollection = () => {
@@ -412,6 +448,7 @@ export function ImportPage() {
 		});
 		setImportMode("import");
 		setSelectedCollections([]);
+		setConflicts([]);
 	};
 
 	return (
@@ -491,6 +528,7 @@ export function ImportPage() {
 					onImport={handleImport}
 					onTokensUpdated={setTokens}
 					tokens={tokens}
+					conflicts={conflicts}
 				/>
 			)}
 

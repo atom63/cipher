@@ -20,11 +20,19 @@ import { Alert } from "../ui/Alert";
 import { BatchRenameDialog } from "./BatchRenameDialog";
 import styles from "./TokenTable.module.css";
 
+/** A conflict detected when importing a token that already exists */
+export interface ImportConflict {
+	tokenId: string;
+	existingValues: Record<string, string>;
+	existingId: string;
+}
+
 interface TokenTableProps {
 	tokens: DesignToken[];
 	onTokensUpdated: (tokens: DesignToken[]) => void;
 	onImport: () => void;
 	onCancel: () => void;
+	conflicts?: ImportConflict[];
 }
 
 interface EditingState {
@@ -120,6 +128,7 @@ const TokenRow = React.memo(function TokenRow({
 	token,
 	typeDisplayText,
 	editing,
+	conflict,
 	onToggle,
 	onActionChange,
 	onNameChange,
@@ -130,6 +139,7 @@ const TokenRow = React.memo(function TokenRow({
 	token: DesignToken;
 	typeDisplayText: string;
 	editing: EditingState | null;
+	conflict?: ImportConflict;
 	onToggle: (id: string) => void;
 	onActionChange: (id: string, action: TokenAction) => void;
 	onNameChange: (id: string, name: string) => void;
@@ -220,6 +230,22 @@ const TokenRow = React.memo(function TokenRow({
 						{renderTokenValue(token)}
 					</div>
 				)}
+
+				{conflict && (
+					<div className={styles.conflictInfo}>
+						<span className={styles.conflictLabel}>Existing:</span>
+						{Object.entries(conflict.existingValues).map(
+							([mode, value]) => (
+								<code key={mode} className={styles.conflictValue}>
+									{Object.keys(conflict.existingValues).length > 1
+										? `${mode}: `
+										: ""}
+									{value}
+								</code>
+							),
+						)}
+					</div>
+				)}
 			</div>
 
 			<div className={styles.tokenActions}>
@@ -254,6 +280,7 @@ export function TokenTable({
 	onTokensUpdated,
 	onImport,
 	onCancel,
+	conflicts = [],
 }: TokenTableProps) {
 	const [filter, setFilter] = useState<TokenCategory | "all">("all");
 	const [selectAll, setSelectAll] = useState(true);
@@ -463,6 +490,15 @@ export function TokenTable({
 		[tokens],
 	);
 
+	// Build conflict lookup map
+	const conflictMap = useMemo(() => {
+		const map = new Map<string, ImportConflict>();
+		for (const c of conflicts) {
+			map.set(c.tokenId, c);
+		}
+		return map;
+	}, [conflicts]);
+
 	// Pre-compute type display text for all tokens
 	const typeDisplayTexts = useMemo(() => {
 		const map = new Map<string, string>();
@@ -511,6 +547,16 @@ export function TokenTable({
 						</button>
 					))}
 			</div>
+
+			{/* Conflict Summary */}
+			{conflicts.length > 0 && (
+				<Alert variant="warning" title={`${conflicts.length} conflict${conflicts.length !== 1 ? "s" : ""} detected`}>
+					{conflicts.length} token{conflicts.length !== 1 ? "s" : ""} already
+					exist{conflicts.length === 1 ? "s" : ""} in the target collection.
+					Conflicting tokens are set to &quot;Skip&quot; by default. Change to
+					&quot;Overwrite&quot; to replace existing values.
+				</Alert>
+			)}
 
 			{/* Validation Results */}
 			{validation.issues.length > 0 && (
@@ -571,6 +617,7 @@ export function TokenTable({
 							token={token}
 							typeDisplayText={typeDisplayTexts.get(token.id) || token.type}
 							editing={editing}
+							conflict={conflictMap.get(token.id)}
 							onToggle={handleToggleToken}
 							onActionChange={handleActionChange}
 							onNameChange={handleNameChange}
