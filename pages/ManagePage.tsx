@@ -163,14 +163,11 @@ const VariableRow = React.memo(function VariableRow({
 				</span>
 			</div>
 			<div className="manage-col-value">{renderValue()}</div>
-			<div className="manage-col-type">
-				<Badge>{variable.resolvedType}</Badge>
-			</div>
 		</div>
 	);
 });
 
-type SortField = "name" | "collection" | "type";
+type SortField = "name" | "collection";
 type SortDir = "asc" | "desc";
 type ActionPanel = "rename" | "move" | "edit" | "swap" | "scale" | null;
 
@@ -481,8 +478,6 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 			if (sortField === "name") cmp = naturalCompare(a.name, b.name);
 			else if (sortField === "collection")
 				cmp = naturalCompare(a.collectionName, b.collectionName);
-			else if (sortField === "type")
-				cmp = a.resolvedType.localeCompare(b.resolvedType);
 			return sortDir === "asc" ? cmp : -cmp;
 		});
 
@@ -952,13 +947,14 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							<Pencil size={14} />
 							Edit
 						</Button>
+						<span className="manage-action-separator" />
 						<Button
 							variant="ghost"
 							onClick={() => openPanel("swap")}
 							title="Swap variable references"
 						>
 							<ArrowLeftRight size={14} />
-							Swap Refs
+							Swap
 						</Button>
 						<Button
 							variant="ghost"
@@ -977,6 +973,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							<Copy size={14} />
 							Duplicate
 						</Button>
+						<span className="manage-action-separator" />
 						<Button
 							variant="ghost"
 							onClick={() => {
@@ -1120,7 +1117,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 								</Button>
 								<Button variant="primary" onClick={handleRename} disabled={operationPending}>
 									<Check size={14} />
-									Apply Rename
+									Rename {renamePreview.length}
 								</Button>
 							</div>
 						</div>
@@ -1534,7 +1531,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 						</div>
 						{floatVars.length === 0 ? (
 							<div className="manage-rename-hint">
-								No FLOAT variables in selection. Scale only works on numeric variables.
+								No numeric variables in selection. Scale works on number values only.
 							</div>
 						) : (
 							<>
@@ -1611,7 +1608,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 										disabled={!validFactor || floatVars.length === 0 || operationPending}
 									>
 										<Check size={14} />
-										Apply Scale
+										Scale {floatVars.length}
 									</Button>
 								</div>
 							</>
@@ -1670,16 +1667,6 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 							Name {sortField === "name" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
 						</div>
 						<div className="manage-col-value">Value</div>
-						<div
-							className="manage-col-type manage-sortable"
-							role="columnheader"
-							tabIndex={0}
-							aria-sort={sortField === "type" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
-							onClick={() => handleSort("type")}
-							onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("type"); } }}
-						>
-							Type {sortField === "type" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
-						</div>
 					</div>
 
 					{/* Grouped rows */}
@@ -1735,7 +1722,7 @@ export function ManagePage({ onNavigate }: { onNavigate?: (page: string) => void
 				onClose={() => setPendingDelete(false)}
 				onConfirm={handleDelete}
 				title="Delete Variables"
-				message={`Are you sure you want to delete ${selectedIds.size} variable${selectedIds.size !== 1 ? "s" : ""}? This cannot be undone.`}
+				message={`Delete ${selectedIds.size} variable${selectedIds.size !== 1 ? "s" : ""}? You can undo this from the notification.`}
 				confirmText={`Delete ${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
 				cancelText="Cancel"
 			/>

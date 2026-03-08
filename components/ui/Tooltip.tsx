@@ -84,7 +84,7 @@ export function TooltipPortal() {
 		fontWeight: 500,
 		lineHeight: 1.3,
 		whiteSpace: "nowrap",
-		color: "var(--primary-foreground)",
+		color: "var(--background)",
 		background: "var(--foreground)",
 		borderRadius: "var(--radius-sm)",
 		pointerEvents: "none",

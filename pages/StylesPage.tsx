@@ -38,7 +38,7 @@ import type {
 } from "../types/messages";
 
 type CategoryFilter = "all" | "paint" | "text" | "effect" | "grid";
-type SortField = "name" | "category";
+type SortField = "name";
 type SortDir = "asc" | "desc";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -46,13 +46,6 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 	text: <Type size={12} />,
 	effect: <Sparkles size={12} />,
 	grid: <Grid size={12} />,
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-	paint: "Color",
-	text: "Text",
-	effect: "Effect",
-	grid: "Grid",
 };
 
 // Memoized style row to avoid re-renders when sibling rows change
@@ -96,9 +89,6 @@ const StyleRow = React.memo(function StyleRow({
 				</span>
 			</div>
 			<div className="manage-col-value">{renderPreview(style)}</div>
-			<div className="manage-col-type">
-				<Badge>{CATEGORY_LABELS[style.category]}</Badge>
-			</div>
 		</div>
 	);
 });
@@ -264,8 +254,6 @@ export function StylesPage() {
 		result.sort((a, b) => {
 			let cmp = 0;
 			if (sortField === "name") cmp = naturalCompare(a.name, b.name);
-			else if (sortField === "category")
-				cmp = a.category.localeCompare(b.category);
 			return sortDir === "asc" ? cmp : -cmp;
 		});
 
@@ -802,10 +790,11 @@ export function StylesPage() {
 							<Unlink size={14} />
 							Rebind
 						</Button>
+						<span className="manage-action-separator" />
 						<Button
 							variant="ghost"
 							onClick={() => setPendingDelete(true)}
-							title="Delete"
+							title="Delete selected styles"
 						>
 							<Trash2 size={14} />
 							Delete
@@ -946,7 +935,7 @@ export function StylesPage() {
 									disabled={operationPending}
 								>
 									<Check size={14} />
-									Apply Rename
+									Rename {renamePreview.length}
 								</Button>
 							</div>
 						</div>
@@ -974,7 +963,7 @@ export function StylesPage() {
 
 					{rebindLoading ? (
 						<div className="styles-rebind-loading">
-							Scanning for unbound colors...
+							Scanning for unbound colors…
 						</div>
 					) : rebindSuggestions.length > 0 ? (
 						<div className="styles-rebind-list">
@@ -1044,8 +1033,8 @@ export function StylesPage() {
 									}
 								>
 									<Check size={14} />
-									Apply {rebindSuggestions.length - rebindExcluded.size}{" "}
-									Rebinding
+									Rebind {rebindSuggestions.length - rebindExcluded.size}{" "}
+									color
 									{rebindSuggestions.length - rebindExcluded.size !== 1
 										? "s"
 										: ""}
@@ -1110,33 +1099,6 @@ export function StylesPage() {
 								))}
 						</div>
 						<div className="manage-col-value">Preview</div>
-						<div
-							className="manage-col-type manage-sortable"
-							role="columnheader"
-							tabIndex={0}
-							aria-sort={
-								sortField === "category"
-									? sortDir === "asc"
-										? "ascending"
-										: "descending"
-									: "none"
-							}
-							onClick={() => handleSort("category")}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									handleSort("category");
-								}
-							}}
-						>
-							Type{" "}
-							{sortField === "category" &&
-								(sortDir === "asc" ? (
-									<ChevronUp size={12} />
-								) : (
-									<ChevronDown size={12} />
-								))}
-						</div>
 					</div>
 
 					{Array.from(grouped.entries()).map(([groupKey, groupStyles]) => {
@@ -1195,7 +1157,7 @@ export function StylesPage() {
 				onClose={() => setPendingDelete(false)}
 				onConfirm={handleDelete}
 				title="Delete Styles"
-				message={`Are you sure you want to delete ${selectedIds.size} style${selectedIds.size !== 1 ? "s" : ""}? This cannot be undone.`}
+				message={`Delete ${selectedIds.size} style${selectedIds.size !== 1 ? "s" : ""}? This cannot be undone.`}
 				confirmText="Delete"
 				cancelText="Cancel"
 			/>
