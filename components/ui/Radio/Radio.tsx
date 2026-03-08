@@ -1,4 +1,5 @@
 import type React from "react";
+import { forwardRef } from "react";
 import styles from "./Radio.module.css";
 
 interface RadioProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -10,30 +11,43 @@ interface RadioProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 /**
- * Primitive Radio Input Component
- * This is the base radio circle that can be composed into other components
+ * Custom styled Radio Input Component
+ * Matches the Checkbox pattern: hidden native input + styled visual element
  */
-export function Radio({
-	id,
-	name,
-	value,
-	checked = false,
-	onChange,
-	disabled = false,
-	className = "",
-	...props
-}: RadioProps) {
-	return (
-		<input
-			id={id}
-			type="radio"
-			name={name}
-			value={value}
-			checked={checked}
-			onChange={onChange}
-			disabled={disabled}
-			className={`${styles["radio"]} ${className}`}
-			{...props}
-		/>
-	);
-}
+export const Radio = forwardRef<HTMLInputElement, RadioProps>(
+	function Radio(
+		{
+			id,
+			name,
+			value,
+			checked = false,
+			onChange,
+			disabled = false,
+			className = "",
+			...props
+		},
+		ref,
+	) {
+		return (
+			<div className={`${styles.radioWrapper} ${className}`}>
+				<input
+					ref={ref}
+					id={id}
+					type="radio"
+					name={name}
+					value={value}
+					checked={checked}
+					onChange={onChange}
+					disabled={disabled}
+					className={styles.radioInput}
+					{...props}
+				/>
+				<div
+					className={`${styles.radioCircle} ${checked ? styles.checked : ""} ${disabled ? styles.disabled : ""}`}
+				>
+					{checked && <div className={styles.radioDot} />}
+				</div>
+			</div>
+		);
+	},
+);

@@ -79,7 +79,7 @@
 }
 
 .tokenRow:hover {
-  background: var(--muted);
+  background: var(--accent);
 }
 
 .tokenRow.skipped {
@@ -138,7 +138,7 @@
 }
 
 .figmaName.editable:hover {
-  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  background: color-mix(in oklch, var(--primary) 20%, transparent);
 }
 
 .inlineEdit {
@@ -148,7 +148,7 @@
   font-size: var(--text-base);
   font-family: inherit;
   outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 10%, transparent);
 }
 
 .colorPreviewWrapper {
@@ -211,7 +211,7 @@
   gap: var(--spacing-sm);
   margin-top: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: color-mix(in srgb, var(--warning) 8%, transparent);
+  background: color-mix(in oklch, var(--warning) 8%, transparent);
   border-radius: var(--radius-sm);
   border-left: 2px solid var(--warning);
   flex-wrap: wrap;

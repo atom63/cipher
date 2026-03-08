@@ -1,14 +1,117 @@
-/* === Primitive Radio Input === */
-input[type="radio"].radio {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: var(--primary);
+/* ============================================
+   RADIO - Custom Styled (matches Checkbox pattern)
+   ============================================ */
+
+/* Wrapper for positioning */
+.radioWrapper {
+  display: inline-flex;
+  position: relative;
   flex-shrink: 0;
 }
 
-input[type="radio"].radio:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+/* Native input - visually hidden but accessible */
+.radioInput {
+  position: absolute;
+  opacity: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  z-index: 1;
 }
 
+.radioInput:disabled {
+  cursor: not-allowed;
+}
+
+/* ============================================
+   CUSTOM RADIO CIRCLE
+   ============================================ */
+
+.radioCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--background);
+  transition:
+    background-color var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Hover state */
+.radioInput:not(:disabled):hover + .radioCircle {
+  border-color: var(--primary);
+}
+
+/* Checked state */
+.radioCircle.checked {
+  border-color: var(--primary);
+}
+
+/* Inner dot for checked state */
+.radioDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  animation: radio-dot-pop 0.15s ease-out;
+}
+
+@keyframes radio-dot-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Active/pressed state */
+.radioInput:active:not(:disabled) + .radioCircle {
+  transform: scale(0.95);
+}
+
+/* Focus state - polished ring */
+.radioInput:focus-visible + .radioCircle {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring);
+}
+
+/* Disabled state */
+.radioCircle.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--muted);
+  border-color: var(--border);
+}
+
+.radioCircle.disabled.checked .radioDot {
+  background: var(--muted-foreground);
+}
+
+.radioInput:disabled:hover + .radioCircle {
+  border-color: var(--border);
+  background: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radioCircle {
+    transition: none;
+  }
+
+  .radioDot {
+    animation: none;
+  }
+}

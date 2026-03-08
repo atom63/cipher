@@ -39,8 +39,8 @@
 
 /* Variants - Compatible with OKLCH colors */
 .info {
-  background-color: color-mix(in srgb, var(--info), transparent 90%);
-  border-color: color-mix(in srgb, var(--info), transparent 70%);
+  background-color: color-mix(in oklch, var(--info), transparent 90%);
+  border-color: color-mix(in oklch, var(--info), transparent 70%);
   color: var(--foreground);
 }
 
@@ -49,8 +49,8 @@
 }
 
 .success {
-  background-color: color-mix(in srgb, var(--success), transparent 90%);
-  border-color: color-mix(in srgb, var(--success), transparent 70%);
+  background-color: color-mix(in oklch, var(--success), transparent 90%);
+  border-color: color-mix(in oklch, var(--success), transparent 70%);
   color: var(--foreground);
 }
 
@@ -59,8 +59,8 @@
 }
 
 .warning {
-  background-color: color-mix(in srgb, var(--warning), transparent 90%);
-  border-color: color-mix(in srgb, var(--warning), transparent 70%);
+  background-color: color-mix(in oklch, var(--warning), transparent 90%);
+  border-color: color-mix(in oklch, var(--warning), transparent 70%);
   color: var(--foreground);
 }
 
@@ -69,8 +69,8 @@
 }
 
 .error {
-  background-color: color-mix(in srgb, var(--destructive), transparent 90%);
-  border-color: color-mix(in srgb, var(--destructive), transparent 70%);
+  background-color: color-mix(in oklch, var(--destructive), transparent 90%);
+  border-color: color-mix(in oklch, var(--destructive), transparent 70%);
   color: var(--foreground);
 }
 

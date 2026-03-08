@@ -5,6 +5,7 @@ import { SectionHeader, useToast } from "../components/ui";
 import { Button } from "../components/ui/Button";
 import { CheckboxWithLabel } from "../components/ui/Checkbox";
 import { Input } from "../components/ui/Input";
+import { NumberField } from "../components/ui/NumberField";
 import { RadioCard } from "../components/ui/Radio";
 import { SHADE_STEPS } from "../generators/color-scale";
 import { RADIX_GRAYS } from "../generators/radix-grays";
@@ -319,15 +320,9 @@ export function GeneratePage() {
 							<div className={styles.colorInputGroup}>
 								<label>Radius anchor (px)</label>
 								<div className={styles.radiusAnchorRow}>
-									<Input
-										type="number"
+									<NumberField
 										value={radiusAnchor}
-										onChange={(e) => {
-											const v = Number(e.target.value);
-											if (e.target.value !== "" && !Number.isNaN(v)) {
-												setRadiusAnchor(v);
-											}
-										}}
+										onChange={setRadiusAnchor}
 										onBlur={() =>
 											setRadiusAnchor(Math.min(32, Math.max(0, radiusAnchor || 0)))
 										}
@@ -351,15 +346,9 @@ export function GeneratePage() {
 									<div className={styles.typescaleRow}>
 										<div className={styles.optionGroup}>
 											<label>Base (px)</label>
-											<Input
-												type="number"
+											<NumberField
 												value={typescale.base}
-												onChange={(e) => {
-													const v = Number(e.target.value);
-													if (e.target.value !== "" && !Number.isNaN(v)) {
-														setTypescale({ ...typescale, base: v });
-													}
-												}}
+												onChange={(v) => setTypescale({ ...typescale, base: v })}
 												onBlur={() =>
 													setTypescale({
 														...typescale,
@@ -372,15 +361,9 @@ export function GeneratePage() {
 										</div>
 										<div className={styles.optionGroup}>
 											<label>Body line height (%)</label>
-											<Input
-												type="number"
+											<NumberField
 												value={typescale.lineHeightBody}
-												onChange={(e) => {
-													const v = Number(e.target.value);
-													if (e.target.value !== "" && !Number.isNaN(v)) {
-														setTypescale({ ...typescale, lineHeightBody: v });
-													}
-												}}
+												onChange={(v) => setTypescale({ ...typescale, lineHeightBody: v })}
 												onBlur={() =>
 													setTypescale({
 														...typescale,
@@ -394,15 +377,9 @@ export function GeneratePage() {
 										</div>
 										<div className={styles.optionGroup}>
 											<label>Heading line height (%)</label>
-											<Input
-												type="number"
+											<NumberField
 												value={typescale.lineHeightHeading}
-												onChange={(e) => {
-													const v = Number(e.target.value);
-													if (e.target.value !== "" && !Number.isNaN(v)) {
-														setTypescale({ ...typescale, lineHeightHeading: v });
-													}
-												}}
+												onChange={(v) => setTypescale({ ...typescale, lineHeightHeading: v })}
 												onBlur={() =>
 													setTypescale({
 														...typescale,
@@ -441,15 +418,9 @@ export function GeneratePage() {
 									<div className={styles.typescaleRow}>
 										<div className={styles.optionGroup}>
 											<label>Steps up</label>
-											<Input
-												type="number"
+											<NumberField
 												value={typescale.stepsUp}
-												onChange={(e) => {
-													const v = Number(e.target.value);
-													if (e.target.value !== "" && !Number.isNaN(v)) {
-														setTypescale({ ...typescale, stepsUp: v });
-													}
-												}}
+												onChange={(v) => setTypescale({ ...typescale, stepsUp: v })}
 												onBlur={() =>
 													setTypescale({
 														...typescale,
@@ -462,15 +433,9 @@ export function GeneratePage() {
 										</div>
 										<div className={styles.optionGroup}>
 											<label>Steps down</label>
-											<Input
-												type="number"
+											<NumberField
 												value={typescale.stepsDown}
-												onChange={(e) => {
-													const v = Number(e.target.value);
-													if (e.target.value !== "" && !Number.isNaN(v)) {
-														setTypescale({ ...typescale, stepsDown: v });
-													}
-												}}
+												onChange={(v) => setTypescale({ ...typescale, stepsDown: v })}
 												onBlur={() =>
 													setTypescale({
 														...typescale,
@@ -482,14 +447,6 @@ export function GeneratePage() {
 											/>
 										</div>
 										<div className={styles.optionGroup}>
-											<CheckboxWithLabel
-												id="round-values"
-												checked={typescale.round}
-												onChange={(checked) =>
-													setTypescale({ ...typescale, round: checked })
-												}
-												label="Round values"
-											/>
 										</div>
 									</div>
 								</div>

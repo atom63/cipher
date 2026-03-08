@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./Tabs.module.css";
 
 interface Tab {
@@ -14,7 +14,6 @@ interface TabsProps {
 	defaultTab?: string;
 	activeTab?: string;
 	onTabChange?: (tabId: string) => void;
-	variant?: "default" | "underline";
 	size?: "sm" | "md";
 	className?: string;
 	children?: React.ReactNode;
@@ -25,7 +24,6 @@ export function Tabs({
 	defaultTab,
 	activeTab: controlledActiveTab,
 	onTabChange,
-	variant = "underline",
 	size = "md",
 	className = "",
 	children,
@@ -35,16 +33,20 @@ export function Tabs({
 	);
 
 	const tabListRef = useRef<HTMLDivElement>(null);
+	const indicatorRef = useRef<HTMLDivElement>(null);
 
 	const activeTab =
 		controlledActiveTab !== undefined ? controlledActiveTab : internalActiveTab;
 
-	const handleTabClick = (tabId: string) => {
-		if (controlledActiveTab === undefined) {
-			setInternalActiveTab(tabId);
-		}
-		onTabChange?.(tabId);
-	};
+	const handleTabClick = useCallback(
+		(tabId: string) => {
+			if (controlledActiveTab === undefined) {
+				setInternalActiveTab(tabId);
+			}
+			onTabChange?.(tabId);
+		},
+		[controlledActiveTab, onTabChange],
+	);
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
@@ -85,26 +87,37 @@ export function Tabs({
 				tabEl?.focus();
 			}
 		},
-		[tabs, activeTab],
+		[tabs, activeTab, handleTabClick],
 	);
 
-	const containerClasses = [
-		styles.tabsContainer,
-		className,
-	].filter(Boolean).join(" ");
+	// Update indicator position when active tab changes
+	useEffect(() => {
+		const list = tabListRef.current;
+		const indicator = indicatorRef.current;
+		if (!list || !indicator) return;
 
-	const listClasses = [
-		styles.tabList,
-		variant === "default" ? styles.listDefault : styles.listUnderline,
-		size === "sm" ? styles.listSm : "",
-	].filter(Boolean).join(" ");
+		const activeEl = list.querySelector<HTMLElement>(`#tab-${activeTab}`);
+		if (!activeEl) return;
 
-	const tabClass = (isActive: boolean) => [
-		styles.tab,
-		variant === "default" ? styles.tabDefault : styles.tabUnderline,
-		size === "sm" ? styles.tabSm : "",
-		isActive ? styles.active : "",
-	].filter(Boolean).join(" ");
+		const listRect = list.getBoundingClientRect();
+		const tabRect = activeEl.getBoundingClientRect();
+
+		indicator.style.left = `${tabRect.left - listRect.left}px`;
+		indicator.style.width = `${tabRect.width}px`;
+	}, [activeTab, tabs]);
+
+	const containerClasses = [styles.tabsContainer, className]
+		.filter(Boolean)
+		.join(" ");
+
+	const listClasses = [styles.tabList, size === "sm" ? styles.listSm : ""]
+		.filter(Boolean)
+		.join(" ");
+
+	const tabClass = (isActive: boolean) =>
+		[styles.tab, size === "sm" ? styles.tabSm : "", isActive ? styles.active : ""]
+			.filter(Boolean)
+			.join(" ");
 
 	return (
 		<div className={containerClasses}>
@@ -127,10 +140,15 @@ export function Tabs({
 						onClick={() => handleTabClick(tab.id)}
 						disabled={tab.disabled}
 					>
-						{tab.icon && <span className={styles.tabIcon} aria-hidden="true">{tab.icon}</span>}
+						{tab.icon && (
+							<span className={styles.tabIcon} aria-hidden="true">
+								{tab.icon}
+							</span>
+						)}
 						<span className={styles.tabLabel}>{tab.label}</span>
 					</button>
 				))}
+				<div ref={indicatorRef} className={styles.indicator} />
 			</div>
 			{children && <div className={styles.tabContent}>{children}</div>}
 		</div>

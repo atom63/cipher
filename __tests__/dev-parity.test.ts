@@ -363,8 +363,8 @@ describe("mathematical typescale generation", () => {
 		}
 	});
 
-	test("round option produces whole numbers", () => {
-		const steps = computeTypescale({ ...DEFAULT_TYPESCALE, round: true });
+	test("values are always rounded to whole numbers", () => {
+		const steps = computeTypescale(DEFAULT_TYPESCALE);
 		for (const step of steps) {
 			expect(step.size).toBe(Math.round(step.size));
 			expect(step.lineHeight).toBe(Math.round(step.lineHeight));

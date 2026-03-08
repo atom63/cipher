@@ -5,7 +5,7 @@ interface SectionHeaderProps {
 	title: string;
 	description?: string;
 	action?: React.ReactNode;
-	variant?: "display" | "primary" | "secondary" | "muted";
+	variant?: "primary" | "secondary";
 }
 
 export function SectionHeader({
@@ -15,7 +15,7 @@ export function SectionHeader({
 	variant = "primary",
 }: SectionHeaderProps) {
 	return (
-		<div className={`${styles.header} ${styles[`variant-${variant}`]}`}>
+		<div className={`${styles.header} ${styles[variant]}`}>
 			<div className={styles.content}>
 				<h2 className={styles.title}>{title}</h2>
 				{description && <p className={styles.description}>{description}</p>}

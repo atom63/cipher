@@ -114,14 +114,14 @@
   cursor: pointer;
   border-radius: var(--radius);
   transition:
-    background-color 0.15s ease,
-    color 0.15s ease,
-    transform 0.1s ease;
+    background-color var(--transition),
+    color var(--transition),
+    transform var(--transition);
   flex-shrink: 0;
 }
 
 .closeButton:hover {
-  background: var(--muted);
+  background: var(--accent);
   color: var(--foreground);
 }
 

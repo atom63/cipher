@@ -1,5 +1,5 @@
 import type React from "react";
-import { RadioCard } from "../Radio";
+import { Radio, RadioCard } from "../Radio";
 import styles from "./RadioGroup.module.css";
 
 export interface RadioOption {
@@ -45,14 +45,13 @@ export function RadioGroup({
 				<div className={styles.inline}>
 					{options.map((option) => (
 						<div key={option.value} className={styles["inline-item"]}>
-							<input
+							<Radio
 								id={`${name}-${option.value}`}
-								type="radio"
 								name={name}
 								value={option.value}
 								checked={value === option.value}
 								onChange={(e) => onChange(e.target.value)}
-								className={styles["inline-input"]}
+								disabled={option.disabled}
 							/>
 							<label
 								htmlFor={`${name}-${option.value}`}

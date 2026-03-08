@@ -184,8 +184,6 @@ export interface TypescaleConfig {
 	stepsUp: number;
 	/** Number of sizes below base (default: 2, max: 4) */
 	stepsDown: number;
-	/** Round computed values to whole px (default: true) */
-	round: boolean;
 }
 
 export const DEFAULT_TYPESCALE: TypescaleConfig = {
@@ -195,7 +193,6 @@ export const DEFAULT_TYPESCALE: TypescaleConfig = {
 	lineHeightHeading: 125,
 	stepsUp: 4,
 	stepsDown: 2,
-	round: true,
 };
 
 // Step names indexed from base outward
@@ -220,7 +217,7 @@ export function computeTypescale(config?: TypescaleConfig): TypeStep[] {
 	const stepsUp = Math.min(c.stepsUp, STEP_NAMES_UP.length);
 	const stepsDown = Math.min(c.stepsDown, STEP_NAMES_DOWN.length);
 
-	const round = (v: number) => (c.round ? Math.round(v) : Math.round(v * 100) / 100);
+	const round = (v: number) => Math.round(v);
 
 	const steps: TypeStep[] = [];
 

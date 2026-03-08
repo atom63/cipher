@@ -283,13 +283,13 @@ describe("non-color tokens", () => {
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: false,
-			typescale: { base: 16, ratio: "minor-third", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2, round: true },
+			typescale: { base: 16, ratio: "minor-third", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2 },
 		});
 		const largeRatio = generateDesignSystem({
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: false,
-			typescale: { base: 16, ratio: "golden-ratio", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2, round: true },
+			typescale: { base: 16, ratio: "golden-ratio", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2 },
 		});
 
 		const smallXl = smallRatio.tokens.find(

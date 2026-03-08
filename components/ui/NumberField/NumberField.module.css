@@ -1,0 +1,127 @@
+/* ============================================
+   NUMBER FIELD
+   ============================================ */
+
+.group {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.group:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 24%, transparent);
+}
+
+.group[data-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ============================================
+   STEP BUTTONS
+   ============================================ */
+
+.button {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 var(--spacing-sm);
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background-color var(--transition),
+    color var(--transition);
+  outline: none;
+}
+
+.button:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.button:active {
+  background: color-mix(in oklch, var(--accent) 80%, var(--foreground) 5%);
+}
+
+.button:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.decrement {
+  border-radius: calc(var(--radius-lg) - 1px) 0 0 calc(var(--radius-lg) - 1px);
+}
+
+.increment {
+  border-radius: 0 calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0;
+}
+
+/* ============================================
+   INPUT
+   ============================================ */
+
+.input {
+  width: 100%;
+  min-width: 0;
+  flex-grow: 1;
+  height: var(--size-8);
+  padding: 0 var(--spacing-sm);
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* Hide native spinners */
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ============================================
+   SIZE: SM
+   ============================================ */
+
+.sm .input {
+  height: var(--size-6);
+  font-size: var(--text-xs);
+}
+
+.sm .button {
+  padding: 0 var(--spacing-xs);
+}
+
+.sm .button svg {
+  width: 12px;
+  height: 12px;
+}

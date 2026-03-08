@@ -1074,7 +1074,6 @@ export function ManagePage({
 														[group.collectionName]: id,
 													}))
 												}
-												variant="default"
 												size="sm"
 												className="manage-edit-mode-tabs"
 											/>

@@ -104,7 +104,7 @@
 
 .grayOption:hover {
 	border-color: var(--primary);
-	background-color: var(--muted);
+	background-color: color-mix(in oklch, var(--primary) 20%, transparent);
 }
 
 .grayOption:focus-visible {
@@ -118,7 +118,7 @@
 
 .grayOption[data-selected="true"] {
 	border-color: var(--primary);
-	background-color: var(--muted);
+	background-color: color-mix(in oklch, var(--primary) 10%, transparent);
 }
 
 .grayPreview {
@@ -130,7 +130,7 @@
 	width: 10px;
 	height: 10px;
 	border-radius: 50%;
-	border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+	border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
 }
 
 .grayName {
@@ -382,7 +382,7 @@
 
 .ratioOption:hover {
 	border-color: var(--primary);
-	background-color: var(--muted);
+	background-color: color-mix(in oklch, var(--primary) 20%, transparent);
 }
 
 .ratioOption:focus-visible {
@@ -396,7 +396,7 @@
 
 .ratioOption[data-selected="true"] {
 	border-color: var(--primary);
-	background-color: var(--muted);
+	background-color: color-mix(in oklch, var(--primary) 10%, transparent);
 }
 
 .ratioLabel {

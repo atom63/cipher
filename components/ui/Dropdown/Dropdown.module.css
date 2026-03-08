@@ -76,7 +76,7 @@
 }
 
 .menuItem:hover:not(:disabled) {
-  background-color: var(--muted);
+  background-color: var(--accent);
   color: var(--foreground);
 }
 
@@ -86,7 +86,7 @@
 }
 
 .menuItem[data-active]:not(:disabled) {
-  background-color: var(--muted);
+  background-color: var(--accent);
   color: var(--foreground);
 }
 
@@ -106,7 +106,7 @@
 
 .menuItemDanger:hover:not(:disabled),
 .menuItemDanger[data-active]:not(:disabled) {
-  background-color: color-mix(in srgb, var(--destructive) 10%, transparent);
+  background-color: color-mix(in oklch, var(--destructive) 10%, transparent);
   color: var(--destructive);
 }
 

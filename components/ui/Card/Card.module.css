@@ -6,10 +6,10 @@
 .card {
   border-radius: var(--radius-lg);
   transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+    background-color var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
   color: var(--card-foreground);
   display: flex;
   flex-direction: column;
@@ -96,7 +96,7 @@
 }
 
 .clickable:hover {
-  border-color: var(--ring);
+  border-color: var(--primary);
   box-shadow: var(--shadow-shadow-2);
 }
 
@@ -115,6 +115,7 @@
 /* Selected state (for selectable cards) */
 .selected {
   border-color: var(--primary);
+  background-color: color-mix(in oklch, var(--primary) 10%, transparent);
   box-shadow:
     0 0 0 1px var(--primary),
     var(--shadow-shadow-2);

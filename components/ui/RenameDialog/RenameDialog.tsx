@@ -49,7 +49,6 @@ export function RenameDialog({
 			}
 		>
 			<Tabs
-				variant="default"
 				size="sm"
 				tabs={[
 					{ id: "find-replace", label: "Replace" },

@@ -5,7 +5,7 @@
   flex-shrink: 0;
   display: inline-flex;
   border-radius: var(--radius-sm);
-  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
   overflow: hidden;
 }
 

@@ -28,7 +28,7 @@
 
 .dropZone:hover {
   border-color: var(--primary);
-  background: var(--muted);
+  background: var(--accent);
 }
 
 .dropZone:focus-visible {
@@ -39,7 +39,7 @@
 
 .dropZone.dragging {
   border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
 }
 
 .dropZonePrimary {

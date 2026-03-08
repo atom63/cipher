@@ -14,9 +14,9 @@
   line-height: 1;
   max-width: 100%;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.1s ease;
+    background-color var(--transition),
+    border-color var(--transition),
+    transform var(--transition);
   border: 1px solid transparent;
 }
 
@@ -137,7 +137,7 @@
 }
 
 .outline:hover {
-  background-color: var(--muted);
+  background-color: var(--accent);
 }
 
 .outline .dot {
@@ -231,7 +231,7 @@
   opacity: 0.6;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: opacity 0.15s ease, background-color 0.15s ease;
+  transition: opacity var(--transition), background-color var(--transition);
   flex-shrink: 0;
 }
 

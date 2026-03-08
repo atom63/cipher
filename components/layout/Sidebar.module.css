@@ -55,7 +55,7 @@
 }
 
 .sidebarItem:hover:not(.disabled) {
-  background: var(--background);
+  background: var(--accent);
   color: var(--foreground);
 }
 
@@ -130,7 +130,7 @@
 }
 
 .sidebarCollapseToggle:hover {
-  background: var(--background);
+  background: var(--accent);
   color: var(--primary);
 }
 

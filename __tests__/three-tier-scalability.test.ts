@@ -46,7 +46,7 @@ describe("combinatorial config coverage", () => {
 			const result = generateDesignSystem({
 				primary: "#3B82F6",
 				layers: "semantic",
-				typescale: { base: 16, ratio, lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2, round: true },
+				typescale: { base: 16, ratio, lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2 },
 			});
 			expect(result.tokens.length).toBeGreaterThan(0);
 			expect(result.stats.totalCount).toBe(result.tokens.length);
@@ -61,7 +61,7 @@ describe("combinatorial config coverage", () => {
 			layers: "three-tier",
 			darkMode: true,
 			radius: 12,
-			typescale: { base: 16, ratio: "perfect-fourth", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2, round: true },
+			typescale: { base: 16, ratio: "perfect-fourth", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2 },
 			fonts: { sans: "Inter", mono: "Fira Code" },
 		});
 		expect(result.tokens.length).toBeGreaterThan(0);
@@ -408,7 +408,7 @@ describe("performance", () => {
 			layers: "three-tier",
 			darkMode: true,
 			radius: 12,
-			typescale: { base: 16, ratio: "perfect-fourth", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2, round: true },
+			typescale: { base: 16, ratio: "perfect-fourth", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2 },
 			fonts: { sans: "Inter" },
 		};
 

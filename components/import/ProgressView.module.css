@@ -239,8 +239,8 @@
 
 .changesSummary {
   padding: var(--spacing-md);
-  background: color-mix(in srgb, var(--info) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--info) 25%, transparent);
+  background: color-mix(in oklch, var(--info) 10%, transparent);
+  border: 1px solid color-mix(in oklch, var(--info) 25%, transparent);
   border-radius: var(--radius-sm);
   margin-bottom: var(--spacing-lg);
   font-size: var(--text-sm);
@@ -310,8 +310,8 @@
 
 .oldValue {
   padding: var(--spacing-2xs) var(--spacing-sm);
-  background: color-mix(in srgb, var(--destructive) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--destructive) 25%, transparent);
+  background: color-mix(in oklch, var(--destructive) 10%, transparent);
+  border: 1px solid color-mix(in oklch, var(--destructive) 25%, transparent);
   border-radius: var(--radius-xs);
   color: var(--destructive);
 }
@@ -323,8 +323,8 @@
 
 .newValue {
   padding: var(--spacing-2xs) var(--spacing-sm);
-  background: color-mix(in srgb, var(--success) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
+  background: color-mix(in oklch, var(--success) 10%, transparent);
+  border: 1px solid color-mix(in oklch, var(--success) 25%, transparent);
   border-radius: var(--radius-xs);
   color: var(--success);
 }

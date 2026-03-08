@@ -18,12 +18,12 @@
 
 .card:hover:not(.disabled) {
   border-color: var(--primary);
-  background: var(--muted);
+  background: color-mix(in oklch, var(--primary) 20%, transparent);
 }
 
 .card.checked {
   border-color: var(--primary);
-  background: var(--muted);
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
   box-shadow: 0 0 0 1px var(--primary);
 }
 
