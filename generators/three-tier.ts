@@ -316,7 +316,7 @@ function generatePrimitives(
 	);
 
 	// --- White/Black alpha scales ---
-	const alphaSteps = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as const;
+	const alphaSteps = [0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as const;
 	for (const step of alphaSteps) {
 		tokens.push(
 			...makeDualModeTokens(
@@ -532,6 +532,11 @@ interface SemanticDef {
 	light: string;
 	dark: string;
 	description: string;
+	/** Optional flat CSS name for shadcn compatibility (e.g., "background" instead of "background-default") */
+	cssName?: string;
+	/** Optional color-mix config for CSS output */
+	lightColorMix?: { base: string; amount: string };
+	darkColorMix?: { base: string; amount: string };
 }
 
 /**
@@ -561,6 +566,7 @@ function buildSemanticDefs(
 		// Background — uses Radix 1-12 steps
 		{
 			name: "background/default",
+			cssName: "background",
 			light: neutral(1),
 			dark: neutral(1),
 			description: "Default page background",
@@ -593,15 +599,20 @@ function buildSemanticDefs(
 		// Foreground / Text — uses Radix high-contrast steps
 		{
 			name: "foreground/default",
+			cssName: "foreground",
 			light: neutral(12),
 			dark: neutral(12),
 			description: "Default text color",
+			darkColorMix: { base: neutral(12), amount: "10%" },
 		},
 		{
 			name: "foreground/muted",
+			cssName: "muted-foreground",
 			light: neutral(11),
 			dark: neutral(11),
 			description: "Muted/secondary text",
+			lightColorMix: { base: neutral(11), amount: "10%" },
+			darkColorMix: { base: neutral(11), amount: "10%" },
 		},
 		{
 			name: "foreground/subtle",
@@ -611,6 +622,7 @@ function buildSemanticDefs(
 		},
 		{
 			name: "foreground/on-emphasis",
+			cssName: "primary-foreground",
 			light: white,
 			dark: white,
 			description: "Text on emphasized background",
@@ -625,6 +637,7 @@ function buildSemanticDefs(
 		// Border — uses Radix mid-range steps
 		{
 			name: "border/default",
+			cssName: "border",
 			light: neutral(6),
 			dark: neutral(6),
 			description: "Default border",
@@ -645,9 +658,10 @@ function buildSemanticDefs(
 		// Surface — uses Radix component background steps
 		{
 			name: "surface/primary",
-			light: primary(50),
-			dark: primary(950),
-			description: "Primary surface (light tint)",
+			cssName: "primary",
+			light: primary(500),
+			dark: primary(500),
+			description: "Primary color",
 		},
 		{
 			name: "surface/primary-hover",
@@ -657,9 +671,10 @@ function buildSemanticDefs(
 		},
 		{
 			name: "surface/component",
+			cssName: "secondary",
 			light: neutral(3),
 			dark: neutral(3),
-			description: "Component background (inputs, cards)",
+			description: "Secondary/component background",
 		},
 		{
 			name: "surface/component-hover",
@@ -673,18 +688,57 @@ function buildSemanticDefs(
 			dark: neutral(5),
 			description: "Component active/pressed background",
 		},
+
+		// Muted
+		{
+			name: "muted/default",
+			cssName: "muted",
+			light: neutral(3),
+			dark: neutral(3),
+			description: "Muted background",
+		},
+
+		// Accent — with color-mix for transparency
+		{
+			name: "accent/default",
+			cssName: "accent",
+			light: neutral(4),
+			dark: neutral(6),
+			description: "Accent background",
+			lightColorMix: { base: neutral(4), amount: "20%" },
+			darkColorMix: { base: neutral(6), amount: "20%" },
+		},
+		{
+			name: "accent/foreground",
+			cssName: "accent-foreground",
+			light: neutral(12),
+			dark: neutral(12),
+			description: "Accent foreground text",
+		},
+
+		// Secondary foreground
+		{
+			name: "secondary/foreground",
+			cssName: "secondary-foreground",
+			light: neutral(11),
+			dark: neutral(10),
+			description: "Secondary foreground text",
+			darkColorMix: { base: neutral(10), amount: "10%" },
+		},
 	];
 
 	// Card
 	defs.push(
 		{
 			name: "card/default",
+			cssName: "card",
 			light: neutral(1),
 			dark: neutral(2),
 			description: "Card background",
 		},
 		{
 			name: "card/foreground",
+			cssName: "card-foreground",
 			light: neutral(12),
 			dark: neutral(12),
 			description: "Card text color",
@@ -695,12 +749,14 @@ function buildSemanticDefs(
 	defs.push(
 		{
 			name: "popover/default",
+			cssName: "popover",
 			light: neutral(1),
 			dark: neutral(4),
 			description: "Popover/dropdown background",
 		},
 		{
 			name: "popover/foreground",
+			cssName: "popover-foreground",
 			light: neutral(12),
 			dark: neutral(12),
 			description: "Popover text color",
@@ -712,6 +768,7 @@ function buildSemanticDefs(
 	defs.push(
 		{
 			name: "destructive/default",
+			cssName: "destructive",
 			light: destructive(500),
 			dark: destructive(500),
 			description: "Destructive action background",
@@ -746,12 +803,14 @@ function buildSemanticDefs(
 	defs.push(
 		{
 			name: "input/default",
+			cssName: "input",
 			light: neutral(5),
 			dark: neutral(7),
 			description: "Input border color",
 		},
 		{
 			name: "ring/default",
+			cssName: "ring",
 			light: neutral(6),
 			dark: neutral(8),
 			description: "Focus ring color",
@@ -771,18 +830,21 @@ function buildSemanticDefs(
 	defs.push(
 		{
 			name: "success/default",
+			cssName: "success",
 			light: success(500),
 			dark: success(500),
 			description: "Success status color",
 		},
 		{
 			name: "warning/default",
+			cssName: "warning",
 			light: warning(500),
 			dark: warning(500),
 			description: "Warning status color",
 		},
 		{
 			name: "info/default",
+			cssName: "info",
 			light: info(500),
 			dark: info(500),
 			description: "Info status color",
@@ -1028,6 +1090,18 @@ export function generateCss(config: BrandConfig): string {
 		}
 	}
 
+	// Semantic color registrations for Tailwind (--color-X: var(--X))
+	const defs = buildSemanticDefs(
+		"primitives",
+		radixGray.name,
+		!!config.secondary,
+	);
+	for (const def of defs) {
+		if (def.cssName) {
+			lines.push(`  --color-${def.cssName}: var(--${def.cssName});`);
+		}
+	}
+
 	lines.push("}");
 	lines.push("");
 
@@ -1039,15 +1113,12 @@ export function generateCss(config: BrandConfig): string {
 		lines.push(`  --color-${radixGray.name}-${i + 1}: ${radixGray.light[i]};`);
 	}
 
-	// Semantic color references (light mode)
-	const defs = buildSemanticDefs(
-		"primitives",
-		radixGray.name,
-		!!config.secondary,
-	);
+	// Semantic color references (light mode) — use flat cssName when available
 	for (const def of defs) {
-		const cssVarName = `--${def.name.replace(/\//g, "-")}`;
-		const cssValue = refToCssVar(def.light);
+		const cssVarName = `--${def.cssName ?? def.name.replace(/\//g, "-")}`;
+		const cssValue = def.lightColorMix
+			? `color-mix(in srgb, ${refToCssVar(def.lightColorMix.base)}, transparent ${def.lightColorMix.amount})`
+			: refToCssVar(def.light);
 		lines.push(`  ${cssVarName}: ${cssValue};`);
 	}
 
@@ -1062,8 +1133,10 @@ export function generateCss(config: BrandConfig): string {
 		}
 
 		for (const def of defs) {
-			const cssVarName = `--${def.name.replace(/\//g, "-")}`;
-			const cssValue = refToCssVar(def.dark);
+			const cssVarName = `--${def.cssName ?? def.name.replace(/\//g, "-")}`;
+			const cssValue = def.darkColorMix
+				? `color-mix(in srgb, ${refToCssVar(def.darkColorMix.base)}, transparent ${def.darkColorMix.amount})`
+				: refToCssVar(def.dark);
 			lines.push(`  ${cssVarName}: ${cssValue};`);
 		}
 
@@ -1163,9 +1236,4 @@ export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 			totalCount: tokens.length,
 		},
 	};
-}
-
-/** @deprecated Use generateDesignSystem instead */
-export function generateThreeTierSystem(config: BrandConfig): GeneratedSystem {
-	return generateDesignSystem({ ...config, layers: "three-tier" });
 }

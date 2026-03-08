@@ -235,9 +235,9 @@ describe("token count stability", () => {
 		});
 
 		// brand(11) + destructive(11) + success(11) + warning(11) + info(11)
-		// + gray(12) + white(1) + black(1) + alpha(11*2=22) = 91 primitives
+		// + gray(12) + white(1) + black(1) + alpha(12*2=24) = 93 primitives
 		// This is a snapshot — update if primitive scales change intentionally
-		expect(result.stats.primitiveCount).toBe(91);
+		expect(result.stats.primitiveCount).toBe(93);
 		expect(result.stats.totalCount).toBeGreaterThan(58);
 	});
 

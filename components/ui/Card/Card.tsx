@@ -3,14 +3,7 @@ import styles from "./Card.module.css";
 
 export interface CardProps {
 	children: ReactNode;
-	variant?:
-		| "default"
-		| "muted"
-		| "bordered"
-		| "elevated"
-		| "outline"
-		| "glass"
-		| "gradient";
+	variant?: "default" | "muted" | "bordered" | "elevated" | "outline";
 	padding?: "none" | "sm" | "md" | "lg" | "xl";
 	hover?: boolean;
 	selected?: boolean;

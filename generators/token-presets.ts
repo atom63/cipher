@@ -100,8 +100,6 @@ export interface ShadowLayer {
 	opacity: number;
 }
 
-/** @deprecated Use ShadowLayer instead */
-export type ShadowDef = ShadowLayer;
 
 export const SHADOW_SCALE: Record<string, ShadowLayer[]> = {
 	"0": [{ offsetX: 0, offsetY: 0, blur: 0, spread: 0, opacity: 0 }],

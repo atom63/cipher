@@ -4,7 +4,6 @@ import type { BrandConfig } from "../generators/three-tier";
 import {
 	generateCss,
 	generateDesignSystem,
-	generateThreeTierSystem,
 } from "../generators/three-tier";
 
 const defaultConfig: BrandConfig = {
@@ -537,14 +536,19 @@ describe("generateCss", () => {
 		expect(css).toContain("--color-brand-500:");
 		expect(css).toContain("--color-destructive-500:");
 		expect(css).toContain("--color-slate-1:");
-		// Semantic tokens
-		expect(css).toContain("--card-default:");
-		expect(css).toContain("--destructive-default:");
-		expect(css).toContain("--input-default:");
-		expect(css).toContain("--ring-default:");
-		expect(css).toContain("--success-default:");
-		expect(css).toContain("--warning-default:");
-		expect(css).toContain("--info-default:");
+		// Semantic tokens (flat shadcn-compatible names)
+		expect(css).toContain("--card:");
+		expect(css).toContain("--destructive:");
+		expect(css).toContain("--input:");
+		expect(css).toContain("--ring:");
+		expect(css).toContain("--success:");
+		expect(css).toContain("--warning:");
+		expect(css).toContain("--info:");
+		// @theme inline includes semantic registrations
+		expect(css).toContain("--color-card: var(--card);");
+		expect(css).toContain("--color-destructive: var(--destructive);");
+		// color-mix support
+		expect(css).toContain("color-mix(in srgb,");
 		expect(css).toContain("--color-success-500:");
 		expect(css).toContain("--color-warning-500:");
 		expect(css).toContain("--color-info-500:");
@@ -606,16 +610,3 @@ describe("token compatibility", () => {
 	});
 });
 
-// =========================================================================
-// Backwards compatibility
-// =========================================================================
-
-describe("generateThreeTierSystem (deprecated)", () => {
-	test("still works and produces three-tier output", () => {
-		const result = generateThreeTierSystem(defaultConfig);
-		const categories = new Set(result.tokens.map((t) => t.category));
-		expect(categories).toContain("primitives");
-		expect(categories).toContain("abstractions");
-		expect(categories).toContain("semantics");
-	});
-});

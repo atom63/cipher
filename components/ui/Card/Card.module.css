@@ -56,45 +56,6 @@
   box-shadow: var(--shadow-shadow-3);
 }
 
-/* Glass - frosted glass effect */
-.glass {
-  background-color: color-mix(in oklch, var(--card) 80%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
-  box-shadow: var(--shadow-shadow-1);
-}
-
-/* Gradient border - subtle gradient outline */
-.gradient {
-  background-color: var(--card);
-  border: 1px solid transparent;
-  background-clip: padding-box;
-  position: relative;
-}
-
-.gradient::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklch, var(--primary) 30%, transparent),
-    color-mix(in oklch, var(--ring) 20%, transparent)
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
 /* ============================================
    PADDING VARIANTS
    ============================================ */
@@ -210,32 +171,6 @@
 
 .cardFooter[data-align="between"] {
   justify-content: space-between;
-}
-
-/* ============================================
-   CARD WITH MEDIA
-   ============================================ */
-.cardMedia {
-  margin: calc(var(--spacing-lg) * -1);
-  margin-bottom: 0;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  overflow: hidden;
-}
-
-.cardMedia img {
-  width: 100%;
-  height: auto;
-  display: block;
-  object-fit: cover;
-}
-
-/* ============================================
-   CARD DIVIDER
-   ============================================ */
-.cardDivider {
-  height: 1px;
-  background-color: var(--border);
-  margin: 0 calc(var(--spacing-lg) * -1);
 }
 
 /* ============================================
