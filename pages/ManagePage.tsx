@@ -246,7 +246,7 @@ export function ManagePage() {
 		} else if (msg.type === "variables-renamed") {
 			const { success, failed, previousNames } = msg.data;
 			if (failed > 0) {
-				showError(`${failed} rename(s) failed`);
+				showError(`${failed} ${failed === 1 ? "rename" : "renames"} failed`);
 			} else {
 				showSuccess(
 					`Renamed ${success} variable${success !== 1 ? "s" : ""}`,
@@ -279,7 +279,7 @@ export function ManagePage() {
 				snapshots: DeletedVariableSnapshot[];
 			};
 			if (failed > 0) {
-				showError(`${failed} deletion(s) failed`);
+				showError(`${failed} ${failed === 1 ? "deletion" : "deletions"} failed`);
 			} else {
 				showSuccess(
 					`Deleted ${success} variable${success !== 1 ? "s" : ""}`,
@@ -300,7 +300,7 @@ export function ManagePage() {
 			loadVariables();
 		} else if (msg.type === "variables-restored") {
 			if (msg.data.failed > 0) {
-				showError(`${msg.data.failed} restore(s) failed`);
+				showError(`${msg.data.failed} ${msg.data.failed === 1 ? "restore" : "restores"} failed`);
 			} else {
 				showSuccess(
 					`Restored ${msg.data.success} variable${msg.data.success !== 1 ? "s" : ""}`,
@@ -310,7 +310,7 @@ export function ManagePage() {
 		} else if (msg.type === "variables-moved") {
 			const { success, failed } = msg.data;
 			if (failed > 0) {
-				showError(`${failed} move(s) failed`);
+				showError(`${failed} ${failed === 1 ? "move" : "moves"} failed`);
 			} else {
 				showSuccess(
 					`Moved ${success} variable${success !== 1 ? "s" : ""}`,
@@ -323,7 +323,7 @@ export function ManagePage() {
 		} else if (msg.type === "variable-values-updated") {
 			const { success, failed, previousValues } = msg.data;
 			if (failed > 0) {
-				showError(`${failed} update(s) failed`);
+				showError(`${failed} ${failed === 1 ? "update" : "updates"} failed`);
 			} else {
 				showSuccess(
 					`Updated ${success} variable${success !== 1 ? "s" : ""}`,
@@ -348,7 +348,7 @@ export function ManagePage() {
 		} else if (msg.type === "variables-duplicated") {
 			const { success, failed, newVariableIds } = msg.data;
 			if (failed > 0) {
-				showError(`${failed} duplication(s) failed`);
+				showError(`${failed} ${failed === 1 ? "duplication" : "duplications"} failed`);
 			} else {
 				showSuccess(
 					`Duplicated ${success} variable${success !== 1 ? "s" : ""}`,
@@ -861,7 +861,7 @@ export function ManagePage() {
 					</div>
 					<div className="manage-rename-inputs">
 						<Input
-							label="Find"
+							label="Find text"
 							value={findText}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								setFindText(e.target.value)
@@ -869,7 +869,7 @@ export function ManagePage() {
 							placeholder="Text to find…"
 						/>
 						<Input
-							label="Replace"
+							label="Replace with"
 							value={replaceText}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								setReplaceText(e.target.value)
@@ -1323,7 +1323,7 @@ export function ManagePage() {
 				onConfirm={handleDelete}
 				title="Delete Variables"
 				message={`Are you sure you want to delete ${selectedIds.size} variable${selectedIds.size !== 1 ? "s" : ""}? This cannot be undone.`}
-				confirmText="Delete"
+				confirmText={`Delete ${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
 				cancelText="Cancel"
 			/>
 		</div>

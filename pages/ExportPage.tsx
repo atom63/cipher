@@ -368,7 +368,7 @@ export function ExportPage() {
 	if (loading) {
 		return (
 			<div className="page-content">
-				<LoadingState message="Loading…" />
+				<LoadingState message="Loading collections and styles…" />
 			</div>
 		);
 	}

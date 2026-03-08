@@ -86,8 +86,8 @@ export function NoResultsState({
 
 /** Empty state for no data */
 export function NoDataState({
-	title = "No data yet",
-	description = "Get started by adding your first item.",
+	title = "Nothing here yet",
+	description = "Create or import something to get started.",
 	action,
 }: {
 	title?: string;
@@ -108,7 +108,7 @@ export function NoDataState({
 /** Empty state for errors */
 export function ErrorState({
 	title = "Something went wrong",
-	description = "We encountered an error. Please try again.",
+	description = "An unexpected error occurred. Try again, or reload the plugin if the issue persists.",
 	onRetry,
 }: {
 	title?: string;

@@ -803,7 +803,7 @@ export function StylesPage() {
 					</div>
 					<div className="manage-rename-inputs">
 						<Input
-							label="Find"
+							label="Find text"
 							value={findText}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								setFindText(e.target.value)
@@ -811,7 +811,7 @@ export function StylesPage() {
 							placeholder="Text to find…"
 						/>
 						<Input
-							label="Replace"
+							label="Replace with"
 							value={replaceText}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								setReplaceText(e.target.value)

@@ -9,6 +9,7 @@ import {
 	LoadingState,
 	RadioGroup,
 	SectionHeader,
+	useToast,
 } from "../ui";
 import styles from "./CollectionSelector.module.css";
 
@@ -45,6 +46,7 @@ export function CollectionSelector({
 	onSelect,
 	onCancel,
 }: CollectionSelectorProps) {
+	const { showWarning } = useToast();
 	const [mode, setMode] = useState<"new" | "existing">("new");
 	const [importMode, setImportMode] = useState<"import" | "override">("import");
 	const [collections, setCollections] = useState<Collection[]>([]);
@@ -93,13 +95,13 @@ export function CollectionSelector({
 	const handleContinue = () => {
 		// For multi-collection imports, check that at least one collection is selected
 		if (isMultiCollection && selectedCollections.size === 0) {
-			alert("Please select at least one collection to import");
+			showWarning("Please select at least one collection to import");
 			return;
 		}
 
 		if (mode === "new") {
 			if (!newCollectionName.trim()) {
-				alert("Please enter a collection name");
+				showWarning("Please enter a collection name");
 				return;
 			}
 			// Pass selected collections array for multi-collection imports
@@ -112,7 +114,7 @@ export function CollectionSelector({
 		} else {
 			const selected = collections.find((c) => c.id === selectedCollectionId);
 			if (!selected) {
-				alert("Please select a collection");
+				showWarning("Please select a collection");
 				return;
 			}
 			onSelect(

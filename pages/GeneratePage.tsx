@@ -243,7 +243,7 @@ export function GeneratePage() {
 
 							{/* Gray palette selector */}
 							<div className={styles.colorInputGroup}>
-								<label>Surface palette</label>
+								<label>Neutral palette</label>
 								<div className={styles.graySelector}>
 									{RADIX_GRAYS.map((g) => (
 										<button
