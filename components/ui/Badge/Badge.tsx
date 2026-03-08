@@ -65,7 +65,7 @@ export function Badge({
 						e.stopPropagation();
 						onRemove?.();
 					}}
-					aria-label="Remove"
+					aria-label={`Remove ${typeof children === "string" ? children : ""}`}
 				>
 					<X size={12} />
 				</button>

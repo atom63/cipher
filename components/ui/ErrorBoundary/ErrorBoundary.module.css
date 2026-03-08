@@ -4,7 +4,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px;
+  padding: var(--spacing-3xl);
   text-align: center;
   min-height: 200px;
 }
@@ -14,7 +14,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--spacing-2xl);
   text-align: center;
   min-height: 150px;
 }
@@ -26,31 +26,31 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  margin-bottom: 16px;
-  background: var(--figma-color-bg-danger-tertiary, #fee2e2);
-  color: var(--figma-color-icon-danger, #dc2626);
-  border-radius: 50%;
+  margin-bottom: var(--spacing-lg);
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+  border-radius: var(--radius-full);
 }
 
 .pageError .errorIcon {
   width: 40px;
   height: 40px;
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-md);
 }
 
 /* Title */
 .errorTitle {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--figma-color-text, var(--foreground, #1a1a1a));
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--foreground);
 }
 
 /* Message */
 .errorMessage {
-  margin: 0 0 16px 0;
-  font-size: 12px;
-  color: var(--figma-color-text-secondary, var(--muted-foreground, #666));
+  margin: 0 0 var(--spacing-lg) 0;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
   max-width: 300px;
   word-break: break-word;
 }
@@ -59,50 +59,58 @@
 .resetButton {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--figma-color-text-onbrand, #fff);
-  background: var(--figma-color-bg-brand, var(--primary, #0754ab));
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--primary-foreground);
+  background: var(--primary);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s ease;
 }
 
 .resetButton:hover {
-  background: var(--figma-color-bg-brand-hover, var(--primary, #0654a0));
   opacity: 0.9;
+}
+
+.resetButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+}
+
+.resetButton:active {
+  transform: scale(0.98);
 }
 
 /* Error Details */
 .errorDetails {
-  margin-top: 16px;
+  margin-top: var(--spacing-lg);
   width: 100%;
   max-width: 400px;
   text-align: left;
 }
 
 .errorDetails summary {
-  font-size: 11px;
-  color: var(--figma-color-text-tertiary, var(--muted-foreground, #999));
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
   cursor: pointer;
   user-select: none;
 }
 
 .errorDetails summary:hover {
-  color: var(--figma-color-text-secondary, var(--muted-foreground, #666));
+  color: var(--foreground);
 }
 
 .errorDetails pre {
-  margin-top: 8px;
-  padding: 12px;
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-md);
   font-size: 10px;
   font-family: monospace;
-  color: var(--figma-color-text-secondary, var(--muted-foreground, #666));
-  background: var(--figma-color-bg-secondary, var(--muted, #f5f5f5));
-  border-radius: 4px;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border-radius: var(--radius-sm);
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-word;

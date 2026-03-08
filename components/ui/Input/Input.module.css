@@ -100,14 +100,14 @@
 
 /* Success state */
 .inputWrapper[data-success="true"] {
-  border-color: var(--success, #22c55e);
+  border-color: var(--success);
 }
 
 .inputWrapper[data-success="true"]:focus-within {
-  border-color: var(--success, #22c55e);
+  border-color: var(--success);
   box-shadow:
     0 0 0 2px var(--background),
-    0 0 0 4px color-mix(in oklch, var(--success, #22c55e) 25%, transparent);
+    0 0 0 4px color-mix(in oklch, var(--success) 25%, transparent);
 }
 
 /* Disabled state */
@@ -184,7 +184,7 @@
 }
 
 .inputWrapper[data-success="true"] .stateIcon {
-  color: var(--success, #22c55e);
+  color: var(--success);
 }
 
 /* ============================================
@@ -206,7 +206,7 @@
 }
 
 .success {
-  color: var(--success, #22c55e);
+  color: var(--success);
 }
 
 .hint {

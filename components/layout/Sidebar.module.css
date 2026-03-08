@@ -59,6 +59,11 @@
   color: var(--foreground);
 }
 
+.sidebarItem:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+}
+
 .sidebarItem.active {
   background: var(--background);
   color: var(--primary);
@@ -127,6 +132,11 @@
 .sidebarCollapseToggle:hover {
   background: var(--background);
   color: var(--primary);
+}
+
+.sidebarCollapseToggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
 /* Collapsed sidebar styles */

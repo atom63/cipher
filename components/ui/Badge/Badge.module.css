@@ -91,42 +91,42 @@
 }
 
 .success {
-  background-color: color-mix(in oklch, var(--success, #22c55e) 15%, transparent);
-  color: var(--success, #22c55e);
+  background-color: color-mix(in oklch, var(--success) 15%, transparent);
+  color: var(--success);
 }
 
 .success:hover {
-  background-color: color-mix(in oklch, var(--success, #22c55e) 25%, transparent);
+  background-color: color-mix(in oklch, var(--success) 25%, transparent);
 }
 
 .success .dot {
-  background-color: var(--success, #22c55e);
+  background-color: var(--success);
 }
 
 .warning {
-  background-color: color-mix(in oklch, var(--warning, #f59e0b) 15%, transparent);
-  color: var(--warning, #f59e0b);
+  background-color: color-mix(in oklch, var(--warning) 15%, transparent);
+  color: var(--warning);
 }
 
 .warning:hover {
-  background-color: color-mix(in oklch, var(--warning, #f59e0b) 25%, transparent);
+  background-color: color-mix(in oklch, var(--warning) 25%, transparent);
 }
 
 .warning .dot {
-  background-color: var(--warning, #f59e0b);
+  background-color: var(--warning);
 }
 
 .info {
-  background-color: color-mix(in oklch, var(--info, #3b82f6) 15%, transparent);
-  color: var(--info, #3b82f6);
+  background-color: color-mix(in oklch, var(--info) 15%, transparent);
+  color: var(--info);
 }
 
 .info:hover {
-  background-color: color-mix(in oklch, var(--info, #3b82f6) 25%, transparent);
+  background-color: color-mix(in oklch, var(--info) 25%, transparent);
 }
 
 .info .dot {
-  background-color: var(--info, #3b82f6);
+  background-color: var(--info);
 }
 
 .outline {

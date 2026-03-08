@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal, 1000);
   padding: var(--spacing-xl);
   animation: overlay-fade-in 0.2s ease-out;
 }
@@ -247,10 +247,10 @@
 
 /* Success dialog */
 .dialog[data-variant="success"] .header {
-  background: color-mix(in oklch, var(--success, #22c55e) 10%, transparent);
-  border-bottom-color: color-mix(in oklch, var(--success, #22c55e) 20%, transparent);
+  background: color-mix(in oklch, var(--success) 10%, transparent);
+  border-bottom-color: color-mix(in oklch, var(--success) 20%, transparent);
 }
 
 .dialog[data-variant="success"] .header h3 {
-  color: var(--success, #22c55e);
+  color: var(--success);
 }

@@ -100,9 +100,18 @@ export function FileImport({
 			<div
 				className={`${styles.dropZone} ${isDragging ? styles.dragging : ""}`}
 				onClick={() => fileInputRef.current?.click()}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						fileInputRef.current?.click();
+					}
+				}}
 				onDragLeave={handleDragLeave}
 				onDragOver={handleDragOver}
 				onDrop={handleDrop}
+				role="button"
+				tabIndex={0}
+				aria-label="Drop a file here or click to browse"
 			>
 				<input
 					accept=".json"

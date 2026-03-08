@@ -25,7 +25,7 @@
 }
 
 .statChip {
-  padding: 6px var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-md);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background: var(--background);
@@ -134,7 +134,7 @@
 }
 
 .figmaName.editable:hover {
-  background: #eff6ff;
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 .inlineEdit {
@@ -144,7 +144,7 @@
   font-size: var(--text-base);
   font-family: inherit;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(24, 160, 251, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .colorPreviewWrapper {
@@ -174,12 +174,12 @@
 }
 
 .tokenReference {
-  color: #06b6d4;
+  color: var(--info);
   font-weight: var(--font-medium);
 }
 
 .tokenString {
-  color: #14b8a6;
+  color: var(--success);
 }
 
 .tokenActions {
