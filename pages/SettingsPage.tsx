@@ -7,7 +7,7 @@ import type { PluginSettings } from "../types/messages";
 const DEFAULT_SETTINGS: PluginSettings = {
 	colorFormat: "oklch",
 	lastExportTab: "variables",
-	theme: "system",
+	theme: "light",
 };
 
 export function SettingsPage() {

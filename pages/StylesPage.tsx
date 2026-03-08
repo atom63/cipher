@@ -664,46 +664,53 @@ export function StylesPage() {
 				</div>
 			</div>
 
-			{/* Selection bar */}
-			{selectedIds.size > 0 && (
-				<div className="manage-selection-bar">
-					<span>{selectedIds.size} selected</span>
-					<div className="manage-selection-actions">
+			{/* Action bar */}
+			<div className="manage-actionbar">
+				<div className="manage-actionbar-row">
+					<span className="manage-selection-count">
+						{selectedIds.size} selected
+					</span>
+					<div className="manage-actionbar-actions">
 						<Button
-							variant="ghost"
+							variant="outline"
+							size="sm"
 							onClick={() => setShowRename(!showRename)}
-							title="Rename (find/replace)"
+							disabled={selectedIds.size === 0}
 						>
 							<PenLine size={14} />
 							Rename
 						</Button>
 						<Button
-							variant="ghost"
+							variant="outline"
+							size="sm"
 							onClick={handleScanRebind}
-							title="Rebind unbound colors to matching variables"
+							disabled={selectedIds.size === 0}
 						>
 							<Unlink size={14} />
 							Rebind
 						</Button>
-						<span className="manage-action-separator" />
 						<Button
-							variant="ghost"
+							variant="outline"
+							size="sm"
 							onClick={() => setPendingDelete(true)}
-							title="Delete selected styles"
+							disabled={selectedIds.size === 0}
 						>
 							<Trash2 size={14} />
 							Delete
 						</Button>
 						<Button
-							variant="ghost"
+							variant="outline"
+							size="sm"
 							onClick={selectNone}
+							disabled={selectedIds.size === 0}
 							data-tooltip="Clear selection (Esc)"
+							aria-label="Clear selection"
 						>
 							<X size={14} />
 						</Button>
 					</div>
 				</div>
-			)}
+			</div>
 
 			{/* Rename dialog */}
 			<RenameDialog
