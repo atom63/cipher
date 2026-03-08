@@ -192,9 +192,15 @@
 }
 
 /* ============================================
-   Dark Mode (Future-ready)
+   Dark Mode
+   ============================================
+   Figma adds .figma-dark to <html> when the user
+   has dark mode enabled (requires themeColors: true).
+   We also support .dark class and prefers-color-scheme
+   as fallbacks.
    ============================================ */
-.dark {
+
+@mixin dark-tokens {
   /* Base colors */
   --background: var(--color-zinc-950);
   --foreground: var(--color-zinc-50);
@@ -244,6 +250,25 @@
   --success-light: var(--color-emerald-950);
   --error: var(--destructive);
   --error-light: var(--color-rose-500);
+
+  color-scheme: dark;
+}
+
+/* Figma-injected dark mode class */
+.figma-dark {
+  @include dark-tokens;
+}
+
+/* Manual toggle class */
+.dark {
+  @include dark-tokens;
+}
+
+/* OS-level dark mode fallback */
+@media (prefers-color-scheme: dark) {
+  :root:not(.figma-light):not(.light) {
+    @include dark-tokens;
+  }
 }
 
 * {
