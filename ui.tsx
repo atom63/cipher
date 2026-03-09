@@ -17,6 +17,7 @@ import {
 	ToastProvider,
 } from "./components/ui";
 import { TooltipPortal } from "./components/ui/Tooltip";
+import { useDebugMode } from "./hooks/useDebugMode";
 import { useFigmaMessage, usePostMessage } from "./hooks/useFigmaMessage";
 import { ExportPage } from "./pages/ExportPage";
 import { GeneratePage } from "./pages/GeneratePage";
@@ -34,6 +35,7 @@ function App() {
 	const [viewMode, setViewMode] = useState<ViewMode>("default");
 	const [isDark, setIsDark] = useState(false);
 	const postMessage = usePostMessage();
+	useDebugMode();
 
 	// Load theme on startup
 	useEffect(() => {

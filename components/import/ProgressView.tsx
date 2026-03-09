@@ -9,7 +9,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import type { ImportUndoEntry } from "../../types/tokens";
-import { Button, LoadingState, Spinner } from "../ui";
+import { Button, LoadingState, ScrollArea, Spinner } from "../ui";
 import styles from "./ProgressView.module.css";
 
 interface ProgressViewProps {
@@ -129,23 +129,25 @@ export function SuccessView({
 						{unchangedTokens.length > 0 &&
 							` · ${unchangedTokens.length} unchanged`}
 					</summary>
-					<ul className={styles.changesList}>
-						{changedTokens.slice(0, 30).map((change, i) => (
-							<li className={styles.changeRow}key={i} >
-								<code className={styles.changeName}>{change.name}</code>
-								<span className={styles.changeValues}>
-									<span className={styles.oldValue}>{change.oldValue}</span>
-									<ChevronRight size={10} />
-									<span className={styles.newValue}>{change.newValue}</span>
-								</span>
-							</li>
-						))}
-						{changedTokens.length > 30 && (
-							<li className={styles.changeMore}>
-								…and {changedTokens.length - 30} more
-							</li>
-						)}
-					</ul>
+					<ScrollArea className={styles.changesScroll}>
+						<ul className={styles.changesList}>
+							{changedTokens.slice(0, 30).map((change, i) => (
+								<li className={styles.changeRow} key={i}>
+									<code className={styles.changeName}>{change.name}</code>
+									<span className={styles.changeValues}>
+										<span className={styles.oldValue}>{change.oldValue}</span>
+										<ChevronRight size={10} />
+										<span className={styles.newValue}>{change.newValue}</span>
+									</span>
+								</li>
+							))}
+							{changedTokens.length > 30 && (
+								<li className={styles.changeMore}>
+									…and {changedTokens.length - 30} more
+								</li>
+							)}
+						</ul>
+					</ScrollArea>
 				</details>
 			)}
 
@@ -169,27 +171,27 @@ export function SuccessView({
 							</>
 						)}
 					</summary>
-					<div className={styles.errorDetailsContent}>
+					<ScrollArea className={styles.errorDetailsContent}>
 						<ul className={styles.errorList}>
 							{errors.map((error, i) => (
 								<li key={i}>{error}</li>
 							))}
 						</ul>
-					</div>
+					</ScrollArea>
 				</details>
 			)}
 
 			<div className={styles.successActions}>
 				{onUndo && undoData && undoData.length > 0 && (
-					<Button onClick={onUndo}variant="ghost" >
+					<Button onClick={onUndo} variant="ghost">
 						<Undo2 size={14} />
 						Undo
 					</Button>
 				)}
-				<Button onClick={onClose}variant="secondary" >
+				<Button onClick={onClose} variant="secondary">
 					Close
 				</Button>
-				<Button onClick={onImportMore}variant="default" >
+				<Button onClick={onImportMore} variant="default">
 					<Plus size={14} />
 					{actionVerb} More
 				</Button>

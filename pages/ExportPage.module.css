@@ -224,15 +224,16 @@
 
 .cssPreviewCode {
 	max-height: min(400px, calc(100vh - 200px));
+	background: var(--muted);
+	border-top: 1px solid var(--border);
+}
+
+.cssPreviewPre {
 	padding: var(--spacing-md);
 	margin: 0;
-	overflow-x: auto;
-	overflow-y: auto;
 	font-family: var(--font-mono);
 	font-size: var(--text-xs);
 	line-height: 1.6;
 	color: var(--foreground);
 	white-space: pre;
-	background: var(--muted);
-	border-top: 1px solid var(--border);
 }

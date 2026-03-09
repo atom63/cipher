@@ -9,7 +9,7 @@ import type {
 	TokenAction,
 	TokenCategory,
 } from "../../types/tokens";
-import { Button, Checkbox, EmptyState, SectionHeader } from "../ui";
+import { Button, Checkbox, EmptyState, ScrollArea, SectionHeader } from "../ui";
 import { Alert } from "../ui/Alert";
 import { BatchRenameDialog } from "./BatchRenameDialog";
 import styles from "./TokenTable.module.css";
@@ -470,7 +470,7 @@ export function TokenTable({
 			</div>
 
 			{/* Token List */}
-			<div className={styles.tokenList}>
+			<ScrollArea className={styles.tokenList}>
 				{filteredTokens.length === 0 ? (
 					<EmptyState
 						description={
@@ -497,7 +497,7 @@ export function TokenTable({
 						/>
 					))
 				)}
-			</div>
+			</ScrollArea>
 
 			{/* Actions */}
 			<div className={styles.tableActions}>

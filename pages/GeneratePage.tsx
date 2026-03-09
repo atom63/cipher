@@ -1,7 +1,15 @@
 import { ArrowLeft, ClipboardCopy, Sparkles, Wand2 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
-import { SectionHeader, useToast } from "../components/ui";
+import {
+	Frame,
+	FrameHeader,
+	FramePanel,
+	ScrollArea,
+	SectionHeader,
+	Separator,
+	useToast,
+} from "../components/ui";
 import { Button } from "../components/ui/Button";
 import { CheckboxWithLabel } from "../components/ui/Checkbox";
 import { Input } from "../components/ui/Input";
@@ -197,9 +205,9 @@ export function GeneratePage() {
 
 						<div className={styles.configSection}>
 							{/* ── Brand Colors ── */}
-							<section className={styles.section}>
-								<h3 className={styles.sectionTitle}>Brand Colors</h3>
-								<div className={styles.sectionContent}>
+							<Frame>
+								<FrameHeader><h3 className={styles.sectionTitle}>Brand Colors</h3></FrameHeader>
+								<FramePanel className={styles.sectionContent}>
 									<div className={styles.fieldGroup}>
 										<label>Primary color</label>
 										<div className={styles.colorInputRow}>
@@ -233,6 +241,8 @@ export function GeneratePage() {
 											/>
 										)}
 									</div>
+
+									<Separator />
 
 									<div className={styles.fieldGroup}>
 										<CheckboxWithLabel
@@ -277,6 +287,8 @@ export function GeneratePage() {
 										)}
 									</div>
 
+									<Separator />
+
 									<div className={styles.fieldGroup}>
 										<label>Neutral palette</label>
 										<div className={styles.graySelector}>
@@ -305,19 +317,21 @@ export function GeneratePage() {
 											))}
 										</div>
 									</div>
-								</div>
-							</section>
+								</FramePanel>
+							</Frame>
 
 							{/* ── Appearance ── */}
-							<section className={styles.section}>
-								<h3 className={styles.sectionTitle}>Appearance</h3>
-								<div className={styles.sectionContent}>
+							<Frame>
+								<FrameHeader><h3 className={styles.sectionTitle}>Appearance</h3></FrameHeader>
+								<FramePanel className={styles.sectionContent}>
 									<CheckboxWithLabel
 										checked={darkMode}
 										id="dark-mode"
 										label="Generate Light + Dark modes"
 										onChange={setDarkMode}
 									/>
+
+									<Separator />
 
 									<div className={styles.fieldGroup}>
 										<label>Structure</label>
@@ -336,6 +350,8 @@ export function GeneratePage() {
 											))}
 										</div>
 									</div>
+
+									<Separator />
 
 									<div className={styles.fieldGroup}>
 										<label>Radius anchor (px)</label>
@@ -360,13 +376,13 @@ export function GeneratePage() {
 											<RadiusPreview scale={generated.radiusScale} />
 										)}
 									</div>
-								</div>
-							</section>
+								</FramePanel>
+							</Frame>
 
 							{/* ── Typography ── */}
-							<section className={styles.section}>
-								<h3 className={styles.sectionTitle}>Typography</h3>
-								<div className={styles.sectionContent}>
+							<Frame>
+								<FrameHeader><h3 className={styles.sectionTitle}>Typography</h3></FrameHeader>
+								<FramePanel className={styles.sectionContent}>
 									<div className={styles.typescaleConfig}>
 										<div className={styles.typescaleRow}>
 											<div className={styles.optionGroup}>
@@ -503,7 +519,11 @@ export function GeneratePage() {
 										</div>
 									</div>
 
+									<Separator />
+
 									<TypescalePreview config={typescale} />
+
+									<Separator />
 
 									<div className={styles.fieldGroup}>
 										<label>Font families</label>
@@ -549,13 +569,13 @@ export function GeneratePage() {
 											</div>
 										</div>
 									</div>
-								</div>
-							</section>
+								</FramePanel>
+							</Frame>
 
 							{/* ── Output ── */}
-							<section className={styles.section}>
-								<h3 className={styles.sectionTitle}>Output</h3>
-								<div className={styles.sectionContent}>
+							<Frame>
+								<FrameHeader><h3 className={styles.sectionTitle}>Output</h3></FrameHeader>
+								<FramePanel className={styles.sectionContent}>
 									<div className={styles.fieldGroup}>
 										<label>Collection name</label>
 										<Input
@@ -570,8 +590,8 @@ export function GeneratePage() {
 											value={collectionName}
 										/>
 									</div>
-								</div>
-							</section>
+								</FramePanel>
+							</Frame>
 
 							{/* Preview button */}
 							<div className={styles.actions}>
@@ -865,7 +885,7 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 	const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
 
 	return (
-		<div className={styles.tokenPreviewList}>
+		<ScrollArea className={styles.tokenPreviewList}>
 			{groupedCategories.map(({ cat, unique, sortedGroups }) => (
 				<div key={cat}>
 					<div className={styles.tokenCategoryHeader}>
@@ -902,7 +922,7 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 						: `Show all ${generated.tokens.length} tokens`}
 				</Button>
 			)}
-		</div>
+		</ScrollArea>
 	);
 }
 

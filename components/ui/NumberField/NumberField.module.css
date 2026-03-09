@@ -34,8 +34,8 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
+  align-self: stretch;
   justify-content: center;
-  height: 100%;
   padding: 0 var(--spacing-sm);
   color: var(--muted-foreground);
   cursor: pointer;

@@ -101,7 +101,6 @@
   max-height: 200px;
   padding: var(--spacing-md);
   margin-top: var(--spacing-sm);
-  overflow-y: auto;
   background: var(--muted);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -182,9 +181,11 @@
   background: var(--accent);
 }
 
-.changesList {
+.changesScroll {
   max-height: 240px;
-  overflow-y: auto;
+}
+
+.changesList {
   list-style: none;
 }
 

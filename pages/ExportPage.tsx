@@ -15,6 +15,7 @@ import {
 	Button,
 	EmptyState,
 	LoadingState,
+	ScrollArea,
 	SectionHeader,
 	TabPanel,
 	Tabs,
@@ -272,6 +273,7 @@ export function ExportPage() {
 												e.stopPropagation();
 												copyToClipboard(file.content, file.name);
 											}}
+											size="icon-sm"
 											variant="ghost"
 										>
 											<Copy size={12} />
@@ -282,15 +284,18 @@ export function ExportPage() {
 												e.stopPropagation();
 												downloadCSS(file);
 											}}
+											size="icon-sm"
 											variant="ghost"
 										>
 											<Download size={12} />
 										</Button>
 									</div>
 									{isExpanded && (
-										<pre className={styles.cssPreviewCode}>
-											<code>{file.content}</code>
-										</pre>
+										<ScrollArea className={styles.cssPreviewCode} orientation="both">
+											<pre className={styles.cssPreviewPre}>
+												<code>{file.content}</code>
+											</pre>
+										</ScrollArea>
 									)}
 								</div>
 							);

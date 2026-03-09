@@ -9,7 +9,8 @@
 .panel {
 	display: flex;
 	flex-direction: column;
-	padding: var(--spacing-sm);
+	gap: var(--spacing-lg);
+	padding: var(--spacing-md);
 	background: var(--background);
 	border: 0px solid var(--border);
 	border-radius: calc(var(--radius-md) - var(--spacing-2xs));
