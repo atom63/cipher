@@ -1,5 +1,4 @@
-// SVG data constants for Flux Lab logo
-// TODO: Replace with actual SVG paths and viewBoxes
+// SVG data constants for Cipher logo
 
 export interface SvgData {
 	path: string;

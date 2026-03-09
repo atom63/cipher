@@ -11,6 +11,7 @@ import {
 	logBinding,
 	resolveVariableReference,
 } from "../libraries/variable-binding";
+import { debug } from "../utils/debug";
 
 // Helper function to convert paint to structured value
 function paintToValue(paint: Paint, colorFormat: string = "oklch"): any {
@@ -38,7 +39,7 @@ function paintToValue(paint: Paint, colorFormat: string = "oklch"): any {
 		paint.type === "GRADIENT_DIAMOND"
 	) {
 		const gradientPaint = paint as GradientPaint;
-		console.log(
+		debug(
 			"🌈 Converting gradient with format:",
 			colorFormat,
 			"stops:",
@@ -427,11 +428,11 @@ export async function exportVariablesAsTokens(
 			const modeCount = collection.modes.length;
 			const variableCount = collection.variableIds.length;
 
-			console.log(
+			debug(
 				`📦 Exporting collection: "${collectionKey}" (${variableCount} variables, ${modeCount} mode${modeCount !== 1 ? "s" : ""})`,
 			);
 			if (modeCount > 1) {
-				console.log(
+				debug(
 					`  🎨 Modes: ${collection.modes.map((m) => m.name).join(", ")}`,
 				);
 			}
@@ -556,7 +557,7 @@ export async function exportStylesAsTokens(
 	colorFormat: string = "oklch",
 ) {
 	try {
-		console.log(
+		debug(
 			"✨ exportStylesAsTokens called with colorFormat:",
 			colorFormat,
 		);
@@ -590,7 +591,7 @@ export async function exportStylesAsTokens(
 			gridStyles = gridStyles.filter((s) => matchesSelection(s.name, "grid"));
 		}
 
-		console.log("📊 Styles to export:", {
+		debug("📊 Styles to export:", {
 			paint: paintStyles.length,
 			text: textStyles.length,
 			effect: effectStyles.length,
@@ -731,7 +732,7 @@ export async function exportStylesAsTokens(
 								collectionName: collection ? collection.name : "Unknown",
 								collectionId: collection ? collection.id : undefined,
 							};
-							console.log(
+							debug(
 								`Text style "${style.name}" ${prop} -> variable: ${variable.name}`,
 							);
 						}
@@ -805,7 +806,7 @@ export async function exportStylesAsTokens(
 		}
 
 		// Send to UI
-		console.log("✅ Styles export complete:", stylesData.$counts);
+		debug("✅ Styles export complete:", stylesData.$counts);
 		figma.ui.postMessage({
 			type: "styles-export-complete",
 			data: {

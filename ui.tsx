@@ -5,7 +5,12 @@
 
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { AppHeader, type PageId, Sidebar, type ViewMode } from "./components/layout";
+import {
+	AppHeader,
+	type PageId,
+	Sidebar,
+	type ViewMode,
+} from "./components/layout";
 import {
 	ErrorBoundary,
 	PageErrorBoundary,
@@ -112,10 +117,10 @@ function App() {
 	return (
 		<div className="plugin-container">
 			<AppHeader
-				viewMode={viewMode}
-				onToggleViewMode={toggleViewMode}
 				isDark={isDark}
 				onToggleTheme={toggleTheme}
+				onToggleViewMode={toggleViewMode}
+				viewMode={viewMode}
 			/>
 
 			{/* Main Layout with Sidebar */}
@@ -147,5 +152,7 @@ if (container) {
 				</ToastProvider>
 			</ErrorBoundary>,
 		);
-	} catch (_error) {}
+	} catch (error) {
+		console.error("[Cipher] Failed to mount UI:", error);
+	}
 }

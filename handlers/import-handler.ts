@@ -9,6 +9,7 @@ import type {
 	ImportUndoEntry,
 } from "../libraries/shared-types";
 import { parseColorToRGBA } from "../parsers/color-parsers";
+import { debug } from "../utils/debug";
 
 // Create Figma variables from tokens (supports multi-collection with references)
 // Note: collectionName parameter is currently unused - tokens are grouped by their category property
@@ -69,7 +70,7 @@ export async function createVariablesFromTokens(
 			const collectionTokens = tokensByCollection[collectionKey];
 			if (!collectionTokens || collectionTokens.length === 0) continue;
 
-			console.log(
+			debug(
 				`📦 Processing collection: "${collectionKey}" with ${collectionTokens.length} tokens`,
 			);
 
@@ -82,10 +83,10 @@ export async function createVariablesFromTokens(
 
 			if (existing) {
 				collection = existing;
-				console.log(`✅ Found existing collection: "${collectionKey}"`);
+				debug(`✅ Found existing collection: "${collectionKey}"`);
 			} else {
 				collection = figma.variables.createVariableCollection(collectionKey);
-				console.log(`✨ Created new collection: "${collectionKey}"`);
+				debug(`✨ Created new collection: "${collectionKey}"`);
 			}
 
 			// Detect and create modes if tokens have modeName property
@@ -100,7 +101,7 @@ export async function createVariablesFromTokens(
 			const modeMap = new Map<string, string>(); // modeName -> modeId
 			if (modeNames.size > 0) {
 				const modeNamesArray = Array.from(modeNames);
-				console.log(
+				debug(
 					`🎨 Collection "${collectionKey}" has ${modeNamesArray.length} modes: ${modeNamesArray.join(", ")}`,
 				);
 
@@ -109,7 +110,7 @@ export async function createVariablesFromTokens(
 				const firstModeId = collection.modes[0].modeId;
 				collection.renameMode(firstModeId, firstModeName);
 				modeMap.set(firstModeName, firstModeId);
-				console.log(`  ✓ Mode 1: "${firstModeName}" (default mode renamed)`);
+				debug(`  ✓ Mode 1: "${firstModeName}" (default mode renamed)`);
 
 				// Add remaining modes
 				for (let i = 1; i < modeNamesArray.length; i++) {
@@ -119,15 +120,15 @@ export async function createVariablesFromTokens(
 					);
 					if (existingMode) {
 						modeMap.set(modeName, existingMode.modeId);
-						console.log(`  ✓ Mode ${i + 1}: "${modeName}" (already exists)`);
+						debug(`  ✓ Mode ${i + 1}: "${modeName}" (already exists)`);
 					} else {
 						const newMode = collection.addMode(modeName);
 						modeMap.set(modeName, newMode);
-						console.log(`  ✨ Mode ${i + 1}: "${modeName}" (created)`);
+						debug(`  ✨ Mode ${i + 1}: "${modeName}" (created)`);
 					}
 				}
 			} else {
-				console.log(
+				debug(
 					`📝 Collection "${collectionKey}" has single mode (default)`,
 				);
 			}
@@ -545,7 +546,7 @@ export async function createVariablesFromTokens(
 		results.undoData = undoEntries;
 
 		// Log results for debugging
-		console.log(`${isOverrideMode ? "Override" : "Import"} completed:`, {
+		debug(`${isOverrideMode ? "Override" : "Import"} completed:`, {
 			success: results.success,
 			failed: results.failed,
 			skipped: results.skipped,
@@ -554,7 +555,7 @@ export async function createVariablesFromTokens(
 		});
 
 		if (results.errors.length > 0) {
-			console.log(
+			debug(
 				`${isOverrideMode ? "Override" : "Import"} errors:`,
 				results.errors,
 			);
@@ -587,7 +588,7 @@ export async function importStylesFromTokens(
 	};
 
 	try {
-		console.log("📥 Starting style import...", {
+		debug("📥 Starting style import...", {
 			selectedGroups: selectedGroups.length,
 			mode: importMode,
 		});
@@ -699,7 +700,7 @@ export async function importStylesFromTokens(
 										variableBinding.id,
 									);
 									if (variable) {
-										console.log(
+										debug(
 											`🔗 Bound variable "${variableName}" to style "${name}"`,
 										);
 										return figma.variables.setBoundVariableForPaint(
@@ -767,7 +768,7 @@ export async function importStylesFromTokens(
 						try {
 							// Use the correct API to bind variables to text style properties
 							style.setBoundVariable("fontFamily", variable);
-							console.log(
+							debug(
 								`🔗 Bound fontFamily variable "${variable.name}" to style "${name}"`,
 							);
 
@@ -871,7 +872,7 @@ export async function importStylesFromTokens(
 						try {
 							// Use the correct API to bind variables to text style properties
 							style.setBoundVariable("fontSize", variable);
-							console.log(
+							debug(
 								`🔗 Bound fontSize variable "${variable.name}" to style "${name}"`,
 							);
 						} catch (error) {
@@ -909,7 +910,7 @@ export async function importStylesFromTokens(
 							// Figma requires lineHeight variables to be in PERCENT format
 							// If the variable stores a multiplier (e.g., 1.4), it should be stored as 140 in the variable
 							style.setBoundVariable("lineHeight", variable);
-							console.log(
+							debug(
 								`🔗 Bound lineHeight variable "${variable.name}" to style "${name}"`,
 							);
 						} catch (error) {
@@ -984,7 +985,7 @@ export async function importStylesFromTokens(
 					if (variable) {
 						try {
 							style.setBoundVariable("fontWeight", variable);
-							console.log(
+							debug(
 								`🔗 Bound fontWeight variable "${variable.name}" to style "${name}"`,
 							);
 						} catch (error) {
@@ -1036,7 +1037,7 @@ export async function importStylesFromTokens(
 					if (variable) {
 						try {
 							style.setBoundVariable("letterSpacing", variable);
-							console.log(
+							debug(
 								`🔗 Bound letterSpacing variable "${variable.name}" to style "${name}"`,
 							);
 						} catch (error) {
@@ -1107,7 +1108,7 @@ export async function importStylesFromTokens(
 					if (variable) {
 						try {
 							style.setBoundVariable("paragraphSpacing", variable);
-							console.log(
+							debug(
 								`🔗 Bound paragraphSpacing variable "${variable.name}" to style "${name}"`,
 							);
 						} catch (error) {
@@ -1147,7 +1148,7 @@ export async function importStylesFromTokens(
 					if (variable) {
 						try {
 							style.setBoundVariable("paragraphIndent", variable);
-							console.log(
+							debug(
 								`🔗 Bound paragraphIndent variable "${variable.name}" to style "${name}"`,
 							);
 						} catch (error) {
@@ -1251,7 +1252,7 @@ export async function importStylesFromTokens(
 												"radius",
 												variable,
 											);
-										console.log(
+										debug(
 											`🔗 Bound radius variable "${variable.name}" to effect ${index} in style "${name}"`,
 										);
 										return boundEffectResult;
@@ -1284,7 +1285,7 @@ export async function importStylesFromTokens(
 												"spread",
 												variable,
 											);
-										console.log(
+										debug(
 											`🔗 Bound spread variable "${variable.name}" to effect ${index} in style "${name}"`,
 										);
 										return boundEffectResult;
@@ -1317,7 +1318,7 @@ export async function importStylesFromTokens(
 												"color",
 												variable,
 											);
-										console.log(
+										debug(
 											`🔗 Bound color variable "${variable.name}" to effect ${index} in style "${name}"`,
 										);
 										return boundEffectResult;
@@ -1394,7 +1395,7 @@ export async function importStylesFromTokens(
 			});
 		}
 
-		console.log("✅ Style import complete:", results);
+		debug("✅ Style import complete:", results);
 		return results;
 	} catch (error) {
 		console.error("❌ Style import error:", error);
@@ -1424,7 +1425,7 @@ function findVariableByName(
 
 			// Try exact match first
 			if (variable.name === variableName) {
-				console.log(
+				debug(
 					`✅ Found variable "${variableName}" in collection "${collection.name}"`,
 				);
 				return variable;
@@ -1434,7 +1435,7 @@ function findVariableByName(
 			// 1. If variableName is "shadcn.background", also try "shadcn/background"
 			const alternativeName = variableName.replace(/\./g, "/");
 			if (variable.name === alternativeName) {
-				console.log(
+				debug(
 					`✅ Found variable "${alternativeName}" (alternative format) in collection "${collection.name}"`,
 				);
 				return variable;
@@ -1446,7 +1447,7 @@ function findVariableByName(
 				const fullPathSlash = `${collectionName}/${alternativeName}`;
 				const fullPathDot = `${collectionName}.${variableName}`;
 				if (variable.name === fullPathSlash || variable.name === fullPathDot) {
-					console.log(
+					debug(
 						`✅ Found variable "${variable.name}" (full path) in collection "${collection.name}"`,
 					);
 					return variable;
@@ -1527,7 +1528,7 @@ function convertFillToPaint(fill: any, returnBindingInfo = false): any {
 							id: variable.id,
 						},
 					};
-					console.log(
+					debug(
 						`🔗 Bound variable to gradient stop: ${stop.boundVariable.variableName}`,
 					);
 				} else {

@@ -18,6 +18,7 @@ import {
 // Import modules
 import { parseJSON } from "./parsers/token-parsers";
 import type { PluginSettings, UIToMainMessage } from "./types/messages";
+import { debug } from "./utils/debug";
 
 // Show the plugin UI (resizable by default)
 figma.showUI(__html__, {
@@ -2093,20 +2094,14 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 		}
 
 		case "export-styles": {
-			console.log("🎨 Export styles message received, data:", msg.data);
+			debug("🎨 Export styles message received, data:", msg.data);
 			const { selectedGroups, colorFormat } = msg.data;
-			console.log(
-				"📦 Extracted colorFormat:",
-				colorFormat,
-				"selectedGroups count:",
-				selectedGroups?.length,
-			);
 			await exportStylesAsTokens(selectedGroups || [], colorFormat || "oklch");
 			break;
 		}
 
 		case "import-styles": {
-			console.log("📥 Import styles message received");
+			debug("📥 Import styles message received");
 			const { stylesData, selectedGroups, importMode } = msg.data;
 			const results = await importStylesFromTokens(
 				stylesData,
