@@ -1627,17 +1627,33 @@ function convertDataToEffect(data: any): Effect | null {
 
 // Helper: Convert grid data to Figma LayoutGrid
 function convertDataToLayoutGrid(data: any): LayoutGrid | null {
-	// Implementation depends on grid data structure
-	// This is a simplified version
+	const color = parseColorToRGBA(data.color ?? "", {
+		r: 0.8,
+		g: 0.8,
+		b: 0.8,
+		a: 0.1,
+	});
+	const visible = data.visible !== false;
+	const pattern = data.pattern || "COLUMNS";
+
+	// GRID pattern uses sectionSize only
+	if (pattern === "GRID") {
+		return {
+			pattern: "GRID",
+			sectionSize: data.sectionSize || 8,
+			visible,
+			color,
+		} as LayoutGrid;
+	}
+
+	// COLUMNS and ROWS require alignment, gutterSize, count, offset
 	return {
-		pattern: data.pattern || "COLUMNS",
-		sectionSize: data.sectionSize || 8,
-		visible: data.visible !== false,
-		color: parseColorToRGBA(data.color ?? "", {
-			r: 0.8,
-			g: 0.8,
-			b: 0.8,
-			a: 0.1,
-		}),
+		pattern,
+		alignment: data.alignment || "STRETCH",
+		gutterSize: data.gutterSize ?? 20,
+		count: data.count ?? 4,
+		offset: data.offset ?? 0,
+		visible,
+		color,
 	} as LayoutGrid;
 }
