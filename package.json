@@ -1,6 +1,6 @@
 {
 	"name": "cipher",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "Cipher - Design System Token Manager for Figma",
 	"type": "module",
 	"author": "You Zhang (ATOM63)",

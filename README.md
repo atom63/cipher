@@ -1,109 +1,126 @@
 # Cipher
 
-A powerful Figma plugin for managing and syncing design system tokens.
+Design system token manager for Figma. The fastest way to manage variables, styles, and get them into production CSS.
 
-## Features
+## What it does
 
-- 🎨 Import and manage design tokens
-- 📦 Export tokens in multiple formats
-- 🔄 Sync design tokens across Figma files
-- 🎯 Support for Radix and Tailwind color libraries
-- ♿ Built with accessibility in mind
+- **Variable manager** — Batch create, rename, move, duplicate, delete, and edit values across collections and modes
+- **Style manager** — Full CRUD for paint, text, effect, and grid styles with variable binding
+- **Token import** — Import design tokens from JSON/CSS files with conflict resolution and undo
+- **CSS export** — Export variables as production-ready CSS with `color-mix()` opacity, CSS custom properties, and Tailwind `@theme inline`
+- **JSON export** — Bidirectional JSON support for pipeline integration
+- **Token generator** — Generate complete token systems from Radix or Tailwind color libraries with typography scales, spacing, radius, and shadows
+- **Style rebind** — Scan styles for unbound properties and batch-bind them to matching variables
+- **Styleguide** — Live preview of your design system: color palettes, typography, spacing, radius, and shadows
 
 ## Development
 
-This project uses Bun for fast, modern JavaScript tooling.
-
 ### Prerequisites
 
-- [Bun](https://bun.sh/) >= 1.0.0
-- Node.js >= 18.0.0 (for Figma plugin development)
+- [Node.js](https://nodejs.org/) >= 18.0.0
+- [pnpm](https://pnpm.io/)
 
 ### Setup
 
 ```bash
 # Install dependencies
-bun install
+pnpm install
 
-# Start development server
-bun dev
+# Start development (watches for changes)
+pnpm dev
 
 # Build for production
-bun run build
+pnpm build
 ```
 
 ### Scripts
 
-- `bun dev` - Start development mode with file watching
-- `bun run build` - Build the plugin for production
-- `bun run tokens` - Generate CSS files from design tokens
-- `bun run tokens:watch` - Watch and regenerate tokens on changes
-- `bun run format` - Format code with Ultracite
-- `bun run lint` - Lint code with Ultracite
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start development mode with file watching |
+| `pnpm build` | Build the plugin for production |
+| `pnpm test` | Run tests |
+| `pnpm typecheck` | TypeScript type checking |
+| `pnpm lint` | Lint with Ultracite (Biome) |
+| `pnpm format` | Auto-fix formatting and lint issues |
+| `pnpm check` | Run typecheck + lint + tests |
+| `pnpm tokens` | Generate CSS from design tokens |
+
+### Installing in Figma
+
+1. Open Figma → Plugins → Development → Import plugin from manifest
+2. Select the `manifest.json` file from this project
+3. The plugin appears under Plugins → Development → Cipher
 
 ## Project Structure
 
 ```
 cipher/
-├── components/       # React UI components
-│   ├── import/      # Import-related components
-│   ├── layout/      # Layout components
-│   ├── library/     # Library selector components
-│   └── ui/          # Reusable UI components
-├── handlers/        # Plugin message handlers
-├── libraries/       # Design system libraries (Radix, Tailwind)
-├── pages/           # Main application pages
-├── parsers/         # Token parsers
-├── scripts/         # Build and generation scripts
-│   └── generate-tokens.js  # Generates CSS from design tokens
-├── tokens/          # Design tokens
-│   ├── base/        # Source token definitions (tokens.json, styles.json)
-│   └── styles/      # Generated CSS files (auto-generated)
-├── types/           # TypeScript type definitions
-├── code.ts          # Figma plugin code (runs in sandbox)
-├── ui.tsx           # React UI entry point
-└── build.js         # Build configuration
+├── components/
+│   ├── ui/           # Reusable primitives (Button, Card, Input, Dialog, etc.)
+│   ├── import/       # Import workflow components
+│   ├── layout/       # App header, sidebar
+│   ├── library/      # Color library selectors (Radix, Tailwind)
+│   ├── manage/       # Variable management components
+│   └── common/       # Shared components (icons, animations)
+├── pages/            # Top-level page components
+│   ├── ManagePage    # Variable CRUD
+│   ├── StylesPage    # Style CRUD + rebind
+│   ├── ImportPage    # Token import
+│   ├── ExportPage    # CSS/JSON export
+│   ├── GeneratePage  # Token generator
+│   ├── StyleguidePage # Design system preview
+│   └── SettingsPage  # Plugin settings
+├── handlers/         # Backend logic (import, export, CSS generation)
+├── generators/       # Token generation engine
+├── parsers/          # Token and CSS parsers
+├── libraries/        # Shared utilities (color, variable binding, matching)
+├── types/            # TypeScript types and message protocol
+├── utils/            # Helpers (theme, zip, debug, errors)
+├── exports/          # Generated CSS token files
+├── __tests__/        # Test suite (374 tests)
+├── code.ts           # Figma main thread (sandbox)
+├── ui.tsx            # React UI entry point
+└── build.js          # esbuild configuration
 ```
-
-## Token Generation
-
-The project includes a TypeScript-based token generation system with utilities for parsing and generating CSS:
-
-### Usage
-
-1. **Edit tokens**: Modify `tokens/base/tokens.json` to add/change design tokens
-2. **Generate CSS**: Run `bun run tokens` to compile tokens into CSS files
-3. **Watch mode**: Run `bun run tokens:watch` for automatic regeneration
-4. **Output**: CSS files are generated in `tokens/styles/` directory
-
-### Features
-
-The generator automatically:
-- Creates separate CSS files for each token collection (primitives, abstractions, semantics, responsive)
-- Handles multiple modes (Light/Dark themes, responsive breakpoints)
-- Resolves token references (`{primitives.zinc.50}` → `var(--color-zinc-50)`)
-- Generates CSS variables with proper prefixes
-- Creates Tailwind-compatible `@theme inline` blocks
-- Supports opacity mixing from Figma styles
-
-### Token Utilities
-
-The `tokens/` directory includes TypeScript utilities:
-- **types/**: Type definitions for design tokens
-- **utils/**: Parser and CSS generator utilities
-- **base/**: Source token files (tokens.json, styles.json)
 
 ## Tech Stack
 
-- **Framework**: React 18
-- **Build Tool**: esbuild
-- **Language**: TypeScript
-- **Styling**: SCSS + CSS Modules
-- **Code Quality**: Ultracite (Biome-based)
+- **React 18** + **TypeScript** (strict mode)
+- **esbuild** for bundling
+- **SCSS** + **CSS Modules** for styling
+- **Lucide React** for icons
+- **Vitest** for testing
+- **Ultracite** (Biome) for formatting and linting
+- **pnpm** for package management
 
-## Contributing
+## Publishing
 
-This project enforces strict type safety and accessibility standards. Please ensure all code passes linting and type checking before committing.
+Before publishing to the Figma Community:
+
+1. Register the plugin at [figma.com/plugin-docs](https://www.figma.com/plugin-docs/publishing/) to get a plugin ID
+2. Replace `"your-plugin-id-here"` in `manifest.json` with your real ID
+3. Prepare required assets:
+   - **Plugin icon**: 128×128 PNG (displayed in Figma's plugin browser)
+   - **Cover image**: 1920×960 PNG (displayed on Community page)
+   - **Description**: See suggested copy below
+4. Run `pnpm build` to produce the production bundle in `dist/`
+
+### Suggested Community Description
+
+> Cipher is a design system token manager that gives you batch control over Figma variables and styles — and exports them as production-ready CSS.
+>
+> **Manage variables at scale.** Bulk rename, move, duplicate, delete, and edit values across collections and modes. No more one-by-one editing.
+>
+> **Manage styles with precision.** Full CRUD for paint, text, effect, and grid styles. Bind unbound style properties to variables in bulk with the rebind scanner.
+>
+> **Export production CSS.** Skip JSON intermediaries. Export your variables as CSS custom properties with color-mix() opacity, Tailwind @theme inline blocks, and proper prefixes.
+>
+> **Import and sync tokens.** Bring tokens in from JSON or CSS files with conflict detection, override mode, and full undo support.
+>
+> **Generate token systems.** Start from Radix or Tailwind color palettes and generate a complete layered token system with typography scales, spacing, radius, and shadows.
+>
+> **Preview your system.** Built-in styleguide shows your color palettes, typography, spacing, and shadows in real time.
 
 ## License
 
