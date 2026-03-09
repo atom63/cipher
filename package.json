@@ -19,23 +19,29 @@
 		"check": "pnpm typecheck && pnpm lint && pnpm test"
 	},
 	"dependencies": {
-		"lucide-react": "^0.562.0",
+		"lucide-react": "^0.577.0",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.4",
-		"@figma/plugin-typings": "^1.98.0",
-		"@types/node": "^22.10.2",
+		"@biomejs/biome": "^2.4.6",
+		"@figma/plugin-typings": "^1.123.0",
+		"@types/node": "^22.19.15",
 		"@types/react": "^18.3.12",
 		"@types/react-dom": "^18.3.1",
-		"esbuild": "^0.24.0",
-		"sass": "^1.81.0",
+		"esbuild": "^0.27.3",
+		"sass": "^1.97.3",
 		"tsx": "^4.19.2",
 		"typescript": "^5.7.2",
 		"vitest": "^4.0.18"
 	},
 	"engines": {
 		"node": ">=18.0.0"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild",
+			"@parcel/watcher"
+		]
 	}
 }
