@@ -1,16 +1,8 @@
 import { Palette, Sparkles, Upload } from "lucide-react";
 import { useState } from "react";
-import {
-	Badge,
-	Button,
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-	SectionHeader,
-} from "../../components/ui";
+import { Badge, Button } from "../../components/ui";
 import type { ColorValue, DesignToken } from "../../types/tokens";
+import styles from "./FirstRunWizard.module.css";
 
 export interface FirstRunWizardProps {
 	/** Create starter tokens directly */
@@ -92,7 +84,7 @@ function buildStarterTokens(): DesignToken[] {
 	return tokens;
 }
 
-// ── Component ──────────────────────────────────────────────────────────────
+// ── Templates ──────────────────────────────────────────────────────────────
 
 type TemplateId = "starter" | "full" | "import";
 
@@ -101,35 +93,37 @@ interface TemplateOption {
 	description: string;
 	icon: React.ReactNode;
 	id: TemplateId;
+	meta?: string;
 	title: string;
-	tokenCount?: string;
 }
 
 const TEMPLATES: TemplateOption[] = [
 	{
 		id: "starter",
-		icon: <Palette size={20} />,
+		icon: <Palette size={18} />,
 		title: "Starter Kit",
-		description: "Essential tokens: 5 colors, spacing scale, border radius",
+		description: "5 brand colors, spacing scale, border radius",
 		badge: "Quick start",
-		tokenCount: "~12 variables",
+		meta: "12 variables",
 	},
 	{
 		id: "full",
-		icon: <Sparkles size={20} />,
-		title: "Full System",
+		icon: <Sparkles size={18} />,
+		title: "Generate System",
 		description:
-			"Complete design system with primitives, semantics, and themes",
+			"Build a complete token system from Radix or Tailwind palettes",
 		badge: "Recommended",
-		tokenCount: "100+ variables",
+		meta: "100+ variables",
 	},
 	{
 		id: "import",
-		icon: <Upload size={20} />,
-		title: "Import Existing",
-		description: "Import tokens from a JSON or CSS file",
+		icon: <Upload size={18} />,
+		title: "Import Tokens",
+		description: "Import from a JSON or CSS file",
 	},
 ];
+
+// ── Component ──────────────────────────────────────────────────────────────
 
 export function FirstRunWizard({
 	onNavigate,
@@ -158,45 +152,26 @@ export function FirstRunWizard({
 	}
 
 	return (
-		<div
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				gap: "16px",
-				padding: "16px 0",
-			}}
-		>
-			<SectionHeader
-				description="No variables yet — let's set up your design system"
-				title="Get Started"
-			/>
+		<div className={styles.wizard}>
+			<div className={styles.header}>
+				<h3 className={styles.title}>Get Started</h3>
+				<p className={styles.subtitle}>
+					No variables yet. Choose how to set up your design system.
+				</p>
+			</div>
 
-			<div
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					gap: "8px",
-				}}
-			>
+			<div className={styles.templates}>
 				{TEMPLATES.map((tpl) => (
-					<Card
-						hover
+					<div
+						className={styles.template}
+						data-selected={selected === tpl.id}
 						key={tpl.id}
 						onClick={() => setSelected(tpl.id)}
-						padding="md"
-						selected={selected === tpl.id}
-						variant="bordered"
 					>
-						<CardHeader>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-								}}
-							>
-								{tpl.icon}
-								<CardTitle>{tpl.title}</CardTitle>
+						<div className={styles.templateIcon}>{tpl.icon}</div>
+						<div className={styles.templateBody}>
+							<div className={styles.templateTitle}>
+								{tpl.title}
 								{tpl.badge && (
 									<Badge
 										size="sm"
@@ -206,27 +181,17 @@ export function FirstRunWizard({
 									</Badge>
 								)}
 							</div>
-						</CardHeader>
-						<CardContent>
-							<CardDescription>{tpl.description}</CardDescription>
-							{tpl.tokenCount && (
-								<span
-									style={{
-										fontSize: "11px",
-										color: "var(--figma-color-text-tertiary, #999)",
-										marginTop: "4px",
-										display: "inline-block",
-									}}
-								>
-									{tpl.tokenCount}
-								</span>
+							<p className={styles.templateDesc}>{tpl.description}</p>
+							{tpl.meta && (
+								<span className={styles.templateMeta}>{tpl.meta}</span>
 							)}
-						</CardContent>
-					</Card>
+						</div>
+					</div>
 				))}
 			</div>
 
 			<Button
+				className={styles.confirm}
 				disabled={!selected || creating}
 				loading={creating}
 				onClick={handleConfirm}
@@ -238,8 +203,8 @@ export function FirstRunWizard({
 					: selected === "starter"
 						? "Create Starter Tokens"
 						: selected === "full"
-							? "Go to Generate"
-							: "Go to Import"}
+							? "Open Generator"
+							: "Open Import"}
 			</Button>
 		</div>
 	);

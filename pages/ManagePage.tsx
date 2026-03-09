@@ -1425,7 +1425,21 @@ export function ManagePage({
 					/>
 				) : (
 					<EmptyState
-						description="No variables match your current filters."
+						action={
+							<Button
+								onClick={() => {
+									setSearch("");
+									setFilterCollection("all");
+									setFilterType("all");
+								}}
+								size="sm"
+								variant="outline"
+							>
+								Clear filters
+							</Button>
+						}
+						description="Try adjusting your search or filters."
+						icon={<Search size={24} />}
 						title="No variables found"
 					/>
 				)
