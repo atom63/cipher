@@ -402,6 +402,356 @@ function generateThemeInline(
 }
 
 // ============================================================================
+// SHADOW TOKENS FROM EFFECT STYLES
+// ============================================================================
+
+/**
+ * Generate shadow-tokens.css from local effect styles.
+ * Extracts drop-shadow effects, cleans Figma float precision artifacts,
+ * and emits CSS custom properties + utility classes.
+ */
+function generateShadowCSS(): CSSFile | null {
+	try {
+		const effectStyles = figma.getLocalEffectStyles();
+		// Find shadow styles (nested under "shadow/" path or named with numeric levels)
+		const shadowStyles = effectStyles.filter(
+			(s) => s.name.toLowerCase().startsWith("shadow/") || s.name.toLowerCase().startsWith("shadow "),
+		);
+
+		if (shadowStyles.length === 0) return null;
+
+		// Sort by the numeric level in the name (shadow/0, shadow/1, etc.)
+		shadowStyles.sort((a, b) => {
+			const aNum = Number.parseInt(a.name.split(/[/\s]/).pop() || "0");
+			const bNum = Number.parseInt(b.name.split(/[/\s]/).pop() || "0");
+			return aNum - bNum;
+		});
+
+		const lines: string[] = [];
+		lines.push("/* Shadow tokens — extracted from Figma effect styles */");
+		lines.push("");
+		lines.push(":root {");
+
+		const levelNames: string[] = [];
+
+		for (const style of shadowStyles) {
+			const level = style.name.split(/[/\s]/).pop() || "0";
+			const dropShadows = style.effects
+				.filter((e) => e.type === "DROP_SHADOW" && e.visible !== false)
+				.map((effect) => {
+					const e = effect as DropShadowEffect;
+					const x = `${e.offset.x}px`;
+					const y = `${e.offset.y}px`;
+					const blur = `${e.radius}px`;
+					const spread = `${e.spread ?? 0}px`;
+					const r = Math.round((e.color?.r ?? 0) * 255);
+					const g = Math.round((e.color?.g ?? 0) * 255);
+					const b = Math.round((e.color?.b ?? 0) * 255);
+					// Clean Figma's float precision artifacts
+					const a = Number.parseFloat((e.color?.a ?? 1).toPrecision(4));
+					return `${x} ${y} ${blur} ${spread} rgba(${r}, ${g}, ${b}, ${a})`;
+				})
+				.join(", ");
+
+			if (dropShadows) {
+				const desc = style.description ? ` /* ${style.description} */` : "";
+				lines.push(`  --shadow-${level}: ${dropShadows};${desc}`);
+				levelNames.push(level);
+			}
+		}
+
+		lines.push("}");
+		lines.push("");
+
+		// Utility classes
+		if (levelNames.length > 0) {
+			lines.push("/* Utility classes for shadows */");
+			lines.push("@layer utilities {");
+			for (const level of levelNames) {
+				lines.push(`  .shadow-${level} { box-shadow: var(--shadow-${level}); }`);
+			}
+			lines.push("}");
+			lines.push("");
+		}
+
+		return {
+			name: "shadow-tokens.css",
+			content: lines.join("\n"),
+			variableCount: levelNames.length,
+		};
+	} catch (_e) {
+		return null;
+	}
+}
+
+// ============================================================================
+// TYPESCALES FROM RESPONSIVE TYPOGRAPHY VARIABLES
+// ============================================================================
+
+/**
+ * Breakpoint config — maps 5 CSS breakpoints to the 3 Figma modes.
+ * lg and xl reuse desktop (md) values.
+ */
+const TYPESCALE_BREAKPOINTS = [
+	{ name: "xs", mode: "mobile (min)", minWidth: null, description: "Extra small (< 640px / mobile)" },
+	{ name: "sm", mode: "tablet (sm)", minWidth: "40rem", description: "Small (640px+ / tablet portrait)" },
+	{ name: "md", mode: "desktop (md)", minWidth: "48rem", description: "Medium (768px+ / tablet landscape)" },
+	{ name: "lg", mode: "desktop (md)", minWidth: "64rem", description: "Large (1024px+ / desktop)" },
+	{ name: "xl", mode: "desktop (md)", minWidth: "80rem", description: "Extra large (1280px+ / large desktop)" },
+];
+
+/** Tailwind text utility → typescale mapping */
+const TAILWIND_TEXT_MAP: [string, string][] = [
+	["text-xs", "caption-1"],
+	["text-sm", "callout"],
+	["text-base", "body"],
+	["text-lg", "headline"],
+	["text-xl", "title-3"],
+	["text-2xl", "title-3"],
+	["text-3xl", "title-2"],
+	["text-4xl", "title-1"],
+	["text-5xl", "large-title"],
+	["text-6xl", "large-title"],
+	["text-7xl", "large-title"],
+	["text-8xl", "large-title"],
+	["text-9xl", "large-title"],
+];
+
+/**
+ * Generate typescales.css from the responsive collection's typography variables.
+ * Resolves variable references to get actual px values, wraps in calc() with
+ * --typography-scale multiplier, generates @media + [data-window-size] selectors
+ * and utility classes.
+ */
+function generateTypescalesCSS(): CSSFile | null {
+	try {
+		const collections = figma.variables.getLocalVariableCollections();
+		const responsive = collections.find(
+			(c) => c.name.toLowerCase() === "responsive",
+		);
+		if (!responsive) return null;
+
+		const variables = responsive.variableIds
+			.map((id) => figma.variables.getVariableById(id))
+			.filter((v): v is Variable => v !== null);
+
+		// Find typography variables — match pattern "typography/{scale}/{font-size|line-height}"
+		const typoVars = variables.filter(
+			(v) => v.name.toLowerCase().startsWith("typography/"),
+		);
+		if (typoVars.length === 0) return null;
+
+		// Group by scale: { "large-title": { "font-size": Variable, "line-height": Variable }, ... }
+		const scales: Record<string, Record<string, Variable>> = {};
+		for (const v of typoVars) {
+			const parts = v.name.split("/");
+			if (parts.length < 3) continue;
+			const scale = parts[1];
+			const prop = parts.slice(2).join("-"); // "font-size" or "line-height"
+			if (!scales[scale]) scales[scale] = {};
+			scales[scale][prop] = v;
+		}
+
+		const scaleNames = Object.keys(scales);
+		if (scaleNames.length === 0) return null;
+
+		// Build mode name → modeId map for the responsive collection
+		const modeIdMap: Record<string, string> = {};
+		for (const m of responsive.modes) {
+			modeIdMap[m.name] = m.modeId;
+		}
+
+		// Helper: resolve a variable value to px string, following aliases
+		const resolveToPixels = (variable: Variable, modeId: string): string | null => {
+			let value = variable.valuesByMode[modeId];
+			if (value === undefined) return null;
+
+			// Follow aliases to get the resolved FLOAT value
+			let depth = 0;
+			while (isVariableAlias(value) && depth < 10) {
+				const aliasId = (value as VariableAlias).id;
+				const refVar = figma.variables.getVariableById(aliasId);
+				if (!refVar) return null;
+				// For the referenced variable, use its first mode's value
+				const refCollection = figma.variables.getVariableCollectionById(refVar.variableCollectionId);
+				if (!refCollection) return null;
+				const refModeId = refCollection.modes[0].modeId;
+				value = refVar.valuesByMode[refModeId];
+				depth++;
+			}
+
+			if (typeof value === "number") return `${value}px`;
+			return null;
+		};
+
+		const lines: string[] = [];
+		lines.push("/* Responsive Typography — extracted from Figma responsive collection */");
+		lines.push("/* Supports viewport-based (@media) and window-based ([data-window-size]) */");
+		lines.push("");
+
+		// Helper: emit a set of typography variables for a mode
+		const emitVars = (indent: string, modeName: string) => {
+			const modeId = modeIdMap[modeName];
+			if (!modeId) return;
+			for (const scale of scaleNames) {
+				for (const prop of ["font-size", "line-height"]) {
+					const variable = scales[scale][prop];
+					if (!variable) continue;
+					const px = resolveToPixels(variable, modeId);
+					if (!px) continue;
+					lines.push(`${indent}--typography-${scale}-${prop}: calc(${px} * var(--typography-scale, 1));`);
+				}
+			}
+		};
+
+		// :root — base mobile values
+		lines.push(":root {");
+		emitVars("  ", TYPESCALE_BREAKPOINTS[0].mode);
+		lines.push("}");
+		lines.push("");
+
+		// [data-window-size="xs"] — explicit mobile
+		lines.push(`/* Window-responsive: ${TYPESCALE_BREAKPOINTS[0].description} */`);
+		lines.push(`[data-window-size="xs"] {`);
+		emitVars("  ", TYPESCALE_BREAKPOINTS[0].mode);
+		lines.push("}");
+		lines.push("");
+
+		// Remaining breakpoints (sm, md, lg, xl)
+		for (const bp of TYPESCALE_BREAKPOINTS.slice(1)) {
+			if (bp.minWidth) {
+				lines.push(`/* ${bp.description} */`);
+				lines.push(`@media (min-width: ${bp.minWidth}) {`);
+				lines.push("  :root {");
+				emitVars("    ", bp.mode);
+				lines.push("  }");
+				lines.push("}");
+				lines.push("");
+			}
+
+			lines.push(`/* Window-responsive: ${bp.description} */`);
+			lines.push(`[data-window-size="${bp.name}"] {`);
+			emitVars("  ", bp.mode);
+			lines.push("}");
+			lines.push("");
+		}
+
+		// Utility classes
+		lines.push("/* Utility classes for typography */");
+		lines.push("@layer utilities {");
+
+		lines.push("  /* Font Size Utilities (Custom Scale) */");
+		for (const scale of scaleNames) {
+			lines.push(`  .size-${scale} { font-size: var(--typography-${scale}-font-size); }`);
+		}
+
+		lines.push("");
+		lines.push("  /* Line Height Utilities (Custom Scale) */");
+		for (const scale of scaleNames) {
+			lines.push(`  .leading-${scale} { line-height: var(--typography-${scale}-line-height); }`);
+		}
+
+		lines.push("");
+		lines.push("  /* Combined Typography Utilities (size + leading) */");
+		for (const scale of scaleNames) {
+			lines.push(`  .type-${scale} {`);
+			lines.push(`    font-size: var(--typography-${scale}-font-size);`);
+			lines.push(`    line-height: var(--typography-${scale}-line-height);`);
+			lines.push("  }");
+		}
+
+		lines.push("");
+		lines.push("  /* Tailwind Standard Text Utilities (mapped to custom scale) */");
+		for (const [tw, scale] of TAILWIND_TEXT_MAP) {
+			lines.push(`  .${tw} { font-size: var(--typography-${scale}-font-size); line-height: var(--typography-${scale}-line-height); }`);
+		}
+
+		lines.push("}");
+		lines.push("");
+
+		return {
+			name: "typescales.css",
+			content: lines.join("\n"),
+			variableCount: typoVars.length,
+		};
+	} catch (_e) {
+		return null;
+	}
+}
+
+// ============================================================================
+// RADIUS SCALING SYSTEM
+// ============================================================================
+
+/**
+ * Generate radius.css with @theme inline block for Tailwind integration.
+ * Uses --corner-radius anchor and --radius-multiplier for global scaling.
+ */
+function generateRadiusCSS(): CSSFile | null {
+	try {
+		const collections = figma.variables.getLocalVariableCollections();
+		const primitives = collections.find(
+			(c) => c.name.toLowerCase() === "primitives",
+		);
+		if (!primitives) return null;
+
+		const variables = primitives.variableIds
+			.map((id) => figma.variables.getVariableById(id))
+			.filter((v): v is Variable => v !== null);
+
+		// Find the corner-radius anchor variable
+		const cornerRadius = variables.find(
+			(v) => v.name.toLowerCase().includes("corner-radius") || v.name.toLowerCase().includes("corner/radius"),
+		);
+		if (!cornerRadius) return null;
+
+		// Get the anchor value
+		const modeId = primitives.modes[0].modeId;
+		let anchorValue = cornerRadius.valuesByMode[modeId];
+		if (isVariableAlias(anchorValue)) return null; // skip if alias
+		if (typeof anchorValue !== "number") return null;
+
+		const anchor = anchorValue;
+		const lines: string[] = [];
+
+		lines.push("@theme inline {");
+		lines.push("  /* Tailwind default: `rounded` class */");
+		lines.push(`  --radius: calc(4px * var(--radius-multiplier));`);
+		lines.push("");
+		lines.push("  /* Lower Scale */");
+		lines.push(`  --radius-2xs: calc((var(--corner-radius) - ${anchor - 2}px) * var(--radius-multiplier));`);
+		lines.push(`  --radius-xs: calc((var(--corner-radius) - ${anchor - 4}px) * var(--radius-multiplier));`);
+		lines.push(`  --radius-sm: calc((var(--corner-radius) - ${anchor - 6}px) * var(--radius-multiplier));`);
+		lines.push(`  --radius-md: calc((var(--corner-radius) - ${anchor - 8}px) * var(--radius-multiplier));`);
+		lines.push("");
+		lines.push("  /* The Anchor */");
+		lines.push("  --radius-lg: calc(var(--corner-radius) * var(--radius-multiplier));");
+		lines.push("");
+		lines.push("  /* Upper Scale */");
+		lines.push(`  --radius-xl: calc((var(--corner-radius) + 4px) * var(--radius-multiplier));`);
+		lines.push(`  --radius-2xl: calc((var(--corner-radius) + 8px) * var(--radius-multiplier));`);
+		lines.push(`  --radius-3xl: calc((var(--corner-radius) + 12px) * var(--radius-multiplier));`);
+		lines.push(`  --radius-4xl: calc((var(--corner-radius) + 16px) * var(--radius-multiplier));`);
+		lines.push("  --radius-full: calc(9999px * var(--radius-multiplier));");
+		lines.push("}");
+		lines.push("");
+		lines.push(":root {");
+		lines.push(`  --corner-radius: ${anchor}px;`);
+		lines.push("  --radius-multiplier: 1;");
+		lines.push("}");
+		lines.push("");
+
+		return {
+			name: "radius.css",
+			content: lines.join("\n"),
+			variableCount: 1,
+		};
+	} catch (_e) {
+		return null;
+	}
+}
+
+// ============================================================================
 // MAIN EXPORT
 // ============================================================================
 
@@ -439,6 +789,25 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 		}, opacityMap);
 		files.push(file);
 		totalVariables += file.variableCount;
+	}
+
+	// Generate specialized CSS files from styles and cross-collection data
+	const shadowFile = generateShadowCSS();
+	if (shadowFile) {
+		files.push(shadowFile);
+		totalVariables += shadowFile.variableCount;
+	}
+
+	const typescaleFile = generateTypescalesCSS();
+	if (typescaleFile) {
+		files.push(typescaleFile);
+		totalVariables += typescaleFile.variableCount;
+	}
+
+	const radiusFile = generateRadiusCSS();
+	if (radiusFile) {
+		files.push(radiusFile);
+		totalVariables += radiusFile.variableCount;
 	}
 
 	// Generate index file that imports all
