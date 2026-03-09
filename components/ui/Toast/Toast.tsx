@@ -21,15 +21,14 @@ export interface ToastAction {
 }
 
 export interface Toast {
+	action?: ToastAction;
+	duration?: number;
 	id: string;
 	message: string;
 	variant: ToastVariant;
-	duration?: number;
-	action?: ToastAction;
 }
 
 interface ToastContextValue {
-	toasts: Toast[];
 	addToast: (
 		message: string,
 		variant?: ToastVariant,
@@ -38,9 +37,10 @@ interface ToastContextValue {
 	) => void;
 	removeToast: (id: string) => void;
 	showError: (message: string) => void;
+	showInfo: (message: string) => void;
 	showSuccess: (message: string, action?: ToastAction) => void;
 	showWarning: (message: string) => void;
-	showInfo: (message: string) => void;
+	toasts: Toast[];
 }
 
 // ============================================================================
@@ -146,7 +146,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 			}}
 		>
 			{children}
-			<ToastContainer toasts={toasts} onDismiss={removeToast} />
+			<ToastContainer onDismiss={removeToast} toasts={toasts} />
 		</ToastContext.Provider>
 	);
 }
@@ -156,55 +156,55 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 // ============================================================================
 
 const icons = {
-	info: <Info size={16} aria-hidden="true" />,
-	success: <CheckCircle size={16} aria-hidden="true" />,
-	warning: <AlertTriangle size={16} aria-hidden="true" />,
-	error: <AlertCircle size={16} aria-hidden="true" />,
+	info: <Info aria-hidden="true" size={16} />,
+	success: <CheckCircle aria-hidden="true" size={16} />,
+	warning: <AlertTriangle aria-hidden="true" size={16} />,
+	error: <AlertCircle aria-hidden="true" size={16} />,
 };
 
 interface ToastItemProps {
-	toast: Toast;
 	onDismiss: (id: string) => void;
+	toast: Toast;
 }
 
 function ToastItem({ toast, onDismiss }: ToastItemProps) {
 	return (
 		<div
+			aria-live={toast.variant === "error" ? "assertive" : "polite"}
 			className={`${styles.toast} ${styles[toast.variant]}`}
 			role="alert"
-			aria-live={toast.variant === "error" ? "assertive" : "polite"}
 		>
 			<span className={styles.icon}>{icons[toast.variant]}</span>
 			<span className={styles.message}>{toast.message}</span>
 			{toast.action && (
 				<Button
-					variant="soft"
-					size="sm"
 					className={styles.actionButton}
 					onClick={() => {
 						toast.action?.onClick();
 						onDismiss(toast.id);
 					}}
+					size="sm"
+					variant="soft"
 				>
 					{toast.action.label}
 				</Button>
 			)}
 			<Button
-				variant="ghost"
-				size="icon-xs"
+				aria-label="Dismiss"
 				className={styles.dismissButton}
 				onClick={() => onDismiss(toast.id)}
-				aria-label="Dismiss"
+				size="icon-xs"
+				variant="ghost"
 			>
-				<X size={12} aria-hidden="true" />
+				<X aria-hidden="true" size={12} />
 			</Button>
 		</div>
 	);
 }
 
 interface ToastContainerProps {
-	toasts: Toast[];
 	onDismiss: (id: string) => void;
+	toasts: Toast[];
 }
 
 function ToastContainer({ toasts, onDismiss }: ToastContainerProps) {
@@ -213,7 +213,7 @@ function ToastContainer({ toasts, onDismiss }: ToastContainerProps) {
 	return (
 		<div className={styles.container}>
 			{toasts.map((toast) => (
-				<ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
+				<ToastItem key={toast.id} onDismiss={onDismiss} toast={toast} />
 			))}
 		</div>
 	);

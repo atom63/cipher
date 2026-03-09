@@ -237,7 +237,10 @@ function gatherStyles(colorFormat: string): any | null {
 	const gridStyles = figma.getLocalGridStyles();
 
 	const totalStyles =
-		paintStyles.length + textStyles.length + effectStyles.length + gridStyles.length;
+		paintStyles.length +
+		textStyles.length +
+		effectStyles.length +
+		gridStyles.length;
 
 	if (totalStyles === 0) return null;
 
@@ -278,7 +281,8 @@ function gatherStyles(colorFormat: string): any | null {
 						? `${style.lineHeight.value}${style.lineHeight.unit === "PIXELS" ? "px" : style.lineHeight.unit === "PERCENT" ? "%" : ""}`
 						: style.lineHeight,
 				letterSpacing:
-					typeof style.letterSpacing === "object" && "value" in style.letterSpacing
+					typeof style.letterSpacing === "object" &&
+					"value" in style.letterSpacing
 						? `${style.letterSpacing.value}${style.letterSpacing.unit === "PIXELS" ? "px" : style.letterSpacing.unit === "PERCENT" ? "%" : ""}`
 						: style.letterSpacing,
 				paragraphSpacing: `${style.paragraphSpacing}px`,
@@ -288,13 +292,22 @@ function gatherStyles(colorFormat: string): any | null {
 			};
 
 			// Capture variable bindings on text properties
-			for (const prop of ["fontSize", "lineHeight", "fontFamily", "fontWeight", "letterSpacing", "paragraphSpacing"]) {
+			for (const prop of [
+				"fontSize",
+				"lineHeight",
+				"fontFamily",
+				"fontWeight",
+				"letterSpacing",
+				"paragraphSpacing",
+			]) {
 				try {
 					const bound = (style as any).boundVariables?.[prop];
 					if (bound?.id) {
 						const variable = figma.variables.getVariableById(bound.id);
 						if (variable) {
-							const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId);
+							const collection = figma.variables.getVariableCollectionById(
+								variable.variableCollectionId,
+							);
 							data[`${prop}BoundVariable`] = {
 								type: "variable",
 								variableId: variable.id,
@@ -303,7 +316,9 @@ function gatherStyles(colorFormat: string): any | null {
 							};
 						}
 					}
-				} catch (_e) { /* skip unreadable bindings */ }
+				} catch (_e) {
+					/* skip unreadable bindings */
+				}
 			}
 
 			setNested(styles.text, style.name, data);
@@ -355,7 +370,8 @@ function gatherStyles(colorFormat: string): any | null {
 /** Set a value at a nested path (e.g. "folder/subfolder/name") in an object */
 function setNested(obj: any, path: string, value: any) {
 	const parts = path.split("/");
-	const name = parts.pop()!;
+	const name = parts.pop();
+	if (!name) return;
 	let current = obj;
 	for (const part of parts) {
 		if (!current[part]) current[part] = {};
@@ -443,7 +459,7 @@ export async function exportVariablesAsTokens(
 				// - "background/primary" -> ["background", "primary"]
 				// - "data/calories" -> ["data", "calories"]
 				const parts = variable.name.split("/");
-				const tokenName = parts[parts.length - 1];
+				const tokenName = parts.at(-1);
 				const parentPath = parts.slice(0, -1); // All parts except the last (the token name)
 
 				// Build nested structure by traversing/creating parent objects
@@ -619,7 +635,7 @@ export async function exportStylesAsTokens(
 		// Process Color Styles (colors, gradients, images)
 		for (const style of paintStyles) {
 			const parts = style.name.split("/");
-			const styleName = parts[parts.length - 1];
+			const styleName = parts.at(-1);
 			const parentPath = parts.slice(0, -1);
 
 			let current = stylesData.styles.paint;
@@ -652,7 +668,7 @@ export async function exportStylesAsTokens(
 		// Process Text Styles (typography)
 		for (const style of textStyles) {
 			const parts = style.name.split("/");
-			const styleName = parts[parts.length - 1];
+			const styleName = parts.at(-1);
 			const parentPath = parts.slice(0, -1);
 
 			let current = stylesData.styles.text;
@@ -734,7 +750,7 @@ export async function exportStylesAsTokens(
 		// Process Effect Styles (shadows, blurs)
 		for (const style of effectStyles) {
 			const parts = style.name.split("/");
-			const styleName = parts[parts.length - 1];
+			const styleName = parts.at(-1);
 			const parentPath = parts.slice(0, -1);
 
 			let current = stylesData.styles.effect;
@@ -757,7 +773,7 @@ export async function exportStylesAsTokens(
 		// Process Layout grid styles
 		for (const style of gridStyles) {
 			const parts = style.name.split("/");
-			const styleName = parts[parts.length - 1];
+			const styleName = parts.at(-1);
 			const parentPath = parts.slice(0, -1);
 
 			let current = stylesData.styles.grid;

@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Palette, Sparkles, Upload } from "lucide-react";
+import { useState } from "react";
 import {
 	Badge,
 	Button,
@@ -13,10 +13,10 @@ import {
 import type { ColorValue, DesignToken } from "../../types/tokens";
 
 export interface FirstRunWizardProps {
-	/** Navigate to another page (e.g. "generate" or "import") */
-	onNavigate: (page: string) => void;
 	/** Create starter tokens directly */
 	onCreateTokens: (tokens: DesignToken[]) => void;
+	/** Navigate to another page (e.g. "generate" or "import") */
+	onNavigate: (page: string) => void;
 }
 
 // ── Starter Kit token definitions ──────────────────────────────────────────
@@ -97,11 +97,11 @@ function buildStarterTokens(): DesignToken[] {
 type TemplateId = "starter" | "full" | "import";
 
 interface TemplateOption {
-	id: TemplateId;
-	icon: React.ReactNode;
-	title: string;
-	description: string;
 	badge?: string;
+	description: string;
+	icon: React.ReactNode;
+	id: TemplateId;
+	title: string;
 	tokenCount?: string;
 }
 
@@ -110,8 +110,7 @@ const TEMPLATES: TemplateOption[] = [
 		id: "starter",
 		icon: <Palette size={20} />,
 		title: "Starter Kit",
-		description:
-			"Essential tokens: 5 colors, spacing scale, border radius",
+		description: "Essential tokens: 5 colors, spacing scale, border radius",
 		badge: "Quick start",
 		tokenCount: "~12 variables",
 	},
@@ -168,8 +167,8 @@ export function FirstRunWizard({
 			}}
 		>
 			<SectionHeader
-				title="Get Started"
 				description="No variables yet — let's set up your design system"
+				title="Get Started"
 			/>
 
 			<div
@@ -181,12 +180,12 @@ export function FirstRunWizard({
 			>
 				{TEMPLATES.map((tpl) => (
 					<Card
-						key={tpl.id}
-						variant="bordered"
-						padding="md"
 						hover
-						selected={selected === tpl.id}
+						key={tpl.id}
 						onClick={() => setSelected(tpl.id)}
+						padding="md"
+						selected={selected === tpl.id}
+						variant="bordered"
 					>
 						<CardHeader>
 							<div
@@ -200,12 +199,8 @@ export function FirstRunWizard({
 								<CardTitle>{tpl.title}</CardTitle>
 								{tpl.badge && (
 									<Badge
-										variant={
-											tpl.id === "full"
-												? "info"
-												: "secondary"
-										}
 										size="sm"
+										variant={tpl.id === "full" ? "info" : "secondary"}
 									>
 										{tpl.badge}
 									</Badge>
@@ -213,9 +208,7 @@ export function FirstRunWizard({
 							</div>
 						</CardHeader>
 						<CardContent>
-							<CardDescription>
-								{tpl.description}
-							</CardDescription>
+							<CardDescription>{tpl.description}</CardDescription>
 							{tpl.tokenCount && (
 								<span
 									style={{
@@ -234,11 +227,11 @@ export function FirstRunWizard({
 			</div>
 
 			<Button
-				variant="primary"
 				disabled={!selected || creating}
 				loading={creating}
 				onClick={handleConfirm}
 				style={{ alignSelf: "stretch" }}
+				variant="primary"
 			>
 				{!selected
 					? "Choose a template"

@@ -3,16 +3,16 @@ import { Radio } from "./Radio";
 import styles from "./RadioCard.module.css";
 
 interface RadioCardProps {
+	badge?: string; // For "Free", "$5.00", etc.
+	checked?: boolean;
+	description?: string;
+	disabled?: boolean;
+	icon?: React.ReactNode; // Optional icon to display before title
 	id: string;
 	name: string;
-	value: string;
-	checked?: boolean;
 	onChange: (value: string) => void;
 	title: string;
-	description?: string;
-	badge?: string; // For "Free", "$5.00", etc.
-	icon?: React.ReactNode; // Optional icon to display before title
-	disabled?: boolean;
+	value: string;
 }
 
 export function RadioCard({
@@ -29,17 +29,17 @@ export function RadioCard({
 }: RadioCardProps) {
 	return (
 		<label
-			htmlFor={id}
 			className={`${styles["card"]} ${checked ? styles["checked"] : ""} ${disabled ? styles["disabled"] : ""} ${description ? styles["has-description"] : ""}`}
+			htmlFor={id}
 		>
 			<Radio
+				checked={checked}
+				className={description ? styles["radio-align"] : ""}
+				disabled={disabled}
 				id={id}
 				name={name}
-				value={value}
-				checked={checked}
 				onChange={(e) => onChange(e.target.value)}
-				disabled={disabled}
-				className={description ? styles["radio-align"] : ""}
+				value={value}
 			/>
 			<div className={styles["content"]}>
 				<div className={styles["header"]}>

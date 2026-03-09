@@ -567,7 +567,7 @@ function generateCSSVariables(collection, mode) {
 function generateTailwindThemeInline(collectionName) {
   const collectionMeta = collections[collectionName];
   if (
-    !(collectionMeta && collectionMeta.modes) ||
+    !(collectionMeta?.modes) ||
     collectionMeta.modes.length === 0
   ) {
     return "";
@@ -955,7 +955,7 @@ function generateShadowCSS() {
 
   // Generate CSS variables for each shadow level
   const shadowLevels = Object.keys(shadowStyles).sort(
-    (a, b) => Number.parseInt(a) - Number.parseInt(b)
+    (a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10)
   );
 
   for (const level of shadowLevels) {
@@ -973,7 +973,7 @@ function generateShadowCSS() {
         // e.g. rgba(0, 0, 0, 0.05999999865889549) → rgba(0, 0, 0, 0.06)
         const cleanColor = color.replace(
           /(\d+\.\d{10,})/g,
-          (_, n) => parseFloat(parseFloat(n).toPrecision(4))
+          (_, n) => Number.parseFloat(Number.parseFloat(n).toPrecision(4))
         );
         return `${offsetX} ${offsetY} ${radius} ${spread} ${cleanColor}`;
       })
@@ -1133,7 +1133,7 @@ for (const collectionName of collectionNames) {
 }
 
 // Warn about missing optional collections
-if (!collections.responsive || !tokens.tokens?.responsive?.typography) {
+if (!(collections.responsive && tokens.tokens?.responsive?.typography)) {
   console.warn(
     'ℹ️  No "responsive" collection with typography tokens found in tokens.json — typescales.css was not generated.'
   );

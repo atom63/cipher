@@ -43,28 +43,28 @@ describe("parseCSS", () => {
 
 	describe("color formats", () => {
 		test("parses hex colors", () => {
-			const css = `:root { --color-red: #ff0000; }`;
+			const css = ":root { --color-red: #ff0000; }";
 			const result = parseCSS(css);
 			expect(result.tokens).toHaveLength(1);
 			expect(result.tokens[0].type).toBe("color");
 		});
 
 		test("parses rgb colors", () => {
-			const css = `:root { --color-blue: rgb(59, 130, 246); }`;
+			const css = ":root { --color-blue: rgb(59, 130, 246); }";
 			const result = parseCSS(css);
 			expect(result.tokens).toHaveLength(1);
 			expect(result.tokens[0].type).toBe("color");
 		});
 
 		test("parses oklch colors", () => {
-			const css = `:root { --color-brand: oklch(0.623 0.214 259.815); }`;
+			const css = ":root { --color-brand: oklch(0.623 0.214 259.815); }";
 			const result = parseCSS(css);
 			expect(result.tokens).toHaveLength(1);
 			expect(result.tokens[0].type).toBe("color");
 		});
 
 		test("parses hsl colors", () => {
-			const css = `:root { --color-accent: hsl(217, 91%, 60%); }`;
+			const css = ":root { --color-accent: hsl(217, 91%, 60%); }";
 			const result = parseCSS(css);
 			expect(result.tokens).toHaveLength(1);
 			expect(result.tokens[0].type).toBe("color");
@@ -81,11 +81,9 @@ describe("parseCSS", () => {
 			}`;
 
 			const result = parseCSS(css);
-			const refToken = result.tokens.find(
-				(t) => t.type === "reference",
-			);
+			const refToken = result.tokens.find((t) => t.type === "reference");
 			expect(refToken).toBeDefined();
-			expect(refToken!.originalValue).toContain("var(--color-primary)");
+			expect(refToken?.originalValue).toContain("var(--color-primary)");
 		});
 	});
 
@@ -116,20 +114,20 @@ describe("parseCSS", () => {
 
 	describe("type inference", () => {
 		test("infers color from hex value", () => {
-			const css = `:root { --background: #ffffff; }`;
+			const css = ":root { --background: #ffffff; }";
 			const result = parseCSS(css);
 			expect(result.tokens[0].type).toBe("color");
 		});
 
 		test("infers number from px value", () => {
-			const css = `:root { --spacing-4: 16px; }`;
+			const css = ":root { --spacing-4: 16px; }";
 			const result = parseCSS(css);
 			expect(result.tokens[0].type).toBe("number");
 			expect(result.tokens[0].value).toBe(16);
 		});
 
 		test("infers number from rem value", () => {
-			const css = `:root { --size-lg: 1.5rem; }`;
+			const css = ":root { --size-lg: 1.5rem; }";
 			const result = parseCSS(css);
 			expect(result.tokens[0].type).toBe("number");
 		});
@@ -137,7 +135,7 @@ describe("parseCSS", () => {
 
 	describe("edge cases", () => {
 		test("returns empty for CSS with no custom properties", () => {
-			const css = `body { color: red; font-size: 16px; }`;
+			const css = "body { color: red; font-size: 16px; }";
 			const result = parseCSS(css);
 			expect(result.tokens).toHaveLength(0);
 		});

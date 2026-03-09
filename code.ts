@@ -143,7 +143,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			const resolveVarName = (
 				alias: { id: string } | undefined,
 			): string | undefined => {
-				if (!alias || !alias.id) return undefined;
+				if (!(alias?.id)) return undefined;
 				try {
 					const v = figma.variables.getVariableById(alias.id);
 					return v ? v.name : undefined;
@@ -222,7 +222,14 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						: "auto";
 				const bv = (s as any).boundVariables || {};
 				const variables: Record<string, string> = {};
-				for (const field of ["fontSize", "lineHeight", "letterSpacing", "paragraphSpacing", "fontFamily", "fontWeight"]) {
+				for (const field of [
+					"fontSize",
+					"lineHeight",
+					"letterSpacing",
+					"paragraphSpacing",
+					"fontFamily",
+					"fontWeight",
+				]) {
 					if (bv[field]) {
 						const n = resolveVarName(bv[field]);
 						if (n) variables[field] = n;
@@ -379,7 +386,6 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			break;
 		}
 
-
 		case "duplicate-styles": {
 			const { styleIds } = msg.data;
 			let success = 0;
@@ -388,12 +394,15 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			for (const id of styleIds) {
 				try {
 					const style = figma.getStyleById(id);
-					if (!style) { failed++; continue; }
+					if (!style) {
+						failed++;
+						continue;
+					}
 
 					if (style.type === "PAINT") {
 						const src = style as PaintStyle;
 						const dup = figma.createPaintStyle();
-						dup.name = src.name + " copy";
+						dup.name = `${src.name} copy`;
 						dup.description = src.description;
 						dup.paints = src.paints;
 						newStyleIds.push(dup.id);
@@ -401,7 +410,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					} else if (style.type === "TEXT") {
 						const src = style as TextStyle;
 						const dup = figma.createTextStyle();
-						dup.name = src.name + " copy";
+						dup.name = `${src.name} copy`;
 						dup.description = src.description;
 						dup.fontSize = src.fontSize;
 						dup.letterSpacing = src.letterSpacing;
@@ -416,7 +425,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					} else if (style.type === "EFFECT") {
 						const src = style as EffectStyle;
 						const dup = figma.createEffectStyle();
-						dup.name = src.name + " copy";
+						dup.name = `${src.name} copy`;
 						dup.description = src.description;
 						dup.effects = src.effects;
 						newStyleIds.push(dup.id);
@@ -424,7 +433,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					} else if (style.type === "GRID") {
 						const src = style as GridStyle;
 						const dup = figma.createGridStyle();
-						dup.name = src.name + " copy";
+						dup.name = `${src.name} copy`;
 						dup.description = src.description;
 						dup.layoutGrids = src.layoutGrids;
 						newStyleIds.push(dup.id);
@@ -454,7 +463,10 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			for (const edit of edits) {
 				try {
 					const style = figma.getStyleById(edit.styleId);
-					if (!style) { failed++; continue; }
+					if (!style) {
+						failed++;
+						continue;
+					}
 
 					// Description — applies to all types
 					if (edit.description != null) {
@@ -471,9 +483,9 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 								if (edit.color) {
 									const hex = edit.color.replace("#", "");
 									newColor = {
-										r: parseInt(hex.slice(0, 2), 16) / 255,
-										g: parseInt(hex.slice(2, 4), 16) / 255,
-										b: parseInt(hex.slice(4, 6), 16) / 255,
+										r: Number.parseInt(hex.slice(0, 2), 16) / 255,
+										g: Number.parseInt(hex.slice(2, 4), 16) / 255,
+										b: Number.parseInt(hex.slice(4, 6), 16) / 255,
 									};
 								}
 								paints[0] = {
@@ -505,7 +517,10 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							}
 						}
 						if (edit.letterSpacing != null) {
-							textStyle.letterSpacing = { value: edit.letterSpacing, unit: "PIXELS" };
+							textStyle.letterSpacing = {
+								value: edit.letterSpacing,
+								unit: "PIXELS",
+							};
 						}
 						if (edit.paragraphSpacing != null) {
 							textStyle.paragraphSpacing = edit.paragraphSpacing;
@@ -550,7 +565,9 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			};
 
 			for (const v of colorVars) {
-				const collection = figma.variables.getVariableCollectionById(v.variableCollectionId);
+				const collection = figma.variables.getVariableCollectionById(
+					v.variableCollectionId,
+				);
 				if (!collection) continue;
 				const keys: string[] = [];
 				for (const modeId of collection.modes.map((m) => m.modeId)) {
@@ -569,20 +586,30 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			const resolveFloat = (val: any, depth = 0): number | undefined => {
 				if (typeof val === "number") return val;
 				if (depth > 3) return undefined;
-				if (val && typeof val === "object" && "type" in val && val.type === "VARIABLE_ALIAS") {
+				if (
+					val &&
+					typeof val === "object" &&
+					"type" in val &&
+					val.type === "VARIABLE_ALIAS"
+				) {
 					const ref = figma.variables.getVariableById(val.id);
 					if (ref) {
-						const refCol = figma.variables.getVariableCollectionById(ref.variableCollectionId);
+						const refCol = figma.variables.getVariableCollectionById(
+							ref.variableCollectionId,
+						);
 						if (refCol) {
 							const firstMode = refCol.modes[0]?.modeId;
-							if (firstMode) return resolveFloat(ref.valuesByMode[firstMode], depth + 1);
+							if (firstMode)
+								return resolveFloat(ref.valuesByMode[firstMode], depth + 1);
 						}
 					}
 				}
 				return undefined;
 			};
 			for (const v of floatVars) {
-				const collection = figma.variables.getVariableCollectionById(v.variableCollectionId);
+				const collection = figma.variables.getVariableCollectionById(
+					v.variableCollectionId,
+				);
 				if (!collection) continue;
 				const values: number[] = [];
 				for (const modeId of collection.modes.map((m) => m.modeId)) {
@@ -599,20 +626,30 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			const resolveString = (val: any, depth = 0): string | undefined => {
 				if (typeof val === "string") return val;
 				if (depth > 3) return undefined;
-				if (val && typeof val === "object" && "type" in val && val.type === "VARIABLE_ALIAS") {
+				if (
+					val &&
+					typeof val === "object" &&
+					"type" in val &&
+					val.type === "VARIABLE_ALIAS"
+				) {
 					const ref = figma.variables.getVariableById(val.id);
 					if (ref) {
-						const refCol = figma.variables.getVariableCollectionById(ref.variableCollectionId);
+						const refCol = figma.variables.getVariableCollectionById(
+							ref.variableCollectionId,
+						);
 						if (refCol) {
 							const firstMode = refCol.modes[0]?.modeId;
-							if (firstMode) return resolveString(ref.valuesByMode[firstMode], depth + 1);
+							if (firstMode)
+								return resolveString(ref.valuesByMode[firstMode], depth + 1);
 						}
 					}
 				}
 				return undefined;
 			};
 			for (const v of stringVars) {
-				const collection = figma.variables.getVariableCollectionById(v.variableCollectionId);
+				const collection = figma.variables.getVariableCollectionById(
+					v.variableCollectionId,
+				);
 				if (!collection) continue;
 				const values: string[] = [];
 				for (const modeId of collection.modes.map((m) => m.modeId)) {
@@ -622,7 +659,6 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				}
 				varStringMap.push({ id: v.id, name: v.name, values });
 			}
-
 
 			const suggestions: any[] = [];
 
@@ -634,10 +670,14 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			const findColorByName = (styleName: string) => {
 				const parts = styleName.split("/");
-				const leaf = parts[parts.length - 1].toLowerCase().replace(/[\s-_]/g, "");
+				const leaf = parts.at(-1)
+					.toLowerCase()
+					.replace(/[\s-_]/g, "");
 				return varColorMap.find((v) => {
 					const vParts = v.name.split("/");
-					const vLeaf = vParts[vParts.length - 1].toLowerCase().replace(/[\s-_]/g, "");
+					const vLeaf = vParts.at(-1)
+						.toLowerCase()
+						.replace(/[\s-_]/g, "");
 					return (
 						vLeaf === leaf ||
 						v.name.toLowerCase().replace(/[\s-_/]/g, "") ===
@@ -647,19 +687,26 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			};
 
 			// Normalize a path for comparison: lowercase, strip separators
-			const normalizePath = (p: string) => p.toLowerCase().replace(/[\s-_]/g, "");
+			const normalizePath = (p: string) =>
+				p.toLowerCase().replace(/[\s-_]/g, "");
 
 			// Find a float variable by style path + property suffix, then fall back to value + name hints
 			// e.g. styleName="typography/large-title", suffix="font-size" → looks for "typography/large-title/font-size"
-			const findFloatVar = (value: number, styleName: string, suffix: string, ...fallbackHints: string[]) => {
+			const findFloatVar = (
+				value: number,
+				styleName: string,
+				suffix: string,
+				...fallbackHints: string[]
+			) => {
 				const styleNorm = normalizePath(styleName);
 				const suffixNorm = normalizePath(suffix);
 				// 1. Path-based: variable name ends with stylePath/suffix pattern
 				const pathMatch = varFloatMap.find((v) => {
 					const vNorm = normalizePath(v.name);
-					return v.values.some((val) => val === value) && (
-						vNorm.endsWith(`${styleNorm}/${suffixNorm}`) ||
-						vNorm.includes(`${styleNorm}/${suffixNorm}`)
+					return (
+						v.values.some((val) => val === value) &&
+						(vNorm.endsWith(`${styleNorm}/${suffixNorm}`) ||
+							vNorm.includes(`${styleNorm}/${suffixNorm}`))
 					);
 				});
 				if (pathMatch) return { var: pathMatch, type: "exact" as const };
@@ -667,7 +714,9 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				for (const hint of [suffix, ...fallbackHints]) {
 					const hintNorm = normalizePath(hint);
 					const match = varFloatMap.find(
-						(v) => v.values.some((val) => val === value) && normalizePath(v.name).includes(hintNorm),
+						(v) =>
+							v.values.some((val) => val === value) &&
+							normalizePath(v.name).includes(hintNorm),
 					);
 					if (match) return { var: match, type: "name" as const };
 				}
@@ -675,16 +724,22 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			};
 
 			// Find a string variable by style path + property suffix, then fall back to value + name hints
-			const findStringVar = (value: string, styleName: string, suffix: string, ...fallbackHints: string[]) => {
+			const findStringVar = (
+				value: string,
+				styleName: string,
+				suffix: string,
+				...fallbackHints: string[]
+			) => {
 				const lower = value.toLowerCase();
 				const styleNorm = normalizePath(styleName);
 				const suffixNorm = normalizePath(suffix);
 				// 1. Path-based
 				const pathMatch = varStringMap.find((v) => {
 					const vNorm = normalizePath(v.name);
-					return v.values.some((val) => val.toLowerCase() === lower) && (
-						vNorm.endsWith(`${styleNorm}/${suffixNorm}`) ||
-						vNorm.includes(`${styleNorm}/${suffixNorm}`)
+					return (
+						v.values.some((val) => val.toLowerCase() === lower) &&
+						(vNorm.endsWith(`${styleNorm}/${suffixNorm}`) ||
+							vNorm.includes(`${styleNorm}/${suffixNorm}`))
 					);
 				});
 				if (pathMatch) return { var: pathMatch, type: "exact" as const };
@@ -692,7 +747,9 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				for (const hint of [suffix, ...fallbackHints]) {
 					const hintNorm = normalizePath(hint);
 					const match = varStringMap.find(
-						(v) => v.values.some((val) => val.toLowerCase() === lower) && normalizePath(v.name).includes(hintNorm),
+						(v) =>
+							v.values.some((val) => val.toLowerCase() === lower) &&
+							normalizePath(v.name).includes(hintNorm),
 					);
 					if (match) return { var: match, type: "name" as const };
 				}
@@ -713,8 +770,14 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							if (!bv.color) {
 								const solid = paint as SolidPaint;
 								const alpha = solid.opacity ?? 1;
-								const key = colorKey(solid.color.r, solid.color.g, solid.color.b, alpha);
-								const match = findByColor(key) || findColorByName(paintStyle.name);
+								const key = colorKey(
+									solid.color.r,
+									solid.color.g,
+									solid.color.b,
+									alpha,
+								);
+								const match =
+									findByColor(key) || findColorByName(paintStyle.name);
 								if (match) {
 									suggestions.push({
 										styleId,
@@ -733,7 +796,12 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 								const stopBv = (stop as any).boundVariables || {};
 								if (!stopBv.color) {
 									const a = "a" in stop.color ? stop.color.a : 1;
-									const key = colorKey(stop.color.r, stop.color.g, stop.color.b, a);
+									const key = colorKey(
+										stop.color.r,
+										stop.color.g,
+										stop.color.b,
+										a,
+									);
 									const match = findByColor(key);
 									if (match) {
 										suggestions.push({
@@ -758,7 +826,12 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							if (!bv.color) {
 								const shadow = e as DropShadowEffect;
 								const a = "a" in shadow.color ? shadow.color.a : 1;
-								const key = colorKey(shadow.color.r, shadow.color.g, shadow.color.b, a);
+								const key = colorKey(
+									shadow.color.r,
+									shadow.color.g,
+									shadow.color.b,
+									a,
+								);
 								const match = findByColor(key);
 								if (match) {
 									suggestions.push({
@@ -799,7 +872,12 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					// lineHeight — path-based: e.g. "typography/large-title" → "typography/large-title/line-height"
 					if (!bv.lineHeight) {
 						const lh = textStyle.lineHeight as any;
-						if (lh && typeof lh === "object" && lh.unit === "PIXELS" && typeof lh.value === "number") {
+						if (
+							lh &&
+							typeof lh === "object" &&
+							lh.unit === "PIXELS" &&
+							typeof lh.value === "number"
+						) {
 							const result = findFloatVar(lh.value, styleName, "line-height");
 							if (result) {
 								suggestions.push({
@@ -818,7 +896,12 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					// fontFamily — path-based, then fallback to any "family" variable
 					if (!bv.fontFamily) {
 						const family = textStyle.fontName.family;
-						const result = findStringVar(family, styleName, "font-family", "family");
+						const result = findStringVar(
+							family,
+							styleName,
+							"font-family",
+							"family",
+						);
 						if (result) {
 							suggestions.push({
 								styleId,
@@ -836,20 +919,34 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					if (!bv.fontWeight) {
 						const fontStyleName = textStyle.fontName.style;
 						const weightMap: Record<string, number> = {
-							thin: 100, hairline: 100,
-							"extra light": 200, ultralight: 200,
+							thin: 100,
+							hairline: 100,
+							"extra light": 200,
+							ultralight: 200,
 							light: 300,
-							regular: 400, normal: 400,
+							regular: 400,
+							normal: 400,
 							medium: 500,
-							"semi bold": 600, semibold: 600, demibold: 600,
+							"semi bold": 600,
+							semibold: 600,
+							demibold: 600,
 							bold: 700,
-							"extra bold": 800, ultrabold: 800, extrabold: 800,
-							black: 900, heavy: 900,
-							"extra black": 950, ultrablack: 950,
+							"extra bold": 800,
+							ultrabold: 800,
+							extrabold: 800,
+							black: 900,
+							heavy: 900,
+							"extra black": 950,
+							ultrablack: 950,
 						};
 						const numWeight = weightMap[fontStyleName.toLowerCase()];
 						if (numWeight != null) {
-							const result = findFloatVar(numWeight, styleName, "font-weight", "weight");
+							const result = findFloatVar(
+								numWeight,
+								styleName,
+								"font-weight",
+								"weight",
+							);
 							if (result) {
 								suggestions.push({
 									styleId,
@@ -883,7 +980,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				try {
 					const style = figma.getStyleById(styleId);
 					const variable = figma.variables.getVariableById(variableId);
-					if (!style || !variable) {
+					if (!(style && variable)) {
 						failed++;
 						continue;
 					}
@@ -893,7 +990,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						const paints = [...paintStyle.paints];
 
 						if (field.startsWith("solid:")) {
-							const pi = parseInt(field.split(":")[1], 10);
+							const pi = Number.parseInt(field.split(":")[1], 10);
 							if (paints[pi]?.type === "SOLID") {
 								paints[pi] = figma.variables.setBoundVariableForPaint(
 									paints[pi] as SolidPaint,
@@ -908,8 +1005,8 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							}
 						} else if (field.startsWith("stop:")) {
 							const [, piStr, siStr] = field.split(":");
-							const pi = parseInt(piStr, 10);
-							const si = parseInt(siStr, 10);
+							const pi = Number.parseInt(piStr, 10);
+							const si = Number.parseInt(siStr, 10);
 							const paint = paints[pi];
 							if (paint?.type.startsWith("GRADIENT_")) {
 								const grad = paint as GradientPaint;
@@ -939,7 +1036,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					} else if (style.type === "EFFECT") {
 						const effectStyle = style as EffectStyle;
 						if (field.startsWith("effect:")) {
-							const ei = parseInt(field.split(":")[1], 10);
+							const ei = Number.parseInt(field.split(":")[1], 10);
 							const effects = [...effectStyle.effects];
 							if (effects[ei]) {
 								effects[ei] = figma.variables.setBoundVariableForEffect(
@@ -1010,7 +1107,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						const paints = [...paintStyle.paints];
 
 						if (field.startsWith("solid:")) {
-							const pi = parseInt(field.split(":")[1], 10);
+							const pi = Number.parseInt(field.split(":")[1], 10);
 							if (paints[pi]?.type === "SOLID") {
 								paints[pi] = figma.variables.setBoundVariableForPaint(
 									paints[pi] as SolidPaint,
@@ -1024,8 +1121,8 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							}
 						} else if (field.startsWith("stop:")) {
 							const [, piStr, siStr] = field.split(":");
-							const pi = parseInt(piStr, 10);
-							const si = parseInt(siStr, 10);
+							const pi = Number.parseInt(piStr, 10);
+							const si = Number.parseInt(siStr, 10);
 							const paint = paints[pi];
 							if (paint?.type.startsWith("GRADIENT_")) {
 								const grad = paint as GradientPaint;
@@ -1051,7 +1148,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					} else if (style.type === "EFFECT") {
 						const effectStyle = style as EffectStyle;
 						if (field.startsWith("effect:")) {
-							const ei = parseInt(field.split(":")[1], 10);
+							const ei = Number.parseInt(field.split(":")[1], 10);
 							const effects = [...effectStyle.effects];
 							if (effects[ei]) {
 								effects[ei] = figma.variables.setBoundVariableForEffect(
@@ -1069,7 +1166,13 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						}
 					} else if (style.type === "TEXT") {
 						const textStyle = style as TextStyle;
-						const textFields = ["fontSize", "lineHeight", "fontFamily", "fontWeight", "fontStyle"];
+						const textFields = [
+							"fontSize",
+							"lineHeight",
+							"fontFamily",
+							"fontWeight",
+							"fontStyle",
+						];
 						if (textFields.includes(field)) {
 							textStyle.setBoundVariable(field as any, null);
 							success++;
@@ -1232,8 +1335,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			}
 
 			// Scan all variables to find references
-			const allCollections =
-				figma.variables.getLocalVariableCollections();
+			const allCollections = figma.variables.getLocalVariableCollections();
 			for (const collection of allCollections) {
 				for (const varId of collection.variableIds) {
 					const variable = figma.variables.getVariableById(varId);
@@ -1388,7 +1490,11 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			let success = 0;
 			let failed = 0;
-			const previousCollections: { newId: string; id: string; collectionId: string }[] = [];
+			const previousCollections: {
+				newId: string;
+				id: string;
+				collectionId: string;
+			}[] = [];
 
 			// Build target mode map: match modes by name
 			const targetModeMap = new Map(
@@ -1582,7 +1688,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 								variable.resolvedType === "FLOAT" &&
 								typeof rawValue === "string"
 							) {
-								value = parseFloat(rawValue);
+								value = Number.parseFloat(rawValue);
 								if (Number.isNaN(value)) continue;
 							} else if (
 								variable.resolvedType === "BOOLEAN" &&
@@ -1598,11 +1704,11 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 									hex.startsWith("#") &&
 									(hex.length === 7 || hex.length === 9)
 								) {
-									const r = parseInt(hex.slice(1, 3), 16) / 255;
-									const g = parseInt(hex.slice(3, 5), 16) / 255;
-									const b = parseInt(hex.slice(5, 7), 16) / 255;
+									const r = Number.parseInt(hex.slice(1, 3), 16) / 255;
+									const g = Number.parseInt(hex.slice(3, 5), 16) / 255;
+									const b = Number.parseInt(hex.slice(5, 7), 16) / 255;
 									const a =
-										hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1;
+										hex.length === 9 ? Number.parseInt(hex.slice(7, 9), 16) / 255 : 1;
 									value = { r, g, b, a };
 								} else {
 									continue;
@@ -1721,7 +1827,12 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 		}
 
 		case "create-variables": {
-			const { tokens, collectionName, importMode = "import", stylesData } = msg.data;
+			const {
+				tokens,
+				collectionName,
+				importMode = "import",
+				stylesData,
+			} = msg.data;
 			// Note: tokens are already filtered by selected collections in the UI
 			const results = await createVariablesFromTokens(
 				tokens,
@@ -1879,7 +1990,10 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			const { variableIds, factor, operation } = msg.data;
 			let success = 0;
 			let failed = 0;
-			const previousValues: { id: string; valuesByMode: Record<string, any> }[] = [];
+			const previousValues: {
+				id: string;
+				valuesByMode: Record<string, any>;
+			}[] = [];
 
 			for (const id of variableIds) {
 				try {
@@ -1911,7 +2025,8 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					// Apply scale
 					for (const [modeId, value] of Object.entries(variable.valuesByMode)) {
 						if (typeof value === "number") {
-							const newValue = operation === "multiply" ? value * factor : value / factor;
+							const newValue =
+								operation === "multiply" ? value * factor : value / factor;
 							variable.setValueForMode(modeId, newValue);
 						}
 					}

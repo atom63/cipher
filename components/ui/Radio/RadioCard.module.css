@@ -1,13 +1,13 @@
 /* === Radio Card === */
 .card {
   display: flex;
-  align-items: center;
   gap: var(--spacing-md);
+  align-items: center;
   padding: var(--spacing-lg);
+  cursor: pointer;
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  cursor: pointer;
   transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
 
@@ -17,13 +17,13 @@
 }
 
 .card:hover:not(.disabled) {
-  border-color: var(--primary);
   background: color-mix(in oklch, var(--primary) 20%, transparent);
+  border-color: var(--primary);
 }
 
 .card.checked {
-  border-color: var(--primary);
   background: color-mix(in oklch, var(--primary) 10%, transparent);
+  border-color: var(--primary);
   box-shadow: 0 0 0 1px var(--primary);
 }
 
@@ -37,8 +37,8 @@
 }
 
 .content {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
 }
 
@@ -49,36 +49,36 @@
 
 .header {
   display: flex;
-  align-items: center;
   gap: var(--spacing-sm);
+  align-items: center;
 }
 
 .icon {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   color: var(--primary);
-  flex-shrink: 0;
 }
 
 .title {
   flex: 1;
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
-  color: var(--foreground);
   line-height: 1.5;
+  color: var(--foreground);
 }
 
 .badge {
   font-size: var(--text-base);
   font-weight: var(--font-medium);
-  color: var(--muted-foreground);
   line-height: 1.5;
+  color: var(--muted-foreground);
 }
 
 .description {
   font-size: var(--text-sm);
-  color: var(--muted-foreground);
   line-height: 1.5;
+  color: var(--muted-foreground);
 }
 
 /* Focus-visible state for accessibility */

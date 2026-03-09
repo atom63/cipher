@@ -526,6 +526,6 @@ describe("parseCollectionJSON", () => {
 		const result = parseCollectionJSON(data, 0);
 		const refToken = result.tokens.find((t) => t.type === "reference");
 		expect(refToken).toBeDefined();
-		expect(refToken!.value).toBe("{primitives.blue}");
+		expect(refToken?.value).toBe("{primitives.blue}");
 	});
 });

@@ -4,20 +4,20 @@
 
 .badge {
   display: inline-flex;
-  align-items: center;
   gap: var(--spacing-xs);
-  border-radius: var(--radius-sm);
+  align-items: center;
+  max-width: 100%;
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  user-select: none;
-  white-space: nowrap;
   line-height: 1;
-  max-width: 100%;
+  white-space: nowrap;
+  user-select: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   transition:
     background-color var(--transition),
     border-color var(--transition),
     transform var(--transition);
-  border: 1px solid transparent;
 }
 
 /* Pill shape */
@@ -30,22 +30,22 @@
    ============================================ */
 
 .sm {
+  gap: var(--spacing-2xs);
+  min-height: 18px;
   padding: var(--spacing-2xs) var(--spacing-sm);
   font-size: var(--text-xs);
-  min-height: 18px;
-  gap: var(--spacing-2xs);
 }
 
 .md {
+  min-height: 22px;
   padding: var(--spacing-2xs) var(--spacing-sm);
   font-size: var(--text-xs);
-  min-height: 22px;
 }
 
 .lg {
+  min-height: 26px;
   padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--text-sm);
-  min-height: 26px;
 }
 
 /* ============================================
@@ -53,8 +53,8 @@
    ============================================ */
 
 .default {
-  background-color: color-mix(in oklch, var(--primary) 15%, transparent);
   color: var(--primary);
+  background-color: color-mix(in oklch, var(--primary) 15%, transparent);
 }
 
 .default:hover {
@@ -66,8 +66,8 @@
 }
 
 .secondary {
-  background-color: var(--muted);
   color: var(--muted-foreground);
+  background-color: var(--muted);
 }
 
 .secondary:hover {
@@ -79,8 +79,8 @@
 }
 
 .destructive {
-  background-color: color-mix(in oklch, var(--destructive) 15%, transparent);
   color: var(--destructive);
+  background-color: color-mix(in oklch, var(--destructive) 15%, transparent);
 }
 
 .destructive:hover {
@@ -92,8 +92,8 @@
 }
 
 .success {
-  background-color: color-mix(in oklch, var(--success) 15%, transparent);
   color: var(--success);
+  background-color: color-mix(in oklch, var(--success) 15%, transparent);
 }
 
 .success:hover {
@@ -105,8 +105,8 @@
 }
 
 .warning {
-  background-color: color-mix(in oklch, var(--warning) 15%, transparent);
   color: var(--warning);
+  background-color: color-mix(in oklch, var(--warning) 15%, transparent);
 }
 
 .warning:hover {
@@ -118,8 +118,8 @@
 }
 
 .info {
-  background-color: color-mix(in oklch, var(--info) 15%, transparent);
   color: var(--info);
+  background-color: color-mix(in oklch, var(--info) 15%, transparent);
 }
 
 .info:hover {
@@ -131,9 +131,9 @@
 }
 
 .outline {
+  color: var(--foreground);
   background-color: transparent;
   border-color: var(--border);
-  color: var(--foreground);
 }
 
 .outline:hover {
@@ -149,10 +149,10 @@
    ============================================ */
 
 .dot {
+  flex-shrink: 0;
   width: 6px;
   height: 6px;
   border-radius: var(--radius-full);
-  flex-shrink: 0;
 }
 
 .dotAnimated {
@@ -184,8 +184,8 @@
 
 .icon {
   display: flex;
-  align-items: center;
   flex-shrink: 0;
+  align-items: center;
 }
 
 .icon svg {
@@ -219,31 +219,31 @@
 
 .removeButton {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  margin: -2px -4px -2px 0;
   width: 16px;
   height: 16px;
-  border: none;
-  background: transparent;
+  padding: 0;
+  margin: -2px -4px -2px 0;
   color: currentColor;
-  opacity: 0.6;
   cursor: pointer;
+  background: transparent;
+  border: none;
   border-radius: var(--radius-sm);
+  opacity: 0.6;
   transition: opacity var(--transition), background-color var(--transition);
-  flex-shrink: 0;
 }
 
 .removeButton:hover {
-  opacity: 1;
   background-color: color-mix(in oklch, currentColor 10%, transparent);
+  opacity: 1;
 }
 
 .removeButton:focus-visible {
-  opacity: 1;
   outline: none;
   box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+  opacity: 1;
 }
 
 .removeButton:active {
@@ -262,10 +262,10 @@
    ============================================ */
 
 .countBadge {
-  min-width: 18px;
   justify-content: center;
-  padding-left: var(--spacing-xs);
+  min-width: 18px;
   padding-right: var(--spacing-xs);
+  padding-left: var(--spacing-xs);
   font-weight: var(--font-semibold);
 }
 

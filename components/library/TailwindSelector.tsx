@@ -26,8 +26,8 @@ import {
 import styles from "./TailwindSelector.module.css";
 
 interface TailwindSelectorProps {
-	onGenerate: (tokens: DesignToken[]) => void;
 	onBack: () => void;
+	onGenerate: (tokens: DesignToken[]) => void;
 	onSelectColors?: () => void; // Navigate to color picker
 }
 
@@ -78,10 +78,10 @@ export function TailwindSelector({
 		<div className={styles.container}>
 			<div className={styles.header}>
 				<Button
-					variant="ghost"
-					size="sm"
-					onClick={onBack}
 					className={styles.backButton}
+					onClick={onBack}
+					size="sm"
+					variant="ghost"
 				>
 					<ChevronLeft size={14} /> Back
 				</Button>
@@ -97,10 +97,10 @@ export function TailwindSelector({
 					<div className={styles.sectionHeader}>
 						<SectionHeader title="Token Categories" />
 						<div className={styles.sectionActions}>
-							<Button variant="ghost" size="sm" onClick={selectAll}>
+							<Button onClick={selectAll}size="sm" variant="ghost" >
 								Select all
 							</Button>
-							<Button variant="ghost" size="sm" onClick={clearAll}>
+							<Button onClick={clearAll}size="sm" variant="ghost" >
 								Clear
 							</Button>
 						</div>
@@ -109,24 +109,24 @@ export function TailwindSelector({
 					<div className={styles.categoryList}>
 						{TAILWIND_CATEGORIES.map((category) => (
 							<Card
-								key={category.id}
-								variant={
-									selectedCategories.includes(category.id) ? "muted" : "default"
-								}
-								padding="md"
-								hover={!selectedCategories.includes(category.id)}
-								onClick={() => toggleCategory(category.id)}
 								className={`${styles.categoryCard} ${
 									selectedCategories.includes(category.id)
 										? styles.selected
 										: ""
 								}`}
+								hover={!selectedCategories.includes(category.id)}
+								key={category.id}
+								onClick={() => toggleCategory(category.id)}
+								padding="md"
+								variant={
+									selectedCategories.includes(category.id) ? "muted" : "default"
+								}
 							>
 								<CardHeader>
 									<div className={styles.categoryTitleRow}>
 										<Checkbox
-											id={`category-${category.id}`}
 											checked={selectedCategories.includes(category.id)}
+											id={`category-${category.id}`}
 											onChange={() => toggleCategory(category.id)}
 											onClick={(e) => e.stopPropagation()}
 										/>
@@ -143,15 +143,16 @@ export function TailwindSelector({
 										<div className={styles.colorPreview}>
 											{getTailwindColorPreview().map((color, idx) => (
 												<div
-													key={idx}
 													className={styles.colorSwatch}
+													key={idx}
 													style={{ backgroundColor: color }}
 													title={`Color ${idx + 1}`}
 												/>
 											))}
 										</div>
 										<div className={styles.colorHint}>
-											Click to select individual palettes <ChevronRight size={12} />
+											Click to select individual palettes{" "}
+											<ChevronRight size={12} />
 										</div>
 									</CardContent>
 								)}
@@ -169,9 +170,9 @@ export function TailwindSelector({
 				{/* Info Box */}
 				<div className={styles.infoBox}>
 					<p className={styles.infoText}>
-						<Lightbulb size={14} /> <strong>Tip:</strong> Tailwind tokens match your development
-						environment exactly. All values are converted to pixels (assuming
-						1rem = 16px).
+						<Lightbulb size={14} /> <strong>Tip:</strong> Tailwind tokens match
+						your development environment exactly. All values are converted to
+						pixels (assuming 1rem = 16px).
 					</p>
 				</div>
 			</div>
@@ -187,13 +188,13 @@ export function TailwindSelector({
 				</div>
 
 				<div className={styles.actions}>
-					<Button variant="secondary" onClick={onBack}>
+					<Button onClick={onBack}variant="secondary" >
 						Cancel
 					</Button>
 					<Button
-						variant="primary"
-						onClick={handleGenerate}
 						disabled={selectedCategories.length === 0}
+						onClick={handleGenerate}
+						variant="primary"
 					>
 						Preview {tokenCount} Tokens <ArrowRight size={14} />
 					</Button>

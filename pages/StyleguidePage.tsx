@@ -53,6 +53,39 @@ import {
 } from "../components/ui";
 import styles from "./StyleguidePage.module.css";
 
+function hexToRgb(hex: string): [number, number, number] {
+	const h = hex.replace("#", "");
+	const full =
+		h.length === 3
+			? h
+					.split("")
+					.map((c) => c + c)
+					.join("")
+			: h;
+	return [
+		Number.parseInt(full.slice(0, 2), 16),
+		Number.parseInt(full.slice(2, 4), 16),
+		Number.parseInt(full.slice(4, 6), 16),
+	];
+}
+
+function getRelativeLuminance(r: number, g: number, b: number): number {
+	const [rs, gs, bs] = [r / 255, g / 255, b / 255].map((c) =>
+		c <= 0.039_28 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4,
+	);
+	return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+function getContrastRatio(hex1: string, hex2: string): number {
+	const [r1, g1, b1] = hexToRgb(hex1);
+	const [r2, g2, b2] = hexToRgb(hex2);
+	const l1 = getRelativeLuminance(r1, g1, b1);
+	const l2 = getRelativeLuminance(r2, g2, b2);
+	const lighter = Math.max(l1, l2);
+	const darker = Math.min(l1, l2);
+	return (lighter + 0.05) / (darker + 0.05);
+}
+
 export function StyleguidePage() {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [confirmOpen, setConfirmOpen] = useState(false);
@@ -150,46 +183,12 @@ export function StyleguidePage() {
 		if (bg) setContrastBg(bg);
 	}, []);
 
-	function hexToRgb(hex: string): [number, number, number] {
-		const h = hex.replace("#", "");
-		const full =
-			h.length === 3
-				? h
-						.split("")
-						.map((c) => c + c)
-						.join("")
-				: h;
-		return [
-			parseInt(full.slice(0, 2), 16),
-			parseInt(full.slice(2, 4), 16),
-			parseInt(full.slice(4, 6), 16),
-		];
-	}
-
-	function getRelativeLuminance(r: number, g: number, b: number): number {
-		const [rs, gs, bs] = [r / 255, g / 255, b / 255].map((c) =>
-			c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4,
-		);
-		return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-	}
-
-	function getContrastRatio(hex1: string, hex2: string): number {
-		const [r1, g1, b1] = hexToRgb(hex1);
-		const [r2, g2, b2] = hexToRgb(hex2);
-		const l1 = getRelativeLuminance(r1, g1, b1);
-		const l2 = getRelativeLuminance(r2, g2, b2);
-		const lighter = Math.max(l1, l2);
-		const darker = Math.min(l1, l2);
-		return (lighter + 0.05) / (darker + 0.05);
-	}
-
 	const contrastRatio = useMemo(() => {
 		try {
 			return getContrastRatio(contrastFg, contrastBg);
 		} catch {
 			return 0;
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [contrastFg, contrastBg]);
 
 	const wcagResults = useMemo(
@@ -205,17 +204,17 @@ export function StyleguidePage() {
 	return (
 		<div className={styles.styleguide}>
 			<SectionHeader
-				variant="primary"
-				title="UI Component Styleguide"
 				description="A comprehensive showcase of all UI components and their variants"
+				title="UI Component Styleguide"
+				variant="primary"
 			/>
 
 			{/* Buttons */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Buttons"
 					description="Various button styles, sizes, and states"
+					title="Buttons"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -270,9 +269,9 @@ export function StyleguidePage() {
 			{/* Dropdown */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Dropdown"
 					description="Dropdown menus with various configurations"
+					title="Dropdown"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -280,31 +279,31 @@ export function StyleguidePage() {
 						<h4>Variants</h4>
 						<div className={styles.row}>
 							<Dropdown
+								options={[
+									{ value: "edit", label: "Edit" },
+									{ value: "duplicate", label: "Duplicate" },
+									{ value: "delete", label: "Delete", danger: true },
+								]}
 								trigger="Primary"
 								variant="primary"
+							/>
+							<Dropdown
 								options={[
 									{ value: "edit", label: "Edit" },
 									{ value: "duplicate", label: "Duplicate" },
 									{ value: "delete", label: "Delete", danger: true },
 								]}
-							/>
-							<Dropdown
 								trigger="Secondary"
 								variant="secondary"
-								options={[
-									{ value: "edit", label: "Edit" },
-									{ value: "duplicate", label: "Duplicate" },
-									{ value: "delete", label: "Delete", danger: true },
-								]}
 							/>
 							<Dropdown
-								trigger="Ghost"
-								variant="ghost"
 								options={[
 									{ value: "edit", label: "Edit" },
 									{ value: "duplicate", label: "Duplicate" },
 									{ value: "delete", label: "Delete", danger: true },
 								]}
+								trigger="Ghost"
+								variant="ghost"
 							/>
 						</div>
 					</div>
@@ -313,28 +312,28 @@ export function StyleguidePage() {
 						<h4>Sizes</h4>
 						<div className={styles.row}>
 							<Dropdown
-								trigger="Small"
+								options={[
+									{ value: "1", label: "Option 1" },
+									{ value: "2", label: "Option 2" },
+								]}
 								size="sm"
+								trigger="Small"
+							/>
+							<Dropdown
 								options={[
 									{ value: "1", label: "Option 1" },
 									{ value: "2", label: "Option 2" },
 								]}
-							/>
-							<Dropdown
-								trigger="Medium"
 								size="md"
-								options={[
-									{ value: "1", label: "Option 1" },
-									{ value: "2", label: "Option 2" },
-								]}
+								trigger="Medium"
 							/>
 							<Dropdown
-								trigger="Large"
-								size="lg"
 								options={[
 									{ value: "1", label: "Option 1" },
 									{ value: "2", label: "Option 2" },
 								]}
+								size="lg"
+								trigger="Large"
 							/>
 						</div>
 					</div>
@@ -343,7 +342,6 @@ export function StyleguidePage() {
 						<h4>With Icons</h4>
 						<div className={styles.row}>
 							<Dropdown
-								trigger="Actions"
 								options={[
 									{ value: "edit", label: "Edit", icon: <Pencil size={14} /> },
 									{ value: "copy", label: "Copy", icon: <Copy size={14} /> },
@@ -354,6 +352,7 @@ export function StyleguidePage() {
 										danger: true,
 									},
 								]}
+								trigger="Actions"
 							/>
 						</div>
 					</div>
@@ -363,9 +362,9 @@ export function StyleguidePage() {
 			{/* Inputs */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Inputs"
 					description="Text inputs and text areas"
+					title="Inputs"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -378,19 +377,19 @@ export function StyleguidePage() {
 								type="text"
 							/>
 							<Input
-								label="With Value"
 								defaultValue="Sample text"
+								label="With Value"
 								type="text"
 							/>
 							<Input
-								label="Disabled Input"
 								disabled
+								label="Disabled Input"
 								placeholder="Disabled"
 								type="text"
 							/>
 							<Input
-								label="With Description"
 								description="This is helper text"
+								label="With Description"
 								type="text"
 							/>
 						</div>
@@ -401,8 +400,8 @@ export function StyleguidePage() {
 						<div className={styles.column}>
 							<Textarea label="Description" placeholder="Enter description…" />
 							<Textarea
-								label="With Description"
 								description="Maximum 500 characters"
+								label="With Description"
 								placeholder="Type here…"
 							/>
 						</div>
@@ -413,9 +412,9 @@ export function StyleguidePage() {
 			{/* Checkboxes */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Checkboxes"
 					description="Various checkbox styles"
+					title="Checkboxes"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -423,29 +422,29 @@ export function StyleguidePage() {
 						<h4>Checkbox Variants</h4>
 						<div className={styles.column}>
 							<Checkbox
-								id="checkbox1"
 								checked={checkbox1}
+								id="checkbox1"
 								onChange={(e) => setCheckbox1(e.target.checked)}
 							/>
 							<CheckboxWithLabel
+								checked={checkbox2}
 								id="checkbox2"
 								label="With Label"
-								checked={checkbox2}
 								onChange={setCheckbox2}
 							/>
 							<CheckboxWithDescription
+								checked={checkbox3}
+								description="This checkbox includes additional description text"
 								id="checkbox3"
 								label="With Description"
-								description="This checkbox includes additional description text"
-								checked={checkbox3}
 								onChange={setCheckbox3}
 							/>
 							<CheckboxWithLabel
+								checked={false}
+								disabled
 								id="checkbox4"
 								label="Disabled"
-								checked={false}
 								onChange={() => {}}
-								disabled
 							/>
 						</div>
 					</div>
@@ -458,37 +457,37 @@ export function StyleguidePage() {
 						</p>
 						<div className={styles.column}>
 							<CheckboxCard
+								checked={checkboxCard1}
+								description="45 color tokens"
+								icon={<FolderPlus size={20} />}
 								id="card1"
 								label="Primitives Collection"
-								description="45 color tokens"
-								checked={checkboxCard1}
 								onChange={setCheckboxCard1}
-								icon={<FolderPlus size={20} />}
 							/>
 							<CheckboxCard
+								checked={checkboxCard2}
+								description="23 semantic color tokens"
+								icon={<Package size={20} />}
 								id="card2"
 								label="Semantic Tokens"
-								description="23 semantic color tokens"
-								checked={checkboxCard2}
 								onChange={setCheckboxCard2}
-								icon={<Package size={20} />}
 							/>
 							<CheckboxCard
+								checked={checkboxCard3}
+								description="Includes experimental and beta features"
+								icon={<Settings size={20} />}
 								id="card3"
 								label="Enable Advanced Features"
-								description="Includes experimental and beta features"
-								checked={checkboxCard3}
 								onChange={setCheckboxCard3}
-								icon={<Settings size={20} />}
 							/>
 							<CheckboxCard
-								id="card4"
-								label="Disabled Option"
-								description="This option is not available"
 								checked={false}
-								onChange={() => {}}
+								description="This option is not available"
 								disabled
 								icon={<Star size={20} />}
+								id="card4"
+								label="Disabled Option"
+								onChange={() => {}}
 							/>
 						</div>
 					</div>
@@ -497,16 +496,16 @@ export function StyleguidePage() {
 						<h4>Without Icons</h4>
 						<div className={styles.column}>
 							<CheckboxCard
+								checked={true}
+								description="Works great without an icon too"
 								id="card-no-icon-1"
 								label="Simple Card Checkbox"
-								description="Works great without an icon too"
-								checked={true}
 								onChange={() => {}}
 							/>
 							<CheckboxCard
+								checked={false}
 								id="card-no-icon-2"
 								label="Another Option"
-								checked={false}
 								onChange={() => {}}
 							/>
 						</div>
@@ -517,9 +516,9 @@ export function StyleguidePage() {
 			{/* Radio Buttons */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Radio Buttons"
 					description="Radio buttons and radio groups"
+					title="Radio Buttons"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -527,21 +526,21 @@ export function StyleguidePage() {
 						<h4>Individual Radio</h4>
 						<div className={styles.column}>
 							<Radio
+								checked={radioValue === "option1"}
 								id="radio1"
 								name="radio-demo"
-								value="option1"
-								checked={radioValue === "option1"}
 								onChange={(e) =>
 									setRadioValue((e.target as HTMLInputElement).value)
 								}
+								value="option1"
 							/>
 							<RadioWithLabel
-								id="radio2"
-								name="radio-demo"
-								value="option2"
-								label="With Label"
 								checked={radioValue === "option2"}
+								id="radio2"
+								label="With Label"
+								name="radio-demo"
 								onChange={setRadioValue}
+								value="option2"
 							/>
 						</div>
 					</div>
@@ -551,13 +550,13 @@ export function StyleguidePage() {
 						<RadioGroup
 							label="Size Selection"
 							name="size-group"
-							value={radioGroupValue}
 							onChange={setRadioGroupValue}
 							options={[
 								{ value: "small", label: "Small" },
 								{ value: "medium", label: "Medium" },
 								{ value: "large", label: "Large" },
 							]}
+							value={radioGroupValue}
 						/>
 					</div>
 
@@ -566,14 +565,14 @@ export function StyleguidePage() {
 						<RadioGroup
 							label="Display Mode"
 							name="display-group"
-							variant="inline"
-							value="grid"
 							onChange={() => {}}
 							options={[
 								{ value: "list", label: "List" },
 								{ value: "grid", label: "Grid" },
 								{ value: "table", label: "Table" },
 							]}
+							value="grid"
+							variant="inline"
 						/>
 					</div>
 
@@ -581,31 +580,31 @@ export function StyleguidePage() {
 						<h4>Radio with Helper Text</h4>
 						<div className={styles.column}>
 							<RadioWithHelper
-								id="radio-helper-1"
-								name="radio-helper"
-								value="standard"
-								label="Standard Plan"
-								helper="Basic features for individuals"
 								checked={radioHelperValue === "standard"}
+								helper="Basic features for individuals"
+								id="radio-helper-1"
+								label="Standard Plan"
+								name="radio-helper"
 								onChange={setRadioHelperValue}
+								value="standard"
 							/>
 							<RadioWithHelper
-								id="radio-helper-2"
-								name="radio-helper"
-								value="premium"
-								label="Premium Plan"
-								helper="Advanced features for teams"
 								checked={radioHelperValue === "premium"}
+								helper="Advanced features for teams"
+								id="radio-helper-2"
+								label="Premium Plan"
+								name="radio-helper"
 								onChange={setRadioHelperValue}
+								value="premium"
 							/>
 							<RadioWithHelper
-								id="radio-helper-3"
-								name="radio-helper"
-								value="enterprise"
-								label="Enterprise Plan"
-								helper="Custom solutions for large organizations"
 								checked={radioHelperValue === "enterprise"}
+								helper="Custom solutions for large organizations"
+								id="radio-helper-3"
+								label="Enterprise Plan"
+								name="radio-helper"
 								onChange={setRadioHelperValue}
+								value="enterprise"
 							/>
 						</div>
 					</div>
@@ -618,48 +617,48 @@ export function StyleguidePage() {
 						</p>
 						<div className={styles.column}>
 							<RadioCard
+								badge="Free"
+								checked={radioCardValue === "basic"}
+								description="Perfect for getting started"
+								icon={<Package size={20} />}
 								id="radio-card-1"
 								name="radio-card"
-								value="basic"
-								title="Basic"
-								description="Perfect for getting started"
-								badge="Free"
-								icon={<Package size={20} />}
-								checked={radioCardValue === "basic"}
 								onChange={setRadioCardValue}
+								title="Basic"
+								value="basic"
 							/>
 							<RadioCard
+								badge="$9/mo"
+								checked={radioCardValue === "pro"}
+								description="For professional designers"
+								icon={<Shield size={20} />}
 								id="radio-card-2"
 								name="radio-card"
-								value="pro"
-								title="Pro"
-								description="For professional designers"
-								badge="$9/mo"
-								icon={<Shield size={20} />}
-								checked={radioCardValue === "pro"}
 								onChange={setRadioCardValue}
+								title="Pro"
+								value="pro"
 							/>
 							<RadioCard
+								badge="$49/mo"
+								checked={radioCardValue === "enterprise"}
+								description="Advanced features for teams"
+								icon={<Zap size={20} />}
 								id="radio-card-3"
 								name="radio-card"
-								value="enterprise"
-								title="Enterprise"
-								description="Advanced features for teams"
-								badge="$49/mo"
-								icon={<Zap size={20} />}
-								checked={radioCardValue === "enterprise"}
 								onChange={setRadioCardValue}
+								title="Enterprise"
+								value="enterprise"
 							/>
 							<RadioCard
-								id="radio-card-4"
-								name="radio-card"
-								value="disabled"
-								title="Disabled Option"
+								checked={false}
 								description="Not available"
 								disabled
 								icon={<Star size={20} />}
-								checked={false}
+								id="radio-card-4"
+								name="radio-card"
 								onChange={setRadioCardValue}
+								title="Disabled Option"
+								value="disabled"
 							/>
 						</div>
 					</div>
@@ -669,9 +668,9 @@ export function StyleguidePage() {
 			{/* Alerts */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Alerts"
 					description="Contextual feedback messages"
+					title="Alerts"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -696,17 +695,17 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>With Title</h4>
 						<div className={styles.column}>
-							<Alert variant="info" title="Did you know?">
+							<Alert title="Did you know?"variant="info" >
 								You can export design tokens in multiple formats including
 								OKLCH, HEX, and RGBA.
 							</Alert>
-							<Alert variant="success" title="Success!">
+							<Alert title="Success!"variant="success" >
 								Your design tokens have been exported successfully.
 							</Alert>
-							<Alert variant="warning" title="Warning">
+							<Alert title="Warning"variant="warning" >
 								Some tokens were skipped during import due to type conflicts.
 							</Alert>
-							<Alert variant="error" title="Error">
+							<Alert title="Error"variant="error" >
 								Failed to export tokens. Please try again.
 							</Alert>
 						</div>
@@ -715,7 +714,7 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>Without Icon</h4>
 						<div className={styles.column}>
-							<Alert variant="info" showIcon={false}>
+							<Alert showIcon={false}variant="info" >
 								This alert doesn't have an icon, showing only the text content.
 							</Alert>
 						</div>
@@ -724,7 +723,7 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>Custom Icon</h4>
 						<div className={styles.column}>
-							<Alert variant="info" icon={<Star size={16} />} title="Featured">
+							<Alert icon={<Star size={16} />} title="Featured"variant="info" >
 								This alert uses a custom icon instead of the default one.
 							</Alert>
 						</div>
@@ -735,9 +734,9 @@ export function StyleguidePage() {
 			{/* Badges */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Badges"
 					description="Colored labels and badges"
+					title="Badges"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -776,7 +775,7 @@ export function StyleguidePage() {
 							<Badge icon={<Bell size={12} />} variant="info">
 								With icon
 							</Badge>
-							<Badge removable onRemove={() => {}}>
+							<Badge onRemove={() => {}}removable >
 								Removable
 							</Badge>
 						</div>
@@ -810,9 +809,9 @@ export function StyleguidePage() {
 			{/* Cards */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Cards"
 					description="Container components with composition"
+					title="Cards"
+					variant="secondary"
 				/>
 
 				<div className={styles.cardGrid}>
@@ -837,10 +836,10 @@ export function StyleguidePage() {
 							<p>Cards can contain text, buttons, and other components.</p>
 						</CardContent>
 						<CardFooter>
-							<Button variant="primary" size="sm">
+							<Button size="sm"variant="primary" >
 								Action
 							</Button>
-							<Button variant="secondary" size="sm">
+							<Button size="sm"variant="secondary" >
 								Cancel
 							</Button>
 						</CardFooter>
@@ -896,9 +895,9 @@ export function StyleguidePage() {
 			{/* Loading States */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Loading States"
 					description="Spinners, skeletons, and loading indicators"
+					title="Loading States"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -915,8 +914,8 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>Loading State</h4>
 						<LoadingState
-							message="Loading components…"
 							hint="This may take a moment"
+							message="Loading components…"
 						/>
 					</div>
 
@@ -927,18 +926,18 @@ export function StyleguidePage() {
 						</p>
 						<div className={styles.column}>
 							<div className={styles.row}>
-								<Skeleton width={40} height={40} radius="full" />
+								<Skeleton height={40} radius="full" width={40} />
 								<div
 									className={styles.column}
 									style={{ flex: 1, gap: "var(--spacing-sm)" }}
 								>
-									<Skeleton height={14} width="60%" radius="sm" />
-									<Skeleton height={10} width="40%" radius="sm" />
+									<Skeleton height={14} radius="sm" width="60%" />
+									<Skeleton height={10} radius="sm" width="40%" />
 								</div>
 							</div>
-							<Skeleton height={12} width="100%" radius="sm" />
-							<Skeleton height={12} width="100%" radius="sm" />
-							<Skeleton height={12} width="70%" radius="sm" />
+							<Skeleton height={12} radius="sm" width="100%" />
+							<Skeleton height={12} radius="sm" width="100%" />
+							<Skeleton height={12} radius="sm" width="70%" />
 						</div>
 					</div>
 
@@ -948,28 +947,28 @@ export function StyleguidePage() {
 							<div className={styles.column} style={{ flex: 1 }}>
 								<p className={styles.componentDescription}>Shimmer (default)</p>
 								<Skeleton
-									height={40}
-									width="100%"
 									animation="shimmer"
+									height={40}
 									radius="md"
+									width="100%"
 								/>
 							</div>
 							<div className={styles.column} style={{ flex: 1 }}>
 								<p className={styles.componentDescription}>Pulse</p>
 								<Skeleton
-									height={40}
-									width="100%"
 									animation="pulse"
+									height={40}
 									radius="md"
+									width="100%"
 								/>
 							</div>
 							<div className={styles.column} style={{ flex: 1 }}>
 								<p className={styles.componentDescription}>None</p>
 								<Skeleton
-									height={40}
-									width="100%"
 									animation="none"
+									height={40}
 									radius="md"
+									width="100%"
 								/>
 							</div>
 						</div>
@@ -980,44 +979,44 @@ export function StyleguidePage() {
 			{/* Empty States */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Empty States"
 					description="Placeholders when content is missing"
+					title="Empty States"
+					variant="secondary"
 				/>
 
 				<Card>
 					<div className={styles.componentGroup}>
 						<h4>Default</h4>
 						<EmptyState
-							title="No items found"
-							description="Get started by creating your first item"
 							action={<Button variant="primary">Create Item</Button>}
+							description="Get started by creating your first item"
+							title="No items found"
 						/>
 					</div>
 
 					<div className={styles.componentGroup}>
 						<h4>Bordered Variant</h4>
 						<EmptyState
-							icon={<Package size={32} />}
-							title="No tokens yet"
-							description="Import a design tokens file or generate from a color palette."
-							variant="bordered"
 							action={
-								<Button variant="primary" size="sm">
+								<Button size="sm"variant="primary" >
 									Import tokens
 								</Button>
 							}
+							description="Import a design tokens file or generate from a color palette."
+							icon={<Package size={32} />}
+							title="No tokens yet"
+							variant="bordered"
 						/>
 					</div>
 
 					<div className={styles.componentGroup}>
 						<h4>Compact Variant</h4>
 						<EmptyState
-							icon={<SearchIcon size={24} />}
-							title="No results"
 							description="Try adjusting your search or filters."
-							variant="compact"
+							icon={<SearchIcon size={24} />}
 							size="sm"
+							title="No results"
+							variant="compact"
 						/>
 					</div>
 				</Card>
@@ -1026,9 +1025,9 @@ export function StyleguidePage() {
 			{/* Toasts */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Toasts"
 					description="Notification messages triggered by actions"
+					title="Toasts"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -1036,30 +1035,30 @@ export function StyleguidePage() {
 						<h4>Trigger Toasts</h4>
 						<div className={styles.row}>
 							<Button
-								variant="primary"
-								size="sm"
 								onClick={() => showSuccess("Changes saved successfully")}
+								size="sm"
+								variant="primary"
 							>
 								Success
 							</Button>
 							<Button
-								variant="destructive"
-								size="sm"
 								onClick={() => showError("Failed to delete variable")}
+								size="sm"
+								variant="destructive"
 							>
 								Error
 							</Button>
 							<Button
-								variant="outline"
-								size="sm"
 								onClick={() => showWarning("3 variables will be overwritten")}
+								size="sm"
+								variant="outline"
 							>
 								Warning
 							</Button>
 							<Button
-								variant="secondary"
-								size="sm"
 								onClick={() => showInfo("Tip: Use Cmd+Z to undo")}
+								size="sm"
+								variant="secondary"
 							>
 								Info
 							</Button>
@@ -1071,9 +1070,9 @@ export function StyleguidePage() {
 			{/* Dialogs */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Dialogs"
 					description="Modal dialogs and confirmation prompts"
+					title="Dialogs"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -1082,22 +1081,22 @@ export function StyleguidePage() {
 						<Button onClick={() => setDialogOpen(true)}>Open Dialog</Button>
 
 						<Dialog
-							isOpen={dialogOpen}
-							onClose={() => setDialogOpen(false)}
-							title="Example Dialog"
 							footer={
 								<DialogActions>
-									<Button variant="ghost" onClick={() => setDialogOpen(false)}>
+									<Button onClick={() => setDialogOpen(false)}variant="ghost" >
 										Cancel
 									</Button>
 									<Button
-										variant="primary"
 										onClick={() => setDialogOpen(false)}
+										variant="primary"
 									>
 										Confirm
 									</Button>
 								</DialogActions>
 							}
+							isOpen={dialogOpen}
+							onClose={() => setDialogOpen(false)}
+							title="Example Dialog"
 						>
 							<p>
 								This is an example dialog with header, content, and action
@@ -1113,21 +1112,21 @@ export function StyleguidePage() {
 							Preset for destructive confirmations with danger styling
 						</p>
 						<Button
-							variant="destructive"
-							size="sm"
 							onClick={() => setConfirmOpen(true)}
+							size="sm"
+							variant="destructive"
 						>
 							Delete collection
 						</Button>
 
 						<ConfirmDialog
+							cancelText="Cancel"
+							confirmText="Delete collection"
 							isOpen={confirmOpen}
+							message="This will permanently delete the collection and all its variables. This can't be undone."
 							onClose={() => setConfirmOpen(false)}
 							onConfirm={() => setConfirmOpen(false)}
 							title="Delete collection?"
-							message="This will permanently delete the collection and all its variables. This can't be undone."
-							confirmText="Delete collection"
-							cancelText="Cancel"
 							variant="danger"
 						/>
 					</div>
@@ -1137,15 +1136,17 @@ export function StyleguidePage() {
 			{/* Tabs */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Tabs"
 					description="Tabbed navigation and content panels"
+					title="Tabs"
+					variant="secondary"
 				/>
 
 				<Card>
 					<div className={styles.componentGroup}>
 						<h4>Basic Tabs</h4>
 						<Tabs
+							activeTab={activeTab}
+							onTabChange={setActiveTab}
 							tabs={[
 								{
 									id: "home",
@@ -1163,10 +1164,8 @@ export function StyleguidePage() {
 									icon: <Cog size={16} />,
 								},
 							]}
-							activeTab={activeTab}
-							onTabChange={setActiveTab}
 						>
-							<TabPanel id="home" activeTab={activeTab}>
+							<TabPanel activeTab={activeTab}id="home" >
 								<div style={{ padding: "var(--spacing-lg)" }}>
 									<h4>Home Tab Content</h4>
 									<p>
@@ -1176,7 +1175,7 @@ export function StyleguidePage() {
 								</div>
 							</TabPanel>
 
-							<TabPanel id="profile" activeTab={activeTab}>
+							<TabPanel activeTab={activeTab}id="profile" >
 								<div style={{ padding: "var(--spacing-lg)" }}>
 									<h4>Profile Tab Content</h4>
 									<p>
@@ -1186,7 +1185,7 @@ export function StyleguidePage() {
 								</div>
 							</TabPanel>
 
-							<TabPanel id="settings" activeTab={activeTab}>
+							<TabPanel activeTab={activeTab}id="settings" >
 								<div style={{ padding: "var(--spacing-lg)" }}>
 									<h4>Settings Tab Content</h4>
 									<p>
@@ -1201,27 +1200,27 @@ export function StyleguidePage() {
 					<div className={styles.componentGroup}>
 						<h4>Tabs without Icons</h4>
 						<Tabs
+							activeTab="tab1"
+							onTabChange={() => {}}
 							tabs={[
 								{ id: "tab1", label: "Overview" },
 								{ id: "tab2", label: "Details" },
 								{ id: "tab3", label: "Advanced" },
 							]}
-							activeTab="tab1"
-							onTabChange={() => {}}
 						>
-							<TabPanel id="tab1" activeTab="tab1">
+							<TabPanel activeTab="tab1"id="tab1" >
 								<div style={{ padding: "var(--spacing-lg)" }}>
 									<p>Tabs can also work without icons for a simpler look.</p>
 								</div>
 							</TabPanel>
 
-							<TabPanel id="tab2" activeTab="tab1">
+							<TabPanel activeTab="tab1"id="tab2" >
 								<div style={{ padding: "var(--spacing-lg)" }}>
 									<p>Details content...</p>
 								</div>
 							</TabPanel>
 
-							<TabPanel id="tab3" activeTab="tab1">
+							<TabPanel activeTab="tab1"id="tab3" >
 								<div style={{ padding: "var(--spacing-lg)" }}>
 									<p>Advanced content...</p>
 								</div>
@@ -1234,9 +1233,9 @@ export function StyleguidePage() {
 			{/* Typography & Colors Reference */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Typography & Colors"
 					description="Design tokens and variables"
+					title="Typography & Colors"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -1267,9 +1266,9 @@ export function StyleguidePage() {
 			{/* Token Visualization */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Token Visualization"
 					description="Visual representation of design tokens from CSS custom properties"
+					title="Token Visualization"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -1399,9 +1398,9 @@ export function StyleguidePage() {
 			{/* Contrast Checker */}
 			<section className={styles.section}>
 				<SectionHeader
-					variant="secondary"
-					title="Contrast Checker"
 					description="WCAG contrast ratio checker for color accessibility"
+					title="Contrast Checker"
+					variant="secondary"
 				/>
 
 				<Card>
@@ -1419,8 +1418,6 @@ export function StyleguidePage() {
 								</label>
 								<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 									<input
-										type="color"
-										value={contrastFg}
 										onChange={(e) => setContrastFg(e.target.value)}
 										style={{
 											width: 36,
@@ -1429,14 +1426,16 @@ export function StyleguidePage() {
 											cursor: "pointer",
 											borderRadius: 4,
 										}}
+										type="color"
+										value={contrastFg}
 									/>
 									<Input
-										value={contrastFg}
 										onChange={(e) =>
 											setContrastFg((e.target as HTMLInputElement).value)
 										}
 										style={{ width: 100 }}
 										type="text"
+										value={contrastFg}
 									/>
 								</div>
 							</div>
@@ -1451,8 +1450,6 @@ export function StyleguidePage() {
 								</label>
 								<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 									<input
-										type="color"
-										value={contrastBg}
 										onChange={(e) => setContrastBg(e.target.value)}
 										style={{
 											width: 36,
@@ -1461,14 +1458,16 @@ export function StyleguidePage() {
 											cursor: "pointer",
 											borderRadius: 4,
 										}}
+										type="color"
+										value={contrastBg}
 									/>
 									<Input
-										value={contrastBg}
 										onChange={(e) =>
 											setContrastBg((e.target as HTMLInputElement).value)
 										}
 										style={{ width: 100 }}
 										type="text"
+										value={contrastBg}
 									/>
 								</div>
 							</div>

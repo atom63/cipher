@@ -2,9 +2,9 @@
    SKELETON BASE
    ============================================ */
 .skeleton {
-  background-color: var(--muted);
   position: relative;
   overflow: hidden;
+  background-color: var(--muted);
 }
 
 /* Radius variants */
@@ -34,17 +34,17 @@
 
 /* Shimmer animation - moving gradient */
 .shimmer::after {
-  content: "";
   position: absolute;
   inset: 0;
+  content: "";
   background: linear-gradient(
     90deg,
     transparent 0%,
     color-mix(in oklch, var(--background) 50%, transparent) 50%,
     transparent 100%
   );
-  animation: skeleton-shimmer 1.5s ease-in-out infinite;
   transform: translateX(-100%);
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
 @keyframes skeleton-shimmer {

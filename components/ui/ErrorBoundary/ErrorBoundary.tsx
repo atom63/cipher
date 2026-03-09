@@ -15,8 +15,8 @@ interface ErrorBoundaryProps {
 }
 
 interface ErrorBoundaryState {
-	hasError: boolean;
 	error: Error | null;
+	hasError: boolean;
 }
 
 // ============================================================================
@@ -105,7 +105,7 @@ function DefaultErrorFallback({ error, onReset }: DefaultErrorFallbackProps) {
 			</div>
 			<h3 className={styles.errorTitle}>Something went wrong</h3>
 			<p className={styles.errorMessage}>{error.message}</p>
-			<button type="button" className={styles.resetButton} onClick={onReset}>
+			<button className={styles.resetButton} onClick={onReset}type="button" >
 				<RefreshCw size={14} />
 				Try Again
 			</button>
@@ -140,7 +140,6 @@ export function PageErrorBoundary({
 
 	return (
 		<ErrorBoundary
-			onError={handleError}
 			fallback={(error, reset) => (
 				<div className={styles.pageError}>
 					<div className={styles.errorIcon}>
@@ -150,12 +149,13 @@ export function PageErrorBoundary({
 						{pageName ? `${pageName} failed to load` : "Page failed to load"}
 					</h3>
 					<p className={styles.errorMessage}>{error.message}</p>
-					<button type="button" className={styles.resetButton} onClick={reset}>
+					<button className={styles.resetButton} onClick={reset}type="button" >
 						<RefreshCw size={14} />
 						Reload Page
 					</button>
 				</div>
 			)}
+			onError={handleError}
 		>
 			{children}
 		</ErrorBoundary>

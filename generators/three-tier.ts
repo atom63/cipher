@@ -18,10 +18,9 @@ import {
 	DEFAULT_RADIUS,
 	DURATION_RAW,
 	DURATION_SEMANTIC,
-	type FontOverrides,
 	FONT_WEIGHTS,
+	type FontOverrides,
 	generateTypographyCss,
-	type RadiusConfig,
 	SHADOW_SCALE,
 	SPACING_SCALE,
 	shadowToCss,
@@ -37,44 +36,44 @@ export type LayerMode =
 	| "three-tier"; // Primitives + abstractions + semantics (full indirection)
 
 export interface BrandConfig {
-	/** Primary brand color (hex) */
-	primary: string;
-	/** Secondary/accent brand color (hex, optional) */
-	secondary?: string;
+	/** Whether to generate light+dark semantic modes (default: true, ignored for "primitives" mode) */
+	darkMode?: boolean;
+	/** Custom font name overrides (prepended to system fallback stacks) */
+	fonts?: FontOverrides;
 	/** Neutral gray palette name — matches a Radix gray preset (default: "slate") */
 	grayName?: string;
 	/** Which layers to generate (default: "semantic") */
 	layers?: LayerMode;
-	/** Whether to generate light+dark semantic modes (default: true, ignored for "primitives" mode) */
-	darkMode?: boolean;
+	/** Primary brand color (hex) */
+	primary: string;
 	/** Radius anchor in px (default: 10) — the "lg" base from which other sizes are derived */
 	radius?: number;
+	/** Secondary/accent brand color (hex, optional) */
+	secondary?: string;
 	/** Typescale configuration (base, ratio, line-height, steps) */
 	typescale?: TypescaleConfig;
-	/** Custom font name overrides (prepended to system fallback stacks) */
-	fonts?: FontOverrides;
 }
 
 export interface GeneratedSystem {
-	tokens: DesignToken[];
-	primitives: ColorScale[];
 	abstractions: AbstractionMapping[];
-	/** The selected Radix gray palette (null if name didn't match) */
-	radixGray: RadixGrayScale | null;
+	primitives: ColorScale[];
 	/** Computed radius scale (t-shirt sizes -> px) */
 	radiusScale: Record<string, number>;
+	/** The selected Radix gray palette (null if name didn't match) */
+	radixGray: RadixGrayScale | null;
 	stats: {
 		primitiveCount: number;
 		abstractionCount: number;
 		semanticCount: number;
 		totalCount: number;
 	};
+	tokens: DesignToken[];
 }
 
 interface AbstractionMapping {
 	name: string;
-	step: ShadeStep;
 	pointsTo: { collection: string; path: string };
+	step: ShadeStep;
 }
 
 // --- Generator ---
@@ -473,7 +472,9 @@ function generateAbstractions(
 	}
 
 	// Radius (computed from anchor)
-	const radiusScale = computeRadiusScale(config.radius ?? DEFAULT_RADIUS.anchor);
+	const radiusScale = computeRadiusScale(
+		config.radius ?? DEFAULT_RADIUS.anchor,
+	);
 	for (const [size, px] of Object.entries(radiusScale)) {
 		tokens.push(
 			...makeDualModeTokens(`radius/${size}`, px, "abstractions", darkMode, {
@@ -488,17 +489,11 @@ function generateAbstractions(
 	for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
 		const ref = `{primitives.duration.${rawKey}}`;
 		tokens.push(
-			...makeDualModeTokens(
-				`duration/${name}`,
-				ref,
-				"abstractions",
-				darkMode,
-				{
-					type: "duration",
-					originalValue: ref,
-					description: `Duration ${name} (${DURATION_RAW[rawKey]}ms)`,
-				},
-			),
+			...makeDualModeTokens(`duration/${name}`, ref, "abstractions", darkMode, {
+				type: "duration",
+				originalValue: ref,
+				description: `Duration ${name} (${DURATION_RAW[rawKey]}ms)`,
+			}),
 		);
 	}
 
@@ -510,15 +505,15 @@ function generateAbstractions(
 // =========================================================================
 
 interface SemanticDef {
-	name: string;
-	light: string;
-	dark: string;
-	description: string;
 	/** Optional flat CSS name for shadcn compatibility (e.g., "background" instead of "background-default") */
 	cssName?: string;
+	dark: string;
+	darkColorMix?: { base: string; amount: string };
+	description: string;
+	light: string;
 	/** Optional color-mix config for CSS output */
 	lightColorMix?: { base: string; amount: string };
-	darkColorMix?: { base: string; amount: string };
+	name: string;
 }
 
 /**
@@ -937,7 +932,9 @@ function generateSemantics(
 
 	// Radius tokens (when not three-tier, put them in semantics directly)
 	if ((config.layers ?? "semantic") !== "three-tier") {
-		const radiusScale = computeRadiusScale(config.radius ?? DEFAULT_RADIUS.anchor);
+		const radiusScale = computeRadiusScale(
+			config.radius ?? DEFAULT_RADIUS.anchor,
+		);
 		for (const [size, px] of Object.entries(radiusScale)) {
 			tokens.push(
 				...makeDualModeTokens(`radius/${size}`, px, "semantics", darkMode, {
@@ -974,7 +971,9 @@ export function generateCss(config: BrandConfig): string {
 	const system = generateDesignSystem(config);
 	const grayName = config.grayName ?? "slate";
 	const radixGray = getRadixGray(grayName) ?? RADIX_GRAYS[0];
-	const radiusScale = computeRadiusScale(config.radius ?? DEFAULT_RADIUS.anchor);
+	const radiusScale = computeRadiusScale(
+		config.radius ?? DEFAULT_RADIUS.anchor,
+	);
 	const darkMode = config.darkMode !== false;
 
 	const lines: string[] = [];

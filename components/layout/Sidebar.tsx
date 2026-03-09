@@ -21,17 +21,17 @@ export type PageId =
 	| "styleguide";
 
 interface MenuItem {
+	enabled: boolean;
+	icon: React.ComponentType<{ size?: number | string; className?: string }>;
 	id: PageId;
 	label: string;
-	icon: React.ComponentType<{ size?: number | string; className?: string }>;
-	enabled: boolean;
 	section?: "features" | "config";
 }
 
 interface SidebarProps {
 	activePage: PageId;
-	onPageChange: (pageId: PageId) => void;
 	collapsed: boolean;
+	onPageChange: (pageId: PageId) => void;
 	onToggleCollapse: () => void;
 }
 
@@ -107,7 +107,7 @@ export function Sidebar({
 				title={collapsed ? item.label : !item.enabled ? "Coming soon" : ""}
 				type="button"
 			>
-				<span className={styles.sidebarIcon} aria-hidden="true">
+				<span aria-hidden="true"className={styles.sidebarIcon} >
 					<Icon size={16} />
 				</span>
 				{!collapsed && (
@@ -139,13 +139,17 @@ export function Sidebar({
 
 			{/* Collapse Toggle */}
 			<button
+				aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
 				className={styles.sidebarCollapseToggle}
 				onClick={onToggleCollapse}
 				title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-				aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
 				type="button"
 			>
-				{collapsed ? <ChevronRight size={18} aria-hidden="true" /> : <ChevronLeft size={18} aria-hidden="true" />}
+				{collapsed ? (
+					<ChevronRight aria-hidden="true" size={18} />
+				) : (
+					<ChevronLeft aria-hidden="true" size={18} />
+				)}
 			</button>
 		</aside>
 	);

@@ -5,18 +5,18 @@ import styles from "./Checkbox.module.css";
 
 export interface CheckboxProps
 	extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> {
-	/** Unique identifier */
-	id: string;
 	/** Checked state */
 	checked?: boolean;
-	/** Indeterminate state (for parent checkboxes) */
-	indeterminate?: boolean;
-	/** Size variant */
-	size?: "sm" | "md" | "lg";
 	/** Error state */
 	error?: boolean;
+	/** Unique identifier */
+	id: string;
+	/** Indeterminate state (for parent checkboxes) */
+	indeterminate?: boolean;
 	/** Change handler */
 	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	/** Size variant */
+	size?: "sm" | "md" | "lg";
 }
 
 /**
@@ -47,14 +47,14 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 				data-error={error || undefined}
 			>
 				<input
-					ref={ref}
-					id={id}
-					type="checkbox"
-					checked={checked}
-					onChange={onChange}
-					disabled={disabled}
-					className={styles.checkboxInput}
 					aria-checked={indeterminate ? "mixed" : checked}
+					checked={checked}
+					className={styles.checkboxInput}
+					disabled={disabled}
+					id={id}
+					onChange={onChange}
+					ref={ref}
+					type="checkbox"
 					{...props}
 				/>
 				<div
@@ -67,9 +67,9 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 				>
 					{checked && !indeterminate && (
 						<Check
+							className={styles.checkIcon}
 							size={iconSize}
 							strokeWidth={3}
-							className={styles.checkIcon}
 						/>
 					)}
 					{indeterminate && <div className={styles.indeterminateIcon} />}

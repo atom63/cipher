@@ -5,24 +5,24 @@ import styles from "./Input.module.css";
 
 export interface InputProps
 	extends React.InputHTMLAttributes<HTMLInputElement> {
-	/** Label text */
-	label?: string;
 	/** Helper description below label */
 	description?: string;
 	/** Error message (also sets error state) */
 	error?: string;
-	/** Success message (also sets success state) */
-	success?: string;
+	/** Full width */
+	fullWidth?: boolean;
 	/** Hint text below input */
 	hint?: string;
+	/** Size variant */
+	inputSize?: "sm" | "md" | "lg";
+	/** Label text */
+	label?: string;
 	/** Icon/element on the left side */
 	leftIcon?: ReactNode;
 	/** Icon/element on the right side */
 	rightIcon?: ReactNode;
-	/** Size variant */
-	inputSize?: "sm" | "md" | "lg";
-	/** Full width */
-	fullWidth?: boolean;
+	/** Success message (also sets success state) */
+	success?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
@@ -56,7 +56,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 			data-disabled={disabled || undefined}
 		>
 			{label && (
-				<label htmlFor={inputId} className={styles.labelWrapper}>
+				<label className={styles.labelWrapper}htmlFor={inputId} >
 					<span className={styles.label}>{label}</span>
 					{description && (
 						<span className={styles.description}>{description}</span>
@@ -66,17 +66,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
 			<div
 				className={`${styles.inputWrapper} ${styles[inputSize]}`}
+				data-disabled={disabled || undefined}
 				data-error={hasError || undefined}
 				data-success={hasSuccess || undefined}
-				data-disabled={disabled || undefined}
 			>
-				{leftIcon && <span className={styles.leftIcon} aria-hidden="true">{leftIcon}</span>}
+				{leftIcon && (
+					<span aria-hidden="true"className={styles.leftIcon} >
+						{leftIcon}
+					</span>
+				)}
 				<input
-					ref={ref}
-					id={inputId}
-					className={styles.input}
-					disabled={disabled}
-					aria-invalid={hasError || undefined}
 					aria-describedby={
 						error
 							? `${inputId}-error`
@@ -86,33 +85,42 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 									? `${inputId}-hint`
 									: undefined
 					}
+					aria-invalid={hasError || undefined}
+					className={styles.input}
+					disabled={disabled}
+					id={inputId}
+					ref={ref}
 					{...props}
 				/>
-				{rightIcon && <span className={styles.rightIcon} aria-hidden="true">{rightIcon}</span>}
+				{rightIcon && (
+					<span aria-hidden="true"className={styles.rightIcon} >
+						{rightIcon}
+					</span>
+				)}
 				{hasError && !rightIcon && (
-					<span className={styles.stateIcon} aria-hidden="true">
+					<span aria-hidden="true"className={styles.stateIcon} >
 						<AlertCircle size={16} />
 					</span>
 				)}
 				{hasSuccess && !rightIcon && (
-					<span className={styles.stateIcon} aria-hidden="true">
+					<span aria-hidden="true"className={styles.stateIcon} >
 						<CheckCircle size={16} />
 					</span>
 				)}
 			</div>
 
 			{error && (
-				<span id={`${inputId}-error`} className={styles.error} role="alert">
+				<span className={styles.error} id={`${inputId}-error`} role="alert">
 					{error}
 				</span>
 			)}
 			{success && !error && (
-				<span id={`${inputId}-success`} className={styles.success}>
+				<span className={styles.success}id={`${inputId}-success`} >
 					{success}
 				</span>
 			)}
 			{showHint && (
-				<span id={`${inputId}-hint`} className={styles.hint}>
+				<span className={styles.hint}id={`${inputId}-hint`} >
 					{hint}
 				</span>
 			)}

@@ -76,7 +76,7 @@ export function parseHslColor(hsl: string): ColorValue | null {
 	const alpha = match[4] ? Number.parseFloat(match[4]) : 1;
 
 	// Normalize h to 0-1
-	h = h - Math.floor(h);
+	h -= Math.floor(h);
 
 	// Convert HSL to RGB
 	const hue2rgb = (p: number, q: number, t: number) => {
@@ -116,21 +116,21 @@ export function parseOKLCHColor(oklch: string): ColorValue | null {
 	const b = C * Math.sin(hRad);
 
 	// Convert OKLab to linear RGB
-	const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
-	const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
-	const s_ = L - 0.0894841775 * a - 1.291485548 * b;
+	const l_ = L + 0.396_337_777_4 * a + 0.215_803_757_3 * b;
+	const m_ = L - 0.105_561_345_8 * a - 0.063_854_172_8 * b;
+	const s_ = L - 0.089_484_177_5 * a - 1.291_485_548 * b;
 
 	const l = l_ * l_ * l_;
 	const m = m_ * m_ * m_;
 	const s = s_ * s_ * s_;
 
-	let r = +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
-	let g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
-	let b_ = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
+	let r = +4.076_741_662_1 * l - 3.307_711_591_3 * m + 0.230_969_929_2 * s;
+	let g = -1.268_438_004_6 * l + 2.609_757_401_1 * m - 0.341_319_396_5 * s;
+	let b_ = -0.004_196_086_3 * l - 0.703_418_614_7 * m + 1.707_614_701 * s;
 
 	// Apply gamma correction (linear to sRGB)
 	const toSRGB = (val: number) => {
-		if (val <= 0.0031308) return 12.92 * val;
+		if (val <= 0.003_130_8) return 12.92 * val;
 		return 1.055 * val ** (1 / 2.4) - 0.055;
 	};
 
@@ -161,10 +161,10 @@ export function parseColor(color: string): ColorValue | null {
 
 /** RGBA color with required alpha channel (for Figma API) */
 export interface RGBA {
-	r: number;
-	g: number;
-	b: number;
 	a: number;
+	b: number;
+	g: number;
+	r: number;
 }
 
 /**

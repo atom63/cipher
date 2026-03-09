@@ -9,25 +9,24 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, test } from "vitest";
-import { generateCss, generateDesignSystem } from "../generators/three-tier";
-import type { BrandConfig } from "../generators/three-tier";
 import { RADIX_GRAYS } from "../generators/radix-grays";
+import { generateDesignSystem } from "../generators/three-tier";
 import {
-	SPACING_SCALE,
-	SHADOW_SCALE,
-	DURATION_RAW,
-	DURATION_SEMANTIC,
+	computeRadiusScale,
 	computeTypescale,
 	DEFAULT_TYPESCALE,
+	DURATION_RAW,
+	DURATION_SEMANTIC,
 	FONT_WEIGHTS,
-	computeRadiusScale,
+	SHADOW_SCALE,
+	SPACING_SCALE,
 } from "../generators/token-presets";
 
 // =========================================================================
 // CSS parsing helpers — extract vars and values from dev CSS files
 // =========================================================================
 
-const TOKENS_DIR = resolve(__dirname, "../exports/styles/tokens");
+const TOKENS_DIR = resolve(import.meta.dirname, "../exports/styles/tokens");
 
 function readDevCss(filename: string): string {
 	return readFileSync(resolve(TOKENS_DIR, filename), "utf-8");
@@ -41,8 +40,7 @@ function parseCssVars(css: string): Map<string, string> {
 	const vars = new Map<string, string>();
 	// Match --prop: value; across potential multi-line values
 	const regex = /(--[\w-]+)\s*:\s*([^;]+);/g;
-	let match: RegExpExecArray | null;
-	while ((match = regex.exec(css)) !== null) {
+	for (const match of css.matchAll(regex)) {
 		const name = match[1].trim();
 		const value = match[2].trim().replace(/\s+/g, " ");
 		vars.set(name, value);
@@ -55,16 +53,12 @@ function parseCssBlock(css: string, selector: string): Map<string, string> {
 	// Find the block for this selector
 	// Handle both `:root {` and `.dark {`
 	const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	const blockRegex = new RegExp(
-		`${escapedSelector}\\s*\\{([^}]+)\\}`,
-		"g",
-	);
+	const blockRegex = new RegExp(`${escapedSelector}\\s*\\{([^}]+)\\}`, "g");
 
 	const vars = new Map<string, string>();
-	let blockMatch: RegExpExecArray | null;
-	while ((blockMatch = blockRegex.exec(css)) !== null) {
+	for (const blockMatch of css.matchAll(blockRegex)) {
 		const blockContent = blockMatch[1];
-		const innerVars = parseCssVars(blockContent + ";"); // ensure trailing ;
+		const innerVars = parseCssVars(`${blockContent};`); // ensure trailing ;
 		for (const [k, v] of innerVars) {
 			vars.set(k, v);
 		}
@@ -87,9 +81,7 @@ function extractPxValue(cssValue: string): number | null {
 
 /** Extract rgba values → hex for comparison */
 function rgbaToHex(rgbaStr: string): string | null {
-	const match = rgbaStr.match(
-		/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/,
-	);
+	const match = rgbaStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
 	if (!match) return null;
 	const r = Number(match[1]);
 	const g = Number(match[2]);
@@ -171,13 +163,13 @@ describe("gray palette parity with dev primitives.css", () => {
 			const devVar = devVars.get(`--color-gray-light-${i}`);
 			expect(devVar, `Dev --color-gray-light-${i} not found`).toBeDefined();
 
-			const devHex = rgbaToHex(devVar!);
+			const devHex = rgbaToHex(devVar ?? "");
 			expect(devHex, `Could not parse hex from "${devVar}"`).not.toBeNull();
 
 			expect(
-				radixGray!.light[i - 1].toLowerCase(),
-				`Gray light step ${i}: dev=${devHex}, radix=${radixGray!.light[i - 1]}`,
-			).toBe(devHex!.toLowerCase());
+				radixGray?.light[i - 1].toLowerCase(),
+				`Gray light step ${i}: dev=${devHex}, radix=${radixGray?.light[i - 1]}`,
+			).toBe(devHex?.toLowerCase());
 		}
 	});
 
@@ -189,13 +181,13 @@ describe("gray palette parity with dev primitives.css", () => {
 			const devVar = devVars.get(`--color-gray-dark-${i}`);
 			expect(devVar, `Dev --color-gray-dark-${i} not found`).toBeDefined();
 
-			const devHex = rgbaToHex(devVar!);
+			const devHex = rgbaToHex(devVar ?? "");
 			expect(devHex, `Could not parse hex from "${devVar}"`).not.toBeNull();
 
 			expect(
-				radixGray!.dark[i - 1].toLowerCase(),
-				`Gray dark step ${i}: dev=${devHex}, radix=${radixGray!.dark[i - 1]}`,
-			).toBe(devHex!.toLowerCase());
+				radixGray?.dark[i - 1].toLowerCase(),
+				`Gray dark step ${i}: dev=${devHex}, radix=${radixGray?.dark[i - 1]}`,
+			).toBe(devHex?.toLowerCase());
 		}
 	});
 });
@@ -256,8 +248,7 @@ describe("radius parity with dev radius.css", () => {
 		// e.g. `--radius-lg: calc(var(--corner-radius) * var(--radius-multiplier)); /* 10px */`
 		const commentValues = new Map<string, number>();
 		const commentRegex = /--radius-([\w-]+):.*?\/\*\s*(\d+)px\s*\*\//g;
-		let match: RegExpExecArray | null;
-		while ((match = commentRegex.exec(devRadiusCss)) !== null) {
+		for (const match of devRadiusCss.matchAll(commentRegex)) {
 			commentValues.set(match[1], Number(match[2]));
 		}
 
@@ -355,7 +346,11 @@ describe("mathematical typescale generation", () => {
 	});
 
 	test("line-height is proportional to font size", () => {
-		const steps = computeTypescale({ ...DEFAULT_TYPESCALE, lineHeightBody: 150, lineHeightHeading: 125 });
+		const steps = computeTypescale({
+			...DEFAULT_TYPESCALE,
+			lineHeightBody: 150,
+			lineHeightHeading: 125,
+		});
 		for (const step of steps) {
 			// With rounding, line-height should be close to 1.5x size
 			expect(step.lineHeight).toBeGreaterThanOrEqual(step.size);
@@ -473,7 +468,11 @@ describe("semantic token coverage vs dev semantics.css", () => {
 		});
 
 		// Map of dev name → generator name → check gray step
-		const checks: { devName: string; genName: string; mode: "light" | "dark" }[] = [
+		const checks: {
+			devName: string;
+			genName: string;
+			mode: "light" | "dark";
+		}[] = [
 			{ devName: "--card", genName: "card/default", mode: "light" },
 			{ devName: "--card", genName: "card/default", mode: "dark" },
 			{ devName: "--popover", genName: "popover/default", mode: "light" },
@@ -485,9 +484,10 @@ describe("semantic token coverage vs dev semantics.css", () => {
 		];
 
 		for (const check of checks) {
-			const devValue = check.mode === "light"
-				? rootVars.get(check.devName)
-				: darkVars.get(check.devName);
+			const devValue =
+				check.mode === "light"
+					? rootVars.get(check.devName)
+					: darkVars.get(check.devName);
 			if (!devValue) continue;
 
 			const devStep = extractGrayStep(devValue);
@@ -631,9 +631,7 @@ describe("font weight parity with dev primitives.css", () => {
 		// which map to weight numbers
 		const devWeights = new Map<string, number>();
 		for (const [name, value] of devVars) {
-			const match = name.match(
-				/^--color-font-weight-variable-([\w-]+)$/,
-			);
+			const match = name.match(/^--color-font-weight-variable-([\w-]+)$/);
 			if (!match) continue;
 			const px = extractPxValue(value);
 			if (px !== null) {
@@ -663,7 +661,9 @@ describe("font weight parity with dev primitives.css", () => {
 describe("shadow-tokens.css structure", () => {
 	test("has :root block with --shadow-N custom properties", () => {
 		const vars = parseCssVars(devShadowCss);
-		const shadowLevels = [...vars.keys()].filter((k) => /^--shadow-\d+$/.test(k));
+		const shadowLevels = [...vars.keys()].filter((k) =>
+			/^--shadow-\d+$/.test(k),
+		);
 		expect(shadowLevels.length).toBeGreaterThanOrEqual(7);
 	});
 
@@ -698,16 +698,30 @@ describe("shadow-tokens.css structure", () => {
 
 describe("typescales.css structure", () => {
 	const expectedScales = [
-		"large-title", "title-1", "title-2", "title-3",
-		"headline", "body", "callout", "subhead",
-		"footnote", "caption-1", "caption-2",
+		"large-title",
+		"title-1",
+		"title-2",
+		"title-3",
+		"headline",
+		"body",
+		"callout",
+		"subhead",
+		"footnote",
+		"caption-1",
+		"caption-2",
 	];
 
 	test("has :root block with all typescale custom properties", () => {
 		const rootVars = parseCssBlock(devTypescalesCss, ":root");
 		for (const scale of expectedScales) {
-			expect(rootVars.has(`--typography-${scale}-font-size`), `Missing --typography-${scale}-font-size`).toBe(true);
-			expect(rootVars.has(`--typography-${scale}-line-height`), `Missing --typography-${scale}-line-height`).toBe(true);
+			expect(
+				rootVars.has(`--typography-${scale}-font-size`),
+				`Missing --typography-${scale}-font-size`,
+			).toBe(true);
+			expect(
+				rootVars.has(`--typography-${scale}-line-height`),
+				`Missing --typography-${scale}-line-height`,
+			).toBe(true);
 		}
 	});
 
@@ -753,9 +767,21 @@ describe("typescales.css structure", () => {
 	});
 
 	test("has Tailwind .text-* utility mappings", () => {
-		const tailwindSizes = ["text-xs", "text-sm", "text-base", "text-lg", "text-xl",
-			"text-2xl", "text-3xl", "text-4xl", "text-5xl", "text-6xl",
-			"text-7xl", "text-8xl", "text-9xl"];
+		const tailwindSizes = [
+			"text-xs",
+			"text-sm",
+			"text-base",
+			"text-lg",
+			"text-xl",
+			"text-2xl",
+			"text-3xl",
+			"text-4xl",
+			"text-5xl",
+			"text-6xl",
+			"text-7xl",
+			"text-8xl",
+			"text-9xl",
+		];
 		for (const tw of tailwindSizes) {
 			expect(devTypescalesCss).toContain(`.${tw}`);
 		}
@@ -788,7 +814,18 @@ describe("radius.css structure", () => {
 	});
 
 	test("defines radius scale from 2xs to full", () => {
-		const sizes = ["2xs", "xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "full"];
+		const sizes = [
+			"2xs",
+			"xs",
+			"sm",
+			"md",
+			"lg",
+			"xl",
+			"2xl",
+			"3xl",
+			"4xl",
+			"full",
+		];
 		for (const size of sizes) {
 			expect(devRadiusCss).toContain(`--radius-${size}`);
 		}
@@ -796,12 +833,14 @@ describe("radius.css structure", () => {
 
 	test("all radius values use calc() with --radius-multiplier", () => {
 		const regex = /--radius-([\w-]+):\s*([^;]+);/g;
-		let match: RegExpExecArray | null;
-		while ((match = regex.exec(devRadiusCss)) !== null) {
+		for (const match of devRadiusCss.matchAll(regex)) {
 			const [, name, value] = match;
 			if (name === "multiplier") continue; // skip the multiplier itself
 			expect(value, `--radius-${name} should use calc()`).toContain("calc(");
-			expect(value, `--radius-${name} should use --radius-multiplier`).toContain("var(--radius-multiplier)");
+			expect(
+				value,
+				`--radius-${name} should use --radius-multiplier`,
+			).toContain("var(--radius-multiplier)");
 		}
 	});
 
@@ -815,7 +854,7 @@ describe("radius.css structure", () => {
 		const rootVars = parseCssBlock(devRadiusCss, ":root");
 		const anchor = rootVars.get("--corner-radius");
 		expect(anchor).toBeDefined();
-		const px = extractPxValue(anchor!);
+		const px = extractPxValue(anchor ?? "");
 		expect(px).toBe(10);
 	});
 
@@ -829,7 +868,9 @@ describe("radius.css structure", () => {
 	});
 
 	test("--radius-lg is the anchor (no offset)", () => {
-		expect(devRadiusCss).toMatch(/--radius-lg:\s*calc\(var\(--corner-radius\)\s*\*\s*var\(--radius-multiplier\)\)/);
+		expect(devRadiusCss).toMatch(
+			/--radius-lg:\s*calc\(var\(--corner-radius\)\s*\*\s*var\(--radius-multiplier\)\)/,
+		);
 	});
 });
 
@@ -862,8 +903,11 @@ describe("CSS variable naming conventions match dev output", () => {
 
 	test("abstractions typescale size vars use --size- prefix", () => {
 		const absVars = parseCssBlock(devAbstractionsCss, ":root");
-		const sizeVars = [...absVars.keys()].filter((k) =>
-			k.includes("typescale") && k.includes("size") && !k.includes("line-height"),
+		const sizeVars = [...absVars.keys()].filter(
+			(k) =>
+				k.includes("typescale") &&
+				k.includes("size") &&
+				!k.includes("line-height"),
 		);
 		expect(sizeVars.length).toBeGreaterThan(0);
 		for (const name of sizeVars) {
@@ -873,8 +917,8 @@ describe("CSS variable naming conventions match dev output", () => {
 
 	test("abstractions typescale line-height vars use --color- prefix", () => {
 		const absVars = parseCssBlock(devAbstractionsCss, ":root");
-		const lhVars = [...absVars.keys()].filter((k) =>
-			k.includes("typescale") && k.includes("line-height"),
+		const lhVars = [...absVars.keys()].filter(
+			(k) => k.includes("typescale") && k.includes("line-height"),
 		);
 		expect(lhVars.length).toBeGreaterThan(0);
 		for (const name of lhVars) {
@@ -907,7 +951,7 @@ describe("CSS variable naming conventions match dev output", () => {
 	test("semantics @theme inline entries are alphabetically sorted by name", () => {
 		const themeMatch = devSemanticsCss.match(/@theme inline\s*\{([^}]+)\}/);
 		expect(themeMatch).not.toBeNull();
-		const entries = themeMatch![1]
+		const entries = themeMatch?.[1]
 			.split("\n")
 			.map((l) => l.trim())
 			.filter((l) => l.startsWith("--"));
@@ -921,7 +965,7 @@ describe("CSS variable naming conventions match dev output", () => {
 	test("abstractions @theme inline includes non-color vars (rounded, z-layer, duration)", () => {
 		const themeMatch = devAbstractionsCss.match(/@theme inline\s*\{([^}]+)\}/);
 		expect(themeMatch).not.toBeNull();
-		const content = themeMatch![1];
+		const content = themeMatch?.[1];
 		expect(content).toContain("--rounded-");
 		expect(content).toContain("--z-layer-");
 		expect(content).toContain("--duration-");
@@ -953,7 +997,7 @@ describe("gap analysis", () => {
 			layers: "semantic",
 			darkMode: true,
 		});
-		const genNames = new Set(
+		const _genNames = new Set(
 			result.tokens
 				.filter((t) => t.category === "semantics")
 				.map((t) => t.figmaName),

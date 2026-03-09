@@ -19,24 +19,24 @@ export interface CollectionInfo {
 
 /** Style group for UI display */
 export interface StyleGroup {
-	name: string;
 	count: number;
+	name: string;
 }
 
 /** Style groups organized by category */
 export interface StylesByCategory {
-	paint: StyleGroup[];
-	text: StyleGroup[];
 	effect: StyleGroup[];
 	grid: StyleGroup[];
+	paint: StyleGroup[];
+	text: StyleGroup[];
 }
 
 /** Style counts by category */
 export interface StyleCounts {
-	paint: number;
-	text: number;
 	effect: number;
 	grid: number;
+	paint: number;
+	text: number;
 	total: number;
 }
 
@@ -52,10 +52,10 @@ export interface SelectedStyleGroup {
 
 /** Parse token JSON content */
 export interface ParseTokensMessage {
-	type: "parse-tokens";
 	data: {
 		content: string;
 	};
+	type: "parse-tokens";
 }
 
 /** Request list of Figma variable collections */
@@ -70,7 +70,6 @@ export interface GetStylesMessage {
 
 /** Create Figma variables from parsed tokens */
 export interface CreateVariablesMessage {
-	type: "create-variables";
 	data: {
 		tokens: DesignToken[];
 		collectionName: string;
@@ -79,52 +78,53 @@ export interface CreateVariablesMessage {
 		/** Styles section from combined JSON export — imported after variables */
 		stylesData?: any;
 	};
+	type: "create-variables";
 }
 
 /** Export Figma variables as tokens */
 export interface ExportVariablesMessage {
-	type: "export-variables";
 	data: {
 		collectionIds: string[];
 		colorFormat: "oklch" | "hex" | "rgba" | "hsl";
 	};
+	type: "export-variables";
 }
 
 /** Export Figma styles as tokens */
 export interface ExportStylesMessage {
-	type: "export-styles";
 	data: {
 		selectedGroups: SelectedStyleGroup[];
 		colorFormat: "oklch" | "hex" | "rgba" | "hsl";
 	};
+	type: "export-styles";
 }
 
 /** Export Figma variables as CSS custom properties */
 export interface ExportCSSMessage {
-	type: "export-css";
 	data: {
 		collectionIds: string[];
 		colorFormat: "oklch" | "hex" | "rgba" | "hsl";
 		includeThemeInline: boolean;
 		includeColorMix: boolean;
 	};
+	type: "export-css";
 }
 
 /** CSS file in export result */
 export interface CSSFileInfo {
-	name: string;
 	content: string;
+	name: string;
 	variableCount: number;
 }
 
 /** CSS export complete */
 export interface CSSExportCompleteMessage {
-	type: "css-export-complete";
 	data: {
 		files: CSSFileInfo[];
 		totalVariables: number;
 		totalCollections: number;
 	};
+	type: "css-export-complete";
 }
 
 /** Request detailed style list for the styles manager */
@@ -134,16 +134,23 @@ export interface GetStyleDetailsMessage {
 
 /** Individual style info for the styles manager */
 export interface StyleInfo {
-	id: string;
-	name: string;
 	category: "paint" | "text" | "effect" | "grid";
 	description: string;
+	id: string;
+	name: string;
 	/** Preview values — depends on category */
 	preview: StylePreview;
 }
 
 /** Individual paint layer info */
 export interface PaintInfo {
+	/** Hex color for solid paints */
+	color?: string;
+	/** Variable bound to this paint's color */
+	colorVariable?: string;
+	opacity?: number;
+	/** Variable bound to this paint's opacity */
+	opacityVariable?: string;
 	paintType:
 		| "SOLID"
 		| "GRADIENT_LINEAR"
@@ -152,23 +159,16 @@ export interface PaintInfo {
 		| "GRADIENT_DIAMOND"
 		| "IMAGE"
 		| "VIDEO";
-	/** Hex color for solid paints */
-	color?: string;
-	opacity?: number;
 	/** Gradient color stops */
 	stops?: { color: string; position: number; variable?: string }[];
-	/** Variable bound to this paint's color */
-	colorVariable?: string;
-	/** Variable bound to this paint's opacity */
-	opacityVariable?: string;
 }
 
 /** Individual effect layer info */
 export interface EffectInfo {
-	effectType: string;
-	description: string;
 	color?: string;
 	colorVariable?: string;
+	description: string;
+	effectType: string;
 	radiusVariable?: string;
 	spreadVariable?: string;
 }
@@ -188,34 +188,33 @@ export type StylePreview =
 
 /** Response with style details */
 export interface StyleDetailsListMessage {
-	type: "style-details-list";
 	data: {
 		styles: StyleInfo[];
 		counts: StyleCounts;
 	};
+	type: "style-details-list";
 }
 
 /** Delete styles in bulk */
 export interface DeleteStylesMessage {
-	type: "delete-styles";
 	data: {
 		styleIds: string[];
 		category: "paint" | "text" | "effect" | "grid";
 	};
+	type: "delete-styles";
 }
 
 /** Styles deleted result */
 export interface StylesDeletedMessage {
-	type: "styles-deleted";
 	data: {
 		success: number;
 		failed: number;
 	};
+	type: "styles-deleted";
 }
 
 /** Rename styles in bulk */
 export interface RenameStylesMessage {
-	type: "rename-styles";
 	data: {
 		renames: {
 			id: string;
@@ -223,51 +222,51 @@ export interface RenameStylesMessage {
 			newName: string;
 		}[];
 	};
+	type: "rename-styles";
 }
 
 /** Styles renamed result */
 export interface StylesRenamedMessage {
-	type: "styles-renamed";
 	data: {
 		success: number;
 		failed: number;
 	};
+	type: "styles-renamed";
 }
 
 /** Scan unbound styles and suggest variable rebindings */
 export interface ScanRebindMessage {
-	type: "scan-rebind";
 	data: {
 		styleIds: string[];
 	};
+	type: "scan-rebind";
 }
 
 /** A suggested rebinding: unbound style property → matching variable */
 export interface RebindSuggestion {
-	styleId: string;
-	styleName: string;
-	/** Field identifier: 'solid:0', 'stop:0:1', 'effect:0' for colors; 'fontSize', 'lineHeight', 'fontFamily', 'fontStyle' for text */
-	field: string;
 	/** Current color hex (for color bindings) */
 	currentColor?: string;
 	/** Current value display string (for text bindings) */
 	currentValue?: string;
+	/** Field identifier: 'solid:0', 'stop:0:1', 'effect:0' for colors; 'fontSize', 'lineHeight', 'fontFamily', 'fontStyle' for text */
+	field: string;
+	matchType: "exact" | "name";
+	styleId: string;
+	styleName: string;
 	suggestedVariableId: string;
 	suggestedVariableName: string;
-	matchType: "exact" | "name";
 }
 
 /** Response with rebind suggestions */
 export interface RebindSuggestionsMessage {
-	type: "rebind-suggestions";
 	data: {
 		suggestions: RebindSuggestion[];
 	};
+	type: "rebind-suggestions";
 }
 
 /** Apply selected rebindings */
 export interface ApplyRebindMessage {
-	type: "apply-rebind";
 	data: {
 		bindings: {
 			styleId: string;
@@ -275,259 +274,259 @@ export interface ApplyRebindMessage {
 			variableId: string;
 		}[];
 	};
+	type: "apply-rebind";
 }
 
 /** Undo rebindings (unbind variables from styles) */
 export interface UndoRebindMessage {
-	type: "undo-rebind";
 	data: {
 		bindings: {
 			styleId: string;
 			field: string;
 		}[];
 	};
+	type: "undo-rebind";
 }
 
 /** Rebind result */
 export interface RebindAppliedMessage {
-	type: "rebind-applied";
 	data: {
 		success: number;
 		failed: number;
 		/** Successfully applied bindings for undo */
 		applied: { styleId: string; field: string }[];
 	};
+	type: "rebind-applied";
 }
 
 /** Undo rebind result */
 export interface RebindUndoneMessage {
-	type: "rebind-undone";
 	data: {
 		success: number;
 		failed: number;
 	};
+	type: "rebind-undone";
 }
 
 /** Duplicate styles */
 export interface DuplicateStylesMessage {
-	type: "duplicate-styles";
 	data: {
 		styleIds: string[];
 	};
+	type: "duplicate-styles";
 }
 
 /** Styles duplicated result */
 export interface StylesDuplicatedMessage {
-	type: "styles-duplicated";
 	data: {
 		success: number;
 		failed: number;
 		newStyleIds: string[];
 	};
+	type: "styles-duplicated";
 }
 
 /** Edit style properties */
 export interface EditStylesMessage {
-	type: "edit-styles";
 	data: {
 		edits: StyleEdit[];
 	};
+	type: "edit-styles";
 }
 
 /** A single style edit */
 export interface StyleEdit {
-	styleId: string;
 	/** For paint styles: new color hex (solid only) */
 	color?: string;
-	/** For paint styles: new opacity 0-1 */
-	opacity?: number;
-	/** For text styles */
-	fontSize?: number;
-	lineHeight?: { value: number; unit: "PIXELS" | "PERCENT" } | "AUTO";
-	fontFamily?: string;
-	fontStyle?: string;
-	letterSpacing?: number;
-	paragraphSpacing?: number;
 	/** Description (any style type) */
 	description?: string;
+	fontFamily?: string;
+	/** For text styles */
+	fontSize?: number;
+	fontStyle?: string;
+	letterSpacing?: number;
+	lineHeight?: { value: number; unit: "PIXELS" | "PERCENT" } | "AUTO";
+	/** For paint styles: new opacity 0-1 */
+	opacity?: number;
+	paragraphSpacing?: number;
+	styleId: string;
 }
 
 /** Styles edited result */
 export interface StylesEditedMessage {
-	type: "styles-edited";
 	data: {
 		success: number;
 		failed: number;
 	};
+	type: "styles-edited";
 }
 
 /** Import styles from token data */
 export interface ImportStylesMessage {
-	type: "import-styles";
 	data: {
 		stylesData: any; // Flexible structure from exported styles
 		selectedGroups: SelectedStyleGroup[];
 		importMode: "import" | "override";
 	};
+	type: "import-styles";
 }
 
 /** Resize plugin window */
 export interface ResizeWindowMessage {
-	type: "resize-window";
 	data: {
 		mode: "compact" | "default";
 	};
+	type: "resize-window";
 }
 
 /** Request all variables with full details for the manage page */
 export interface GetVariablesMessage {
-	type: "get-variables";
 	data?: {
 		collectionIds?: string[];
 	};
+	type: "get-variables";
 }
 
 /** Variable detail for manage page display */
 export interface VariableInfo {
+	collectionId: string;
+	collectionName: string;
+	description: string;
 	id: string;
 	name: string;
 	resolvedType: string;
-	collectionId: string;
-	collectionName: string;
 	valuesByMode: Record<string, string>;
-	description: string;
 }
 
 /** Response with full variable details */
 export interface VariablesListMessage {
-	type: "variables-list";
 	data: {
 		variables: VariableInfo[];
 		collections: CollectionInfo[];
 	};
+	type: "variables-list";
 }
 
 /** Rename variables in bulk */
 export interface RenameVariablesMessage {
-	type: "rename-variables";
 	data: {
 		renames: { id: string; newName: string }[];
 	};
+	type: "rename-variables";
 }
 
 /** Check if variables have dependencies before deleting */
 export interface CheckDependenciesMessage {
-	type: "check-dependencies";
 	data: {
 		variableIds: string[];
 	};
+	type: "check-dependencies";
 }
 
 /** Delete variables in bulk */
 export interface DeleteVariablesMessage {
-	type: "delete-variables";
 	data: {
 		variableIds: string[];
 	};
+	type: "delete-variables";
 }
 
 /** Variables renamed result */
 export interface VariablesRenamedMessage {
-	type: "variables-renamed";
 	data: {
 		success: number;
 		failed: number;
 		previousNames: { id: string; oldName: string }[];
 	};
+	type: "variables-renamed";
 }
 
 /** Snapshot of a deleted variable for undo */
 export interface DeletedVariableSnapshot {
-	name: string;
-	resolvedType: string;
 	collectionId: string;
 	description: string;
+	name: string;
+	resolvedType: string;
 	valuesByMode: Record<string, any>;
 }
 
 /** Variables deleted result */
 export interface VariablesDeletedMessage {
-	type: "variables-deleted";
 	data: {
 		success: number;
 		failed: number;
 		snapshots: DeletedVariableSnapshot[];
 	};
+	type: "variables-deleted";
 }
 
 /** Restore previously deleted variables */
 export interface RestoreVariablesMessage {
-	type: "restore-variables";
 	data: {
 		snapshots: DeletedVariableSnapshot[];
 	};
+	type: "restore-variables";
 }
 
 /** Variables restored result */
 export interface VariablesRestoredMessage {
-	type: "variables-restored";
 	data: {
 		success: number;
 		failed: number;
 	};
+	type: "variables-restored";
 }
 
 /** Move variables to a different collection */
 export interface MoveVariablesMessage {
-	type: "move-variables";
 	data: {
 		variableIds: string[];
 		targetCollectionId: string;
 	};
+	type: "move-variables";
 }
 
 /** Variables moved result */
 export interface VariablesMovedMessage {
-	type: "variables-moved";
 	data: {
 		success: number;
 		failed: number;
 		previousCollections: { newId: string; id: string; collectionId: string }[];
 	};
+	type: "variables-moved";
 }
 
 /** Duplicate variables */
 export interface DuplicateVariablesMessage {
-	type: "duplicate-variables";
 	data: {
 		variableIds: string[];
 	};
+	type: "duplicate-variables";
 }
 
 /** Variables duplicated result */
 export interface VariablesDuplicatedMessage {
-	type: "variables-duplicated";
 	data: {
 		success: number;
 		failed: number;
 		newVariableIds: string[];
 	};
+	type: "variables-duplicated";
 }
 
 /** Update variable values in bulk */
 export interface UpdateVariableValuesMessage {
-	type: "update-variable-values";
 	data: {
 		updates: {
 			id: string;
 			valuesByMode: Record<string, any>;
 		}[];
 	};
+	type: "update-variable-values";
 }
 
 /** Variables values updated result */
 export interface VariableValuesUpdatedMessage {
-	type: "variable-values-updated";
 	data: {
 		success: number;
 		failed: number;
@@ -536,56 +535,56 @@ export interface VariableValuesUpdatedMessage {
 			valuesByMode: Record<string, any>;
 		}[];
 	};
+	type: "variable-values-updated";
 }
 
 /** Undo a previous import operation */
 export interface UndoImportMessage {
-	type: "undo-import";
 	data: {
 		entries: ImportUndoEntry[];
 	};
+	type: "undo-import";
 }
 
 /** Import undo result */
 export interface ImportUndoneMessage {
-	type: "import-undone";
 	data: {
 		success: number;
 		failed: number;
 	};
+	type: "import-undone";
 }
 
 /** Swap all references from one variable to another */
 export interface SwapReferencesMessage {
-	type: "swap-references";
 	data: {
 		sourceId: string;
 		targetId: string;
 	};
+	type: "swap-references";
 }
 
 /** References swapped result */
 export interface ReferencesSwappedMessage {
-	type: "references-swapped";
 	data: {
 		success: number;
 		failed: number;
 	};
+	type: "references-swapped";
 }
 
 /** Scale numeric variable values by a factor */
 export interface ScaleVariableValuesMessage {
-	type: "scale-variable-values";
 	data: {
 		variableIds: string[];
 		factor: number;
 		operation: "multiply" | "divide";
 	};
+	type: "scale-variable-values";
 }
 
 /** Scale variable values result */
 export interface VariableValuesScaledMessage {
-	type: "variable-values-scaled";
 	data: {
 		success: number;
 		failed: number;
@@ -594,16 +593,17 @@ export interface VariableValuesScaledMessage {
 			valuesByMode: Record<string, any>;
 		}[];
 	};
+	type: "variable-values-scaled";
 }
 
 /** Check for import conflicts (existing variables with same name) */
 export interface CheckImportConflictsMessage {
-	type: "check-import-conflicts";
 	data: {
 		tokens: DesignToken[];
 		collectionName: string;
 		selectedCollections?: string[];
 	};
+	type: "check-import-conflicts";
 }
 
 /** Close the plugin */
@@ -625,8 +625,8 @@ export interface LoadSettingsMessage {
 
 /** Save settings to clientStorage */
 export interface SaveSettingsMessage {
-	type: "save-settings";
 	data: Partial<PluginSettings>;
+	type: "save-settings";
 }
 
 /** Union of all UI → Main thread messages */
@@ -670,53 +670,52 @@ export type UIToMainMessage =
 
 /** Tokens have been parsed */
 export interface TokensParsedMessage {
-	type: "tokens-parsed";
 	data: ParsedTokens;
+	type: "tokens-parsed";
 }
 
 /** List of available collections */
 export interface CollectionsListMessage {
-	type: "collections-list";
 	data: {
 		collections: CollectionInfo[];
 	};
+	type: "collections-list";
 }
 
 /** List of available styles */
 export interface StylesListMessage {
-	type: "styles-list";
 	data: {
 		stylesByCategory: StylesByCategory;
 		totalCounts: StyleCounts;
 	};
+	type: "styles-list";
 }
 
 /** Variables have been created */
 export interface VariablesCreatedMessage {
-	type: "variables-created";
 	data: ImportResults;
+	type: "variables-created";
 }
 
 /** Import operation complete */
 export interface ImportCompleteMessage {
-	type: "import-complete";
 	data: ImportResults;
+	type: "import-complete";
 }
 
 /** Variable export complete */
 export interface ExportCompleteMessage {
-	type: "export-complete";
 	data: {
 		tokens: any; // Token structure with $schema, $collections, tokens
 		collectionCount: number;
 		variableCount: number;
 		format: string;
 	};
+	type: "export-complete";
 }
 
 /** Style export complete */
 export interface StylesExportCompleteMessage {
-	type: "styles-export-complete";
 	data: {
 		styles: any; // Style structure with $schema, $counts, styles
 		counts: {
@@ -728,38 +727,38 @@ export interface StylesExportCompleteMessage {
 		};
 		format: string;
 	};
+	type: "styles-export-complete";
 }
 
 /** Export error occurred */
 export interface ExportErrorMessage {
-	type: "export-error";
 	data: {
 		message: string;
 	};
+	type: "export-error";
 }
 
 /** Progress update during long operations */
 export interface ProgressUpdateMessage {
-	type: "progress-update";
 	data: {
 		current: number;
 		total: number;
 		message: string;
 	};
+	type: "progress-update";
 }
 
 /** General error message */
 export interface ErrorMessage {
-	type: "error";
 	data: {
 		message: string;
 		details?: any;
 	};
+	type: "error";
 }
 
 /** Result of dependency check before deletion */
 export interface DependencyCheckResultMessage {
-	type: "dependency-check-result";
 	data: {
 		dependencies: {
 			[variableId: string]: {
@@ -768,11 +767,11 @@ export interface DependencyCheckResultMessage {
 			};
 		};
 	};
+	type: "dependency-check-result";
 }
 
 /** Result of import conflict check */
 export interface ImportConflictsResultMessage {
-	type: "import-conflicts-result";
 	data: {
 		conflicts: {
 			tokenId: string;
@@ -780,12 +779,13 @@ export interface ImportConflictsResultMessage {
 			existingId: string;
 		}[];
 	};
+	type: "import-conflicts-result";
 }
 
 /** Settings loaded from clientStorage */
 export interface SettingsLoadedMessage {
-	type: "settings-loaded";
 	data: PluginSettings;
+	type: "settings-loaded";
 }
 
 /** Union of all Main thread → UI messages */

@@ -8,10 +8,10 @@ import * as RadixColors from "@radix-ui/colors";
 import type { DesignToken } from "../types/tokens";
 
 export interface RadixPalette {
-	name: string;
-	displayName: string;
 	category: "gray" | "color";
 	description: string;
+	displayName: string;
+	name: string;
 }
 
 // All available Radix color palettes
@@ -210,9 +210,9 @@ export const RADIX_PALETTES: RadixPalette[] = [
 // Helper to convert hex to RGB object for Figma
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
 	const cleanHex = hex.replace("#", "");
-	const r = parseInt(cleanHex.slice(0, 2), 16) / 255;
-	const g = parseInt(cleanHex.slice(2, 4), 16) / 255;
-	const b = parseInt(cleanHex.slice(4, 6), 16) / 255;
+	const r = Number.parseInt(cleanHex.slice(0, 2), 16) / 255;
+	const g = Number.parseInt(cleanHex.slice(2, 4), 16) / 255;
+	const b = Number.parseInt(cleanHex.slice(4, 6), 16) / 255;
 	return { r, g, b };
 }
 

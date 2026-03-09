@@ -82,8 +82,8 @@ const VariableRow = React.memo(function VariableRow({
 			<span className="manage-name-swatches">
 				{colorEntries.map(([mode, val]) => (
 					<ColorSwatch
-						key={mode}
 						color={val}
+						key={mode}
 						size="sm"
 						title={`${mode}: ${val}`}
 					/>
@@ -100,14 +100,14 @@ const VariableRow = React.memo(function VariableRow({
 			const [, val] = entries[0];
 			if (isReference(val)) {
 				return (
-					<Badge variant="outline" size="sm" icon={<Link size={10} />}>
+					<Badge icon={<Link size={10} />}size="sm" variant="outline" >
 						{val.slice(1, -1)}
 					</Badge>
 				);
 			}
 			if (isColor && isColorValue(val)) {
 				return (
-					<Badge variant="outline" size="sm" dot dotColor={val}>
+					<Badge dot dotColor={val}size="sm" variant="outline" >
 						{val}
 					</Badge>
 				);
@@ -119,19 +119,19 @@ const VariableRow = React.memo(function VariableRow({
 			<div className="manage-value-modes">
 				{entries.map(([mode, val]) => (
 					<div
-						key={mode}
 						className="manage-mode-chip"
+						key={mode}
 						title={`${mode}: ${val}`}
 					>
-						<Badge variant="secondary" size="sm">
+						<Badge size="sm"variant="secondary" >
 							{mode}
 						</Badge>
 						{isReference(val) ? (
-							<Badge variant="outline" size="sm" icon={<Link size={10} />}>
+							<Badge icon={<Link size={10} />}size="sm" variant="outline" >
 								{val.slice(1, -1)}
 							</Badge>
 						) : isColor && isColorValue(val) ? (
-							<Badge variant="outline" size="sm" dot dotColor={val}>
+							<Badge dot dotColor={val}size="sm" variant="outline" >
 								{val}
 							</Badge>
 						) : (
@@ -145,28 +145,28 @@ const VariableRow = React.memo(function VariableRow({
 
 	return (
 		<div
-			className={`manage-row ${isSelected ? "manage-row-selected" : ""}`}
-			role="row"
-			tabIndex={0}
 			aria-selected={isSelected}
+			className={`manage-row ${isSelected ? "manage-row-selected" : ""}`}
 			onClick={(e) => onToggleSelect(variable.id, e)}
+			onContextMenu={(e) => {
+				e.preventDefault();
+				onContextSelect(variable.id);
+			}}
 			onKeyDown={(e) => {
 				if (e.key === "Enter" || e.key === " ") {
 					e.preventDefault();
 					onToggleSelect(variable.id, e as unknown as React.MouseEvent);
 				}
 			}}
-			onContextMenu={(e) => {
-				e.preventDefault();
-				onContextSelect(variable.id);
-			}}
+			role="row"
+			tabIndex={0}
 		>
 			<div className="manage-col-check">
 				<Checkbox
-					id={`var-${variable.id}`}
 					checked={isSelected}
-					size="sm"
+					id={`var-${variable.id}`}
 					onChange={() => {}}
+					size="sm"
 				/>
 			</div>
 			<div className="manage-col-name">
@@ -521,11 +521,12 @@ export function ManagePage({
 		for (const v of filtered) {
 			if (!collections.has(v.collectionName))
 				collections.set(v.collectionName, new Map());
-			const subGroups = collections.get(v.collectionName)!;
+			const subGroups = collections.get(v.collectionName);
+			if (!subGroups) continue;
 			const parts = v.name.split("/");
 			const subKey = parts.length > 1 ? parts[0] : "Other";
 			if (!subGroups.has(subKey)) subGroups.set(subKey, []);
-			subGroups.get(subKey)!.push(v);
+			subGroups.get(subKey)?.push(v);
 		}
 		// Sort collections
 		const naturalCompare = (a: string, b: string) =>
@@ -613,7 +614,7 @@ export function ManagePage({
 	};
 
 	const handleScale = () => {
-		const factor = parseFloat(scaleFactor);
+		const factor = Number.parseFloat(scaleFactor);
 		if (!factor || factor === 0 || operationPending) return;
 		setOperationPending(true);
 		postMessage({
@@ -810,9 +811,9 @@ export function ManagePage({
 		return (
 			<div className="manage-page">
 				<SectionHeader
-					variant="primary"
-					title="Manage Variables"
 					description="Loading variables from Figma…"
+					title="Manage Variables"
+					variant="primary"
 				/>
 				<LoadingState message="Loading variables…" />
 			</div>
@@ -822,9 +823,9 @@ export function ManagePage({
 	return (
 		<div className="manage-page" ref={listRef}>
 			<SectionHeader
-				variant="primary"
-				title="Manage Variables"
 				description={`${variables.length} variables across ${collections.length} collection${collections.length !== 1 ? "s" : ""}`}
+				title="Manage Variables"
+				variant="primary"
 			/>
 
 			{/* Toolbar */}
@@ -833,17 +834,17 @@ export function ManagePage({
 					<div className="manage-search">
 						<Search size={14} />
 						<input
-							type="text"
-							placeholder="Search variables…"
-							value={search}
 							onChange={(e) => setSearch(e.target.value)}
+							placeholder="Search variables…"
+							type="text"
+							value={search}
 						/>
 					</div>
 
 					<select
 						className="manage-filter-select"
-						value={filterCollection}
 						onChange={(e) => setFilterCollection(e.target.value)}
+						value={filterCollection}
 					>
 						<option value="all">All collections</option>
 						{collections.map((c) => (
@@ -855,8 +856,8 @@ export function ManagePage({
 
 					<select
 						className="manage-filter-select"
-						value={filterType}
 						onChange={(e) => setFilterType(e.target.value)}
+						value={filterType}
 					>
 						<option value="all">All types</option>
 						{uniqueTypes.map((t) => (
@@ -869,10 +870,10 @@ export function ManagePage({
 
 				<div className="manage-toolbar-right">
 					<Button
-						variant="ghost"
-						onClick={loadVariables}
-						data-tooltip="Refresh"
 						aria-label="Refresh variables"
+						data-tooltip="Refresh"
+						onClick={loadVariables}
+						variant="ghost"
 					>
 						<RefreshCw size={14} />
 					</Button>
@@ -887,62 +888,62 @@ export function ManagePage({
 					</span>
 					<div className="manage-actionbar-actions">
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => openPanel("rename")}
 							disabled={selectedIds.size === 0}
+							onClick={() => openPanel("rename")}
+							size="sm"
+							variant="outline"
 						>
 							<PenLine size={14} />
 							Rename
 						</Button>
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => openPanel("edit")}
 							disabled={selectedIds.size === 0}
+							onClick={() => openPanel("edit")}
+							size="sm"
+							variant="outline"
 						>
 							<Pencil size={14} />
 							Edit
 						</Button>
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => openPanel("move")}
 							disabled={selectedIds.size === 0}
+							onClick={() => openPanel("move")}
+							size="sm"
+							variant="outline"
 						>
 							<FolderInput size={14} />
 							Move
 						</Button>
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleDuplicate}
 							disabled={operationPending || selectedIds.size === 0}
+							onClick={handleDuplicate}
+							size="sm"
+							variant="outline"
 						>
 							<Copy size={14} />
 							Duplicate
 						</Button>
 						<Button
-							variant="outline"
-							size="sm"
+							disabled={selectedIds.size === 0}
 							onClick={() => {
 								postMessage({
 									type: "check-dependencies",
 									data: { variableIds: Array.from(selectedIds) },
 								});
 							}}
-							disabled={selectedIds.size === 0}
+							size="sm"
+							variant="outline"
 						>
 							<Trash2 size={14} />
 							Delete
 						</Button>
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={selectNone}
-							disabled={selectedIds.size === 0}
-							data-tooltip="Clear selection (Esc)"
 							aria-label="Clear selection"
+							data-tooltip="Clear selection (Esc)"
+							disabled={selectedIds.size === 0}
+							onClick={selectNone}
+							size="sm"
+							variant="outline"
 						>
 							<X size={14} />
 						</Button>
@@ -952,10 +953,10 @@ export function ManagePage({
 					<span className="manage-actionbar-label">Transform</span>
 					<div className="manage-actionbar-actions">
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => openPanel("scale")}
 							disabled={selectedIds.size === 0}
+							onClick={() => openPanel("scale")}
+							size="sm"
+							variant="outline"
 						>
 							<ArrowUpDown size={14} />
 							Scale
@@ -966,29 +967,25 @@ export function ManagePage({
 
 			{/* Rename dialog */}
 			<RenameDialog
-				isOpen={activePanel === "rename" && selectedIds.size > 0}
-				onClose={() => setActivePanel(null)}
-				itemLabel={`${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
-				rename={rename}
-				onApply={handleRename}
 				disabled={operationPending}
+				isOpen={activePanel === "rename" && selectedIds.size > 0}
+				itemLabel={`${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
+				onApply={handleRename}
+				onClose={() => setActivePanel(null)}
+				rename={rename}
 			/>
 
 			{/* Move dialog */}
 			<Dialog
-				isOpen={activePanel === "move" && selectedIds.size > 0}
-				onClose={() => setActivePanel(null)}
-				title={`Move ${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
-				maxWidth="sm"
 				footer={
 					<DialogActions>
-						<Button variant="outline" onClick={() => setActivePanel(null)}>
+						<Button onClick={() => setActivePanel(null)}variant="outline" >
 							Cancel
 						</Button>
 						<Button
-							variant="primary"
-							onClick={handleMove}
 							disabled={!moveTargetId || operationPending}
+							onClick={handleMove}
+							variant="primary"
 						>
 							<FolderInput size={14} />
 							{moveTargetId
@@ -997,20 +994,24 @@ export function ManagePage({
 						</Button>
 					</DialogActions>
 				}
+				isOpen={activePanel === "move" && selectedIds.size > 0}
+				maxWidth="sm"
+				onClose={() => setActivePanel(null)}
+				title={`Move ${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
 			>
 				<div className="manage-move-options">
 					{moveTargetCollections.map((c) => (
 						<label
-							key={c.id}
 							className={`manage-move-option ${c.isCurrent ? "manage-move-current" : ""}`}
+							key={c.id}
 						>
 							<input
-								type="radio"
-								name="moveTarget"
-								value={c.id}
 								checked={moveTargetId === c.id}
-								onChange={() => setMoveTargetId(c.id)}
 								disabled={c.isCurrent}
+								name="moveTarget"
+								onChange={() => setMoveTargetId(c.id)}
+								type="radio"
+								value={c.id}
 							/>
 							<span className="manage-move-name">{c.name}</span>
 							<span className="manage-move-count">
@@ -1018,7 +1019,7 @@ export function ManagePage({
 								{c.variableCount === 1 ? "variable" : "variables"}
 							</span>
 							{c.isCurrent && (
-								<Badge variant="secondary" size="sm">
+								<Badge size="sm"variant="secondary" >
 									current
 								</Badge>
 							)}
@@ -1029,33 +1030,33 @@ export function ManagePage({
 
 			{/* Edit values dialog */}
 			<Dialog
-				isOpen={activePanel === "edit" && editSelectedVars.length > 0}
-				onClose={() => setActivePanel(null)}
-				title={`Edit ${editSelectedVars.length} ${editSelectedVars.length === 1 ? "variable" : "variables"}`}
-				maxWidth="lg"
-				noPadding
 				footer={
 					<DialogActions>
-						<Button variant="outline" onClick={() => setActivePanel(null)}>
+						<Button onClick={() => setActivePanel(null)}variant="outline" >
 							Cancel
 						</Button>
 						<Button
-							variant="primary"
-							onClick={handleEditValues}
 							disabled={!editHasChanges || operationPending}
+							onClick={handleEditValues}
+							variant="primary"
 						>
 							<Check size={14} />
 							Save changes
 						</Button>
 					</DialogActions>
 				}
+				isOpen={activePanel === "edit" && editSelectedVars.length > 0}
+				maxWidth="lg"
+				noPadding
+				onClose={() => setActivePanel(null)}
+				title={`Edit ${editSelectedVars.length} ${editSelectedVars.length === 1 ? "variable" : "variables"}`}
 			>
 				<div className="manage-edit-table">
 					{editGroups.map((group) => {
 						const activeMode =
 							editActiveModes[group.collectionName] || group.modes[0];
 						return (
-							<div key={group.collectionName} className="manage-edit-group">
+							<div className="manage-edit-group"key={group.collectionName} >
 								{/* Collection label + mode tabs */}
 								{(editGroups.length > 1 || group.modes.length > 1) && (
 									<div className="manage-edit-group-bar">
@@ -1066,8 +1067,8 @@ export function ManagePage({
 										)}
 										{group.modes.length > 1 && (
 											<Tabs
-												tabs={group.modes.map((m) => ({ id: m, label: m }))}
 												activeTab={activeMode}
+												className="manage-edit-mode-tabs"
 												onTabChange={(id) =>
 													setEditActiveModes((prev) => ({
 														...prev,
@@ -1075,7 +1076,7 @@ export function ManagePage({
 													}))
 												}
 												size="sm"
-												className="manage-edit-mode-tabs"
+												tabs={group.modes.map((m) => ({ id: m, label: m }))}
 											/>
 										)}
 									</div>
@@ -1095,7 +1096,7 @@ export function ManagePage({
 										const isPickingAlias = aliasPickField === fieldKey;
 
 										return (
-											<div key={v.id} className="manage-edit-row">
+											<div className="manage-edit-row"key={v.id} >
 												<div className="manage-edit-col-name" title={v.name}>
 													<span className="manage-edit-var-name">{v.name}</span>
 												</div>
@@ -1104,14 +1105,14 @@ export function ManagePage({
 														<div className="manage-edit-alias-field">
 															<div className="manage-edit-alias-search">
 																<input
-																	type="text"
-																	placeholder="Search variables…"
-																	value={aliasSearch}
+																	autoFocus
+																	className="manage-edit-alias-input"
 																	onChange={(e) =>
 																		setAliasSearch(e.target.value)
 																	}
-																	className="manage-edit-alias-input"
-																	autoFocus
+																	placeholder="Search variables…"
+																	type="text"
+																	value={aliasSearch}
 																/>
 																<div className="manage-edit-alias-list">
 																	{filteredAliasOptions.map((opt) => {
@@ -1119,9 +1120,8 @@ export function ManagePage({
 																			Object.values(opt.valuesByMode)[0] || "";
 																		return (
 																			<button
-																				key={opt.id}
-																				type="button"
 																				className={`manage-edit-alias-option ${val === `{${opt.name}}` ? "active" : ""}`}
+																				key={opt.id}
 																				onClick={() => {
 																					setEditField(
 																						v.id,
@@ -1131,6 +1131,7 @@ export function ManagePage({
 																					setAliasPickField(null);
 																					setAliasSearch("");
 																				}}
+																				type="button"
 																			>
 																				{opt.resolvedType === "COLOR" &&
 																					isColorValue(optVal) && (
@@ -1156,12 +1157,12 @@ export function ManagePage({
 																</div>
 															</div>
 															<Button
-																variant="ghost"
-																size="sm"
 																onClick={() => {
 																	setAliasPickField(null);
 																	setAliasSearch("");
 																}}
+																size="sm"
+																variant="ghost"
 															>
 																Cancel
 															</Button>
@@ -1169,30 +1170,30 @@ export function ManagePage({
 													) : isAlias ? (
 														<div className="manage-edit-alias-display">
 															<Badge
-																variant="outline"
-																size="sm"
 																icon={<Link size={10} />}
+																size="sm"
+																variant="outline"
 															>
 																{val.slice(1, -1)}
 															</Badge>
 															<Button
-																variant="ghost"
-																size="icon-xs"
 																data-tooltip="Change reference"
 																onClick={() => {
 																	setAliasPickField(fieldKey);
 																	setAliasSearch("");
 																}}
+																size="icon-xs"
+																variant="ghost"
 															>
 																<Link size={12} />
 															</Button>
 															<Button
-																variant="destructive-soft"
-																size="icon-xs"
 																data-tooltip="Remove reference"
 																onClick={() =>
 																	setEditField(v.id, activeMode, "")
 																}
+																size="icon-xs"
+																variant="destructive-soft"
 															>
 																<X size={12} />
 															</Button>
@@ -1202,13 +1203,7 @@ export function ManagePage({
 															{v.resolvedType === "COLOR" &&
 																isColorValue(val) && (
 																	<input
-																		type="color"
 																		className="manage-edit-color-picker"
-																		value={
-																			val.startsWith("#")
-																				? val.slice(0, 7)
-																				: "#000000"
-																		}
 																		onChange={(e) =>
 																			setEditField(
 																				v.id,
@@ -1216,12 +1211,17 @@ export function ManagePage({
 																				e.target.value,
 																			)
 																		}
+																		type="color"
+																		value={
+																			val.startsWith("#")
+																				? val.slice(0, 7)
+																				: "#000000"
+																		}
 																	/>
 																)}
 															{v.resolvedType === "BOOLEAN" ? (
 																<select
 																	className="manage-filter-select"
-																	value={val || "false"}
 																	onChange={(e) =>
 																		setEditField(
 																			v.id,
@@ -1229,19 +1229,14 @@ export function ManagePage({
 																			e.target.value,
 																		)
 																	}
+																	value={val || "false"}
 																>
 																	<option value="true">true</option>
 																	<option value="false">false</option>
 																</select>
 															) : (
 																<input
-																	type={
-																		v.resolvedType === "FLOAT"
-																			? "number"
-																			: "text"
-																	}
 																	className="manage-edit-input"
-																	value={val}
 																	onChange={(e) =>
 																		setEditField(
 																			v.id,
@@ -1256,17 +1251,23 @@ export function ManagePage({
 																				? "0"
 																				: "Value…"
 																	}
+																	type={
+																		v.resolvedType === "FLOAT"
+																			? "number"
+																			: "text"
+																	}
+																	value={val}
 																/>
 															)}
 															{v.resolvedType !== "BOOLEAN" && (
 																<Button
-																	variant="ghost"
-																	size="icon-xs"
 																	data-tooltip="Set as reference"
 																	onClick={() => {
 																		setAliasPickField(fieldKey);
 																		setAliasSearch("");
 																	}}
+																	size="icon-xs"
+																	variant="ghost"
 																>
 																	<Link size={12} />
 																</Button>
@@ -1290,30 +1291,26 @@ export function ManagePage({
 				const floatVars = selectedVars.filter(
 					(v) => v.resolvedType === "FLOAT",
 				);
-				const factor = parseFloat(scaleFactor);
+				const factor = Number.parseFloat(scaleFactor);
 				const validFactor = !Number.isNaN(factor) && factor !== 0;
 
 				return (
 					<Dialog
-						isOpen={activePanel === "scale" && selectedIds.size > 0}
-						onClose={() => setActivePanel(null)}
-						title={`Scale ${floatVars.length} numeric ${floatVars.length === 1 ? "variable" : "variables"}`}
-						maxWidth="sm"
 						footer={
 							floatVars.length > 0 ? (
 								<DialogActions>
 									<Button
-										variant="outline"
 										onClick={() => setActivePanel(null)}
+										variant="outline"
 									>
 										Cancel
 									</Button>
 									<Button
-										variant="primary"
-										onClick={handleScale}
 										disabled={
 											!validFactor || floatVars.length === 0 || operationPending
 										}
+										onClick={handleScale}
+										variant="primary"
 									>
 										<Check size={14} />
 										Scale {floatVars.length}
@@ -1321,6 +1318,10 @@ export function ManagePage({
 								</DialogActions>
 							) : undefined
 						}
+						isOpen={activePanel === "scale" && selectedIds.size > 0}
+						maxWidth="sm"
+						onClose={() => setActivePanel(null)}
+						title={`Scale ${floatVars.length} numeric ${floatVars.length === 1 ? "variable" : "variables"}`}
 					>
 						{floatVars.length === 0 ? (
 							<div className="manage-rename-hint">
@@ -1335,19 +1336,19 @@ export function ManagePage({
 										<div className="manage-scale-radio-group">
 											<label>
 												<input
-													type="radio"
-													name="scaleOp"
 													checked={scaleOperation === "multiply"}
+													name="scaleOp"
 													onChange={() => setScaleOperation("multiply")}
+													type="radio"
 												/>
 												Multiply
 											</label>
 											<label>
 												<input
-													type="radio"
-													name="scaleOp"
 													checked={scaleOperation === "divide"}
+													name="scaleOp"
 													onChange={() => setScaleOperation("divide")}
+													type="radio"
 												/>
 												Divide
 											</label>
@@ -1355,11 +1356,11 @@ export function ManagePage({
 									</div>
 									<Input
 										label="Factor"
-										value={scaleFactor}
 										onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 											setScaleFactor(e.target.value)
 										}
 										placeholder="e.g. 2"
+										value={scaleFactor}
 									/>
 								</div>
 								{validFactor && floatVars.length > 0 && (
@@ -1368,15 +1369,15 @@ export function ManagePage({
 										<div className="manage-rename-preview-list">
 											{floatVars.slice(0, 10).map((v) => {
 												const firstMode = Object.keys(v.valuesByMode)[0];
-												const original = parseFloat(v.valuesByMode[firstMode]);
+												const original = Number.parseFloat(v.valuesByMode[firstMode]);
 												const result =
 													scaleOperation === "multiply"
 														? original * factor
 														: original / factor;
 												return (
 													<div
-														key={v.id}
 														className="manage-rename-preview-item"
+														key={v.id}
 													>
 														<span className="manage-rename-old">
 															{v.name}: {original}
@@ -1410,7 +1411,6 @@ export function ManagePage({
 			{filtered.length === 0 ? (
 				variables.length === 0 ? (
 					<FirstRunWizard
-						onNavigate={(page) => onNavigate?.(page)}
 						onCreateTokens={(tokens: DesignToken[]) => {
 							postMessage({
 								type: "create-variables",
@@ -1421,11 +1421,12 @@ export function ManagePage({
 								},
 							});
 						}}
+						onNavigate={(page) => onNavigate?.(page)}
 					/>
 				) : (
 					<EmptyState
-						title="No variables found"
 						description="No variables match your current filters."
+						title="No variables found"
 					/>
 				)
 			) : (
@@ -1434,25 +1435,22 @@ export function ManagePage({
 					<div className="manage-list-header">
 						<div className="manage-col-check">
 							<Checkbox
-								id="select-all"
 								checked={
 									selectedIds.size === filtered.length && filtered.length > 0
 								}
+								id="select-all"
 								indeterminate={
 									selectedIds.size > 0 && selectedIds.size < filtered.length
 								}
-								size="sm"
 								onChange={() =>
 									selectedIds.size === filtered.length
 										? selectNone()
 										: selectAll()
 								}
+								size="sm"
 							/>
 						</div>
 						<div
-							className="manage-col-name manage-sortable"
-							role="columnheader"
-							tabIndex={0}
 							aria-sort={
 								sortField === "name"
 									? sortDir === "asc"
@@ -1460,6 +1458,7 @@ export function ManagePage({
 										: "descending"
 									: "none"
 							}
+							className="manage-col-name manage-sortable"
 							onClick={() => handleSort("name")}
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") {
@@ -1467,6 +1466,8 @@ export function ManagePage({
 									handleSort("name");
 								}
 							}}
+							role="columnheader"
+							tabIndex={0}
 						>
 							Name{" "}
 							{sortField === "name" &&
@@ -1488,12 +1489,10 @@ export function ManagePage({
 						).length;
 						const hasSubGroups = subGroups.size > 1 || !subGroups.has("Other");
 						return (
-							<div key={collectionName} className="manage-group">
+							<div className="manage-group"key={collectionName} >
 								<div
-									className="manage-group-header"
-									role="button"
-									tabIndex={0}
 									aria-expanded={!isCollapsed}
+									className="manage-group-header"
 									onClick={() => toggleGroup(collectionName)}
 									onKeyDown={(e) => {
 										if (e.key === "Enter" || e.key === " ") {
@@ -1501,6 +1500,8 @@ export function ManagePage({
 											toggleGroup(collectionName);
 										}
 									}}
+									role="button"
+									tabIndex={0}
 								>
 									{isCollapsed ? (
 										<ChevronRight size={14} />
@@ -1520,12 +1521,10 @@ export function ManagePage({
 											selectedIds.has(v.id),
 										).length;
 										return (
-											<div key={subGroupKey} className="manage-subgroup">
+											<div className="manage-subgroup"key={subGroupKey} >
 												<div
-													className="manage-subgroup-header"
-													role="button"
-													tabIndex={0}
 													aria-expanded={!isSubCollapsed}
+													className="manage-subgroup-header"
 													onClick={(e) => {
 														e.stopPropagation();
 														toggleGroup(subGroupKey);
@@ -1536,6 +1535,8 @@ export function ManagePage({
 															toggleGroup(subGroupKey);
 														}
 													}}
+													role="button"
+													tabIndex={0}
 												>
 													{isSubCollapsed ? (
 														<ChevronRight size={12} />
@@ -1553,25 +1554,25 @@ export function ManagePage({
 												{!isSubCollapsed &&
 													vars.map((v) => (
 														<VariableRow
-															key={v.id}
-															variable={v}
 															isSelected={selectedIds.has(v.id)}
-															onToggleSelect={toggleSelect}
+															key={v.id}
 															onContextSelect={contextSelect}
+															onToggleSelect={toggleSelect}
+															variable={v}
 														/>
 													))}
 											</div>
 										);
 									})}
-								{!isCollapsed && !hasSubGroups && (
+								{!(isCollapsed || hasSubGroups ) && (
 									<div className="manage-subgroup">
 										{allVars.map((v) => (
 											<VariableRow
-												key={v.id}
-												variable={v}
 												isSelected={selectedIds.has(v.id)}
-												onToggleSelect={toggleSelect}
+												key={v.id}
 												onContextSelect={contextSelect}
+												onToggleSelect={toggleSelect}
+												variable={v}
 											/>
 										))}
 									</div>
@@ -1583,23 +1584,19 @@ export function ManagePage({
 			)}
 
 			<ConfirmDialog
+				cancelText="Cancel"
+				confirmText={`Delete ${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
 				isOpen={pendingDelete}
+				message={`Delete ${selectedIds.size} variable${selectedIds.size !== 1 ? "s" : ""}? You can undo this from the notification.`}
 				onClose={() => setPendingDelete(false)}
 				onConfirm={handleDelete}
 				title="Delete Variables"
-				message={`Delete ${selectedIds.size} variable${selectedIds.size !== 1 ? "s" : ""}? You can undo this from the notification.`}
-				confirmText={`Delete ${selectedIds.size} ${selectedIds.size === 1 ? "variable" : "variables"}`}
-				cancelText="Cancel"
 			/>
 
 			<ConfirmDialog
+				cancelText="Cancel"
+				confirmText={"Delete anyway"}
 				isOpen={dependencyWarning !== null}
-				onClose={() => setDependencyWarning(null)}
-				onConfirm={() => {
-					setDependencyWarning(null);
-					handleDelete();
-				}}
-				title="Delete Variables with Dependencies"
 				message={(() => {
 					if (!dependencyWarning) return "";
 					const depsWithRefs = Object.values(dependencyWarning.deps).filter(
@@ -1620,8 +1617,12 @@ export function ManagePage({
 					];
 					return lines.join("\n");
 				})()}
-				confirmText={`Delete anyway`}
-				cancelText="Cancel"
+				onClose={() => setDependencyWarning(null)}
+				onConfirm={() => {
+					setDependencyWarning(null);
+					handleDelete();
+				}}
+				title="Delete Variables with Dependencies"
 			/>
 		</div>
 	);

@@ -1,16 +1,16 @@
 /* === Checkbox with Label - Flowbite style === */
 .wrapper {
   display: flex;
-  align-items: center;
   gap: var(--spacing-md);
+  align-items: center;
 }
 
 .label {
   font-size: var(--text-base);
   font-weight: var(--font-medium);
+  line-height: 1.5;
   color: var(--foreground);
   cursor: pointer;
-  line-height: 1.5;
 }
 
 .wrapper:has(input:disabled) .label {

@@ -2,9 +2,9 @@ import type React from "react";
 import styles from "./SectionHeader.module.css";
 
 interface SectionHeaderProps {
-	title: string;
-	description?: string;
 	action?: React.ReactNode;
+	description?: string;
+	title: string;
 	variant?: "primary" | "secondary";
 }
 

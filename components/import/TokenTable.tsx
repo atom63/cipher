@@ -9,34 +9,29 @@ import type {
 	TokenAction,
 	TokenCategory,
 } from "../../types/tokens";
-import {
-	Button,
-	Checkbox,
-	EmptyState,
-	SectionHeader,
-} from "../ui";
+import { Button, Checkbox, EmptyState, SectionHeader } from "../ui";
 import { Alert } from "../ui/Alert";
 import { BatchRenameDialog } from "./BatchRenameDialog";
 import styles from "./TokenTable.module.css";
 
 /** A conflict detected when importing a token that already exists */
 export interface ImportConflict {
-	tokenId: string;
-	existingValues: Record<string, string>;
 	existingId: string;
+	existingValues: Record<string, string>;
+	tokenId: string;
 }
 
 interface TokenTableProps {
-	tokens: DesignToken[];
-	onTokensUpdated: (tokens: DesignToken[]) => void;
-	onImport: () => void;
-	onCancel: () => void;
 	conflicts?: ImportConflict[];
+	onCancel: () => void;
+	onImport: () => void;
+	onTokensUpdated: (tokens: DesignToken[]) => void;
+	tokens: DesignToken[];
 }
 
 interface EditingState {
-	tokenId: string;
 	field: "figmaName" | "value";
+	tokenId: string;
 }
 
 // Render a token's value display
@@ -175,7 +170,7 @@ const TokenRow = React.memo(function TokenRow({
 				) : (
 					name
 				)}
-				<Pencil size={8} className={styles.editIcon} />
+				<Pencil className={styles.editIcon} size={8} />
 			</span>
 		);
 	};
@@ -224,19 +219,17 @@ const TokenRow = React.memo(function TokenRow({
 		>
 			<div className={styles.colCheck}>
 				<Checkbox
-					id={`token-${token.id}`}
 					checked={token.action !== "skip"}
-					size="sm"
+					id={`token-${token.id}`}
 					onChange={() => onToggle(token.id)}
+					size="sm"
 				/>
 			</div>
 			<div className={styles.colName}>
 				{renderNameSwatch()}
 				{renderName()}
 			</div>
-			<div className={styles.colValue}>
-				{renderValue()}
-			</div>
+			<div className={styles.colValue}>{renderValue()}</div>
 		</div>
 	);
 });
@@ -330,10 +323,16 @@ export function TokenTable({
 
 	const handleCancelEdit = useCallback(() => setEditing(null), []);
 
-	const handleBatchRename = (find: string, replace: string, useRegex: boolean) => {
+	const handleBatchRename = (
+		find: string,
+		replace: string,
+		useRegex: boolean,
+	) => {
 		let pattern: RegExp;
 		try {
-			pattern = useRegex ? new RegExp(find, "gi") : new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+			pattern = useRegex
+				? new RegExp(find, "gi")
+				: new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
 		} catch {
 			return;
 		}
@@ -378,9 +377,9 @@ export function TokenTable({
 	return (
 		<div className={styles.tokenTableContainer}>
 			<SectionHeader
-				variant="secondary"
-				title="Review Tokens"
 				description={`${stats.total} ${stats.total === 1 ? "token" : "tokens"} found · ${stats.toImport} selected for import`}
+				title="Review Tokens"
+				variant="secondary"
 			/>
 
 			{/* Stats - Dynamic category filters */}
@@ -396,8 +395,8 @@ export function TokenTable({
 					.sort(([, a], [, b]) => b - a) // Sort by count descending
 					.map(([category, count]) => (
 						<button
-							key={category}
 							className={`${styles.statChip} ${filter === category ? styles.active : ""}`}
+							key={category}
 							onClick={() => setFilter(category as TokenCategory)}
 							type="button"
 						>
@@ -408,21 +407,28 @@ export function TokenTable({
 
 			{/* Conflict Summary */}
 			{conflicts.length > 0 && (
-				<Alert variant="warning" title={`${conflicts.length} ${conflicts.length === 1 ? "conflict" : "conflicts"} detected`}>
-					{conflicts.length} {conflicts.length === 1 ? "token already exists" : "tokens already exist"} in the target collection.
-					Deselect to skip, or keep selected to overwrite existing values.
+				<Alert
+					title={`${conflicts.length} ${conflicts.length === 1 ? "conflict" : "conflicts"} detected`}
+					variant="warning"
+				>
+					{conflicts.length}{" "}
+					{conflicts.length === 1
+						? "token already exists"
+						: "tokens already exist"}{" "}
+					in the target collection. Deselect to skip, or keep selected to
+					overwrite existing values.
 				</Alert>
 			)}
 
 			{/* Validation Results */}
 			{validation.issues.length > 0 && (
 				<Alert
-					variant={validation.valid ? "warning" : "error"}
 					title={
 						validation.valid
 							? `${validation.stats.warnings} ${validation.stats.warnings === 1 ? "warning" : "warnings"}`
 							: `${validation.stats.errors} ${validation.stats.errors === 1 ? "error" : "errors"} — fix before importing`
 					}
+					variant={validation.valid ? "warning" : "error"}
 				>
 					<ul className={styles.validationList}>
 						{validation.issues.slice(0, 5).map((issue) => (
@@ -431,9 +437,7 @@ export function TokenTable({
 							</li>
 						))}
 						{validation.issues.length > 5 && (
-							<li>
-								…and {validation.issues.length - 5} more
-							</li>
+							<li>…and {validation.issues.length - 5} more</li>
 						)}
 					</ul>
 				</Alert>
@@ -443,21 +447,21 @@ export function TokenTable({
 			<div className={styles.listHeader}>
 				<div className={styles.colCheck}>
 					<Checkbox
-						id="select-all"
 						checked={allSelected}
-						indeterminate={!allSelected && !noneSelected}
-						size="sm"
+						id="select-all"
+						indeterminate={!(allSelected || noneSelected)}
 						onChange={handleToggleAll}
+						size="sm"
 					/>
 				</div>
 				<div className={styles.colName}>Name</div>
 				<div className={styles.colValue}>
 					<span>Value</span>
 					<Button
-						variant="ghost"
-						size="sm"
 						onClick={() => setShowBatchRename(true)}
+						size="sm"
 						title="Find and replace in token names"
+						variant="ghost"
 					>
 						<Search size={14} />
 						Batch Rename
@@ -469,23 +473,27 @@ export function TokenTable({
 			<div className={styles.tokenList}>
 				{filteredTokens.length === 0 ? (
 					<EmptyState
+						description={
+							filter === "all"
+								? undefined
+								: "Select a different category or show all tokens."
+						}
 						icon={<Search size={24} />}
-						title={filter === "all" ? "No tokens found" : `No ${filter} tokens`}
-						description={filter === "all" ? undefined : "Select a different category or show all tokens."}
 						size="sm"
+						title={filter === "all" ? "No tokens found" : `No ${filter} tokens`}
 					/>
 				) : (
 					filteredTokens.map((token) => (
 						<TokenRow
-							key={token.id}
-							token={token}
-							editing={editing}
 							conflict={conflictMap.get(token.id)}
-							onToggle={handleToggleToken}
-							onNameChange={handleNameChange}
-							onValueChange={handleValueChange}
-							onStartEdit={setEditing}
+							editing={editing}
+							key={token.id}
 							onCancelEdit={handleCancelEdit}
+							onNameChange={handleNameChange}
+							onStartEdit={setEditing}
+							onToggle={handleToggleToken}
+							onValueChange={handleValueChange}
+							token={token}
 						/>
 					))
 				)}
@@ -493,24 +501,26 @@ export function TokenTable({
 
 			{/* Actions */}
 			<div className={styles.tableActions}>
-				<Button variant="ghost" onClick={onCancel}>
+				<Button onClick={onCancel}variant="ghost" >
 					<X size={14} />
 					Cancel
 				</Button>
 				<Button
-					variant="primary"
 					disabled={stats.toImport === 0 || !validation.valid}
 					onClick={onImport}
+					variant="primary"
 				>
 					{!validation.valid ? (
 						<>
 							<AlertTriangle size={14} />
-							Fix {validation.stats.errors} {validation.stats.errors === 1 ? "error" : "errors"} to import
+							Fix {validation.stats.errors}{" "}
+							{validation.stats.errors === 1 ? "error" : "errors"} to import
 						</>
 					) : (
 						<>
 							<Check size={14} />
-							Import {stats.toImport} {stats.toImport === 1 ? "token" : "tokens"}
+							Import {stats.toImport}{" "}
+							{stats.toImport === 1 ? "token" : "tokens"}
 						</>
 					)}
 				</Button>

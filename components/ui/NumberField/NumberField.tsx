@@ -3,17 +3,17 @@ import { forwardRef, useCallback, useRef } from "react";
 import styles from "./NumberField.module.css";
 
 interface NumberFieldProps {
-	value: number;
-	onChange: (value: number) => void;
-	onBlur?: () => void;
-	min?: number;
-	max?: number;
-	step?: number;
-	size?: "sm" | "md";
-	disabled?: boolean;
-	placeholder?: string;
 	className?: string;
+	disabled?: boolean;
 	id?: string;
+	max?: number;
+	min?: number;
+	onBlur?: () => void;
+	onChange: (value: number) => void;
+	placeholder?: string;
+	size?: "sm" | "md";
+	step?: number;
+	value: number;
 }
 
 export const NumberField = forwardRef<HTMLInputElement, NumberFieldProps>(
@@ -91,42 +91,42 @@ export const NumberField = forwardRef<HTMLInputElement, NumberFieldProps>(
 		return (
 			<div className={groupClasses} data-disabled={disabled || undefined}>
 				<button
-					type="button"
-					className={`${styles.button} ${styles.decrement}`}
-					onClick={decrement}
-					disabled={disabled || atMin}
-					tabIndex={-1}
 					aria-label="Decrease"
+					className={`${styles.button} ${styles.decrement}`}
+					disabled={disabled || atMin}
+					onClick={decrement}
+					tabIndex={-1}
+					type="button"
 				>
 					<Minus />
 				</button>
 				<input
+					autoComplete="off"
+					className={styles.input}
+					disabled={disabled}
+					id={id}
+					max={max}
+					min={min}
+					onBlur={onBlur}
+					onChange={handleInputChange}
+					onKeyDown={handleKeyDown}
+					placeholder={placeholder}
 					ref={(node) => {
 						inputRef.current = node;
 						if (typeof ref === "function") ref(node);
 						else if (ref) ref.current = node;
 					}}
-					id={id}
-					type="number"
-					className={styles.input}
-					value={value}
-					onChange={handleInputChange}
-					onBlur={onBlur}
-					onKeyDown={handleKeyDown}
-					min={min}
-					max={max}
 					step={step}
-					disabled={disabled}
-					placeholder={placeholder}
-					autoComplete="off"
+					type="number"
+					value={value}
 				/>
 				<button
-					type="button"
-					className={`${styles.button} ${styles.increment}`}
-					onClick={increment}
-					disabled={disabled || atMax}
-					tabIndex={-1}
 					aria-label="Increase"
+					className={`${styles.button} ${styles.increment}`}
+					disabled={disabled || atMax}
+					onClick={increment}
+					tabIndex={-1}
+					type="button"
 				>
 					<Plus />
 				</button>

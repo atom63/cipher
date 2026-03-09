@@ -41,26 +41,26 @@ export type TokenCategory =
 export type TokenAction = "import" | "skip" | "overwrite";
 
 export interface ColorValue {
-	r: number; // 0-1
-	g: number; // 0-1
-	b: number; // 0-1
 	a?: number; // 0-1
+	b: number; // 0-1
+	g: number; // 0-1
+	r: number; // 0-1
 }
 
 export interface ShadowValue {
+	blur: number;
+	color: string | ColorValue;
+	spread: number;
 	x: number;
 	y: number;
-	blur: number;
-	spread: number;
-	color: string | ColorValue;
 }
 
 export interface TypographyValue {
 	fontFamily?: string;
 	fontSize?: number;
 	fontWeight?: number;
-	lineHeight?: number | string;
 	letterSpacing?: number | string;
+	lineHeight?: number | string;
 }
 
 export type TokenValue =
@@ -78,57 +78,53 @@ export interface ConflictInfo {
 }
 
 export interface DesignToken {
-	id: string;
-	name: string; // Original name from source
+	action: TokenAction;
+	category: TokenCategory;
+	conflict?: ConflictInfo;
+	description?: string;
 	figmaName: string; // Transformed name for Figma
-	value: TokenValue;
+	id: string;
+	metadata?: Record<string, any>;
+	name: string; // Original name from source
 	originalValue: string; // Original string value from source
 	type: TokenType;
-	category: TokenCategory;
-	description?: string;
-	metadata?: Record<string, any>;
-	action: TokenAction;
-	conflict?: ConflictInfo;
+	value: TokenValue;
 }
 
 export interface ParsedTokens {
-	tokens: DesignToken[];
+	errors: ParseError[];
 	stats: {
 		total: number;
 		byCategory: Record<string, number>; // Flexible to support any category
 		conflicts: number;
 		errors: number;
 	};
-	errors: ParseError[];
 	/** Styles section from combined JSON export (paint, text, effect, grid) */
 	styles?: any;
+	tokens: DesignToken[];
 }
 
 export interface ParseError {
 	line?: number;
-	token?: string;
 	message: string;
 	severity: "error" | "warning";
+	token?: string;
 }
 
 /** Snapshot of a variable for import undo */
 export interface ImportUndoEntry {
-	/** Variable ID in Figma */
-	variableId: string;
 	/** What the import did */
 	action: "created" | "updated";
-	/** For "updated": previous values by modeId */
-	previousValues?: Record<string, any>;
 	/** For "updated": previous description */
 	previousDescription?: string;
+	/** For "updated": previous values by modeId */
+	previousValues?: Record<string, any>;
+	/** Variable ID in Figma */
+	variableId: string;
 }
 
 /** Results from import operations (variables or styles) */
 export interface ImportResults {
-	success: number;
-	failed: number;
-	errors: string[];
-	skipped: number;
 	changes: Array<{
 		name: string;
 		type: string;
@@ -136,6 +132,10 @@ export interface ImportResults {
 		oldValue?: string;
 		newValue: string;
 	}>;
+	errors: string[];
+	failed: number;
+	skipped: number;
+	success: number;
 	/** Undo data for reverting the import */
 	undoData?: ImportUndoEntry[];
 }
@@ -143,9 +143,9 @@ export interface ImportResults {
 // Simple token format for MVP
 export interface SimpleTokens {
 	colors?: Record<string, string>;
-	spacing?: Record<string, string | number>;
 	radius?: Record<string, string | number>;
 	sizes?: Record<string, string | number>;
+	spacing?: Record<string, string | number>;
 	typography?: {
 		fontFamily?: Record<string, string>;
 		fontSize?: Record<string, string | number>;
@@ -170,25 +170,24 @@ export type MessageType =
 	| "error";
 
 export interface Message {
-	type: MessageType;
 	data?: any;
+	type: MessageType;
 }
 
 export interface ParseTokensMessage extends Message {
-	type: "parse-tokens";
 	data: {
 		content: string;
 		format: "json" | "css";
 	};
+	type: "parse-tokens";
 }
 
 export interface TokensParsedMessage extends Message {
-	type: "tokens-parsed";
 	data: ParsedTokens;
+	type: "tokens-parsed";
 }
 
 export interface CreateVariablesMessage extends Message {
-	type: "create-variables";
 	data: {
 		tokens: DesignToken[];
 		collectionName: string;
@@ -197,30 +196,31 @@ export interface CreateVariablesMessage extends Message {
 		/** Styles section from combined JSON export — imported after variables */
 		stylesData?: any;
 	};
+	type: "create-variables";
 }
 
 export interface VariablesCreatedMessage extends Message {
-	type: "variables-created";
 	data: {
 		success: number;
 		failed: number;
 		errors: string[];
 	};
+	type: "variables-created";
 }
 
 export interface ProgressUpdateMessage extends Message {
-	type: "progress-update";
 	data: {
 		current: number;
 		total: number;
 		message: string;
 	};
+	type: "progress-update";
 }
 
 export interface ErrorMessage extends Message {
-	type: "error";
 	data: {
 		message: string;
 		details?: any;
 	};
+	type: "error";
 }

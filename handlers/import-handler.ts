@@ -273,10 +273,9 @@ export async function createVariablesFromTokens(
 
 					// Snapshot all mode values before mutation (for undo)
 					const preUpdateSnapshot =
-						!isNewVariable &&
-						!undoEntries.some(
+						!(isNewVariable ||undoEntries.some(
 							(e) => e.variableId === variable.id && e.action === "updated",
-						)
+						))
 							? { ...variable.valuesByMode }
 							: null;
 					const preUpdateDescription = !isNewVariable
@@ -467,10 +466,9 @@ export async function createVariablesFromTokens(
 
 					// Snapshot before mutation for undo
 					const preRefSnapshot =
-						!isNewVariable &&
-						!undoEntries.some(
+						!(isNewVariable ||undoEntries.some(
 							(e) => e.variableId === variable.id && e.action === "updated",
-						)
+						))
 							? { ...variable.valuesByMode }
 							: null;
 					const preRefDescription = !isNewVariable
@@ -595,7 +593,7 @@ export async function importStylesFromTokens(
 		});
 
 		// Validate input
-		if (!stylesData || !stylesData.styles) {
+		if (!(stylesData?.styles)) {
 			throw new Error("Invalid style data format");
 		}
 
@@ -711,7 +709,7 @@ export async function importStylesFromTokens(
 										);
 									}
 								} catch (e) {
-									console.warn(`Could not bind variable to paint:`, e);
+									console.warn("Could not bind variable to paint:", e);
 								}
 							}
 
@@ -999,7 +997,7 @@ export async function importStylesFromTokens(
 								try {
 									(style as any).fontWeight = Number(data.fontWeight);
 								} catch (_e) {
-									console.warn(`Could not set fontWeight directly`);
+									console.warn("Could not set fontWeight directly");
 								}
 							}
 						}
@@ -1012,7 +1010,7 @@ export async function importStylesFromTokens(
 							try {
 								(style as any).fontWeight = Number(data.fontWeight);
 							} catch (_e) {
-								console.warn(`Could not set fontWeight directly`);
+								console.warn("Could not set fontWeight directly");
 							}
 						}
 					}
@@ -1023,7 +1021,7 @@ export async function importStylesFromTokens(
 					} catch (_e) {
 						// fontWeight might not be directly settable in all Figma API versions
 						console.warn(
-							`Could not set fontWeight directly - property may not be supported`,
+							"Could not set fontWeight directly - property may not be supported",
 						);
 					}
 				}
@@ -1544,7 +1542,7 @@ function convertFillToPaint(fill: any, returnBindingInfo = false): any {
 
 		const paint: GradientPaint = {
 			type: gradientType,
-			gradientStops: gradientStops,
+			gradientStops,
 			gradientTransform: fill.gradientTransform || [
 				[1, 0, 0],
 				[0, 1, 0],

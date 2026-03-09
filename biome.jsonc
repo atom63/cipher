@@ -1,0 +1,77 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["ultracite/biome/core", "ultracite/biome/react"],
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "!scripts",
+      "!dist",
+      "!exports/styles",
+      "!exports/styles-test",
+      "!src/styles"
+    ]
+  },
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off",
+        "noBitwiseOperators": "off",
+        "noEmptyBlockStatements": "off",
+        "noEvolvingTypes": "off",
+        "noAssignInExpressions": "off",
+        // Figma plugin handlers use async without await for API conformance
+        "useAwait": "off"
+      },
+      "complexity": {
+        "noImportantStyles": "off",
+        "useLiteralKeys": "off",
+        // Plugin handlers are naturally complex
+        "noExcessiveCognitiveComplexity": "off"
+      },
+      "a11y": {
+        "noStaticElementInteractions": "off",
+        "useKeyWithClickEvents": "off",
+        "noAutofocus": "off",
+        "noLabelWithoutControl": "off",
+        "useAriaPropsSupportedByRole": "off",
+        // Div-based layouts with ARIA roles
+        "useSemanticElements": "off",
+        "noNoninteractiveElementInteractions": "off"
+      },
+      "correctness": {
+        "noUnknownTypeSelector": "off",
+        // Figma plugin API globals (figma, __html__, __uiFiles__)
+        "noUndeclaredVariables": "off"
+      },
+      "style": {
+        "noDescendingSpecificity": "off",
+        // Existing codebase patterns
+        "useBlockStatements": "off",
+        "useFilenamingConvention": "off",
+        "noNestedTernary": "off",
+        "noParameterAssign": "off",
+        "noNegationElse": "off",
+        "noInferrableTypes": "off",
+        "useForOf": "off",
+        "useDefaultSwitchClause": "off",
+        "useCollapsedIf": "off",
+        "useCollapsedElseIf": "off"
+      },
+      "performance": {
+        // Tests and build scripts use inline regex
+        "useTopLevelRegex": "off",
+        "noBarrelFile": "off",
+        "noNamespaceImport": "off"
+      }
+    }
+  },
+  "formatter": {
+    "includes": ["!**/*.module.css"]
+  },
+  "css": {
+    "formatter": {
+      "indentStyle": "tab"
+    }
+  }
+}

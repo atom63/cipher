@@ -24,8 +24,8 @@ import {
 import styles from "./RadixSelector.module.css";
 
 interface RadixSelectorProps {
-	onGenerate: (tokens: DesignToken[]) => void;
 	onBack: () => void;
+	onGenerate: (tokens: DesignToken[]) => void;
 }
 
 export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
@@ -71,10 +71,10 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 		<div className={styles.container}>
 			<div className={styles.header}>
 				<Button
-					variant="ghost"
-					size="sm"
-					onClick={onBack}
 					className={styles.backButton}
+					onClick={onBack}
+					size="sm"
+					variant="ghost"
 				>
 					<ChevronLeft size={14} /> Back
 				</Button>
@@ -88,9 +88,9 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 				{/* Options */}
 				<div className={styles.options}>
 					<CheckboxWithLabel
+						checked={includeDarkMode}
 						id="dark-mode"
 						label="Include dark mode palettes"
-						checked={includeDarkMode}
 						onChange={(checked: boolean) => setIncludeDarkMode(checked)}
 					/>
 				</div>
@@ -101,16 +101,16 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 						<SectionHeader title="Gray Scales" />
 						<div className={styles.sectionActions}>
 							<Button
-								variant="ghost"
-								size="sm"
 								onClick={() => selectAllInCategory(palettesByCategory.gray)}
+								size="sm"
+								variant="ghost"
 							>
 								Select all
 							</Button>
 							<Button
-								variant="ghost"
-								size="sm"
 								onClick={() => deselectAllInCategory(palettesByCategory.gray)}
+								size="sm"
+								variant="ghost"
 							>
 								Clear
 							</Button>
@@ -120,22 +120,22 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 					<div className={styles.paletteGrid}>
 						{palettesByCategory.gray.map((palette) => (
 							<Card
-								key={palette.name}
-								variant={
-									selectedPalettes.includes(palette.name) ? "muted" : "bordered"
-								}
-								padding="sm"
-								hover={!selectedPalettes.includes(palette.name)}
-								onClick={() => togglePalette(palette.name)}
 								className={
 									selectedPalettes.includes(palette.name) ? styles.selected : ""
+								}
+								hover={!selectedPalettes.includes(palette.name)}
+								key={palette.name}
+								onClick={() => togglePalette(palette.name)}
+								padding="sm"
+								variant={
+									selectedPalettes.includes(palette.name) ? "muted" : "bordered"
 								}
 							>
 								<CardHeader>
 									<CheckboxWithLabel
+										checked={selectedPalettes.includes(palette.name)}
 										id={`palette-${palette.name}`}
 										label={palette.displayName}
-										checked={selectedPalettes.includes(palette.name)}
 										onChange={() => togglePalette(palette.name)}
 									/>
 								</CardHeader>
@@ -144,8 +144,8 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 										{getRadixPalettePreview(palette.name, "light").map(
 											(color, idx) => (
 												<div
-													key={idx}
 													className={styles.colorSwatch}
+													key={idx}
 													style={{ backgroundColor: color }}
 													title={`Shade ${idx + 1}`}
 												/>
@@ -164,16 +164,16 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 						<SectionHeader title="Colors" />
 						<div className={styles.sectionActions}>
 							<Button
-								variant="ghost"
-								size="sm"
 								onClick={() => selectAllInCategory(palettesByCategory.color)}
+								size="sm"
+								variant="ghost"
 							>
 								Select all
 							</Button>
 							<Button
-								variant="ghost"
-								size="sm"
 								onClick={() => deselectAllInCategory(palettesByCategory.color)}
+								size="sm"
+								variant="ghost"
 							>
 								Clear
 							</Button>
@@ -183,22 +183,22 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 					<div className={styles.paletteGrid}>
 						{palettesByCategory.color.map((palette) => (
 							<Card
-								key={palette.name}
-								variant={
-									selectedPalettes.includes(palette.name) ? "muted" : "bordered"
-								}
-								padding="sm"
-								hover={!selectedPalettes.includes(palette.name)}
-								onClick={() => togglePalette(palette.name)}
 								className={
 									selectedPalettes.includes(palette.name) ? styles.selected : ""
+								}
+								hover={!selectedPalettes.includes(palette.name)}
+								key={palette.name}
+								onClick={() => togglePalette(palette.name)}
+								padding="sm"
+								variant={
+									selectedPalettes.includes(palette.name) ? "muted" : "bordered"
 								}
 							>
 								<CardHeader>
 									<CheckboxWithLabel
+										checked={selectedPalettes.includes(palette.name)}
 										id={`palette-${palette.name}`}
 										label={palette.displayName}
-										checked={selectedPalettes.includes(palette.name)}
 										onChange={() => togglePalette(palette.name)}
 									/>
 								</CardHeader>
@@ -207,8 +207,8 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 										{getRadixPalettePreview(palette.name, "light").map(
 											(color, idx) => (
 												<div
-													key={idx}
 													className={styles.colorSwatch}
+													key={idx}
 													style={{ backgroundColor: color }}
 													title={`Shade ${idx + 1}`}
 												/>
@@ -233,13 +233,13 @@ export function RadixSelector({ onGenerate, onBack }: RadixSelectorProps) {
 				</div>
 
 				<div className={styles.actions}>
-					<Button variant="secondary" onClick={onBack}>
+					<Button onClick={onBack}variant="secondary" >
 						Cancel
 					</Button>
 					<Button
-						variant="primary"
-						onClick={handleGenerate}
 						disabled={selectedPalettes.length === 0}
+						onClick={handleGenerate}
+						variant="primary"
 					>
 						Preview {tokenCount} Tokens <ArrowRight size={14} />
 					</Button>

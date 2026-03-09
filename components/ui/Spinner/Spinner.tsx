@@ -6,15 +6,15 @@ import styles from "./Spinner.module.css";
 // ============================================================================
 
 export interface SpinnerProps {
-	size?: "sm" | "md" | "lg" | "xl";
 	className?: string;
+	size?: "sm" | "md" | "lg" | "xl";
 }
 
 export function Spinner({ size = "md", className = "" }: SpinnerProps) {
 	return (
 		<output
-			className={`${styles.spinner} ${styles[size]} ${className}`}
 			aria-label="Loading"
+			className={`${styles.spinner} ${styles[size]} ${className}`}
 		/>
 	);
 }
@@ -24,10 +24,10 @@ export function Spinner({ size = "md", className = "" }: SpinnerProps) {
 // ============================================================================
 
 export interface LoadingStateProps {
-	message?: string;
-	hint?: string;
-	size?: "sm" | "md" | "lg";
 	children?: ReactNode;
+	hint?: string;
+	message?: string;
+	size?: "sm" | "md" | "lg";
 }
 
 export function LoadingState({
@@ -44,4 +44,3 @@ export function LoadingState({
 		</div>
 	);
 }
-

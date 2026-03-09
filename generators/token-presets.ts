@@ -56,7 +56,7 @@ export interface RadiusConfig {
 
 /** Offsets from the anchor value for each t-shirt size */
 const RADIUS_OFFSETS: Record<string, number> = {
-	none: -Infinity, // special: always 0
+	none: Number.NEGATIVE_INFINITY, // special: always 0
 	"2xs": -8,
 	xs: -6,
 	sm: -4,
@@ -66,7 +66,7 @@ const RADIUS_OFFSETS: Record<string, number> = {
 	"2xl": 8,
 	"3xl": 12,
 	"4xl": 16,
-	full: Infinity, // special: always 9999
+	full: Number.POSITIVE_INFINITY, // special: always 9999
 };
 
 /** Accepts either a plain anchor number (multiplier=1) or a full RadiusConfig */
@@ -96,13 +96,12 @@ export const DEFAULT_RADIUS: RadiusConfig = { anchor: 10, multiplier: 1 };
 // =========================================================================
 
 export interface ShadowLayer {
+	blur: number;
 	offsetX: number;
 	offsetY: number;
-	blur: number;
-	spread: number;
 	opacity: number;
+	spread: number;
 }
-
 
 export const SHADOW_SCALE: Record<string, ShadowLayer[]> = {
 	"0": [{ offsetX: 0, offsetY: 0, blur: 0, spread: 0, opacity: 0 }],
@@ -146,9 +145,9 @@ export function shadowToCss(defOrLayers: ShadowLayer | ShadowLayer[]): string {
 // =========================================================================
 
 export interface TypeStep {
+	lineHeight: number;
 	name: string;
 	size: number;
-	lineHeight: number;
 }
 
 // --- Scale ratios ---
@@ -164,6 +163,7 @@ export const TYPESCALE_RATIOS: Record<string, TypescaleRatio> = {
 	"minor-third": { label: "Minor Third", value: 1.2 },
 	"major-third": { label: "Major Third", value: 1.25 },
 	"perfect-fourth": { label: "Perfect Fourth", value: 1.333 },
+	// biome-ignore lint/suspicious/noApproximativeNumericConstant: Intentional design typography ratio, not an approximation of Math.SQRT2
 	"augmented-fourth": { label: "Augmented Fourth", value: 1.414 },
 	"perfect-fifth": { label: "Perfect Fifth", value: 1.5 },
 	"golden-ratio": { label: "Golden Ratio", value: 1.618 },
@@ -174,16 +174,16 @@ export const TYPESCALE_RATIOS: Record<string, TypescaleRatio> = {
 export interface TypescaleConfig {
 	/** Base font size in px (default: 16) */
 	base: number;
-	/** Scale ratio key or numeric value (default: "major-third" = 1.25) */
-	ratio: string;
 	/** Line-height for body text (base + downscales) as percentage (default: 150) */
 	lineHeightBody: number;
 	/** Line-height for headings (upscales) as percentage (default: 125) */
 	lineHeightHeading: number;
-	/** Number of sizes above base (default: 4, max: 7) */
-	stepsUp: number;
+	/** Scale ratio key or numeric value (default: "major-third" = 1.25) */
+	ratio: string;
 	/** Number of sizes below base (default: 2, max: 4) */
 	stepsDown: number;
+	/** Number of sizes above base (default: 4, max: 7) */
+	stepsUp: number;
 }
 
 export const DEFAULT_TYPESCALE: TypescaleConfig = {
@@ -196,12 +196,8 @@ export const DEFAULT_TYPESCALE: TypescaleConfig = {
 };
 
 // Step names indexed from base outward
-const STEP_NAMES_UP = [
-	"lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl",
-];
-const STEP_NAMES_DOWN = [
-	"sm", "xs", "2xs", "3xs",
-];
+const STEP_NAMES_UP = ["lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"];
+const STEP_NAMES_DOWN = ["sm", "xs", "2xs", "3xs"];
 
 /** Resolve ratio key to numeric value */
 export function resolveRatio(ratioKey: string): number {
@@ -291,9 +287,9 @@ export const FONT_FAMILIES: Record<string, string> = {
 };
 
 export interface FontOverrides {
+	mono?: string;
 	sans?: string;
 	serif?: string;
-	mono?: string;
 }
 
 const SYSTEM_FALLBACKS: Record<string, string> = {
@@ -303,7 +299,9 @@ const SYSTEM_FALLBACKS: Record<string, string> = {
 };
 
 /** Build font stacks with optional custom font names prepended to system fallbacks */
-export function buildFontFamilies(overrides?: FontOverrides): Record<string, string> {
+export function buildFontFamilies(
+	overrides?: FontOverrides,
+): Record<string, string> {
 	if (!overrides) return { ...FONT_FAMILIES };
 	const result = { ...FONT_FAMILIES };
 	for (const key of ["sans", "serif", "mono"] as const) {
@@ -342,7 +340,9 @@ export function generateTypographyCss(steps: TypeStep[]): string {
 	lines.push(":root {");
 	for (const step of steps) {
 		lines.push(`  --typography-${step.name}-font-size: ${step.size}px;`);
-		lines.push(`  --typography-${step.name}-line-height: ${step.lineHeight}px;`);
+		lines.push(
+			`  --typography-${step.name}-line-height: ${step.lineHeight}px;`,
+		);
 	}
 	lines.push("}");
 

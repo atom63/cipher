@@ -19,13 +19,13 @@ import styles from "./LibrarySelector.module.css";
 export type LibraryType = "radix" | "tailwind" | "custom" | "json";
 
 interface LibraryOption {
-	id: LibraryType;
-	icon: React.ReactNode;
-	title: string;
-	description: string;
-	tokenCount: string;
 	badge?: string;
+	description: string;
 	disabled?: boolean;
+	icon: React.ReactNode;
+	id: LibraryType;
+	title: string;
+	tokenCount: string;
 }
 
 interface LibrarySelectorProps {
@@ -75,12 +75,12 @@ export function LibrarySelector({ onSelect }: LibrarySelectorProps) {
 			<div className={styles.grid}>
 				{LIBRARY_OPTIONS.map((option) => (
 					<Card
-						key={option.id}
-						variant="default"
-						padding="md"
-						hover={!option.disabled}
-						onClick={() => !option.disabled && onSelect(option.id)}
 						className={`${styles.libraryCard} ${option.disabled ? styles.disabled : ""}`}
+						hover={!option.disabled}
+						key={option.id}
+						onClick={() => !option.disabled && onSelect(option.id)}
+						padding="md"
+						variant="default"
 					>
 						<div className={styles.iconWrapper}>
 							<span className={styles.icon}>{option.icon}</span>
@@ -100,7 +100,11 @@ export function LibrarySelector({ onSelect }: LibrarySelectorProps) {
 
 						<CardFooter className={styles.footer}>
 							<span className={styles.tokenCount}>{option.tokenCount}</span>
-							{!option.disabled && <span className={styles.arrow}><ArrowRight size={12} /></span>}
+							{!option.disabled && (
+								<span className={styles.arrow}>
+									<ArrowRight size={12} />
+								</span>
+							)}
 						</CardFooter>
 					</Card>
 				))}
@@ -108,8 +112,8 @@ export function LibrarySelector({ onSelect }: LibrarySelectorProps) {
 
 			<div className={styles.footer}>
 				<p className={styles.footerText}>
-					<Lightbulb size={14} /> <strong>Tip:</strong> Use the <strong>Import</strong> tab in the
-					sidebar to upload JSON token files.
+					<Lightbulb size={14} /> <strong>Tip:</strong> Use the{" "}
+					<strong>Import</strong> tab in the sidebar to upload JSON token files.
 				</p>
 			</div>
 		</div>

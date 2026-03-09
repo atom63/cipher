@@ -1,26 +1,32 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { Button } from "../Button";
 import styles from "./Dropdown.module.css";
 
 export interface DropdownOption {
-	value: string;
-	label: string;
-	icon?: ReactNode;
-	disabled?: boolean;
 	danger?: boolean;
+	disabled?: boolean;
+	icon?: ReactNode;
+	label: string;
 	onClick?: () => void;
+	value: string;
 }
 
 export interface DropdownProps {
-	trigger: ReactNode | ((isOpen: boolean) => ReactNode);
-	options: DropdownOption[];
 	align?: "left" | "right" | "center";
-	width?: "auto" | "trigger" | number;
+	className?: string;
 	disabled?: boolean;
 	onSelect?: (value: string) => void;
-	className?: string;
-	variant?: "primary" | "secondary" | "ghost";
+	options: DropdownOption[];
 	size?: "sm" | "md" | "lg";
+	trigger: ReactNode | ((isOpen: boolean) => ReactNode);
+	variant?: "primary" | "secondary" | "ghost";
+	width?: "auto" | "trigger" | number;
 }
 
 export function Dropdown({
@@ -85,14 +91,17 @@ export function Dropdown({
 		}
 	};
 
-	const handleSelect = (option: DropdownOption) => {
-		if (!option.disabled) {
-			option.onClick?.();
-			onSelect?.(option.value);
-			setIsOpen(false);
-			triggerRef.current?.focus();
-		}
-	};
+	const handleSelect = useCallback(
+		(option: DropdownOption) => {
+			if (!option.disabled) {
+				option.onClick?.();
+				onSelect?.(option.value);
+				setIsOpen(false);
+				triggerRef.current?.focus();
+			}
+		},
+		[onSelect],
+	);
 
 	// Arrow key navigation
 	useEffect(() => {
@@ -142,7 +151,7 @@ export function Dropdown({
 
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, activeIndex, options]);
+	}, [isOpen, activeIndex, options, handleSelect]);
 
 	const getMenuWidth = () => {
 		if (width === "auto") {
@@ -158,48 +167,51 @@ export function Dropdown({
 	};
 
 	return (
-		<div ref={dropdownRef} className={`${styles.dropdown} ${className}`}>
+		<div className={`${styles.dropdown} ${className}`}ref={dropdownRef} >
 			<Button
-				ref={triggerRef}
-				onClick={handleToggle}
-				disabled={disabled}
-				variant={variant}
-				size={size}
-				className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ""}`}
-				aria-haspopup="menu"
 				aria-expanded={isOpen}
+				aria-haspopup="menu"
+				className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ""}`}
+				disabled={disabled}
+				onClick={handleToggle}
+				ref={triggerRef}
+				size={size}
+				variant={variant}
 			>
 				{typeof trigger === "function" ? trigger(isOpen) : trigger}
 			</Button>
 
 			{isOpen && (
 				<div
-					className={`${styles.menu} ${styles[`align-${align}`]}`}
-					style={{ width: getMenuWidth() }}
-					role="menu"
-					aria-orientation="vertical"
 					aria-activedescendant={
 						activeIndex >= 0
 							? `menuitem-${options[activeIndex]?.value}`
 							: undefined
 					}
+					aria-orientation="vertical"
+					className={`${styles.menu} ${styles[`align-${align}`]}`}
+					role="menu"
+					style={{ width: getMenuWidth() }}
+					tabIndex={-1}
 				>
 					<ul className={styles.menuList}>
 						{options.map((option, index) => (
 							<li key={option.value} role="none">
 								<button
-									type="button"
-									role="menuitem"
-									id={`menuitem-${option.value}`}
-									disabled={option.disabled}
-									onClick={() => handleSelect(option)}
-									data-active={index === activeIndex || undefined}
 									className={`${styles.menuItem} ${
 										option.disabled ? styles.menuItemDisabled : ""
 									} ${option.danger ? styles.menuItemDanger : ""}`}
+									data-active={index === activeIndex || undefined}
+									disabled={option.disabled}
+									id={`menuitem-${option.value}`}
+									onClick={() => handleSelect(option)}
+									role="menuitem"
+									type="button"
 								>
 									{option.icon && (
-										<span className={styles.menuItemIcon} aria-hidden="true">{option.icon}</span>
+										<span aria-hidden="true"className={styles.menuItemIcon} >
+											{option.icon}
+										</span>
 									)}
 									<span className={styles.menuItemLabel}>{option.label}</span>
 								</button>

@@ -27,9 +27,9 @@ import styles from "./ExportPage.module.css";
 
 interface Collection {
 	id: string;
+	modes: string[];
 	name: string;
 	variableCount: number;
-	modes: string[];
 }
 
 type ExportViewState = "selection" | "exporting" | "success" | "css-preview";
@@ -117,7 +117,10 @@ export function ExportPage() {
 		setActiveTab(tab);
 	};
 
-	const totalVariables = collections.reduce((sum, c) => sum + c.variableCount, 0);
+	const totalVariables = collections.reduce(
+		(sum, c) => sum + c.variableCount,
+		0,
+	);
 
 	const handleExportJSON = () => {
 		setView("exporting");
@@ -213,29 +216,29 @@ export function ExportPage() {
 		return (
 			<div className="page-content">
 				<SectionHeader
-					variant="primary"
-					title="CSS Export"
 					description={`${cssStats?.totalVariables ?? 0} variables from ${cssStats?.totalCollections ?? 0} collection${(cssStats?.totalCollections ?? 0) !== 1 ? "s" : ""}`}
+					title="CSS Export"
+					variant="primary"
 				/>
 
 				<div className={styles.cssPreviewActions}>
-					<Button variant="ghost" onClick={copyAllCSS}>
+					<Button onClick={copyAllCSS}variant="ghost" >
 						<Copy size={14} />
 						Copy All
 					</Button>
 					<Button
-						variant="ghost"
 						onClick={() =>
 							downloadAsZip(
 								cssFiles.map((f) => ({ name: f.name, content: f.content })),
 								"design-tokens-css",
 							)
 						}
+						variant="ghost"
 					>
 						<Archive size={14} />
 						Download ZIP
 					</Button>
-					<Button variant="ghost" onClick={handleExportAgain}>
+					<Button onClick={handleExportAgain}variant="ghost" >
 						<FileDown size={14} />
 						Export Again
 					</Button>
@@ -247,7 +250,7 @@ export function ExportPage() {
 						.map((file) => {
 							const isExpanded = expandedCssFile === file.name;
 							return (
-								<div key={file.name} className={styles.cssFileItem}>
+								<div className={styles.cssFileItem}key={file.name} >
 									<div
 										className={styles.cssFileHeader}
 										onClick={() =>
@@ -264,22 +267,22 @@ export function ExportPage() {
 											{file.variableCount} vars
 										</span>
 										<Button
-											variant="ghost"
+											data-tooltip="Copy"
 											onClick={(e: React.MouseEvent) => {
 												e.stopPropagation();
 												copyToClipboard(file.content, file.name);
 											}}
-											data-tooltip="Copy"
+											variant="ghost"
 										>
 											<Copy size={12} />
 										</Button>
 										<Button
-											variant="ghost"
+											data-tooltip="Download"
 											onClick={(e: React.MouseEvent) => {
 												e.stopPropagation();
 												downloadCSS(file);
 											}}
-											data-tooltip="Download"
+											variant="ghost"
 										>
 											<Download size={12} />
 										</Button>
@@ -335,7 +338,7 @@ export function ExportPage() {
 					</div>
 
 					<div className={styles.successActions}>
-						<Button variant="default" onClick={handleExportAgain}>
+						<Button onClick={handleExportAgain}variant="default" >
 							<FileDown size={14} />
 							Export Again
 						</Button>
@@ -350,14 +353,14 @@ export function ExportPage() {
 		return (
 			<div className="page-content">
 				<SectionHeader
-					variant="primary"
-					title="Export"
 					description="Export your design tokens as JSON or CSS"
+					title="Export"
+					variant="primary"
 				/>
 				<EmptyState
+					description="This file has no variable collections to export."
 					icon={<CircleOff size={32} />}
 					title="No Variable Collections"
-					description="This file has no variable collections to export."
 				/>
 			</div>
 		);
@@ -367,9 +370,9 @@ export function ExportPage() {
 	return (
 		<div className="page-content">
 			<SectionHeader
-				variant="primary"
-				title="Export"
 				description={`${totalVariables} variables across ${collections.length} collection${collections.length !== 1 ? "s" : ""}`}
+				title="Export"
+				variant="primary"
 			/>
 
 			{/* Color Format */}
@@ -378,11 +381,11 @@ export function ExportPage() {
 				<div className={styles.formatOptions}>
 					{(["oklch", "hex", "rgba"] as const).map((fmt) => (
 						<button
-							key={fmt}
-							type="button"
 							className={styles.formatOption}
 							data-selected={colorFormat === fmt}
+							key={fmt}
 							onClick={() => handleColorFormatChange(fmt)}
+							type="button"
 						>
 							{fmt.toUpperCase()}
 						</button>
@@ -391,14 +394,14 @@ export function ExportPage() {
 			</div>
 
 			<Tabs
+				activeTab={activeTab}
+				onTabChange={handleTabChange}
 				tabs={[
 					{ id: "json", label: "JSON", icon: <Database size={14} /> },
 					{ id: "css", label: "CSS", icon: <Code size={14} /> },
 				]}
-				activeTab={activeTab}
-				onTabChange={handleTabChange}
 			>
-				<TabPanel id="json" activeTab={activeTab}>
+				<TabPanel activeTab={activeTab}id="json" >
 					<div className={styles.tabContent}>
 						<p className={styles.tabDescription}>
 							Structured token file for cross-platform use, Style Dictionary
@@ -407,7 +410,7 @@ export function ExportPage() {
 
 						<div className={styles.collectionSummary}>
 							{collections.map((c) => (
-								<div key={c.id} className={styles.collectionRow}>
+								<div className={styles.collectionRow}key={c.id} >
 									<span className={styles.collectionName}>{c.name}</span>
 									<span className={styles.collectionMeta}>
 										{c.variableCount} var{c.variableCount !== 1 ? "s" : ""}
@@ -418,7 +421,7 @@ export function ExportPage() {
 						</div>
 
 						<div className={styles.exportActions}>
-							<Button variant="primary" onClick={handleExportJSON}>
+							<Button onClick={handleExportJSON}variant="primary" >
 								<Download size={14} />
 								Export JSON
 							</Button>
@@ -426,7 +429,7 @@ export function ExportPage() {
 					</div>
 				</TabPanel>
 
-				<TabPanel id="css" activeTab={activeTab}>
+				<TabPanel activeTab={activeTab}id="css" >
 					<div className={styles.tabContent}>
 						<p className={styles.tabDescription}>
 							Production-ready CSS custom properties with{" "}
@@ -436,7 +439,7 @@ export function ExportPage() {
 
 						<div className={styles.collectionSummary}>
 							{collections.map((c) => (
-								<div key={c.id} className={styles.collectionRow}>
+								<div className={styles.collectionRow}key={c.id} >
 									<span className={styles.collectionName}>{c.name}</span>
 									<span className={styles.collectionMeta}>
 										{c.variableCount} var{c.variableCount !== 1 ? "s" : ""}
@@ -447,7 +450,7 @@ export function ExportPage() {
 						</div>
 
 						<div className={styles.exportActions}>
-							<Button variant="primary" onClick={handleExportCSS}>
+							<Button onClick={handleExportCSS}variant="primary" >
 								<Code size={14} />
 								Export CSS
 							</Button>

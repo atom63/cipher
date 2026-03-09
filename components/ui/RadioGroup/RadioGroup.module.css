@@ -18,14 +18,14 @@
 .label {
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
-  color: var(--foreground);
   line-height: 1.5;
+  color: var(--foreground);
 }
 
 .description {
   font-size: var(--text-sm);
-  color: var(--muted-foreground);
   line-height: 1.5;
+  color: var(--muted-foreground);
 }
 
 /* === Card Variant === */
@@ -46,15 +46,15 @@
 
 .inline-item {
   display: flex;
-  align-items: center;
   gap: var(--spacing-md);
+  align-items: center;
 }
 
 .inline-label {
   font-size: var(--text-base);
   font-weight: var(--font-medium);
+  line-height: 1.5;
   color: var(--foreground);
   cursor: pointer;
-  line-height: 1.5;
 }
 

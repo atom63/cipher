@@ -50,8 +50,7 @@ describe("convertVariableValue", () => {
 	// convertVariableValue uses figma.variables.getVariableById for aliases,
 	// which is not available in test. We test direct value conversion only.
 
-	const makeVariable = (resolvedType: string) =>
-		({ resolvedType }) as any;
+	const makeVariable = (resolvedType: string) => ({ resolvedType }) as any;
 
 	test("converts COLOR to formatted string", () => {
 		const value = { r: 1, g: 0, b: 0 };

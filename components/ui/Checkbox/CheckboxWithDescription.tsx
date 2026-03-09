@@ -2,12 +2,12 @@ import { Checkbox } from "./Checkbox";
 import styles from "./CheckboxWithDescription.module.css";
 
 interface CheckboxWithDescriptionProps {
+	checked: boolean;
+	description?: string;
+	disabled?: boolean;
 	id: string;
 	label: string;
-	description?: string;
-	checked: boolean;
 	onChange: (checked: boolean) => void;
-	disabled?: boolean;
 }
 
 export function CheckboxWithDescription({
@@ -22,19 +22,19 @@ export function CheckboxWithDescription({
 		<div className={styles.wrapper}>
 			<div className={styles.checkboxContainer}>
 				<Checkbox
-					id={id}
-					checked={checked}
-					onChange={(e) => onChange(e.target.checked)}
-					disabled={disabled}
 					aria-describedby={description ? `${id}-description` : undefined}
+					checked={checked}
+					disabled={disabled}
+					id={id}
+					onChange={(e) => onChange(e.target.checked)}
 				/>
 			</div>
 			<div className={styles.content}>
-				<label htmlFor={id} className={styles.label}>
+				<label className={styles.label}htmlFor={id} >
 					{label}
 				</label>
 				{description && (
-					<p id={`${id}-description`} className={styles.description}>
+					<p className={styles.description}id={`${id}-description`} >
 						{description}
 					</p>
 				)}

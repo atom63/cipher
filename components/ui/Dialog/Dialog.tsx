@@ -4,29 +4,29 @@ import { Button } from "../Button";
 import styles from "./Dialog.module.css";
 
 export interface DialogProps {
-	/** Whether dialog is open */
-	isOpen: boolean;
-	/** Called when dialog should close */
-	onClose: () => void;
-	/** Dialog title */
-	title: string;
 	/** Dialog content */
 	children: ReactNode;
-	/** Footer content (usually actions) */
-	footer?: ReactNode;
-	/** Max width variant */
-	maxWidth?: "sm" | "md" | "lg" | "xl" | "full";
-	/** Visual variant for special dialogs */
-	variant?: "default" | "danger" | "success";
-	/** Close on overlay click (default: true) */
-	closeOnOverlayClick?: boolean;
+	className?: string;
 	/** Close on Escape key (default: true) */
 	closeOnEscape?: boolean;
-	/** Show close button (default: true) */
-	showCloseButton?: boolean;
+	/** Close on overlay click (default: true) */
+	closeOnOverlayClick?: boolean;
+	/** Footer content (usually actions) */
+	footer?: ReactNode;
+	/** Whether dialog is open */
+	isOpen: boolean;
+	/** Max width variant */
+	maxWidth?: "sm" | "md" | "lg" | "xl" | "full";
 	/** Remove content padding for full-bleed layouts like tables */
 	noPadding?: boolean;
-	className?: string;
+	/** Called when dialog should close */
+	onClose: () => void;
+	/** Show close button (default: true) */
+	showCloseButton?: boolean;
+	/** Dialog title */
+	title: string;
+	/** Visual variant for special dialogs */
+	variant?: "default" | "danger" | "success";
 }
 
 export function Dialog({
@@ -73,7 +73,7 @@ export function Dialog({
 			if (focusable.length === 0) return;
 
 			const first = focusable[0];
-			const last = focusable[focusable.length - 1];
+			const last = focusable.at(-1);
 
 			if (e.shiftKey && document.activeElement === first) {
 				e.preventDefault();
@@ -91,7 +91,7 @@ export function Dialog({
 		// Focus the first focusable element on open
 		requestAnimationFrame(() => {
 			const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
-				'button:not([disabled]), [href], input:not([disabled])',
+				"button:not([disabled]), [href], input:not([disabled])",
 			);
 			firstFocusable?.focus();
 		});
@@ -114,32 +114,36 @@ export function Dialog({
 
 	return (
 		<div
+			aria-labelledby="dialog-title"
+			aria-modal="true"
 			className={styles.overlay}
 			onClick={handleOverlayClick}
 			role="dialog"
-			aria-modal="true"
-			aria-labelledby="dialog-title"
 		>
 			<div
-				ref={dialogRef}
 				className={`${styles.dialog} ${styles[`maxWidth-${maxWidth}`]} ${className}`}
-				onClick={(e) => e.stopPropagation()}
 				data-variant={variant !== "default" ? variant : undefined}
+				onClick={(e) => e.stopPropagation()}
+				ref={dialogRef}
 			>
 				<div className={styles.header}>
 					<h3 id="dialog-title">{title}</h3>
 					{showCloseButton && (
 						<button
-							type="button"
+							aria-label="Close dialog"
 							className={styles.closeButton}
 							onClick={onClose}
-							aria-label="Close dialog"
+							type="button"
 						>
-							<X size={18} aria-hidden="true" />
+							<X aria-hidden="true" size={18} />
 						</button>
 					)}
 				</div>
-				<div className={`${styles.content} ${noPadding ? styles.noPadding : ""}`}>{children}</div>
+				<div
+					className={`${styles.content} ${noPadding ? styles.noPadding : ""}`}
+				>
+					{children}
+				</div>
 				{footer && <div className={styles.footer}>{footer}</div>}
 			</div>
 		</div>
@@ -151,8 +155,8 @@ export function Dialog({
 // ============================================================================
 
 export interface DialogActionsProps {
-	children: ReactNode;
 	align?: "left" | "center" | "right" | "between";
+	children: ReactNode;
 	className?: string;
 }
 
@@ -175,15 +179,15 @@ export function DialogActions({
 // ============================================================================
 
 export interface ConfirmDialogProps {
+	cancelText?: string;
+	confirmText?: string;
 	isOpen: boolean;
+	loading?: boolean;
+	message: string;
 	onClose: () => void;
 	onConfirm: () => void;
 	title: string;
-	message: string;
-	confirmText?: string;
-	cancelText?: string;
 	variant?: "default" | "danger";
-	loading?: boolean;
 }
 
 export function ConfirmDialog({
@@ -199,29 +203,25 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
 	return (
 		<Dialog
-			isOpen={isOpen}
-			onClose={onClose}
-			title={title}
-			variant={variant}
-			maxWidth="sm"
 			footer={
 				<DialogActions>
-					<Button
-						variant="outline"
-						onClick={onClose}
-						disabled={loading}
-					>
+					<Button disabled={loading}onClick={onClose} variant="outline" >
 						{cancelText}
 					</Button>
 					<Button
-						variant={variant === "danger" ? "destructive" : "primary"}
-						onClick={onConfirm}
 						loading={loading}
+						onClick={onConfirm}
+						variant={variant === "danger" ? "destructive" : "primary"}
 					>
 						{confirmText}
 					</Button>
 				</DialogActions>
 			}
+			isOpen={isOpen}
+			maxWidth="sm"
+			onClose={onClose}
+			title={title}
+			variant={variant}
 		>
 			<p style={{ margin: 0, color: "var(--muted-foreground)" }}>{message}</p>
 		</Dialog>

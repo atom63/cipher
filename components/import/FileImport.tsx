@@ -79,7 +79,9 @@ export function FileImport({
 		try {
 			const data = JSON.parse(content);
 			if (data.$schema === "figma-styles-export") {
-				showError("This is a Figma Styles file. Import supports variable token files (JSON or CSS).");
+				showError(
+					"This is a Figma Styles file. Import supports variable token files (JSON or CSS).",
+				);
 				return;
 			}
 		} catch (_e) {
@@ -123,26 +125,26 @@ export function FileImport({
 		<div className={styles.fileImport}>
 			{/* File Drop Zone */}
 			<div
+				aria-label="Drop a file here or click to browse"
 				className={`${styles.dropZone} ${isDragging ? styles.dragging : ""}`}
 				onClick={() => fileInputRef.current?.click()}
+				onDragLeave={handleDragLeave}
+				onDragOver={handleDragOver}
+				onDrop={handleDrop}
 				onKeyDown={(e) => {
 					if (e.key === "Enter" || e.key === " ") {
 						e.preventDefault();
 						fileInputRef.current?.click();
 					}
 				}}
-				onDragLeave={handleDragLeave}
-				onDragOver={handleDragOver}
-				onDrop={handleDrop}
 				role="button"
 				tabIndex={0}
-				aria-label="Drop a file here or click to browse"
 			>
 				<input
 					accept=".json,.css"
+					className={styles.hiddenInput}
 					onChange={handleFileSelect}
 					ref={fileInputRef}
-					className={styles.hiddenInput}
 					type="file"
 				/>
 
@@ -150,7 +152,9 @@ export function FileImport({
 					<LoadingState message="Reading file…" />
 				) : (
 					<>
-						<div className={styles.uploadIcon}><FolderOpen size={32} /></div>
+						<div className={styles.uploadIcon}>
+							<FolderOpen size={32} />
+						</div>
 						<p className={styles.dropZonePrimary}>
 							Drop a file here or click to browse
 						</p>
@@ -160,7 +164,6 @@ export function FileImport({
 					</>
 				)}
 			</div>
-
 		</div>
 	);
 }

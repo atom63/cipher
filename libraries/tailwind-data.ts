@@ -367,23 +367,23 @@ const TAILWIND_BORDER_RADIUS = {
 // Helper to convert hex to RGB object for Figma
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
 	const cleanHex = hex.replace("#", "");
-	const r = parseInt(cleanHex.slice(0, 2), 16) / 255;
-	const g = parseInt(cleanHex.slice(2, 4), 16) / 255;
-	const b = parseInt(cleanHex.slice(4, 6), 16) / 255;
+	const r = Number.parseInt(cleanHex.slice(0, 2), 16) / 255;
+	const g = Number.parseInt(cleanHex.slice(2, 4), 16) / 255;
+	const b = Number.parseInt(cleanHex.slice(4, 6), 16) / 255;
 	return { r, g, b };
 }
 
 export interface TailwindColorPalette {
-	name: string;
-	displayName: string;
 	category: "gray" | "color";
+	displayName: string;
+	name: string;
 	shades: Record<string, string>;
 }
 
 export interface TailwindCategory {
+	description: string;
 	id: string;
 	label: string;
-	description: string;
 	tokenCount: number;
 }
 

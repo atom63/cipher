@@ -1,10 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { SHADE_STEPS } from "../generators/color-scale";
 import type { BrandConfig } from "../generators/three-tier";
-import {
-	generateCss,
-	generateDesignSystem,
-} from "../generators/three-tier";
+import { generateCss, generateDesignSystem } from "../generators/three-tier";
 
 const defaultConfig: BrandConfig = {
 	primary: "#3B82F6",
@@ -283,13 +280,27 @@ describe("non-color tokens", () => {
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: false,
-			typescale: { base: 16, ratio: "minor-third", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2 },
+			typescale: {
+				base: 16,
+				ratio: "minor-third",
+				lineHeightBody: 150,
+				lineHeightHeading: 125,
+				stepsUp: 4,
+				stepsDown: 2,
+			},
 		});
 		const largeRatio = generateDesignSystem({
 			primary: "#3B82F6",
 			layers: "semantic",
 			darkMode: false,
-			typescale: { base: 16, ratio: "golden-ratio", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2 },
+			typescale: {
+				base: 16,
+				ratio: "golden-ratio",
+				lineHeightBody: 150,
+				lineHeightHeading: 125,
+				stepsUp: 4,
+				stepsDown: 2,
+			},
 		});
 
 		const smallXl = smallRatio.tokens.find(
@@ -577,4 +588,3 @@ describe("token compatibility", () => {
 		}
 	});
 });
-

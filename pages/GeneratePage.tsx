@@ -19,9 +19,9 @@ import {
 import {
 	computeTypescale,
 	DEFAULT_TYPESCALE,
+	type FontOverrides,
 	TYPESCALE_RATIOS,
 	type TypescaleConfig,
-	type FontOverrides,
 } from "../generators/token-presets";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type { DesignToken, ImportResults } from "../types/tokens";
@@ -89,7 +89,9 @@ export function GeneratePage() {
 	const [layers, setLayers] = useState<LayerMode>("semantic");
 	const [darkMode, setDarkMode] = useState(true);
 	const [radiusAnchor, setRadiusAnchor] = useState(10);
-	const [typescale, setTypescale] = useState<TypescaleConfig>({ ...DEFAULT_TYPESCALE });
+	const [typescale, setTypescale] = useState<TypescaleConfig>({
+		...DEFAULT_TYPESCALE,
+	});
 	const [fonts, setFonts] = useState<FontOverrides>({});
 	const [collectionName, setCollectionName] = useState("generated");
 
@@ -99,7 +101,11 @@ export function GeneratePage() {
 	// Build config object (shared between preview and CSS export)
 	const brandConfig: BrandConfig | null = useMemo(() => {
 		if (!/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(primaryColor)) return null;
-		if (hasSecondary && !/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(secondaryColor)) return null;
+		if (
+			hasSecondary &&
+			!/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(secondaryColor)
+		)
+			return null;
 
 		return {
 			primary: primaryColor,
@@ -109,7 +115,7 @@ export function GeneratePage() {
 			darkMode,
 			radius: radiusAnchor,
 			typescale,
-			fonts: (fonts.sans || fonts.serif || fonts.mono) ? fonts : undefined,
+			fonts: fonts.sans || fonts.serif || fonts.mono ? fonts : undefined,
 		};
 	}, [
 		primaryColor,
@@ -131,17 +137,23 @@ export function GeneratePage() {
 
 	// Listen for import result
 	useFigmaMessage(
-		useCallback((msg) => {
-			if (msg.type === "import-complete" || msg.type === "variables-created") {
-				setResult(msg.data as ImportResults);
-				setView("success");
-			}
-			if (msg.type === "error") {
-				const errData = msg.data as { message?: string } | undefined;
-				showError(errData?.message || "Generation failed");
-				setView("preview");
-			}
-		}, [showError]),
+		useCallback(
+			(msg) => {
+				if (
+					msg.type === "import-complete" ||
+					msg.type === "variables-created"
+				) {
+					setResult(msg.data as ImportResults);
+					setView("success");
+				}
+				if (msg.type === "error") {
+					const errData = msg.data as { message?: string } | undefined;
+					showError(errData?.message || "Generation failed");
+					setView("preview");
+				}
+			},
+			[showError],
+		),
 	);
 
 	const handleGenerate = useCallback(() => {
@@ -178,9 +190,9 @@ export function GeneratePage() {
 				{view === "config" && (
 					<>
 						<SectionHeader
-							variant="primary"
-							title="Generate Design System"
 							description="Create a complete token system from your brand colors"
+							title="Generate Design System"
+							variant="primary"
 						/>
 
 						<div className={styles.configSection}>
@@ -192,15 +204,16 @@ export function GeneratePage() {
 										<label>Primary color</label>
 										<div className={styles.colorInputRow}>
 											<input
-												type="color"
-												className={styles.colorSwatch}
-												value={primaryColor}
-												onChange={(e) => setPrimaryColor(e.target.value)}
 												aria-label="Primary color picker"
+												className={styles.colorSwatch}
+												onChange={(e) => setPrimaryColor(e.target.value)}
+												type="color"
+												value={primaryColor}
 											/>
 											<Input
+												autoComplete="off"
 												className={styles.colorHexInput}
-												value={primaryColor}
+												maxLength={7}
 												onChange={(e) => {
 													let v = e.target.value;
 													if (!v.startsWith("#")) v = `#${v}`;
@@ -208,38 +221,40 @@ export function GeneratePage() {
 														setPrimaryColor(v.toUpperCase());
 												}}
 												placeholder="#3B82F6"
-												maxLength={7}
 												spellCheck={false}
-												autoComplete="off"
+												value={primaryColor}
 											/>
 										</div>
 										{generated && (
 											<ColorRampPreview
-												scale={generated.primitives.find((s) => s.name === "brand")}
+												scale={generated.primitives.find(
+													(s) => s.name === "brand",
+												)}
 											/>
 										)}
 									</div>
 
 									<div className={styles.fieldGroup}>
 										<CheckboxWithLabel
-											id="has-secondary"
 											checked={hasSecondary}
-											onChange={setHasSecondary}
+											id="has-secondary"
 											label="Secondary / accent color"
+											onChange={setHasSecondary}
 										/>
 										{hasSecondary && (
 											<>
 												<div className={styles.colorInputRow}>
 													<input
-														type="color"
-														className={styles.colorSwatch}
-														value={secondaryColor}
-														onChange={(e) => setSecondaryColor(e.target.value)}
 														aria-label="Secondary color picker"
+														className={styles.colorSwatch}
+														onChange={(e) => setSecondaryColor(e.target.value)}
+														type="color"
+														value={secondaryColor}
 													/>
 													<Input
+														autoComplete="off"
 														className={styles.colorHexInput}
-														value={secondaryColor}
+														maxLength={7}
 														onChange={(e) => {
 															let v = e.target.value;
 															if (!v.startsWith("#")) v = `#${v}`;
@@ -247,14 +262,15 @@ export function GeneratePage() {
 																setSecondaryColor(v.toUpperCase());
 														}}
 														placeholder="#10B981"
-														maxLength={7}
 														spellCheck={false}
-														autoComplete="off"
+														value={secondaryColor}
 													/>
 												</div>
 												{generated && (
 													<ColorRampPreview
-														scale={generated.primitives.find((s) => s.name === "secondary")}
+														scale={generated.primitives.find(
+															(s) => s.name === "secondary",
+														)}
 													/>
 												)}
 											</>
@@ -266,20 +282,20 @@ export function GeneratePage() {
 										<div className={styles.graySelector}>
 											{RADIX_GRAYS.map((g) => (
 												<button
-													key={g.name}
-													type="button"
+													aria-label={`${g.label} neutral palette`}
+													aria-pressed={grayName === g.name}
 													className={styles.grayOption}
 													data-selected={grayName === g.name}
+													key={g.name}
 													onClick={() => setGrayName(g.name)}
 													title={g.label}
-													aria-pressed={grayName === g.name}
-													aria-label={`${g.label} neutral palette`}
+													type="button"
 												>
 													<div className={styles.grayPreview}>
 														{[0, 2, 4, 7, 10, 11].map((i) => (
 															<div
-																key={i}
 																className={styles.grayDot}
+																key={i}
 																style={{ backgroundColor: g.light[i] }}
 															/>
 														))}
@@ -297,10 +313,10 @@ export function GeneratePage() {
 								<h3 className={styles.sectionTitle}>Appearance</h3>
 								<div className={styles.sectionContent}>
 									<CheckboxWithLabel
-										id="dark-mode"
 										checked={darkMode}
-										onChange={setDarkMode}
+										id="dark-mode"
 										label="Generate Light + Dark modes"
+										onChange={setDarkMode}
 									/>
 
 									<div className={styles.fieldGroup}>
@@ -308,14 +324,14 @@ export function GeneratePage() {
 										<div className={styles.layerOptions}>
 											{LAYER_OPTIONS.map((opt) => (
 												<RadioCard
-													key={opt.value}
-													id={`layer-${opt.value}`}
-													name="layers"
-													value={opt.value}
 													checked={layers === opt.value}
+													description={opt.desc}
+													id={`layer-${opt.value}`}
+													key={opt.value}
+													name="layers"
 													onChange={(v) => setLayers(v as LayerMode)}
 													title={opt.title}
-													description={opt.desc}
+													value={opt.value}
 												/>
 											))}
 										</div>
@@ -325,14 +341,16 @@ export function GeneratePage() {
 										<label>Radius anchor (px)</label>
 										<div className={styles.radiusAnchorRow}>
 											<NumberField
-												value={radiusAnchor}
-												onChange={setRadiusAnchor}
-												onBlur={() =>
-													setRadiusAnchor(Math.min(32, Math.max(0, radiusAnchor || 0)))
-												}
-												min={0}
-												max={32}
 												className={styles.radiusAnchorInput}
+												max={32}
+												min={0}
+												onBlur={() =>
+													setRadiusAnchor(
+														Math.min(32, Math.max(0, radiusAnchor || 0)),
+													)
+												}
+												onChange={setRadiusAnchor}
+												value={radiusAnchor}
 											/>
 											<span className={styles.hint}>
 												Base "lg" — other sizes derived via offsets
@@ -354,48 +372,66 @@ export function GeneratePage() {
 											<div className={styles.optionGroup}>
 												<label>Base (px)</label>
 												<NumberField
-													value={typescale.base}
-													onChange={(v) => setTypescale({ ...typescale, base: v })}
+													max={48}
+													min={8}
 													onBlur={() =>
 														setTypescale({
 															...typescale,
-															base: Math.min(48, Math.max(8, typescale.base || 16)),
+															base: Math.min(
+																48,
+																Math.max(8, typescale.base || 16),
+															),
 														})
 													}
-													min={8}
-													max={48}
+													onChange={(v) =>
+														setTypescale({ ...typescale, base: v })
+													}
+													value={typescale.base}
 												/>
 											</div>
 											<div className={styles.optionGroup}>
 												<label>Body line height (%)</label>
 												<NumberField
-													value={typescale.lineHeightBody}
-													onChange={(v) => setTypescale({ ...typescale, lineHeightBody: v })}
+													max={200}
+													min={100}
 													onBlur={() =>
 														setTypescale({
 															...typescale,
-															lineHeightBody: Math.min(200, Math.max(100, typescale.lineHeightBody || 150)),
+															lineHeightBody: Math.min(
+																200,
+																Math.max(100, typescale.lineHeightBody || 150),
+															),
 														})
 													}
-													min={100}
-													max={200}
+													onChange={(v) =>
+														setTypescale({ ...typescale, lineHeightBody: v })
+													}
 													step={5}
+													value={typescale.lineHeightBody}
 												/>
 											</div>
 											<div className={styles.optionGroup}>
 												<label>Heading line height (%)</label>
 												<NumberField
-													value={typescale.lineHeightHeading}
-													onChange={(v) => setTypescale({ ...typescale, lineHeightHeading: v })}
+													max={175}
+													min={100}
 													onBlur={() =>
 														setTypescale({
 															...typescale,
-															lineHeightHeading: Math.min(175, Math.max(100, typescale.lineHeightHeading || 125)),
+															lineHeightHeading: Math.min(
+																175,
+																Math.max(
+																	100,
+																	typescale.lineHeightHeading || 125,
+																),
+															),
 														})
 													}
-													min={100}
-													max={175}
+													onChange={(v) =>
+														setTypescale({ ...typescale, lineHeightHeading: v })
+													}
 													step={5}
+													value={typescale.lineHeightHeading}
 												/>
 											</div>
 										</div>
@@ -405,15 +441,15 @@ export function GeneratePage() {
 											<div className={styles.ratioSelector}>
 												{Object.entries(TYPESCALE_RATIOS).map(([key, r]) => (
 													<button
-														key={key}
-														type="button"
+														aria-pressed={typescale.ratio === key}
 														className={styles.ratioOption}
 														data-selected={typescale.ratio === key}
-														aria-pressed={typescale.ratio === key}
+														key={key}
 														onClick={() =>
 															setTypescale({ ...typescale, ratio: key })
 														}
 														title={`${r.label} (${r.value})`}
+														type="button"
 													>
 														<span className={styles.ratioLabel}>{r.label}</span>
 														<span className={styles.ratioValue}>{r.value}</span>
@@ -426,31 +462,41 @@ export function GeneratePage() {
 											<div className={styles.optionGroup}>
 												<label>Steps up</label>
 												<NumberField
-													value={typescale.stepsUp}
-													onChange={(v) => setTypescale({ ...typescale, stepsUp: v })}
+													max={7}
+													min={0}
 													onBlur={() =>
 														setTypescale({
 															...typescale,
-															stepsUp: Math.min(7, Math.max(0, typescale.stepsUp || 0)),
+															stepsUp: Math.min(
+																7,
+																Math.max(0, typescale.stepsUp || 0),
+															),
 														})
 													}
-													min={0}
-													max={7}
+													onChange={(v) =>
+														setTypescale({ ...typescale, stepsUp: v })
+													}
+													value={typescale.stepsUp}
 												/>
 											</div>
 											<div className={styles.optionGroup}>
 												<label>Steps down</label>
 												<NumberField
-													value={typescale.stepsDown}
-													onChange={(v) => setTypescale({ ...typescale, stepsDown: v })}
+													max={4}
+													min={0}
 													onBlur={() =>
 														setTypescale({
 															...typescale,
-															stepsDown: Math.min(4, Math.max(0, typescale.stepsDown || 0)),
+															stepsDown: Math.min(
+																4,
+																Math.max(0, typescale.stepsDown || 0),
+															),
 														})
 													}
-													min={0}
-													max={4}
+													onChange={(v) =>
+														setTypescale({ ...typescale, stepsDown: v })
+													}
+													value={typescale.stepsDown}
 												/>
 											</div>
 											<div className={styles.optionGroup} />
@@ -465,40 +511,40 @@ export function GeneratePage() {
 											<div className={styles.fontInputRow}>
 												<label>Sans</label>
 												<Input
-													value={fonts.sans ?? ""}
+													autoComplete="off"
+													maxLength={64}
 													onChange={(e) =>
 														setFonts({ ...fonts, sans: e.target.value })
 													}
 													placeholder="System default"
-													maxLength={64}
 													spellCheck={false}
-													autoComplete="off"
+													value={fonts.sans ?? ""}
 												/>
 											</div>
 											<div className={styles.fontInputRow}>
 												<label>Serif</label>
 												<Input
-													value={fonts.serif ?? ""}
+													autoComplete="off"
+													maxLength={64}
 													onChange={(e) =>
 														setFonts({ ...fonts, serif: e.target.value })
 													}
 													placeholder="System default"
-													maxLength={64}
 													spellCheck={false}
-													autoComplete="off"
+													value={fonts.serif ?? ""}
 												/>
 											</div>
 											<div className={styles.fontInputRow}>
 												<label>Mono</label>
 												<Input
-													value={fonts.mono ?? ""}
+													autoComplete="off"
+													maxLength={64}
 													onChange={(e) =>
 														setFonts({ ...fonts, mono: e.target.value })
 													}
 													placeholder="System default"
-													maxLength={64}
 													spellCheck={false}
-													autoComplete="off"
+													value={fonts.mono ?? ""}
 												/>
 											</div>
 										</div>
@@ -513,14 +559,15 @@ export function GeneratePage() {
 									<div className={styles.fieldGroup}>
 										<label>Collection name</label>
 										<Input
-											value={collectionName}
-											onChange={(e) => setCollectionName(e.target.value)}
-											onBlur={() => {
-												if (!collectionName.trim()) setCollectionName("generated");
-											}}
-											placeholder="generated"
 											maxLength={64}
+											onBlur={() => {
+												if (!collectionName.trim())
+													setCollectionName("generated");
+											}}
+											onChange={(e) => setCollectionName(e.target.value)}
+											placeholder="generated"
 											spellCheck={false}
+											value={collectionName}
 										/>
 									</div>
 								</div>
@@ -529,9 +576,9 @@ export function GeneratePage() {
 							{/* Preview button */}
 							<div className={styles.actions}>
 								<Button
-									variant="primary"
-									onClick={() => setView("preview")}
 									disabled={!generated}
+									onClick={() => setView("preview")}
+									variant="primary"
 								>
 									<Sparkles size={14} />
 									Preview
@@ -544,9 +591,9 @@ export function GeneratePage() {
 				{view === "preview" && generated && (
 					<>
 						<SectionHeader
-							variant="primary"
-							title="Preview"
 							description={`${generated.stats.totalCount} tokens in "${collectionName}"`}
+							title="Preview"
+							variant="primary"
 						/>
 
 						<div className={styles.previewSection}>
@@ -572,13 +619,13 @@ export function GeneratePage() {
 							<div className={styles.scalePreview}>
 								{/* Brand/secondary scales (50-950) */}
 								{generated.primitives.map((scale) => (
-									<div key={scale.name} className={styles.scaleRow}>
+									<div className={styles.scaleRow}key={scale.name} >
 										<span className={styles.scaleLabel}>{scale.name}</span>
 										<div className={styles.scaleSwatches}>
 											{SHADE_STEPS.map((step) => (
 												<div
-													key={step}
 													className={styles.scaleSwatch}
+													key={step}
 													style={{
 														backgroundColor: scale.hexValues[step],
 													}}
@@ -598,8 +645,8 @@ export function GeneratePage() {
 										<div className={styles.scaleSwatches}>
 											{generated.radixGray.light.map((hex, i) => (
 												<div
-													key={i}
 													className={styles.scaleSwatch}
+													key={i}
 													style={{ backgroundColor: hex }}
 													title={`${i + 1}: ${hex}`}
 												/>
@@ -609,8 +656,8 @@ export function GeneratePage() {
 											<div className={styles.scaleSwatches}>
 												{generated.radixGray.dark.map((hex, i) => (
 													<div
-														key={i}
 														className={styles.scaleSwatch}
+														key={i}
 														style={{ backgroundColor: hex }}
 														title={`${i + 1}: ${hex} (dark)`}
 													/>
@@ -629,15 +676,15 @@ export function GeneratePage() {
 
 							{/* Actions */}
 							<div className={styles.actions}>
-								<Button variant="ghost" onClick={() => setView("config")}>
+								<Button onClick={() => setView("config")}variant="ghost" >
 									<ArrowLeft size={14} />
 									Back
 								</Button>
-								<Button variant="ghost" onClick={handleCopyCss}>
+								<Button onClick={handleCopyCss}variant="ghost" >
 									<ClipboardCopy size={14} />
 									Copy CSS
 								</Button>
-								<Button variant="primary" onClick={handleGenerate}>
+								<Button onClick={handleGenerate}variant="primary" >
 									<Wand2 size={14} />
 									Create in Figma
 								</Button>
@@ -663,12 +710,12 @@ export function GeneratePage() {
 		return (
 			<div className={styles.page}>
 				<SuccessView
-					success={result.success}
-					failed={result.failed}
-					errors={result.errors}
 					changes={result.changes}
+					errors={result.errors}
+					failed={result.failed}
 					onClose={handleReset}
 					onImportMore={handleReset}
+					success={result.success}
 				/>
 			</div>
 		);
@@ -690,8 +737,8 @@ function ColorRampPreview({
 			<div className={styles.colorRampSwatches}>
 				{SHADE_STEPS.map((step) => (
 					<div
-						key={step}
 						className={styles.colorRampSwatch}
+						key={step}
 						style={{ backgroundColor: scale.hexValues[step] }}
 						title={`${step}: ${scale.hexValues[step]}`}
 					/>
@@ -716,7 +763,7 @@ function RadiusPreview({ scale }: { scale: Record<string, number> }) {
 	return (
 		<div className={styles.radiusPreview}>
 			{entries.map(([name, px]) => (
-				<div key={name} className={styles.radiusItem}>
+				<div className={styles.radiusItem}key={name} >
 					<div
 						className={styles.radiusSample}
 						style={{ borderRadius: `${Math.min(px, 24)}px` }}
@@ -737,7 +784,7 @@ function TypescalePreview({ config }: { config: TypescaleConfig }) {
 	return (
 		<div className={styles.typescalePreview}>
 			{steps.map((step) => (
-				<div key={step.name} className={styles.typescalePreviewRow}>
+				<div className={styles.typescalePreviewRow}key={step.name} >
 					<div className={styles.typescaleMeta}>
 						<span className={styles.typescaleName}>{step.name}</span>
 						<span className={styles.typescaleSize}>
@@ -779,34 +826,40 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 	// Memoize the expensive grouping/sorting work
 	const groupedCategories = useMemo(() => {
 		const categories = ["primitives", "abstractions", "semantics"] as const;
-		return categories.map((cat) => {
-			const catTokens = generated.tokens.filter((t) => t.category === cat);
-			if (catTokens.length === 0) return null;
+		return categories
+			.map((cat) => {
+				const catTokens = generated.tokens.filter((t) => t.category === cat);
+				if (catTokens.length === 0) return null;
 
-			// Deduplicate by figmaName (modes create duplicates)
-			const seen = new Set<string>();
-			const unique = catTokens.filter((t) => {
-				if (seen.has(t.figmaName)) return false;
-				seen.add(t.figmaName);
-				return true;
-			});
+				// Deduplicate by figmaName (modes create duplicates)
+				const seen = new Set<string>();
+				const unique = catTokens.filter((t) => {
+					if (seen.has(t.figmaName)) return false;
+					seen.add(t.figmaName);
+					return true;
+				});
 
-			// Sub-group by token type
-			const grouped = new Map<string, typeof unique>();
-			for (const token of unique) {
-				const group = getTokenTypeGroup(token.type);
-				const arr = grouped.get(group) ?? [];
-				if (!grouped.has(group)) grouped.set(group, arr);
-				arr.push(token);
-			}
+				// Sub-group by token type
+				const grouped = new Map<string, typeof unique>();
+				for (const token of unique) {
+					const group = getTokenTypeGroup(token.type);
+					const arr = grouped.get(group) ?? [];
+					if (!grouped.has(group)) grouped.set(group, arr);
+					arr.push(token);
+				}
 
-			// Sort groups by defined order
-			const sortedGroups = TOKEN_TYPE_ORDER.filter((g) => grouped.has(g)).map(
-				(g) => ({ group: g, tokens: grouped.get(g) ?? [] }),
-			);
+				// Sort groups by defined order
+				const sortedGroups = TOKEN_TYPE_ORDER.filter((g) => grouped.has(g)).map(
+					(g) => ({ group: g, tokens: grouped.get(g) ?? [] }),
+				);
 
-			return { cat, unique, sortedGroups };
-		}).filter(Boolean) as { cat: string; unique: DesignToken[]; sortedGroups: { group: string; tokens: DesignToken[] }[] }[];
+				return { cat, unique, sortedGroups };
+			})
+			.filter(Boolean) as {
+			cat: string;
+			unique: DesignToken[];
+			sortedGroups: { group: string; tokens: DesignToken[] }[];
+		}[];
 	}, [generated.tokens]);
 
 	const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
@@ -828,11 +881,9 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 									</div>
 								)}
 								{displayed.map((token) => (
-									<div key={token.id} className={styles.tokenRow}>
+									<div className={styles.tokenRow}key={token.id} >
 										<TokenIndicator token={token} />
-										<span className={styles.tokenName}>
-											{token.figmaName}
-										</span>
+										<span className={styles.tokenName}>{token.figmaName}</span>
 										<span className={styles.tokenValue}>
 											{token.originalValue}
 										</span>
@@ -845,11 +896,7 @@ function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
 			))}
 
 			{generated.tokens.length > 40 && (
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={toggleExpanded}
-				>
+				<Button onClick={toggleExpanded}size="sm" variant="ghost" >
 					{expanded
 						? "Show less"
 						: `Show all ${generated.tokens.length} tokens`}
@@ -866,7 +913,11 @@ const NON_COLOR_DOT_STYLE = {
 	border: "1px dashed var(--border)",
 } as const;
 
-const TokenIndicator = React.memo(function TokenIndicator({ token }: { token: Pick<DesignToken, "type" | "value"> }) {
+const TokenIndicator = React.memo(function TokenIndicator({
+	token,
+}: {
+	token: Pick<DesignToken, "type" | "value">;
+}) {
 	if (
 		token.type === "color" &&
 		typeof token.value === "object" &&
@@ -881,10 +932,5 @@ const TokenIndicator = React.memo(function TokenIndicator({ token }: { token: Pi
 			/>
 		);
 	}
-	return (
-		<div
-			className={styles.tokenColorDot}
-			style={NON_COLOR_DOT_STYLE}
-		/>
-	);
+	return <div className={styles.tokenColorDot} style={NON_COLOR_DOT_STYLE} />;
 });

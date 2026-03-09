@@ -6,15 +6,15 @@ import styles from "./Skeleton.module.css";
 // ============================================================================
 
 export interface SkeletonProps {
-	/** Width of skeleton (number = px, string = any CSS value) */
-	width?: number | string;
+	/** Animation style */
+	animation?: "pulse" | "shimmer" | "none";
+	className?: string;
 	/** Height of skeleton (number = px, string = any CSS value) */
 	height?: number | string;
 	/** Border radius variant */
 	radius?: "none" | "sm" | "md" | "lg" | "full";
-	/** Animation style */
-	animation?: "pulse" | "shimmer" | "none";
-	className?: string;
+	/** Width of skeleton (number = px, string = any CSS value) */
+	width?: number | string;
 }
 
 export function Skeleton({
@@ -31,10 +31,9 @@ export function Skeleton({
 
 	return (
 		<div
+			aria-hidden="true"
 			className={`${styles.skeleton} ${styles[radius]} ${styles[animation]} ${className}`}
 			style={style}
-			aria-hidden="true"
 		/>
 	);
 }
-

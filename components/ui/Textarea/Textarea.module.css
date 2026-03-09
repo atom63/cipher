@@ -14,8 +14,8 @@
 }
 
 .wrapper[data-disabled="true"] {
-  opacity: 0.5;
   pointer-events: none;
+  opacity: 0.5;
 }
 
 /* ============================================
@@ -31,14 +31,14 @@
 .label {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
-  color: var(--foreground);
   line-height: 1.4;
+  color: var(--foreground);
 }
 
 .description {
   font-size: var(--text-xs);
-  color: var(--muted-foreground);
   line-height: 1.4;
+  color: var(--muted-foreground);
 }
 
 /* ============================================
@@ -96,8 +96,8 @@
 
 /* Disabled state */
 .textareaWrapper[data-disabled="true"] {
-  background: var(--muted);
   cursor: not-allowed;
+  background: var(--muted);
 }
 
 /* ============================================
@@ -109,15 +109,15 @@
   width: 100%;
   min-height: 80px;
   padding: var(--spacing-md);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--foreground);
+  resize: vertical;
+  outline: none;
+  background: transparent;
   border: none;
   border-radius: inherit;
-  background: transparent;
-  font-size: var(--text-sm);
-  font-family: inherit;
-  color: var(--foreground);
-  outline: none;
-  line-height: 1.5;
-  resize: vertical;
 }
 
 .textarea::placeholder {
@@ -135,9 +135,9 @@
 
 .footer {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   gap: var(--spacing-md);
+  align-items: flex-start;
+  justify-content: space-between;
   min-height: 18px;
 }
 
@@ -153,8 +153,8 @@
 .success,
 .hint {
   display: flex;
-  align-items: center;
   gap: var(--spacing-xs);
+  align-items: center;
   font-size: var(--text-xs);
   line-height: 1.4;
 }
@@ -176,13 +176,13 @@
    ============================================ */
 
 .charCount {
+  flex-shrink: 0;
   font-size: var(--text-xs);
   color: var(--muted-foreground);
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .charCount[data-over="true"] {
-  color: var(--destructive);
   font-weight: var(--font-medium);
+  color: var(--destructive);
 }

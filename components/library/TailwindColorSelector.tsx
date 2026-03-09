@@ -24,8 +24,8 @@ import {
 import styles from "./TailwindColorSelector.module.css";
 
 interface TailwindColorSelectorProps {
-	onGenerate: (tokens: DesignToken[]) => void;
 	onBack: () => void;
+	onGenerate: (tokens: DesignToken[]) => void;
 }
 
 export function TailwindColorSelector({
@@ -74,10 +74,10 @@ export function TailwindColorSelector({
 		<div className={styles.container}>
 			<div className={styles.header}>
 				<Button
-					variant="ghost"
-					size="sm"
-					onClick={onBack}
 					className={styles.backButton}
+					onClick={onBack}
+					size="sm"
+					variant="ghost"
 				>
 					<ChevronLeft size={14} /> Back
 				</Button>
@@ -96,16 +96,16 @@ export function TailwindColorSelector({
 						<SectionHeader title="Gray Scales" />
 						<div className={styles.sectionActions}>
 							<Button
-								variant="ghost"
-								size="sm"
 								onClick={() => selectAllInCategory(palettesByCategory.gray)}
+								size="sm"
+								variant="ghost"
 							>
 								Select all
 							</Button>
 							<Button
-								variant="ghost"
-								size="sm"
 								onClick={() => deselectAllInCategory(palettesByCategory.gray)}
+								size="sm"
+								variant="ghost"
 							>
 								Clear
 							</Button>
@@ -115,22 +115,22 @@ export function TailwindColorSelector({
 					<div className={styles.paletteGrid}>
 						{palettesByCategory.gray.map((palette) => (
 							<Card
-								key={palette.name}
-								variant={
-									selectedPalettes.includes(palette.name) ? "muted" : "bordered"
-								}
-								padding="sm"
-								hover={!selectedPalettes.includes(palette.name)}
-								onClick={() => togglePalette(palette.name)}
 								className={
 									selectedPalettes.includes(palette.name) ? styles.selected : ""
+								}
+								hover={!selectedPalettes.includes(palette.name)}
+								key={palette.name}
+								onClick={() => togglePalette(palette.name)}
+								padding="sm"
+								variant={
+									selectedPalettes.includes(palette.name) ? "muted" : "bordered"
 								}
 							>
 								<CardHeader>
 									<CheckboxWithLabel
+										checked={selectedPalettes.includes(palette.name)}
 										id={`palette-${palette.name}`}
 										label={palette.displayName}
-										checked={selectedPalettes.includes(palette.name)}
 										onChange={() => togglePalette(palette.name)}
 									/>
 								</CardHeader>
@@ -139,8 +139,8 @@ export function TailwindColorSelector({
 										{getTailwindPalettePreview(palette.name).map(
 											(color, idx) => (
 												<div
-													key={idx}
 													className={styles.colorSwatch}
+													key={idx}
 													style={{ backgroundColor: color }}
 													title={`Shade ${["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"][idx]}`}
 												/>
@@ -159,16 +159,16 @@ export function TailwindColorSelector({
 						<SectionHeader title="Colors" />
 						<div className={styles.sectionActions}>
 							<Button
-								variant="ghost"
-								size="sm"
 								onClick={() => selectAllInCategory(palettesByCategory.color)}
+								size="sm"
+								variant="ghost"
 							>
 								Select all
 							</Button>
 							<Button
-								variant="ghost"
-								size="sm"
 								onClick={() => deselectAllInCategory(palettesByCategory.color)}
+								size="sm"
+								variant="ghost"
 							>
 								Clear
 							</Button>
@@ -178,22 +178,22 @@ export function TailwindColorSelector({
 					<div className={styles.paletteGrid}>
 						{palettesByCategory.color.map((palette) => (
 							<Card
-								key={palette.name}
-								variant={
-									selectedPalettes.includes(palette.name) ? "muted" : "bordered"
-								}
-								padding="sm"
-								hover={!selectedPalettes.includes(palette.name)}
-								onClick={() => togglePalette(palette.name)}
 								className={
 									selectedPalettes.includes(palette.name) ? styles.selected : ""
+								}
+								hover={!selectedPalettes.includes(palette.name)}
+								key={palette.name}
+								onClick={() => togglePalette(palette.name)}
+								padding="sm"
+								variant={
+									selectedPalettes.includes(palette.name) ? "muted" : "bordered"
 								}
 							>
 								<CardHeader>
 									<CheckboxWithLabel
+										checked={selectedPalettes.includes(palette.name)}
 										id={`palette-${palette.name}`}
 										label={palette.displayName}
-										checked={selectedPalettes.includes(palette.name)}
 										onChange={() => togglePalette(palette.name)}
 									/>
 								</CardHeader>
@@ -202,8 +202,8 @@ export function TailwindColorSelector({
 										{getTailwindPalettePreview(palette.name).map(
 											(color, idx) => (
 												<div
-													key={idx}
 													className={styles.colorSwatch}
+													key={idx}
 													style={{ backgroundColor: color }}
 													title={`Shade ${["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"][idx]}`}
 												/>
@@ -228,13 +228,13 @@ export function TailwindColorSelector({
 				</div>
 
 				<div className={styles.actions}>
-					<Button variant="secondary" onClick={onBack}>
+					<Button onClick={onBack}variant="secondary" >
 						Cancel
 					</Button>
 					<Button
-						variant="primary"
-						onClick={handleGenerate}
 						disabled={selectedPalettes.length === 0}
+						onClick={handleGenerate}
+						variant="primary"
 					>
 						Preview {tokenCount} Tokens <ArrowRight size={14} />
 					</Button>

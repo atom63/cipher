@@ -363,7 +363,7 @@ export function parseTokenValue(
 			id: generateTokenId(fullName, index),
 			name: tokenPath,
 			figmaName: fullName,
-			value: value,
+			value,
 			originalValue: value,
 			type: "reference",
 			category,
@@ -475,12 +475,18 @@ export function parseJSON(content: string): ParsedTokens {
 		// Check for styles-only files and reject them
 		if (data.$schema === "figma-styles-export") {
 			errors.push({
-				message: "This is a Figma Styles file. Import supports variable token files (JSON or CSS).",
+				message:
+					"This is a Figma Styles file. Import supports variable token files (JSON or CSS).",
 				severity: "error",
 			});
 			return {
 				tokens: [],
-				stats: { total: 0, byCategory: {}, conflicts: 0, errors: errors.length },
+				stats: {
+					total: 0,
+					byCategory: {},
+					conflicts: 0,
+					errors: errors.length,
+				},
 				errors,
 			};
 		}

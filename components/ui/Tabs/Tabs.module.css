@@ -13,16 +13,16 @@
    ============================================ */
 
 .tabList {
-  display: flex;
   position: relative;
   z-index: 0;
-  width: fit-content;
-  align-items: center;
+  display: flex;
   gap: 2px;
-  background: var(--muted);
-  border-radius: var(--radius-lg); /* 10px */
+  align-items: center;
+  width: fit-content;
   padding: 2px; /* inner radius = 10 - 2 = 8px (--radius-md) */
   color: color-mix(in oklch, var(--muted-foreground) 72%, transparent);
+  background: var(--muted);
+  border-radius: var(--radius-lg);
 }
 
 /* Small size list */
@@ -36,17 +36,17 @@
 
 .indicator {
   position: absolute;
-  z-index: -1;
   top: 2px;
   bottom: 2px;
   left: 0;
+  z-index: -1;
+  pointer-events: none;
   background: var(--background);
   border-radius: var(--radius-md);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition:
     left 0.2s ease-in-out,
     width 0.2s ease-in-out;
-  pointer-events: none;
 }
 
 /* ============================================
@@ -55,28 +55,28 @@
 
 .tab {
   position: relative;
+  z-index: 1;
   display: flex;
   flex-grow: 1;
   flex-shrink: 0;
+  gap: 6px;
   align-items: center;
   justify-content: center;
-  gap: 6px;
   height: var(--size-8);
   padding: 0 calc(var(--spacing-md) - 1px);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  color: inherit;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  cursor: pointer;
   transition:
     color var(--transition),
     background-color var(--transition),
     box-shadow var(--transition);
-  outline: none;
-  white-space: nowrap;
-  z-index: 1;
 }
 
 .tab:disabled {
@@ -103,10 +103,10 @@
    ============================================ */
 
 .tabSm {
-  font-size: var(--text-xs);
+  gap: var(--spacing-xs);
   height: var(--size-6);
   padding: 0 var(--spacing-sm);
-  gap: var(--spacing-xs);
+  font-size: var(--text-xs);
 }
 
 /* ============================================
@@ -115,11 +115,11 @@
 
 .tabIcon {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  pointer-events: none;
   margin: 0 -2px;
+  pointer-events: none;
 }
 
 .tabIcon svg {
@@ -147,8 +147,8 @@
 
 .tabPanel {
   display: flex;
-  flex-direction: column;
   flex: 1;
+  flex-direction: column;
   outline: none;
   animation: tabFadeIn 0.15s ease;
 }

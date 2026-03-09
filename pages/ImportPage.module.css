@@ -3,8 +3,8 @@
 .actions {
 	display: flex;
 	gap: var(--spacing-lg);
-	margin-top: var(--spacing-2xl);
 	padding-top: var(--spacing-xl);
+	margin-top: var(--spacing-2xl);
 	border-top: 1px solid var(--border);
 }
 

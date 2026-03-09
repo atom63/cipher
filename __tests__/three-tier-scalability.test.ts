@@ -11,42 +11,52 @@ const GRAY_NAMES = ["gray", "mauve", "slate", "sage", "olive", "sand"];
 const DARK_MODES = [true, false];
 
 describe("combinatorial config coverage", () => {
-	test.each(LAYER_MODES)(
-		"layer mode '%s' generates without errors for all gray palettes",
-		(layers) => {
-			for (const grayName of GRAY_NAMES) {
-				const result = generateDesignSystem({
-					primary: "#3B82F6",
-					layers,
-					grayName,
-				});
-				expect(result.tokens.length).toBeGreaterThan(0);
-				expect(result.stats.totalCount).toBe(result.tokens.length);
-			}
-		},
-	);
+	test.each(
+		LAYER_MODES,
+	)("layer mode '%s' generates without errors for all gray palettes", (layers) => {
+		for (const grayName of GRAY_NAMES) {
+			const result = generateDesignSystem({
+				primary: "#3B82F6",
+				layers,
+				grayName,
+			});
+			expect(result.tokens.length).toBeGreaterThan(0);
+			expect(result.stats.totalCount).toBe(result.tokens.length);
+		}
+	});
 
-	test.each(LAYER_MODES)(
-		"layer mode '%s' works with both dark mode on and off",
-		(layers) => {
-			for (const darkMode of DARK_MODES) {
-				const result = generateDesignSystem({
-					primary: "#3B82F6",
-					layers,
-					darkMode,
-				});
-				expect(result.tokens.length).toBeGreaterThan(0);
-			}
-		},
-	);
+	test.each(
+		LAYER_MODES,
+	)("layer mode '%s' works with both dark mode on and off", (layers) => {
+		for (const darkMode of DARK_MODES) {
+			const result = generateDesignSystem({
+				primary: "#3B82F6",
+				layers,
+				darkMode,
+			});
+			expect(result.tokens.length).toBeGreaterThan(0);
+		}
+	});
 
 	test("all typescale ratios produce valid output", () => {
-		const ratios = ["minor-third", "major-third", "perfect-fourth", "golden-ratio"];
+		const ratios = [
+			"minor-third",
+			"major-third",
+			"perfect-fourth",
+			"golden-ratio",
+		];
 		for (const ratio of ratios) {
 			const result = generateDesignSystem({
 				primary: "#3B82F6",
 				layers: "semantic",
-				typescale: { base: 16, ratio, lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2 },
+				typescale: {
+					base: 16,
+					ratio,
+					lineHeightBody: 150,
+					lineHeightHeading: 125,
+					stepsUp: 4,
+					stepsDown: 2,
+				},
 			});
 			expect(result.tokens.length).toBeGreaterThan(0);
 			expect(result.stats.totalCount).toBe(result.tokens.length);
@@ -61,7 +71,14 @@ describe("combinatorial config coverage", () => {
 			layers: "three-tier",
 			darkMode: true,
 			radius: 12,
-			typescale: { base: 16, ratio: "perfect-fourth", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2 },
+			typescale: {
+				base: 16,
+				ratio: "perfect-fourth",
+				lineHeightBody: 150,
+				lineHeightHeading: 125,
+				stepsUp: 4,
+				stepsDown: 2,
+			},
 			fonts: { sans: "Inter", mono: "Fira Code" },
 		});
 		expect(result.tokens.length).toBeGreaterThan(0);
@@ -76,37 +93,36 @@ describe("combinatorial config coverage", () => {
 // =========================================================================
 
 describe("reference integrity", () => {
-	test.each(LAYER_MODES)(
-		"all references in '%s' mode resolve to existing tokens",
-		(layers) => {
-			const result = generateDesignSystem({
-				primary: "#3B82F6",
-				secondary: "#10B981",
-				layers,
-				darkMode: false,
-			});
+	test.each(
+		LAYER_MODES,
+	)("all references in '%s' mode resolve to existing tokens", (layers) => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			secondary: "#10B981",
+			layers,
+			darkMode: false,
+		});
 
-			// Build set of all token paths (category.figmaName with / → .)
-			const tokenPaths = new Set<string>();
-			for (const token of result.tokens) {
-				const path = `${token.category}.${token.figmaName.replace(/\//g, ".")}`;
-				tokenPaths.add(path);
-			}
+		// Build set of all token paths (category.figmaName with / → .)
+		const tokenPaths = new Set<string>();
+		for (const token of result.tokens) {
+			const path = `${token.category}.${token.figmaName.replace(/\//g, ".")}`;
+			tokenPaths.add(path);
+		}
 
-			// Check all reference values
-			for (const token of result.tokens) {
-				const ref = String(token.originalValue);
-				const match = ref.match(/^\{([^}]+)\}$/);
-				if (match) {
-					const refPath = match[1];
-					expect(
-						tokenPaths.has(refPath),
-						`Token "${token.figmaName}" references "${refPath}" which doesn't exist.\nAvailable: ${[...tokenPaths].filter((p) => p.startsWith(refPath.split(".")[0])).join(", ")}`,
-					).toBe(true);
-				}
+		// Check all reference values
+		for (const token of result.tokens) {
+			const ref = String(token.originalValue);
+			const match = ref.match(/^\{([^}]+)\}$/);
+			if (match) {
+				const refPath = match[1];
+				expect(
+					tokenPaths.has(refPath),
+					`Token "${token.figmaName}" references "${refPath}" which doesn't exist.\nAvailable: ${[...tokenPaths].filter((p) => p.startsWith(refPath.split(".")[0])).join(", ")}`,
+				).toBe(true);
 			}
-		},
-	);
+		}
+	});
 
 	test("three-tier semantics reference abstractions, not primitives directly (for color tokens)", () => {
 		const result = generateDesignSystem({
@@ -133,44 +149,43 @@ describe("reference integrity", () => {
 // =========================================================================
 
 describe("cross-mode consistency", () => {
-	test.each(LAYER_MODES)(
-		"'%s' mode: Light and Dark token counts match per figmaName",
-		(layers) => {
-			const result = generateDesignSystem({
-				primary: "#3B82F6",
-				secondary: "#10B981",
-				layers,
-				darkMode: true,
-			});
+	test.each(
+		LAYER_MODES,
+	)("'%s' mode: Light and Dark token counts match per figmaName", (layers) => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			secondary: "#10B981",
+			layers,
+			darkMode: true,
+		});
 
-			const lightNames = new Set<string>();
-			const darkNames = new Set<string>();
+		const lightNames = new Set<string>();
+		const darkNames = new Set<string>();
 
-			for (const token of result.tokens) {
-				const mode = (token as any).modeName;
-				if (mode === "Light") lightNames.add(token.figmaName);
-				if (mode === "Dark") darkNames.add(token.figmaName);
-			}
+		for (const token of result.tokens) {
+			const mode = (token as any).modeName;
+			if (mode === "Light") lightNames.add(token.figmaName);
+			if (mode === "Dark") darkNames.add(token.figmaName);
+		}
 
-			// Every Light token should have a Dark counterpart
-			for (const name of lightNames) {
-				expect(
-					darkNames.has(name),
-					`Light token "${name}" has no Dark counterpart`,
-				).toBe(true);
-			}
+		// Every Light token should have a Dark counterpart
+		for (const name of lightNames) {
+			expect(
+				darkNames.has(name),
+				`Light token "${name}" has no Dark counterpart`,
+			).toBe(true);
+		}
 
-			// Every Dark token should have a Light counterpart
-			for (const name of darkNames) {
-				expect(
-					lightNames.has(name),
-					`Dark token "${name}" has no Light counterpart`,
-				).toBe(true);
-			}
+		// Every Dark token should have a Light counterpart
+		for (const name of darkNames) {
+			expect(
+				lightNames.has(name),
+				`Dark token "${name}" has no Light counterpart`,
+			).toBe(true);
+		}
 
-			expect(lightNames.size).toBe(darkNames.size);
-		},
-	);
+		expect(lightNames.size).toBe(darkNames.size);
+	});
 
 	test("no mode tokens when darkMode is false", () => {
 		for (const layers of LAYER_MODES) {
@@ -408,7 +423,14 @@ describe("performance", () => {
 			layers: "three-tier",
 			darkMode: true,
 			radius: 12,
-			typescale: { base: 16, ratio: "perfect-fourth", lineHeightBody: 150, lineHeightHeading: 125, stepsUp: 4, stepsDown: 2 },
+			typescale: {
+				base: 16,
+				ratio: "perfect-fourth",
+				lineHeightBody: 150,
+				lineHeightHeading: 125,
+				stepsUp: 4,
+				stepsDown: 2,
+			},
 			fonts: { sans: "Inter" },
 		};
 

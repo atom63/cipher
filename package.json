@@ -14,8 +14,8 @@
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
 		"typecheck": "tsc --noEmit",
-		"format": "npx ultracite fix",
-		"lint": "npx ultracite check",
+		"format": "ultracite fix",
+		"lint": "ultracite check",
 		"check": "pnpm typecheck && pnpm lint && pnpm test"
 	},
 	"dependencies": {
@@ -33,6 +33,7 @@
 		"sass": "^1.97.3",
 		"tsx": "^4.19.2",
 		"typescript": "^5.7.2",
+		"ultracite": "^7.2.5",
 		"vitest": "^4.0.18"
 	},
 	"engines": {

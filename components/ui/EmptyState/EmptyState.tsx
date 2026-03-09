@@ -2,23 +2,23 @@ import type { ReactNode } from "react";
 import styles from "./EmptyState.module.css";
 
 export interface EmptyStateProps {
-	/** Icon element to display */
-	icon?: ReactNode;
-	/** Illustration SVG/image (alternative to icon) */
-	illustration?: ReactNode;
-	/** Main title text */
-	title?: string;
-	/** Description text */
-	description?: string;
 	/** Action button/element */
 	action?: ReactNode;
 	/** Additional content */
 	children?: ReactNode;
+	className?: string;
+	/** Description text */
+	description?: string;
+	/** Icon element to display */
+	icon?: ReactNode;
+	/** Illustration SVG/image (alternative to icon) */
+	illustration?: ReactNode;
 	/** Size variant */
 	size?: "sm" | "md" | "lg";
+	/** Main title text */
+	title?: string;
 	/** Visual variant */
 	variant?: "default" | "bordered" | "compact";
-	className?: string;
 }
 
 export function EmptyState({
@@ -50,4 +50,3 @@ export function EmptyState({
 		</div>
 	);
 }
-

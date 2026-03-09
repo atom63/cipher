@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vitest";
+import type { StringVarEntry, VarEntry } from "../libraries/rebind-matching";
 import {
-	WEIGHT_MAP,
 	colorKey,
 	findFloatVar,
 	findStringVar,
 	normalizePath,
+	WEIGHT_MAP,
 } from "../libraries/rebind-matching";
-import type { StringVarEntry, VarEntry } from "../libraries/rebind-matching";
 
 // =============================================================================
 // normalizePath
@@ -106,8 +106,8 @@ describe("findFloatVar", () => {
 			"font-size",
 		);
 		expect(result).toBeDefined();
-		expect(result!.var.id).toBe("1");
-		expect(result!.type).toBe("exact");
+		expect(result?.var.id).toBe("1");
+		expect(result?.type).toBe("exact");
 	});
 
 	test("does NOT match spacing variable with same value when path differs", () => {
@@ -118,7 +118,7 @@ describe("findFloatVar", () => {
 			"typography/large-title",
 			"font-size",
 		);
-		expect(result!.var.id).not.toBe("4");
+		expect(result?.var.id).not.toBe("4");
 	});
 
 	test("matches line-height by path", () => {
@@ -129,15 +129,15 @@ describe("findFloatVar", () => {
 			"line-height",
 		);
 		expect(result).toBeDefined();
-		expect(result!.var.id).toBe("2");
-		expect(result!.type).toBe("exact");
+		expect(result?.var.id).toBe("2");
+		expect(result?.type).toBe("exact");
 	});
 
 	test("matches body font-size (not large-title)", () => {
 		const result = findFloatVar(vars, 14, "typography/body", "font-size");
 		expect(result).toBeDefined();
-		expect(result!.var.id).toBe("3");
-		expect(result!.type).toBe("exact");
+		expect(result?.var.id).toBe("3");
+		expect(result?.type).toBe("exact");
 	});
 
 	test("falls back to hint-based matching for font-weight", () => {
@@ -151,8 +151,8 @@ describe("findFloatVar", () => {
 			"weight",
 		);
 		expect(result).toBeDefined();
-		expect(result!.var.id).toBe("5");
-		expect(result!.type).toBe("name");
+		expect(result?.var.id).toBe("5");
+		expect(result?.type).toBe("name");
 	});
 
 	test("matches font/weight/strong for medium (500)", () => {
@@ -164,17 +164,27 @@ describe("findFloatVar", () => {
 			"weight",
 		);
 		expect(result).toBeDefined();
-		expect(result!.var.id).toBe("6");
-		expect(result!.type).toBe("name");
+		expect(result?.var.id).toBe("6");
+		expect(result?.type).toBe("name");
 	});
 
 	test("returns undefined when no value matches", () => {
-		const result = findFloatVar(vars, 999, "typography/large-title", "font-size");
+		const result = findFloatVar(
+			vars,
+			999,
+			"typography/large-title",
+			"font-size",
+		);
 		expect(result).toBeUndefined();
 	});
 
 	test("returns undefined when no hint matches", () => {
-		const result = findFloatVar(vars, 36, "typography/large-title", "no-such-prop");
+		const result = findFloatVar(
+			vars,
+			36,
+			"typography/large-title",
+			"no-such-prop",
+		);
 		expect(result).toBeUndefined();
 	});
 
@@ -187,7 +197,7 @@ describe("findFloatVar", () => {
 			"font-size",
 		);
 		expect(result32).toBeDefined();
-		expect(result32!.var.id).toBe("1");
+		expect(result32?.var.id).toBe("1");
 
 		const result28 = findFloatVar(
 			vars,
@@ -196,7 +206,7 @@ describe("findFloatVar", () => {
 			"font-size",
 		);
 		expect(result28).toBeDefined();
-		expect(result28!.var.id).toBe("1");
+		expect(result28?.var.id).toBe("1");
 	});
 });
 
@@ -223,8 +233,8 @@ describe("findStringVar", () => {
 			"font-family",
 		);
 		expect(result).toBeDefined();
-		expect(result!.var.id).toBe("3");
-		expect(result!.type).toBe("exact");
+		expect(result?.var.id).toBe("3");
+		expect(result?.type).toBe("exact");
 	});
 
 	test("falls back to hint when path doesn't match", () => {
@@ -238,8 +248,8 @@ describe("findStringVar", () => {
 			"family",
 		);
 		expect(result).toBeDefined();
-		expect(result!.var.id).toBe("1");
-		expect(result!.type).toBe("name");
+		expect(result?.var.id).toBe("1");
+		expect(result?.type).toBe("name");
 	});
 
 	test("case-insensitive value matching", () => {
@@ -251,7 +261,7 @@ describe("findStringVar", () => {
 			"family",
 		);
 		expect(result).toBeDefined();
-		expect(result!.var.id).toBe("1");
+		expect(result?.var.id).toBe("1");
 	});
 
 	test("returns undefined when value not found", () => {
@@ -285,7 +295,11 @@ describe("typography rebind scenario", () => {
 			values: [44, 40, 36],
 		},
 		{ id: "fs:t1", name: "typography/title-1/font-size", values: [30, 28, 24] },
-		{ id: "lh:t1", name: "typography/title-1/line-height", values: [38, 36, 32] },
+		{
+			id: "lh:t1",
+			name: "typography/title-1/line-height",
+			values: [38, 36, 32],
+		},
 		{ id: "fs:b", name: "typography/body/font-size", values: [14, 14, 14] },
 		{ id: "lh:b", name: "typography/body/line-height", values: [20, 20, 20] },
 		// Abstraction: font weights
@@ -307,8 +321,8 @@ describe("typography rebind scenario", () => {
 			"typography/large-title",
 			"font-size",
 		);
-		expect(result!.var.id).toBe("fs:lt");
-		expect(result!.var.id).not.toBe("sp:9");
+		expect(result?.var.id).toBe("fs:lt");
+		expect(result?.var.id).not.toBe("sp:9");
 	});
 
 	test("large-title lineHeight → typography/large-title/line-height", () => {
@@ -318,18 +332,13 @@ describe("typography rebind scenario", () => {
 			"typography/large-title",
 			"line-height",
 		);
-		expect(result!.var.id).toBe("lh:lt");
+		expect(result?.var.id).toBe("lh:lt");
 	});
 
 	test("body fontSize → typography/body/font-size (not spacing/5 even though both are 20)", () => {
 		// body font-size is 14, not 20 — spacing/5 is 20
-		const result = findFloatVar(
-			floatVars,
-			14,
-			"typography/body",
-			"font-size",
-		);
-		expect(result!.var.id).toBe("fs:b");
+		const result = findFloatVar(floatVars, 14, "typography/body", "font-size");
+		expect(result?.var.id).toBe("fs:b");
 	});
 
 	test("body lineHeight → typography/body/line-height (not spacing/5)", () => {
@@ -339,8 +348,8 @@ describe("typography rebind scenario", () => {
 			"typography/body",
 			"line-height",
 		);
-		expect(result!.var.id).toBe("lh:b");
-		expect(result!.var.id).not.toBe("sp:5");
+		expect(result?.var.id).toBe("lh:b");
+		expect(result?.var.id).not.toBe("sp:5");
 	});
 
 	test("fontWeight Regular → font/weight/default", () => {
@@ -352,7 +361,7 @@ describe("typography rebind scenario", () => {
 			"font-weight",
 			"weight",
 		);
-		expect(result!.var.id).toBe("fw:d");
+		expect(result?.var.id).toBe("fw:d");
 	});
 
 	test("fontWeight Medium → font/weight/strong", () => {
@@ -364,7 +373,7 @@ describe("typography rebind scenario", () => {
 			"font-weight",
 			"weight",
 		);
-		expect(result!.var.id).toBe("fw:s");
+		expect(result?.var.id).toBe("fw:s");
 	});
 
 	test("fontFamily → font/family/primary", () => {
@@ -375,7 +384,7 @@ describe("typography rebind scenario", () => {
 			"font-family",
 			"family",
 		);
-		expect(result!.var.id).toBe("ff:p");
+		expect(result?.var.id).toBe("ff:p");
 	});
 
 	test("different styles don't cross-match", () => {
@@ -386,6 +395,6 @@ describe("typography rebind scenario", () => {
 			"typography/title-1",
 			"font-size",
 		);
-		expect(result!.var.id).toBe("fs:t1");
+		expect(result?.var.id).toBe("fs:t1");
 	});
 });

@@ -21,7 +21,7 @@ const cssModulesPlugin = {
 			let hash = 0;
 			for (let i = 0; i < str.length; i++) {
 				hash = (hash << 5) - hash + str.charCodeAt(i);
-				hash = hash & hash;
+				hash &= hash;
 			}
 			return Math.abs(hash).toString(36).substring(0, 6);
 		};

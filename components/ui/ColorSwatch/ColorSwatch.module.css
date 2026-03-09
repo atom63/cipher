@@ -2,18 +2,18 @@
 
 .swatch {
   position: relative;
-  flex-shrink: 0;
   display: inline-flex;
-  border-radius: var(--radius-sm);
-  border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+  flex-shrink: 0;
   overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+  border-radius: var(--radius-sm);
 }
 
 /* Checker background for transparency */
 .swatch::before {
-  content: "";
   position: absolute;
   inset: 0;
+  content: "";
   background-color: var(--background);
   background-image:
     linear-gradient(45deg, var(--muted-foreground) 25%, transparent 25%),

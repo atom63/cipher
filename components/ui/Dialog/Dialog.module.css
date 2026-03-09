@@ -6,15 +6,15 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: color-mix(in oklch, var(--background) 60%, transparent);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  z-index: var(--z-modal, 1000);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-modal, 1000);
   padding: var(--spacing-xl);
   overscroll-behavior: contain;
+  background: color-mix(in oklch, var(--background) 60%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   animation: overlay-fade-in 0.2s ease-out;
 }
 
@@ -31,17 +31,17 @@
 
 /* Dialog container */
 .dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: calc(100vh - var(--spacing-4xl));
+  overflow: hidden;
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-shadow-5);
-  width: 100%;
-  max-height: calc(100vh - var(--spacing-4xl));
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  animation: dialog-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   transform-origin: center;
+  animation: dialog-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes dialog-slide-in {
@@ -85,44 +85,44 @@
 
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-shrink: 0;
   gap: var(--spacing-md);
+  align-items: center;
+  justify-content: space-between;
   padding: var(--spacing-lg) var(--spacing-xl);
   border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
 }
 
 .header h3 {
+  margin: 0;
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
-  color: var(--foreground);
-  margin: 0;
   line-height: 1.4;
+  color: var(--foreground);
 }
 
 .closeButton {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
   padding: 0;
-  border: none;
-  background: transparent;
   color: var(--muted-foreground);
   cursor: pointer;
+  background: transparent;
+  border: none;
   border-radius: var(--radius);
   transition:
     background-color var(--transition),
     color var(--transition),
     transform var(--transition);
-  flex-shrink: 0;
 }
 
 .closeButton:hover {
-  background: var(--accent);
   color: var(--foreground);
+  background: var(--accent);
 }
 
 .closeButton:active {
@@ -142,8 +142,8 @@
 
 .content {
   flex: 1;
-  overflow-y: auto;
   padding: var(--spacing-xl);
+  overflow-y: auto;
   overscroll-behavior: contain;
 }
 
@@ -174,10 +174,10 @@
    ============================================ */
 
 .footer {
-  padding: var(--spacing-lg) var(--spacing-xl);
-  border-top: 1px solid var(--border);
   flex-shrink: 0;
+  padding: var(--spacing-lg) var(--spacing-xl);
   background: color-mix(in oklch, var(--muted) 30%, transparent);
+  border-top: 1px solid var(--border);
 }
 
 /* ============================================
@@ -186,8 +186,8 @@
 
 .actions {
   display: flex;
-  gap: var(--spacing-sm);
   flex-wrap: wrap;
+  gap: var(--spacing-sm);
 }
 
 .align-left {
@@ -220,8 +220,8 @@
 /* Small viewport: bottom sheet style */
 @media (max-width: 600px) {
   .overlay {
-    padding: 0;
     align-items: flex-end;
+    padding: 0;
   }
 
   .dialog {

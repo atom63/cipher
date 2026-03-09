@@ -1,5 +1,4 @@
 import { Columns2, Moon, Square, Sun } from "lucide-react";
-import type { PluginSettings } from "../../types/messages";
 import { AnimatedLogo } from "../common/icon/cipher/app-logo";
 import { Button } from "../ui";
 import styles from "./AppHeader.module.css";
@@ -7,10 +6,10 @@ import styles from "./AppHeader.module.css";
 export type ViewMode = "default" | "compact";
 
 interface AppHeaderProps {
-	viewMode: ViewMode;
-	onToggleViewMode: () => void;
 	isDark: boolean;
 	onToggleTheme: () => void;
+	onToggleViewMode: () => void;
+	viewMode: ViewMode;
 }
 
 export function AppHeader({
@@ -21,25 +20,25 @@ export function AppHeader({
 }: AppHeaderProps) {
 	return (
 		<header className={styles.header}>
-			<AnimatedLogo height={16} colored />
+			<AnimatedLogo colored height={16} />
 			<div className={styles.actions}>
 				<Button
-					variant="ghost"
-					size="icon-sm"
 					onClick={onToggleTheme}
+					size="icon-sm"
 					title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+					variant="ghost"
 				>
 					{isDark ? <Sun size={14} /> : <Moon size={14} />}
 				</Button>
 				<Button
-					variant="soft"
-					size="sm"
 					onClick={onToggleViewMode}
+					size="sm"
 					title={
 						viewMode === "default"
 							? "Switch to Compact Mode"
 							: "Switch to Default Mode"
 					}
+					variant="soft"
 				>
 					{viewMode === "default" ? (
 						<Columns2 size={14} />

@@ -5,7 +5,6 @@ export { Alert } from "./Alert";
 export { Badge, CountBadge, StatusBadge } from "./Badge";
 // Form Components
 export { Button } from "./Button";
-export { ColorSwatch, GradientSwatch } from "./ColorSwatch";
 export {
 	Card,
 	CardContent,
@@ -20,6 +19,7 @@ export {
 	CheckboxWithDescription,
 	CheckboxWithLabel,
 } from "./Checkbox";
+export { ColorSwatch, GradientSwatch } from "./ColorSwatch";
 export { ConfirmDialog, Dialog, DialogActions } from "./Dialog";
 export { Dropdown } from "./Dropdown";
 export { EmptyState } from "./EmptyState";

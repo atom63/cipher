@@ -14,11 +14,11 @@
 
 /** Information about a bound variable */
 export interface BoundVariableInfo {
+	collectionId: string | undefined;
+	collectionName: string;
 	type: "variable";
 	variableId: string;
 	variableName: string;
-	collectionName: string;
-	collectionId: string | undefined;
 }
 
 /** Properties that can have variable bindings */

@@ -2,11 +2,11 @@ import { Checkbox } from "./Checkbox";
 import styles from "./CheckboxWithLabel.module.css";
 
 interface CheckboxWithLabelProps {
+	checked: boolean;
+	disabled?: boolean;
 	id: string;
 	label: string;
-	checked: boolean;
 	onChange: (checked: boolean) => void;
-	disabled?: boolean;
 }
 
 export function CheckboxWithLabel({
@@ -19,12 +19,12 @@ export function CheckboxWithLabel({
 	return (
 		<div className={styles["wrapper"]}>
 			<Checkbox
-				id={id}
 				checked={checked}
-				onChange={(e) => onChange(e.target.checked)}
 				disabled={disabled}
+				id={id}
+				onChange={(e) => onChange(e.target.checked)}
 			/>
-			<label htmlFor={id} className={styles["label"]}>
+			<label className={styles["label"]}htmlFor={id} >
 				{label}
 			</label>
 		</div>

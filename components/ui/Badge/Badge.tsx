@@ -4,6 +4,23 @@ import styles from "./Badge.module.css";
 
 export interface BadgeProps {
 	children: ReactNode;
+	className?: string;
+	/** Show dot indicator */
+	dot?: boolean;
+	/** Animate the dot (pulse effect, limited to 3 cycles) */
+	dotAnimated?: boolean;
+	/** Dot color (defaults to variant color) */
+	dotColor?: string;
+	/** Icon before text */
+	icon?: ReactNode;
+	/** Called when remove button clicked */
+	onRemove?: () => void;
+	/** Pill shape (fully rounded) */
+	pill?: boolean;
+	/** Make badge removable */
+	removable?: boolean;
+	/** Size */
+	size?: "sm" | "md" | "lg";
 	/** Color variant */
 	variant?:
 		| "default"
@@ -13,23 +30,6 @@ export interface BadgeProps {
 		| "warning"
 		| "info"
 		| "outline";
-	/** Size */
-	size?: "sm" | "md" | "lg";
-	/** Pill shape (fully rounded) */
-	pill?: boolean;
-	/** Show dot indicator */
-	dot?: boolean;
-	/** Animate the dot (pulse effect, limited to 3 cycles) */
-	dotAnimated?: boolean;
-	/** Dot color (defaults to variant color) */
-	dotColor?: string;
-	/** Make badge removable */
-	removable?: boolean;
-	/** Called when remove button clicked */
-	onRemove?: () => void;
-	/** Icon before text */
-	icon?: ReactNode;
-	className?: string;
 }
 
 export function Badge({
@@ -54,26 +54,26 @@ export function Badge({
 		>
 			{dot && (
 				<span
+					aria-hidden="true"
 					className={`${styles.dot} ${dotAnimated ? styles.dotAnimated : ""}`}
 					style={dotColor ? { backgroundColor: dotColor } : undefined}
-					aria-hidden="true"
 				/>
 			)}
 			{icon && (
-				<span className={styles.icon} aria-hidden="true">
+				<span aria-hidden="true"className={styles.icon} >
 					{icon}
 				</span>
 			)}
 			<span className={styles.text}>{children}</span>
 			{removable && (
 				<button
-					type="button"
+					aria-label={`Remove ${typeof children === "string" ? children : ""}`}
 					className={styles.removeButton}
 					onClick={(e) => {
 						e.stopPropagation();
 						onRemove?.();
 					}}
-					aria-label={`Remove ${typeof children === "string" ? children : ""}`}
+					type="button"
 				>
 					<X size={12} />
 				</button>
@@ -120,12 +120,12 @@ export function StatusBadge({
 	const config = statusConfig[status];
 	return (
 		<Badge
-			variant={config.variant}
+			className={className}
 			dot={showDot}
 			dotAnimated={config.animated}
-			size="sm"
 			pill
-			className={className}
+			size="sm"
+			variant={config.variant}
 		>
 			{config.label}
 		</Badge>
@@ -153,10 +153,10 @@ export function CountBadge({
 
 	return (
 		<Badge
-			variant={variant}
-			size="sm"
-			pill
 			className={`${styles.countBadge} ${className}`}
+			pill
+			size="sm"
+			variant={variant}
 		>
 			{displayCount}
 		</Badge>

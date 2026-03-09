@@ -4,20 +4,20 @@
 
 /* Wrapper for positioning */
 .checkboxWrapper {
-  display: inline-flex;
   position: relative;
+  display: inline-flex;
   flex-shrink: 0;
 }
 
 /* Native input - visually hidden but accessible */
 .checkboxInput {
   position: absolute;
-  opacity: 0;
+  z-index: 1;
   width: 18px;
   height: 18px;
   margin: 0;
   cursor: pointer;
-  z-index: 1;
+  opacity: 0;
 }
 
 .checkboxInput:disabled {
@@ -30,26 +30,26 @@
 
 .checkboxBox {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 18px;
   height: 18px;
+  cursor: pointer;
+  background: var(--background);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--background);
   transition:
     background-color var(--transition),
     border-color var(--transition),
     box-shadow var(--transition),
     transform 0.1s ease;
-  cursor: pointer;
-  flex-shrink: 0;
 }
 
 /* Hover state */
 .checkboxInput:not(:disabled):hover + .checkboxBox {
-  border-color: var(--primary);
   background: color-mix(in oklch, var(--primary) 60%, transparent);
+  border-color: var(--primary);
 }
 
 /* Checked state */
@@ -78,10 +78,10 @@
 
 /* Disabled state */
 .checkboxBox.disabled {
-  opacity: 0.5;
   cursor: not-allowed;
   background: var(--muted);
   border-color: var(--border);
+  opacity: 0.5;
 }
 
 .checkboxBox.disabled.checked {
@@ -90,8 +90,8 @@
 }
 
 .checkboxInput:disabled:hover + .checkboxBox {
-  border-color: var(--border);
   background: var(--muted);
+  border-color: var(--border);
 }
 
 /* ============================================
@@ -99,8 +99,8 @@
    ============================================ */
 
 .checkIcon {
-  color: white;
   flex-shrink: 0;
+  color: white;
   animation: checkmark-pop 0.15s ease-out;
 }
 

@@ -4,9 +4,9 @@ import type { DesignToken } from "../../types/tokens";
 import { Button, Checkbox, Dialog, DialogActions, Input } from "../ui";
 
 interface BatchRenameDialogProps {
-	tokens: DesignToken[];
 	onApply: (find: string, replace: string, useRegex: boolean) => void;
 	onClose: () => void;
+	tokens: DesignToken[];
 }
 
 export function BatchRenameDialog({
@@ -54,44 +54,44 @@ export function BatchRenameDialog({
 
 	return (
 		<Dialog
-			isOpen={true}
-			onClose={onClose}
-			title="Batch Rename"
-			maxWidth="md"
 			footer={
 				<DialogActions>
-					<Button variant="outline" onClick={onClose}>
+					<Button onClick={onClose}variant="outline" >
 						Cancel
 					</Button>
 					<Button
-						variant="primary"
-						onClick={handleApply}
 						disabled={!find.trim() || changeCount === 0}
+						onClick={handleApply}
+						variant="primary"
 					>
 						<Check size={14} />
 						Rename{changeCount > 0 ? ` ${changeCount}` : ""}
 					</Button>
 				</DialogActions>
 			}
+			isOpen={true}
+			maxWidth="md"
+			onClose={onClose}
+			title="Batch Rename"
 		>
 			<div className="manage-rename-inputs">
 				<Input
-					label="Find"
-					id="batch-find"
 					autoFocus
-					value={find}
+					id="batch-find"
+					label="Find"
 					onChange={(e) => setFind(e.target.value)}
 					placeholder="Text to find…"
 					type="text"
+					value={find}
 				/>
 
 				<Input
-					label="Replace with"
 					id="batch-replace"
-					value={replace}
+					label="Replace with"
 					onChange={(e) => setReplace(e.target.value)}
 					placeholder="Replace with…"
 					type="text"
+					value={replace}
 				/>
 
 				<label
@@ -99,10 +99,10 @@ export function BatchRenameDialog({
 					title="Use regular expressions (e.g. color/(\w+) → colour/$1)"
 				>
 					<Checkbox
-						id="batch-use-regex"
 						checked={useRegex}
-						size="sm"
+						id="batch-use-regex"
 						onChange={(e) => setUseRegex(e.target.checked)}
+						size="sm"
 					/>
 					Regex
 				</label>
@@ -118,8 +118,8 @@ export function BatchRenameDialog({
 					<div className="manage-rename-preview-list">
 						{preview.slice(0, 15).map((r) => (
 							<div
-								key={r.id}
 								className={`manage-rename-preview-item ${r.newName === null ? "unchanged" : ""}`}
+								key={r.id}
 							>
 								<span
 									className={

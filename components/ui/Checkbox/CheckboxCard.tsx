@@ -3,14 +3,14 @@ import { Checkbox } from "./Checkbox";
 import styles from "./CheckboxCard.module.css";
 
 interface CheckboxCardProps {
-	id: string;
-	label: string;
-	description?: string;
 	checked: boolean;
-	onChange: (checked: boolean) => void;
+	className?: string;
+	description?: string;
 	disabled?: boolean;
 	icon?: ReactNode;
-	className?: string;
+	id: string;
+	label: string;
+	onChange: (checked: boolean) => void;
 }
 
 /**
@@ -39,17 +39,17 @@ export function CheckboxCard({
 
 	return (
 		<label
-			htmlFor={id}
 			className={`${styles.card} ${checked ? styles.checked : ""} ${disabled ? styles.disabled : ""} ${hasIcon ? styles.withIcon : ""} ${className}`}
+			htmlFor={id}
 		>
 			{/* Checkbox on left when no icon */}
 			{!hasIcon && (
 				<Checkbox
-					id={id}
-					checked={checked}
-					onChange={(e) => onChange(e.target.checked)}
-					disabled={disabled}
 					aria-describedby={description ? `${id}-description` : undefined}
+					checked={checked}
+					disabled={disabled}
+					id={id}
+					onChange={(e) => onChange(e.target.checked)}
 				/>
 			)}
 
@@ -60,7 +60,7 @@ export function CheckboxCard({
 			<div className={styles.content}>
 				<span className={styles.label}>{label}</span>
 				{description && (
-					<span id={`${id}-description`} className={styles.description}>
+					<span className={styles.description}id={`${id}-description`} >
 						{description}
 					</span>
 				)}
@@ -69,11 +69,11 @@ export function CheckboxCard({
 			{/* Checkbox on right when icon exists */}
 			{hasIcon && (
 				<Checkbox
-					id={id}
-					checked={checked}
-					onChange={(e) => onChange(e.target.checked)}
-					disabled={disabled}
 					aria-describedby={description ? `${id}-description` : undefined}
+					checked={checked}
+					disabled={disabled}
+					id={id}
+					onChange={(e) => onChange(e.target.checked)}
 				/>
 			)}
 		</label>

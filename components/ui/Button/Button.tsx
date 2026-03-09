@@ -3,6 +3,9 @@ import { forwardRef } from "react";
 import styles from "./Button.module.css";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+	children: React.ReactNode;
+	loading?: boolean;
+	size?: "sm" | "md" | "lg" | "icon-xs" | "icon-sm" | "icon" | "icon-lg";
 	variant?:
 		| "default"
 		| "primary"
@@ -14,9 +17,6 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 		| "outline"
 		| "link"
 		| "soft";
-	size?: "sm" | "md" | "lg" | "icon-xs" | "icon-sm" | "icon" | "icon-lg";
-	loading?: boolean;
-	children: React.ReactNode;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -67,12 +67,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
 		return (
 			<button
-				type="button"
-				ref={ref}
-				className={classes}
-				disabled={disabled || loading}
-				data-loading={loading || undefined}
 				aria-busy={loading || undefined}
+				className={classes}
+				data-loading={loading || undefined}
+				disabled={disabled || loading}
+				ref={ref}
+				type="button"
 				{...props}
 			>
 				{loading ? (

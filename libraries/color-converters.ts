@@ -35,7 +35,7 @@ export function rgbToRgba(color: RGB & { a?: number }): string {
 export function rgbToOklch(color: RGB & { a?: number }): string {
 	// Convert sRGB to linear RGB (remove gamma correction)
 	const toLinear = (val: number) => {
-		if (val <= 0.04045) return val / 12.92;
+		if (val <= 0.040_45) return val / 12.92;
 		return ((val + 0.055) / 1.055) ** 2.4;
 	};
 
@@ -44,17 +44,17 @@ export function rgbToOklch(color: RGB & { a?: number }): string {
 	const b = toLinear(color.b);
 
 	// Convert linear RGB to OKLab
-	const l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
-	const m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
-	const s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b;
+	const l = 0.412_221_470_8 * r + 0.536_332_536_3 * g + 0.051_445_992_9 * b;
+	const m = 0.211_903_498_2 * r + 0.680_699_545_1 * g + 0.107_396_956_6 * b;
+	const s = 0.088_302_461_9 * r + 0.281_718_837_6 * g + 0.629_978_700_5 * b;
 
 	const l_ = Math.cbrt(l);
 	const m_ = Math.cbrt(m);
 	const s_ = Math.cbrt(s);
 
-	const L = 0.2104542553 * l_ + 0.793617785 * m_ - 0.0040720468 * s_;
-	const a = 1.9779984951 * l_ - 2.428592205 * m_ + 0.4505937099 * s_;
-	const bVal = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.808675766 * s_;
+	const L = 0.210_454_255_3 * l_ + 0.793_617_785 * m_ - 0.004_072_046_8 * s_;
+	const a = 1.977_998_495_1 * l_ - 2.428_592_205 * m_ + 0.450_593_709_9 * s_;
+	const bVal = 0.025_904_037_1 * l_ + 0.782_771_766_2 * m_ - 0.808_675_766 * s_;
 
 	// Convert OKLab to OKLCH
 	const C = Math.sqrt(a * a + bVal * bVal);
@@ -87,10 +87,7 @@ export function convertColor(color: RGB | RGBA, format: string): string {
 
 // Convert RGB/RGBA to specified format, stripping alpha (always fully opaque)
 // Used for color-mix() output where opacity is handled externally
-export function convertColorOpaque(
-	color: RGB | RGBA,
-	format: string,
-): string {
+export function convertColorOpaque(color: RGB | RGBA, format: string): string {
 	const opaque = { r: color.r, g: color.g, b: color.b, a: 1 };
 	return convertColor(opaque, format);
 }

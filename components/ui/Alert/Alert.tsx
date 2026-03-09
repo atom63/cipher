@@ -4,18 +4,18 @@ import styles from "./Alert.module.css";
 
 export interface AlertProps {
 	children: ReactNode;
-	variant?: "info" | "success" | "warning" | "error";
-	title?: string;
+	className?: string;
 	icon?: ReactNode;
 	showIcon?: boolean;
-	className?: string;
+	title?: string;
+	variant?: "info" | "success" | "warning" | "error";
 }
 
 const defaultIcons = {
-	info: <Info size={16} aria-hidden="true" />,
-	success: <CheckCircle size={16} aria-hidden="true" />,
-	warning: <AlertTriangle size={16} aria-hidden="true" />,
-	error: <AlertCircle size={16} aria-hidden="true" />,
+	info: <Info aria-hidden="true" size={16} />,
+	success: <CheckCircle aria-hidden="true" size={16} />,
+	warning: <AlertTriangle aria-hidden="true" size={16} />,
+	error: <AlertCircle aria-hidden="true" size={16} />,
 };
 
 export function Alert({
@@ -31,9 +31,11 @@ export function Alert({
 
 	return (
 		<div
+			aria-live={
+				variant === "error" || variant === "warning" ? "assertive" : "polite"
+			}
 			className={`${styles.alert} ${variantClass} ${className}`}
 			role="alert"
-			aria-live={variant === "error" || variant === "warning" ? "assertive" : "polite"}
 		>
 			{showIcon && <div className={styles.alertIcon}>{displayIcon}</div>}
 			<div className={styles.alertContent}>

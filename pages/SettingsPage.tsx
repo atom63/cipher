@@ -41,9 +41,9 @@ export function SettingsPage() {
 	return (
 		<div className="settings-page">
 			<SectionHeader
-				variant="primary"
-				title="Settings"
 				description="Configure plugin preferences"
+				title="Settings"
+				variant="primary"
 			/>
 
 			<div className="settings-content">
@@ -52,10 +52,9 @@ export function SettingsPage() {
 					<h3>Export</h3>
 
 					<RadioGroup
-						label="Default Color Format"
 						description="Format used when exporting color values"
+						label="Default Color Format"
 						name="colorFormat"
-						value={settings.colorFormat}
 						onChange={(value: string) =>
 							setSettings({
 								...settings,
@@ -84,17 +83,18 @@ export function SettingsPage() {
 								description: "Hue, saturation, lightness",
 							},
 						]}
+						value={settings.colorFormat}
 					/>
 				</section>
 			</div>
 
 			{/* Actions */}
 			<div className="settings-actions">
-				<Button variant="ghost" onClick={handleReset}>
+				<Button onClick={handleReset}variant="ghost" >
 					<RotateCcw size={14} />
 					Reset to Defaults
 				</Button>
-				<Button variant="primary" onClick={handleSave}>
+				<Button onClick={handleSave}variant="primary" >
 					<Save size={14} />
 					Save Settings
 				</Button>

@@ -1,5 +1,8 @@
 import { ArrowRight, Check } from "lucide-react";
-import type { RenamePreviewItem, UseRenameReturn } from "../../../hooks/useRename";
+import type {
+	RenamePreviewItem,
+	UseRenameReturn,
+} from "../../../hooks/useRename";
 import { Button } from "../Button";
 import { Checkbox } from "../Checkbox";
 import { Dialog, DialogActions } from "../Dialog";
@@ -7,13 +10,13 @@ import { Input } from "../Input";
 import { Tabs } from "../Tabs";
 
 interface RenameDialogProps {
+	disabled?: boolean;
 	isOpen: boolean;
-	onClose: () => void;
 	/** e.g. "3 variables" or "5 styles" */
 	itemLabel: string;
-	rename: UseRenameReturn;
 	onApply: () => void;
-	disabled?: boolean;
+	onClose: () => void;
+	rename: UseRenameReturn;
 }
 
 export function RenameDialog({
@@ -28,37 +31,37 @@ export function RenameDialog({
 
 	return (
 		<Dialog
-			isOpen={isOpen}
-			onClose={onClose}
-			title={`Rename ${itemLabel}`}
-			maxWidth="md"
 			footer={
 				<DialogActions>
-					<Button variant="outline" onClick={onClose}>
+					<Button onClick={onClose}variant="outline" >
 						Cancel
 					</Button>
 					<Button
-						variant="primary"
-						onClick={onApply}
 						disabled={changes.length === 0 || disabled}
+						onClick={onApply}
+						variant="primary"
 					>
 						<Check size={14} />
 						Rename{changes.length > 0 ? ` ${changes.length}` : ""}
 					</Button>
 				</DialogActions>
 			}
+			isOpen={isOpen}
+			maxWidth="md"
+			onClose={onClose}
+			title={`Rename ${itemLabel}`}
 		>
 			<Tabs
+				activeTab={rename.renameMode}
+				onTabChange={(tab) =>
+					rename.setRenameMode(tab as "find-replace" | "prefix" | "suffix")
+				}
 				size="sm"
 				tabs={[
 					{ id: "find-replace", label: "Replace" },
 					{ id: "prefix", label: "Prefix" },
 					{ id: "suffix", label: "Suffix" },
 				]}
-				activeTab={rename.renameMode}
-				onTabChange={(tab) =>
-					rename.setRenameMode(tab as "find-replace" | "prefix" | "suffix")
-				}
 			/>
 
 			<div className="manage-rename-inputs">
@@ -66,29 +69,29 @@ export function RenameDialog({
 					<>
 						<Input
 							label="Find"
-							value={rename.findText}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								rename.setFindText(e.target.value)
 							}
 							placeholder="Text to find…"
+							value={rename.findText}
 						/>
 						<Input
 							label="Replace with"
-							value={rename.replaceText}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								rename.setReplaceText(e.target.value)
 							}
 							placeholder="Replace with…"
+							value={rename.replaceText}
 						/>
 						<label
 							className="manage-regex-toggle"
 							title="Use regular expressions (e.g. color/(\w+) → colour/$1)"
 						>
 							<Checkbox
-								id="rename-use-regex"
 								checked={rename.useRegex}
-								size="sm"
+								id="rename-use-regex"
 								onChange={(e) => rename.setUseRegex(e.target.checked)}
+								size="sm"
 							/>
 							Regex
 						</label>
@@ -97,21 +100,21 @@ export function RenameDialog({
 				{rename.renameMode === "prefix" && (
 					<Input
 						label="Prefix"
-						value={rename.renamePrefix}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 							rename.setRenamePrefix(e.target.value)
 						}
 						placeholder="e.g. brand/"
+						value={rename.renamePrefix}
 					/>
 				)}
 				{rename.renameMode === "suffix" && (
 					<Input
 						label="Suffix"
-						value={rename.renameSuffix}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 							rename.setRenameSuffix(e.target.value)
 						}
 						placeholder="e.g. /dark"
+						value={rename.renameSuffix}
 					/>
 				)}
 			</div>
@@ -134,8 +137,8 @@ function RenamePreview({ items }: { items: RenamePreviewItem[] }) {
 			<div className="manage-rename-preview-list">
 				{items.slice(0, 15).map((r) => (
 					<div
-						key={r.id}
 						className={`manage-rename-preview-item ${r.newName === null ? "unchanged" : ""}`}
+						key={r.id}
 					>
 						<span
 							className={

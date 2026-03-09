@@ -85,7 +85,9 @@ const DARK_TOKENS = `
  * - "dark": injects dark tokens, forces dark mode
  */
 export function applyTheme(theme: PluginSettings["theme"]) {
-	let styleEl = document.getElementById(THEME_STYLE_ID) as HTMLStyleElement | null;
+	let styleEl = document.getElementById(
+		THEME_STYLE_ID,
+	) as HTMLStyleElement | null;
 
 	if (theme === "system") {
 		// Remove override — let Figma/OS handle it

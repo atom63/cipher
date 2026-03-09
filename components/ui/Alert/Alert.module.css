@@ -3,32 +3,32 @@
   display: flex;
   gap: var(--spacing-md);
   padding: var(--spacing-lg);
-  border-radius: var(--radius-md);
-  border: 1px solid;
   font-size: var(--text-sm);
   line-height: 1.5;
+  border: 1px solid;
+  border-radius: var(--radius-md);
   transition: all var(--transition);
 }
 
 /* Alert Icon */
 .alertIcon {
-  flex-shrink: 0;
   display: flex;
+  flex-shrink: 0;
   align-items: flex-start;
   padding-top: 2px;
 }
 
 /* Alert Content */
 .alertContent {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--spacing-xs);
 }
 
 .alertTitle {
-  font-weight: var(--font-semibold);
   font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   line-height: 1.4;
 }
 
@@ -39,9 +39,9 @@
 
 /* Variants - Compatible with OKLCH colors */
 .info {
+  color: var(--foreground);
   background-color: color-mix(in oklch, var(--info), transparent 90%);
   border-color: color-mix(in oklch, var(--info), transparent 70%);
-  color: var(--foreground);
 }
 
 .info .alertIcon {
@@ -49,9 +49,9 @@
 }
 
 .success {
+  color: var(--foreground);
   background-color: color-mix(in oklch, var(--success), transparent 90%);
   border-color: color-mix(in oklch, var(--success), transparent 70%);
-  color: var(--foreground);
 }
 
 .success .alertIcon {
@@ -59,9 +59,9 @@
 }
 
 .warning {
+  color: var(--foreground);
   background-color: color-mix(in oklch, var(--warning), transparent 90%);
   border-color: color-mix(in oklch, var(--warning), transparent 70%);
-  color: var(--foreground);
 }
 
 .warning .alertIcon {
@@ -69,9 +69,9 @@
 }
 
 .error {
+  color: var(--foreground);
   background-color: color-mix(in oklch, var(--destructive), transparent 90%);
   border-color: color-mix(in oklch, var(--destructive), transparent 70%);
-  color: var(--foreground);
 }
 
 .error .alertIcon {

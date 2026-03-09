@@ -6,11 +6,11 @@
   display: flex;
   align-items: center;
   width: 100%;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  background: var(--background);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: var(--background);
-  color: var(--foreground);
-  font-size: var(--text-sm);
   transition:
     border-color var(--transition),
     box-shadow var(--transition);
@@ -37,19 +37,19 @@
   justify-content: center;
   height: 100%;
   padding: 0 var(--spacing-sm);
-  background: transparent;
-  border: none;
   color: var(--muted-foreground);
   cursor: pointer;
+  outline: none;
+  background: transparent;
+  border: none;
   transition:
     background-color var(--transition),
     color var(--transition);
-  outline: none;
 }
 
 .button:hover {
-  background: var(--accent);
   color: var(--foreground);
+  background: var(--accent);
 }
 
 .button:active {
@@ -79,18 +79,18 @@
    ============================================ */
 
 .input {
+  flex-grow: 1;
   width: 100%;
   min-width: 0;
-  flex-grow: 1;
   height: var(--size-8);
   padding: 0 var(--spacing-sm);
-  background: transparent;
-  border: none;
-  color: inherit;
   font-size: inherit;
   font-variant-numeric: tabular-nums;
+  color: inherit;
   text-align: center;
   outline: none;
+  background: transparent;
+  border: none;
 }
 
 .input::placeholder {
@@ -100,8 +100,8 @@
 /* Hide native spinners */
 .input::-webkit-outer-spin-button,
 .input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
   margin: 0;
+  -webkit-appearance: none;
 }
 
 .input[type="number"] {

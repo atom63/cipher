@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 interface TooltipState {
+	pos: "top" | "bottom" | "right";
 	text: string;
 	x: number;
 	y: number;
-	pos: "top" | "bottom" | "right";
 }
 
 /**
@@ -78,7 +78,7 @@ export function TooltipPortal() {
 
 	const style: React.CSSProperties = {
 		position: "fixed",
-		zIndex: 10000,
+		zIndex: 10_000,
 		padding: "4px 8px",
 		fontSize: "11px",
 		fontWeight: 500,
@@ -96,7 +96,7 @@ export function TooltipPortal() {
 	};
 
 	return createPortal(
-		<div style={style} role="tooltip">
+		<div role="tooltip"style={style} >
 			{tip.text}
 		</div>,
 		document.body,

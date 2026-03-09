@@ -21,14 +21,14 @@ interface Collection {
 }
 
 interface CollectionSelectorProps {
-	tokens: DesignToken[];
+	onCancel: () => void;
 	onSelect: (
 		mode: "new" | "existing",
 		collectionName: string,
 		importMode?: "import" | "override",
 		selectedCollections?: string[],
 	) => void;
-	onCancel: () => void;
+	tokens: DesignToken[];
 }
 
 export function CollectionSelector({
@@ -149,17 +149,17 @@ export function CollectionSelector({
 	return (
 		<div className={styles.collectionSelector}>
 			<SectionHeader
-				variant="secondary"
-				title={
-					isMultiCollection
-						? "Multiple Collections Detected"
-						: "Choose Collection"
-				}
 				description={
 					isMultiCollection
 						? "This file contains multiple collections that will be created in Figma"
 						: "Select where to import your design tokens"
 				}
+				title={
+					isMultiCollection
+						? "Multiple Collections Detected"
+						: "Choose Collection"
+				}
+				variant="secondary"
 			/>
 
 			{loading ? (
@@ -170,7 +170,6 @@ export function CollectionSelector({
 						<RadioGroup
 							label="Action"
 							name="actionType"
-							value={importMode}
 							onChange={(value: string) =>
 								setImportMode(value as "import" | "override")
 							}
@@ -188,19 +187,14 @@ export function CollectionSelector({
 										"Only update existing. Skips missing tokens and references.",
 								},
 							]}
+							value={importMode}
 						/>
 					</div>
 
 					<div className={styles.multiCollectionPreview}>
 						<div className={styles.previewHeader}>
-							<p className={styles.previewIntro}>
-								Collections
-							</p>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={toggleAllCollections}
-							>
+							<p className={styles.previewIntro}>Collections</p>
+							<Button onClick={toggleAllCollections}size="sm" variant="ghost" >
 								{selectedCollections.size === detectedCollections.length
 									? "Deselect All"
 									: "Select All"}
@@ -209,11 +203,11 @@ export function CollectionSelector({
 						<div className={styles.collectionPreviewList}>
 							{collectionStats.map(({ name, count }) => (
 								<CheckboxCard
-									key={name}
-									id={`collection-${name}`}
-									label={name}
-									description={`${count} variable${count !== 1 ? "s" : ""}`}
 									checked={selectedCollections.has(name)}
+									description={`${count} variable${count !== 1 ? "s" : ""}`}
+									id={`collection-${name}`}
+									key={name}
+									label={name}
 									onChange={() => toggleCollection(name)}
 								/>
 							))}
@@ -221,16 +215,17 @@ export function CollectionSelector({
 					</div>
 
 					<div className={styles.collectionActions}>
-						<Button variant="ghost" onClick={onCancel}>
+						<Button onClick={onCancel}variant="ghost" >
 							Cancel
 						</Button>
 						<Button
-							variant="primary"
-							onClick={handleContinue}
 							disabled={selectedCollections.size === 0}
+							onClick={handleContinue}
+							variant="primary"
 						>
 							<ArrowRight size={14} />
-							Continue ({selectedCollections.size} of {detectedCollections.length})
+							Continue ({selectedCollections.size} of{" "}
+							{detectedCollections.length})
 						</Button>
 					</div>
 				</>
@@ -240,7 +235,6 @@ export function CollectionSelector({
 						<RadioGroup
 							label="Action"
 							name="actionType"
-							value={importMode}
 							onChange={(value: string) =>
 								setImportMode(value as "import" | "override")
 							}
@@ -258,13 +252,13 @@ export function CollectionSelector({
 										"Only update existing. Skips missing tokens and references.",
 								},
 							]}
+							value={importMode}
 						/>
 
 						<RadioGroup
-							label="Import Mode"
 							description="Create a new collection or append to an existing one"
+							label="Import Mode"
 							name="importMode"
-							value={mode}
 							onChange={(value: string) => setMode(value as "new" | "existing")}
 							options={[
 								{
@@ -281,36 +275,36 @@ export function CollectionSelector({
 											: "No existing collections found",
 								},
 							]}
+							value={mode}
 						/>
 					</div>
 
 					{mode === "new" ? (
 						<div className={styles.collectionForm}>
 							<Input
-								label="Collection Name"
 								description="Name for the new variable collection"
-								value={newCollectionName}
+								label="Collection Name"
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 									setNewCollectionName(e.target.value)
 								}
 								placeholder="Design Tokens"
+								value={newCollectionName}
 							/>
 						</div>
 					) : (
 						<div className={styles.collectionForm}>
 							{collections.length === 0 ? (
 								<EmptyState
+									description="Create a new collection to get started"
 									icon={<FolderOpen size={48} strokeWidth={1.5} />}
 									title="No collections found"
-									description="Create a new collection to get started"
 								/>
 							) : (
 								<>
 									<RadioGroup
-										label="Select Collection"
 										description="Variables will be added to the selected collection"
+										label="Select Collection"
 										name="collection"
-										value={selectedCollectionId}
 										onChange={setSelectedCollectionId}
 										options={collections.map((collection) => ({
 											value: collection.id,
@@ -318,6 +312,7 @@ export function CollectionSelector({
 											description: `${collection.variableCount} variable${collection.variableCount !== 1 ? "s" : ""}`,
 											icon: <FolderOpen size={16} />,
 										}))}
+										value={selectedCollectionId}
 									/>
 									{selectedCollection && (
 										<div className={styles.collectionPreview}>
@@ -331,13 +326,13 @@ export function CollectionSelector({
 					)}
 
 					<div className={styles.collectionActions}>
-						<Button variant="ghost" onClick={onCancel}>
+						<Button onClick={onCancel}variant="ghost" >
 							Cancel
 						</Button>
 						<Button
-							variant="primary"
-							onClick={handleContinue}
 							disabled={mode === "existing" && collections.length === 0}
+							onClick={handleContinue}
+							variant="primary"
 						>
 							<ArrowRight size={14} />
 							Continue to Review

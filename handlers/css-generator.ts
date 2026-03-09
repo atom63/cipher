@@ -21,20 +21,20 @@ type ColorFormat = "oklch" | "hex" | "rgba" | "hsl";
 interface CSSGeneratorOptions {
 	collectionIds: string[];
 	colorFormat: ColorFormat;
-	includeThemeInline: boolean;
 	includeColorMix: boolean;
+	includeThemeInline: boolean;
 }
 
 interface CSSFile {
-	name: string;
 	content: string;
+	name: string;
 	variableCount: number;
 }
 
 interface CSSExportResult {
 	files: CSSFile[];
-	totalVariables: number;
 	totalCollections: number;
+	totalVariables: number;
 }
 
 // ============================================================================
@@ -65,9 +65,13 @@ function buildStyleOpacityMap(): Map<string, number> {
 
 		for (const style of paintStyles) {
 			for (const paint of style.paints) {
-				if (paint.type !== "SOLID" && paint.type !== "GRADIENT_LINEAR" &&
-					paint.type !== "GRADIENT_RADIAL" && paint.type !== "GRADIENT_ANGULAR" &&
-					paint.type !== "GRADIENT_DIAMOND") {
+				if (
+					paint.type !== "SOLID" &&
+					paint.type !== "GRADIENT_LINEAR" &&
+					paint.type !== "GRADIENT_RADIAL" &&
+					paint.type !== "GRADIENT_ANGULAR" &&
+					paint.type !== "GRADIENT_DIAMOND"
+				) {
 					continue;
 				}
 
@@ -143,7 +147,7 @@ function normalizeName(name: string): string {
 // ============================================================================
 
 // Infer CSS variable prefix from variable name path
-function inferPrefix(name: string, resolvedType: string): string {
+function inferPrefix(name: string, _resolvedType: string): string {
 	const lower = name.toLowerCase();
 	const firstSegment = lower.split("/")[0];
 
@@ -157,7 +161,12 @@ function inferPrefix(name: string, resolvedType: string): string {
 	// Rounded → --rounded-*
 	if (firstSegment === "rounded") return "rounded";
 	// Z-index → --z-*
-	if (firstSegment === "z-index" || firstSegment === "zindex" || firstSegment === "zlayer") return "z";
+	if (
+		firstSegment === "z-index" ||
+		firstSegment === "zindex" ||
+		firstSegment === "zlayer"
+	)
+		return "z";
 	// Size (also matches deeper paths like font/typescale/*/size/*)
 	if (lower.includes("/size/")) return "size";
 	// Duration — any path containing "duration" (but not easing)
@@ -185,7 +194,11 @@ function inferPrefix(name: string, resolvedType: string): string {
  * - Color: strip "color/" from path, add --color- prefix → --color-zinc-50
  * - Everything else: add --color- prefix → --color-font-family-sans
  */
-function toVarName(name: string, resolvedType: string, collectionName?: string): string {
+function toVarName(
+	name: string,
+	resolvedType: string,
+	collectionName?: string,
+): string {
 	const cssName = name.replace(/\//g, "-").replace(/\s+/g, "-").toLowerCase();
 
 	// Semantics: strip "shadcn-" prefix, no type prefix
@@ -242,7 +255,7 @@ function valueToCSS(
 	colorFormat: ColorFormat,
 	includeColorMix: boolean,
 	opacityMap: Map<string, number>,
-	collectionName?: string,
+	_collectionName?: string,
 ): string {
 	if (isVariableAlias(value)) {
 		const aliasId = (value as VariableAlias).id;
@@ -251,7 +264,9 @@ function valueToCSS(
 			const refVar = figma.variables.getVariableById(aliasId);
 			if (refVar) {
 				// Resolve the referenced variable's collection name for correct naming
-				const refCollection = figma.variables.getVariableCollectionById(refVar.variableCollectionId);
+				const refCollection = figma.variables.getVariableCollectionById(
+					refVar.variableCollectionId,
+				);
 				const refCollectionName = refCollection?.name;
 				const cssRef = `var(${toVarName(refVar.name, refVar.resolvedType, refCollectionName)})`;
 
@@ -335,21 +350,44 @@ function generateCollectionCSS(
 				for (const variable of variables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
-					const varName = toVarName(variable.name, variable.resolvedType, colName);
-					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap, colName);
+					const varName = toVarName(
+						variable.name,
+						variable.resolvedType,
+						colName,
+					);
+					const cssValue = valueToCSS(
+						value,
+						variable,
+						colorFormat,
+						options.includeColorMix,
+						opacityMap,
+						colName,
+					);
 					lines.push(`  ${varName}: ${cssValue};`);
 				}
 				lines.push("}");
 				lines.push("");
 			} else if (isResponsiveMode(mode.name)) {
-				const mediaQuery = modeToMediaQuery(mode.name)!;
+				const mediaQuery = modeToMediaQuery(mode.name);
+				if (!mediaQuery) continue;
 				lines.push(`${mediaQuery} {`);
 				lines.push("  :root {");
 				for (const variable of variables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
-					const varName = toVarName(variable.name, variable.resolvedType, colName);
-					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap, colName);
+					const varName = toVarName(
+						variable.name,
+						variable.resolvedType,
+						colName,
+					);
+					const cssValue = valueToCSS(
+						value,
+						variable,
+						colorFormat,
+						options.includeColorMix,
+						opacityMap,
+						colName,
+					);
 					lines.push(`    ${varName}: ${cssValue};`);
 				}
 				lines.push("  }");
@@ -361,8 +399,19 @@ function generateCollectionCSS(
 				for (const variable of variables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
-					const varName = toVarName(variable.name, variable.resolvedType, colName);
-					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap, colName);
+					const varName = toVarName(
+						variable.name,
+						variable.resolvedType,
+						colName,
+					);
+					const cssValue = valueToCSS(
+						value,
+						variable,
+						colorFormat,
+						options.includeColorMix,
+						opacityMap,
+						colName,
+					);
 					lines.push(`  ${varName}: ${cssValue};`);
 				}
 				lines.push("}");
@@ -376,7 +425,14 @@ function generateCollectionCSS(
 			const value = variable.valuesByMode[mode.modeId];
 			if (value === undefined) continue;
 			const varName = toVarName(variable.name, variable.resolvedType, colName);
-			const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap, colName);
+			const cssValue = valueToCSS(
+				value,
+				variable,
+				colorFormat,
+				options.includeColorMix,
+				opacityMap,
+				colName,
+			);
 			lines.push(`  ${varName}: ${cssValue};`);
 		}
 		lines.push("}");
@@ -451,7 +507,9 @@ function generateThemeInline(
 		if (isSemantics) {
 			// Semantics: --color-{name}: var(--{name})
 			const unprefixed = varName; // e.g., "--background"
-			entries.push(`  --color-${unprefixed.replace("--", "")}: var(${unprefixed});`);
+			entries.push(
+				`  --color-${unprefixed.replace("--", "")}: var(${unprefixed});`,
+			);
 		} else {
 			// Other collections: self-reference for Tailwind registration
 			entries.push(`  ${varName}: var(${varName});`);
@@ -489,15 +547,17 @@ function generateShadowCSS(): CSSFile | null {
 		const effectStyles = figma.getLocalEffectStyles();
 		// Find shadow styles (nested under "shadow/" path or named with numeric levels)
 		const shadowStyles = effectStyles.filter(
-			(s) => s.name.toLowerCase().startsWith("shadow/") || s.name.toLowerCase().startsWith("shadow "),
+			(s) =>
+				s.name.toLowerCase().startsWith("shadow/") ||
+				s.name.toLowerCase().startsWith("shadow "),
 		);
 
 		if (shadowStyles.length === 0) return null;
 
 		// Sort by the numeric level in the name (shadow/0, shadow/1, etc.)
 		shadowStyles.sort((a, b) => {
-			const aNum = Number.parseInt(a.name.split(/[/\s]/).pop() || "0");
-			const bNum = Number.parseInt(b.name.split(/[/\s]/).pop() || "0");
+			const aNum = Number.parseInt(a.name.split(/[/\s]/).pop() || "0", 10);
+			const bNum = Number.parseInt(b.name.split(/[/\s]/).pop() || "0", 10);
 			return aNum - bNum;
 		});
 
@@ -544,7 +604,9 @@ function generateShadowCSS(): CSSFile | null {
 			lines.push("/* Utility classes for shadows */");
 			lines.push("@layer utilities {");
 			for (const level of levelNames) {
-				lines.push(`  .shadow-${level} { box-shadow: var(--shadow-${level}); }`);
+				lines.push(
+					`  .shadow-${level} { box-shadow: var(--shadow-${level}); }`,
+				);
 			}
 			lines.push("}");
 			lines.push("");
@@ -569,11 +631,36 @@ function generateShadowCSS(): CSSFile | null {
  * lg and xl reuse desktop (md) values.
  */
 const TYPESCALE_BREAKPOINTS = [
-	{ name: "xs", mode: "mobile (min)", minWidth: null, description: "Extra small (< 640px / mobile)" },
-	{ name: "sm", mode: "tablet (sm)", minWidth: "40rem", description: "Small (640px+ / tablet portrait)" },
-	{ name: "md", mode: "desktop (md)", minWidth: "48rem", description: "Medium (768px+ / tablet landscape)" },
-	{ name: "lg", mode: "desktop (md)", minWidth: "64rem", description: "Large (1024px+ / desktop)" },
-	{ name: "xl", mode: "desktop (md)", minWidth: "80rem", description: "Extra large (1280px+ / large desktop)" },
+	{
+		name: "xs",
+		mode: "mobile (min)",
+		minWidth: null,
+		description: "Extra small (< 640px / mobile)",
+	},
+	{
+		name: "sm",
+		mode: "tablet (sm)",
+		minWidth: "40rem",
+		description: "Small (640px+ / tablet portrait)",
+	},
+	{
+		name: "md",
+		mode: "desktop (md)",
+		minWidth: "48rem",
+		description: "Medium (768px+ / tablet landscape)",
+	},
+	{
+		name: "lg",
+		mode: "desktop (md)",
+		minWidth: "64rem",
+		description: "Large (1024px+ / desktop)",
+	},
+	{
+		name: "xl",
+		mode: "desktop (md)",
+		minWidth: "80rem",
+		description: "Extra large (1280px+ / large desktop)",
+	},
 ];
 
 /** Tailwind text utility → typescale mapping */
@@ -612,8 +699,8 @@ function generateTypescalesCSS(): CSSFile | null {
 			.filter((v): v is Variable => v !== null);
 
 		// Find typography variables — match pattern "typography/{scale}/{font-size|line-height}"
-		const typoVars = variables.filter(
-			(v) => v.name.toLowerCase().startsWith("typography/"),
+		const typoVars = variables.filter((v) =>
+			v.name.toLowerCase().startsWith("typography/"),
 		);
 		if (typoVars.length === 0) return null;
 
@@ -638,7 +725,10 @@ function generateTypescalesCSS(): CSSFile | null {
 		}
 
 		// Helper: resolve a variable value to px string, following aliases
-		const resolveToPixels = (variable: Variable, modeId: string): string | null => {
+		const resolveToPixels = (
+			variable: Variable,
+			modeId: string,
+		): string | null => {
 			let value = variable.valuesByMode[modeId];
 			if (value === undefined) return null;
 
@@ -649,7 +739,9 @@ function generateTypescalesCSS(): CSSFile | null {
 				const refVar = figma.variables.getVariableById(aliasId);
 				if (!refVar) return null;
 				// For the referenced variable, use its first mode's value
-				const refCollection = figma.variables.getVariableCollectionById(refVar.variableCollectionId);
+				const refCollection = figma.variables.getVariableCollectionById(
+					refVar.variableCollectionId,
+				);
 				if (!refCollection) return null;
 				const refModeId = refCollection.modes[0].modeId;
 				value = refVar.valuesByMode[refModeId];
@@ -661,8 +753,12 @@ function generateTypescalesCSS(): CSSFile | null {
 		};
 
 		const lines: string[] = [];
-		lines.push("/* Responsive Typography — extracted from Figma responsive collection */");
-		lines.push("/* Supports viewport-based (@media) and window-based ([data-window-size]) */");
+		lines.push(
+			"/* Responsive Typography — extracted from Figma responsive collection */",
+		);
+		lines.push(
+			"/* Supports viewport-based (@media) and window-based ([data-window-size]) */",
+		);
 		lines.push("");
 
 		// Helper: emit a set of typography variables for a mode
@@ -675,7 +771,9 @@ function generateTypescalesCSS(): CSSFile | null {
 					if (!variable) continue;
 					const px = resolveToPixels(variable, modeId);
 					if (!px) continue;
-					lines.push(`${indent}--typography-${scale}-${prop}: calc(${px} * var(--typography-scale, 1));`);
+					lines.push(
+						`${indent}--typography-${scale}-${prop}: calc(${px} * var(--typography-scale, 1));`,
+					);
 				}
 			}
 		};
@@ -687,7 +785,9 @@ function generateTypescalesCSS(): CSSFile | null {
 		lines.push("");
 
 		// [data-window-size="xs"] — explicit mobile
-		lines.push(`/* Window-responsive: ${TYPESCALE_BREAKPOINTS[0].description} */`);
+		lines.push(
+			`/* Window-responsive: ${TYPESCALE_BREAKPOINTS[0].description} */`,
+		);
 		lines.push(`[data-window-size="xs"] {`);
 		emitVars("  ", TYPESCALE_BREAKPOINTS[0].mode);
 		lines.push("}");
@@ -718,13 +818,17 @@ function generateTypescalesCSS(): CSSFile | null {
 
 		lines.push("  /* Font Size Utilities (Custom Scale) */");
 		for (const scale of scaleNames) {
-			lines.push(`  .size-${scale} { font-size: var(--typography-${scale}-font-size); }`);
+			lines.push(
+				`  .size-${scale} { font-size: var(--typography-${scale}-font-size); }`,
+			);
 		}
 
 		lines.push("");
 		lines.push("  /* Line Height Utilities (Custom Scale) */");
 		for (const scale of scaleNames) {
-			lines.push(`  .leading-${scale} { line-height: var(--typography-${scale}-line-height); }`);
+			lines.push(
+				`  .leading-${scale} { line-height: var(--typography-${scale}-line-height); }`,
+			);
 		}
 
 		lines.push("");
@@ -737,9 +841,13 @@ function generateTypescalesCSS(): CSSFile | null {
 		}
 
 		lines.push("");
-		lines.push("  /* Tailwind Standard Text Utilities (mapped to custom scale) */");
+		lines.push(
+			"  /* Tailwind Standard Text Utilities (mapped to custom scale) */",
+		);
 		for (const [tw, scale] of TAILWIND_TEXT_MAP) {
-			lines.push(`  .${tw} { font-size: var(--typography-${scale}-font-size); line-height: var(--typography-${scale}-line-height); }`);
+			lines.push(
+				`  .${tw} { font-size: var(--typography-${scale}-font-size); line-height: var(--typography-${scale}-line-height); }`,
+			);
 		}
 
 		lines.push("}");
@@ -787,9 +895,13 @@ function generateRadiusCSS(): CSSFile | null {
 				// Follow aliases to get the resolved value
 				let depth = 0;
 				while (isVariableAlias(value) && depth < 10) {
-					const refVar = figma.variables.getVariableById((value as VariableAlias).id);
+					const refVar = figma.variables.getVariableById(
+						(value as VariableAlias).id,
+					);
 					if (!refVar) break;
-					const refCol = figma.variables.getVariableCollectionById(refVar.variableCollectionId);
+					const refCol = figma.variables.getVariableCollectionById(
+						refVar.variableCollectionId,
+					);
 					if (!refCol) break;
 					value = refVar.valuesByMode[refCol.modes[0].modeId];
 					depth++;
@@ -802,7 +914,9 @@ function generateRadiusCSS(): CSSFile | null {
 
 			// Fall back to corner-radius variable
 			const cornerRadius = variables.find(
-				(v) => v.name.toLowerCase().includes("corner-radius") || v.name.toLowerCase().includes("corner/radius"),
+				(v) =>
+					v.name.toLowerCase().includes("corner-radius") ||
+					v.name.toLowerCase().includes("corner/radius"),
 			);
 			if (cornerRadius) {
 				const value = cornerRadius.valuesByMode[modeId];
@@ -818,22 +932,40 @@ function generateRadiusCSS(): CSSFile | null {
 
 		lines.push("@theme inline {");
 		lines.push("  /* Tailwind default: `rounded` class */");
-		lines.push(`  --radius: calc(4px * var(--radius-multiplier));`);
+		lines.push("  --radius: calc(4px * var(--radius-multiplier));");
 		lines.push("");
 		lines.push("  /* Lower Scale */");
-		lines.push(`  --radius-2xs: calc((var(--corner-radius) - ${anchor - 2}px) * var(--radius-multiplier));`);
-		lines.push(`  --radius-xs: calc((var(--corner-radius) - ${anchor - 4}px) * var(--radius-multiplier));`);
-		lines.push(`  --radius-sm: calc((var(--corner-radius) - ${anchor - 6}px) * var(--radius-multiplier));`);
-		lines.push(`  --radius-md: calc((var(--corner-radius) - ${anchor - 8}px) * var(--radius-multiplier));`);
+		lines.push(
+			`  --radius-2xs: calc((var(--corner-radius) - ${anchor - 2}px) * var(--radius-multiplier));`,
+		);
+		lines.push(
+			`  --radius-xs: calc((var(--corner-radius) - ${anchor - 4}px) * var(--radius-multiplier));`,
+		);
+		lines.push(
+			`  --radius-sm: calc((var(--corner-radius) - ${anchor - 6}px) * var(--radius-multiplier));`,
+		);
+		lines.push(
+			`  --radius-md: calc((var(--corner-radius) - ${anchor - 8}px) * var(--radius-multiplier));`,
+		);
 		lines.push("");
 		lines.push("  /* The Anchor */");
-		lines.push("  --radius-lg: calc(var(--corner-radius) * var(--radius-multiplier));");
+		lines.push(
+			"  --radius-lg: calc(var(--corner-radius) * var(--radius-multiplier));",
+		);
 		lines.push("");
 		lines.push("  /* Upper Scale */");
-		lines.push(`  --radius-xl: calc((var(--corner-radius) + 4px) * var(--radius-multiplier));`);
-		lines.push(`  --radius-2xl: calc((var(--corner-radius) + 8px) * var(--radius-multiplier));`);
-		lines.push(`  --radius-3xl: calc((var(--corner-radius) + 12px) * var(--radius-multiplier));`);
-		lines.push(`  --radius-4xl: calc((var(--corner-radius) + 16px) * var(--radius-multiplier));`);
+		lines.push(
+			"  --radius-xl: calc((var(--corner-radius) + 4px) * var(--radius-multiplier));",
+		);
+		lines.push(
+			"  --radius-2xl: calc((var(--corner-radius) + 8px) * var(--radius-multiplier));",
+		);
+		lines.push(
+			"  --radius-3xl: calc((var(--corner-radius) + 12px) * var(--radius-multiplier));",
+		);
+		lines.push(
+			"  --radius-4xl: calc((var(--corner-radius) + 16px) * var(--radius-multiplier));",
+		);
 		lines.push("  --radius-full: calc(9999px * var(--radius-multiplier));");
 		lines.push("}");
 		lines.push("");
@@ -906,12 +1038,18 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 		// Skip the "tailwind-colors" collection — these palette colors
 		// (red-50..950, blue-50..950, etc.) are built into Tailwind CSS v4.
 		// Exporting them would duplicate what Tailwind provides natively.
-		if (colLower === "tailwind-colors" || colLower === "tailwind colors") continue;
+		if (colLower === "tailwind-colors" || colLower === "tailwind colors")
+			continue;
 
-		const file = generateCollectionCSS(collection, options.colorFormat, {
-			includeThemeInline: options.includeThemeInline,
-			includeColorMix: options.includeColorMix,
-		}, opacityMap);
+		const file = generateCollectionCSS(
+			collection,
+			options.colorFormat,
+			{
+				includeThemeInline: options.includeThemeInline,
+				includeColorMix: options.includeColorMix,
+			},
+			opacityMap,
+		);
 		files.push(file);
 		totalVariables += file.variableCount;
 	}

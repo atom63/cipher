@@ -2,12 +2,7 @@
 // Parses CSS files containing :root { --var-name: value; } declarations
 // and converts them to DesignToken[] for the import pipeline.
 
-import type {
-	DesignToken,
-	ParseError,
-	TokenCategory,
-	TokenType,
-} from "../types/tokens";
+import type { DesignToken, TokenCategory, TokenType } from "../types/tokens";
 import { parseColor } from "./color-parsers";
 import { generateTokenId } from "./token-parsers";
 
@@ -16,9 +11,9 @@ import { generateTokenId } from "./token-parsers";
 // ---------------------------------------------------------------------------
 
 export interface CSSParseResult {
-	tokens: DesignToken[];
 	errors: { line: number; message: string }[];
 	stats: { totalDeclarations: number; parsed: number; skipped: number };
+	tokens: DesignToken[];
 }
 
 // ---------------------------------------------------------------------------
@@ -36,18 +31,17 @@ const SELECTOR_CATEGORY_MAP: Record<string, TokenCategory> = {
 const BLOCK_RE = /([^{}]+)\{([^}]*)\}/g;
 
 /** Regex for a single custom-property declaration */
-const DECLARATION_RE =
-	/\s*--([\w-]+)\s*:\s*((?:[^;]|;\s*(?![\s}]))*?)\s*;/g;
+const DECLARATION_RE = /\s*--([\w-]+)\s*:\s*((?:[^;]|;\s*(?![\s}]))*?)\s*;/g;
 
 /** Regex to detect var() references */
 const VAR_REF_RE = /^var\(\s*--([\w-]+)\s*\)$/;
 
 /** Color function/hex patterns */
-const COLOR_PATTERNS =
-	/^(#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\(|oklch\()/;
+const COLOR_PATTERNS = /^(#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\(|oklch\()/;
 
 /** Numeric value with optional unit */
-const NUMERIC_RE = /^-?[0-9]*\.?[0-9]+(px|rem|em|%|vw|vh|vmin|vmax|ch|ex|pt|pc|in|cm|mm|deg|rad|turn|s|ms)?$/;
+const NUMERIC_RE =
+	/^-?[0-9]*\.?[0-9]+(px|rem|em|%|vw|vh|vmin|vmax|ch|ex|pt|pc|in|cm|mm|deg|rad|turn|s|ms)?$/;
 
 /** Name segments that strongly suggest a color token */
 const COLOR_NAME_HINTS = [
@@ -86,9 +80,7 @@ function categoryFromSelector(selector: string): TokenCategory {
 	}
 
 	// data-mode / data-theme attribute selectors
-	const attrMatch = trimmed.match(
-		/\[data-(?:mode|theme)=["']([^"']+)["']\]/,
-	);
+	const attrMatch = trimmed.match(/\[data-(?:mode|theme)=["']([^"']+)["']\]/);
 	if (attrMatch) {
 		return attrMatch[1] as TokenCategory; // e.g. "dark", "high-contrast"
 	}
@@ -222,10 +214,7 @@ export function parseCSS(cssText: string): CSSParseResult {
 	const stripped = stripComments(cssText);
 
 	// Find all selector blocks
-	let blockMatch: RegExpExecArray | null;
-	BLOCK_RE.lastIndex = 0;
-
-	while ((blockMatch = BLOCK_RE.exec(stripped)) !== null) {
+	for (const blockMatch of stripped.matchAll(BLOCK_RE)) {
 		const selector = blockMatch[1];
 		const blockBody = blockMatch[2];
 		const blockStartOffset = blockMatch.index + blockMatch[1].length + 1; // offset of '{'
@@ -233,10 +222,7 @@ export function parseCSS(cssText: string): CSSParseResult {
 		const category = categoryFromSelector(selector);
 
 		// Extract declarations from the block
-		let declMatch: RegExpExecArray | null;
-		DECLARATION_RE.lastIndex = 0;
-
-		while ((declMatch = DECLARATION_RE.exec(blockBody)) !== null) {
+		for (const declMatch of blockBody.matchAll(DECLARATION_RE)) {
 			totalDeclarations++;
 
 			const varName = declMatch[1]; // without --

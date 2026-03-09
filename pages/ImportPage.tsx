@@ -6,10 +6,7 @@ import {
 	SuccessView,
 	TokenTable,
 } from "../components/import";
-import {
-	SectionHeader,
-	useToast,
-} from "../components/ui";
+import { SectionHeader, useToast } from "../components/ui";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type {
 	DesignToken,
@@ -19,9 +16,9 @@ import type {
 
 /** A conflict detected when importing a token that already exists */
 export interface ImportConflict {
-	tokenId: string;
-	existingValues: Record<string, string>;
 	existingId: string;
+	existingValues: Record<string, string>;
+	tokenId: string;
 }
 
 type ImportViewState =
@@ -220,9 +217,9 @@ export function ImportPage() {
 			{view === "upload" && (
 				<>
 					<SectionHeader
-						variant="primary"
-						title="Import"
 						description="Import design tokens from JSON or CSS into Figma variables"
+						title="Import"
+						variant="primary"
 					/>
 
 					<FileImport onTokensParsed={handleTokensParsed} />
@@ -231,19 +228,19 @@ export function ImportPage() {
 
 			{view === "collection" && (
 				<CollectionSelector
-					tokens={tokens}
-					onSelect={handleCollectionSelected}
 					onCancel={handleCancel}
+					onSelect={handleCollectionSelected}
+					tokens={tokens}
 				/>
 			)}
 
 			{view === "review" && (
 				<TokenTable
+					conflicts={conflicts}
 					onCancel={handleBackToCollection}
 					onImport={handleImport}
 					onTokensUpdated={setTokens}
 					tokens={tokens}
-					conflicts={conflicts}
 				/>
 			)}
 
@@ -251,14 +248,14 @@ export function ImportPage() {
 
 			{view === "success" && (
 				<SuccessView
+					changes={result.changes}
 					errors={result.errors}
 					failed={result.failed}
+					importMode={importMode}
 					onClose={handleClose}
 					onImportMore={handleImportMore}
 					onUndo={handleUndoImport}
 					success={result.success}
-					importMode={importMode}
-					changes={result.changes}
 					undoData={result.undoData}
 				/>
 			)}

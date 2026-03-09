@@ -1,31 +1,31 @@
 /* Button Component - Enhanced Design */
 
 .button {
+  position: relative;
   display: inline-flex;
+  gap: var(--spacing-sm);
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
-  border-radius: var(--radius);
+  overflow: hidden;
   font-weight: var(--font-medium);
+  white-space: nowrap;
   cursor: pointer;
+  user-select: none;
+  outline: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
   transition:
     background-color var(--transition),
     border-color var(--transition),
     color var(--transition),
     box-shadow var(--transition),
     transform var(--transition);
-  white-space: nowrap;
-  user-select: none;
-  border: 1px solid transparent;
-  outline: none;
-  position: relative;
-  overflow: hidden;
 }
 
 /* Auto-size SVG children */
 .button svg {
-  pointer-events: none;
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 /* Focus state - polished ring */
@@ -38,17 +38,17 @@
 
 /* Disabled state */
 .button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
   pointer-events: none;
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* ============================================
    DEFAULT - Neutral high-emphasis button
    ============================================ */
 .default {
-  background-color: var(--foreground);
   color: var(--background);
+  background-color: var(--foreground);
   box-shadow:
     var(--shadow-shadow-1),
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
@@ -75,8 +75,8 @@
    PRIMARY - Brand-colored CTA button
    ============================================ */
 .primary {
-  background-color: var(--primary);
   color: var(--primary-foreground);
+  background-color: var(--primary);
   box-shadow:
     var(--shadow-shadow-1),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
@@ -103,8 +103,8 @@
    SECONDARY - Muted action button
    ============================================ */
 .secondary {
-  background-color: var(--secondary);
   color: var(--secondary-foreground);
+  background-color: var(--secondary);
   border-color: var(--border);
 }
 
@@ -121,14 +121,14 @@
    GHOST - Minimal button
    ============================================ */
 .ghost {
-  background-color: transparent;
   color: var(--foreground);
+  background-color: transparent;
   border-color: transparent;
 }
 
 .ghost:hover:not(:disabled) {
-  background-color: var(--accent);
   color: var(--accent-foreground);
+  background-color: var(--accent);
 }
 
 .ghost:active:not(:disabled) {
@@ -139,8 +139,8 @@
    DESTRUCTIVE - Danger action
    ============================================ */
 .destructive {
-  background-color: var(--destructive);
   color: var(--destructive-foreground);
+  background-color: var(--destructive);
   box-shadow:
     var(--shadow-shadow-1),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
@@ -167,27 +167,27 @@
    DESTRUCTIVE GHOST - Transparent, destructive on hover
    ============================================ */
 .destructiveGhost {
-  background-color: transparent;
   color: var(--muted-foreground);
+  background-color: transparent;
   border-color: transparent;
 }
 
 .destructiveGhost:hover:not(:disabled) {
-  background-color: color-mix(in oklch, var(--destructive) 10%, transparent);
   color: var(--destructive);
+  background-color: color-mix(in oklch, var(--destructive) 10%, transparent);
 }
 
 .destructiveGhost:active:not(:disabled) {
-  background-color: color-mix(in oklch, var(--destructive) 15%, transparent);
   color: var(--destructive);
+  background-color: color-mix(in oklch, var(--destructive) 15%, transparent);
 }
 
 /* ============================================
    DESTRUCTIVE SOFT - Muted destructive button
    ============================================ */
 .destructiveSoft {
-  background-color: color-mix(in oklch, var(--destructive) 10%, transparent);
   color: var(--destructive);
+  background-color: color-mix(in oklch, var(--destructive) 10%, transparent);
   border-color: transparent;
 }
 
@@ -203,18 +203,18 @@
    OUTLINE - Bordered button
    ============================================ */
 .outline {
+  color: var(--foreground);
   background-color: var(--background);
   border-color: var(--border);
-  color: var(--foreground);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     inset 0 -1px 0 rgba(0, 0, 0, 0.06);
 }
 
 .outline:hover:not(:disabled) {
+  color: var(--accent-foreground);
   background-color: var(--accent);
   border-color: color-mix(in oklch, var(--border) 80%, var(--foreground));
-  color: var(--accent-foreground);
 }
 
 .outline:active:not(:disabled) {
@@ -225,13 +225,13 @@
    LINK - Text-only button
    ============================================ */
 .link {
-  background-color: transparent;
-  border-color: transparent;
+  padding-right: 0;
+  padding-left: 0;
   color: var(--primary);
   text-decoration: underline;
   text-underline-offset: 4px;
-  padding-left: 0;
-  padding-right: 0;
+  background-color: transparent;
+  border-color: transparent;
 }
 
 .link:hover:not(:disabled) {
@@ -247,8 +247,8 @@
    SOFT - Muted primary button
    ============================================ */
 .soft {
-  background-color: color-mix(in oklch, var(--primary) 15%, transparent);
   color: var(--primary);
+  background-color: color-mix(in oklch, var(--primary) 15%, transparent);
   border-color: transparent;
 }
 
@@ -284,10 +284,10 @@
 }
 
 .iconXs {
-  height: var(--size-6);
-  width: var(--size-6);
-  padding: 0;
   flex-shrink: 0;
+  width: var(--size-6);
+  height: var(--size-6);
+  padding: 0;
   border-radius: calc(var(--radius) - 2px);
 }
 
@@ -297,10 +297,10 @@
 }
 
 .iconSm {
-  height: var(--size-7, 1.75rem);
-  width: var(--size-7, 1.75rem);
-  padding: 0;
   flex-shrink: 0;
+  width: var(--size-7, 1.75rem);
+  height: var(--size-7, 1.75rem);
+  padding: 0;
   border-radius: calc(var(--radius) - 2px);
 }
 
@@ -310,10 +310,10 @@
 }
 
 .icon {
-  height: var(--size-8);
-  width: var(--size-8);
-  padding: 0;
   flex-shrink: 0;
+  width: var(--size-8);
+  height: var(--size-8);
+  padding: 0;
 }
 
 .icon svg {
@@ -322,10 +322,10 @@
 }
 
 .iconLg {
-  height: var(--size-10);
-  width: var(--size-10);
-  padding: 0;
   flex-shrink: 0;
+  width: var(--size-10);
+  height: var(--size-10);
+  padding: 0;
 }
 
 .iconLg svg {
@@ -337,15 +337,15 @@
    LOADING STATE
    ============================================ */
 .loading {
-  pointer-events: none;
   position: relative;
+  pointer-events: none;
 }
 
 .loading::before {
-  content: "";
   position: absolute;
   width: 14px;
   height: 14px;
+  content: "";
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
@@ -358,8 +358,8 @@
 
 .loadingContent {
   display: inline-flex;
-  align-items: center;
   gap: inherit;
+  align-items: center;
 }
 
 @keyframes button-spin {

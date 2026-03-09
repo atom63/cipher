@@ -1,4 +1,13 @@
-import { AlertTriangle, Check, CheckCircle, ChevronRight, Plus, Undo2, X, XCircle } from "lucide-react";
+import {
+	AlertTriangle,
+	Check,
+	CheckCircle,
+	ChevronRight,
+	Plus,
+	Undo2,
+	X,
+	XCircle,
+} from "lucide-react";
 import type { ImportUndoEntry } from "../../types/tokens";
 import { Button, LoadingState, Spinner } from "../ui";
 import styles from "./ProgressView.module.css";
@@ -10,8 +19,8 @@ interface ProgressViewProps {
 export function ProgressView({ message }: ProgressViewProps) {
 	return (
 		<LoadingState
-			message={message || "Importing Tokens…"}
 			hint="This may take a few moments…"
+			message={message || "Importing Tokens…"}
 		>
 			<Spinner size="lg" />
 		</LoadingState>
@@ -19,14 +28,6 @@ export function ProgressView({ message }: ProgressViewProps) {
 }
 
 interface SuccessViewProps {
-	success: number;
-	failed: number;
-	errors: string[];
-	onClose: () => void;
-	onImportMore: () => void;
-	onUndo?: () => void;
-	importMode?: "import" | "override";
-	undoData?: ImportUndoEntry[];
 	changes?: Array<{
 		name: string;
 		type: string;
@@ -34,6 +35,14 @@ interface SuccessViewProps {
 		oldValue?: string;
 		newValue: string;
 	}>;
+	errors: string[];
+	failed: number;
+	importMode?: "import" | "override";
+	onClose: () => void;
+	onImportMore: () => void;
+	onUndo?: () => void;
+	success: number;
+	undoData?: ImportUndoEntry[];
 }
 
 export function SuccessView({
@@ -65,7 +74,13 @@ export function SuccessView({
 				className={styles.successIcon}
 				data-status={allFailed ? "error" : hasErrors ? "warning" : "success"}
 			>
-				{allFailed ? <X size={24} /> : hasErrors ? <AlertTriangle size={24} /> : <Check size={24} />}
+				{allFailed ? (
+					<X size={24} />
+				) : hasErrors ? (
+					<AlertTriangle size={24} />
+				) : (
+					<Check size={24} />
+				)}
 			</div>
 			<h2>
 				{allFailed
@@ -89,7 +104,11 @@ export function SuccessView({
 					<p
 						className={isOverrideMode ? styles.skippedStat : styles.failedStat}
 					>
-						{isOverrideMode ? <AlertTriangle size={14} /> : <XCircle size={14} />}
+						{isOverrideMode ? (
+							<AlertTriangle size={14} />
+						) : (
+							<XCircle size={14} />
+						)}
 						<span>
 							{isOverrideMode ? "Skipped" : "Failed"}: <strong>{failed}</strong>{" "}
 							token{failed !== 1 ? "s" : ""}
@@ -107,11 +126,12 @@ export function SuccessView({
 							? `${changedTokens.length} updated`
 							: `${changes.length} token${changes.length !== 1 ? "s" : ""}`}
 						{createdTokens.length > 0 && ` · ${createdTokens.length} created`}
-						{unchangedTokens.length > 0 && ` · ${unchangedTokens.length} unchanged`}
+						{unchangedTokens.length > 0 &&
+							` · ${unchangedTokens.length} unchanged`}
 					</summary>
 					<ul className={styles.changesList}>
 						{changedTokens.slice(0, 30).map((change, i) => (
-							<li key={i} className={styles.changeRow}>
+							<li className={styles.changeRow}key={i} >
 								<code className={styles.changeName}>{change.name}</code>
 								<span className={styles.changeValues}>
 									<span className={styles.oldValue}>{change.oldValue}</span>
@@ -136,9 +156,18 @@ export function SuccessView({
 					open={allFailed}
 				>
 					<summary>
-						{allFailed
-							? <><AlertTriangle size={14} /> {isOverrideMode ? "Skip" : "Error"} Details</>
-							: <><AlertTriangle size={14} /> View {isOverrideMode ? "Skipped Tokens" : "Error Details"} ({errors.length})</>}
+						{allFailed ? (
+							<>
+								<AlertTriangle size={14} /> {isOverrideMode ? "Skip" : "Error"}{" "}
+								Details
+							</>
+						) : (
+							<>
+								<AlertTriangle size={14} /> View{" "}
+								{isOverrideMode ? "Skipped Tokens" : "Error Details"} (
+								{errors.length})
+							</>
+						)}
 					</summary>
 					<div className={styles.errorDetailsContent}>
 						<ul className={styles.errorList}>
@@ -152,15 +181,15 @@ export function SuccessView({
 
 			<div className={styles.successActions}>
 				{onUndo && undoData && undoData.length > 0 && (
-					<Button variant="ghost" onClick={onUndo}>
+					<Button onClick={onUndo}variant="ghost" >
 						<Undo2 size={14} />
 						Undo
 					</Button>
 				)}
-				<Button variant="secondary" onClick={onClose}>
+				<Button onClick={onClose}variant="secondary" >
 					Close
 				</Button>
-				<Button variant="default" onClick={onImportMore}>
+				<Button onClick={onImportMore}variant="default" >
 					<Plus size={14} />
 					{actionVerb} More
 				</Button>

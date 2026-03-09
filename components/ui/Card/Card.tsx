@@ -2,14 +2,14 @@ import type { HTMLAttributes, ReactNode } from "react";
 import styles from "./Card.module.css";
 
 export interface CardProps {
-	children: ReactNode;
-	variant?: "default" | "muted" | "bordered" | "elevated" | "outline";
-	padding?: "none" | "sm" | "md" | "lg" | "xl";
-	hover?: boolean;
-	selected?: boolean;
-	className?: string;
-	onClick?: () => void;
 	asChild?: boolean;
+	children: ReactNode;
+	className?: string;
+	hover?: boolean;
+	onClick?: () => void;
+	padding?: "none" | "sm" | "md" | "lg" | "xl";
+	selected?: boolean;
+	variant?: "default" | "muted" | "bordered" | "elevated" | "outline";
 }
 
 export function Card({
@@ -29,6 +29,7 @@ export function Card({
 
 	return (
 		<div
+			aria-pressed={onClick && selected ? true : undefined}
 			className={`${styles.card} ${variantClass} ${paddingClass} ${hoverClass} ${clickableClass} ${selectedClass} ${className}`}
 			onClick={onClick}
 			onKeyDown={(e) => {
@@ -38,7 +39,6 @@ export function Card({
 			}}
 			role={onClick ? "button" : undefined}
 			tabIndex={onClick ? 0 : undefined}
-			aria-pressed={onClick && selected ? true : undefined}
 		>
 			{children}
 		</div>

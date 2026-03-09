@@ -12,11 +12,11 @@ export type ErrorSeverity = "info" | "warning" | "error";
 
 /** Structured error information */
 export interface ErrorInfo {
-	message: string;
-	severity: ErrorSeverity;
 	code?: string;
 	context?: string;
 	details?: string[];
+	message: string;
+	severity: ErrorSeverity;
 }
 
 /** Result type for operations that can fail */
@@ -118,8 +118,8 @@ export function safeExecuteSync<T>(fn: () => T, context?: string): Result<T> {
 
 /** Validation result */
 export interface ValidationResult {
-	valid: boolean;
 	errors: string[];
+	valid: boolean;
 }
 
 /**

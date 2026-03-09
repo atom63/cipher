@@ -21,8 +21,8 @@ export interface StringVarEntry {
 }
 
 export interface MatchResult<T> {
-	var: T;
 	type: "exact" | "name";
+	var: T;
 }
 
 /**
@@ -107,12 +107,7 @@ export function findStringVar(
 }
 
 /** RGBA color key for matching (includes alpha) */
-export function colorKey(
-	r: number,
-	g: number,
-	b: number,
-	a: number,
-): string {
+export function colorKey(r: number, g: number, b: number, a: number): string {
 	return `${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)},${Math.round(a * 100)}`;
 }
 

@@ -4,20 +4,20 @@
 
 /* Wrapper for positioning */
 .radioWrapper {
-  display: inline-flex;
   position: relative;
+  display: inline-flex;
   flex-shrink: 0;
 }
 
 /* Native input - visually hidden but accessible */
 .radioInput {
   position: absolute;
-  opacity: 0;
+  z-index: 1;
   width: 16px;
   height: 16px;
   margin: 0;
   cursor: pointer;
-  z-index: 1;
+  opacity: 0;
 }
 
 .radioInput:disabled {
@@ -30,20 +30,20 @@
 
 .radioCircle {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 16px;
   height: 16px;
+  cursor: pointer;
+  background: var(--background);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-full);
-  background: var(--background);
   transition:
     background-color var(--transition),
     border-color var(--transition),
     box-shadow var(--transition),
     transform var(--transition);
-  cursor: pointer;
-  flex-shrink: 0;
 }
 
 /* Hover state */
@@ -60,8 +60,8 @@
 .radioDot {
   width: 8px;
   height: 8px;
-  border-radius: var(--radius-full);
   background: var(--primary);
+  border-radius: var(--radius-full);
   animation: radio-dot-pop 0.15s ease-out;
 }
 
@@ -91,10 +91,10 @@
 
 /* Disabled state */
 .radioCircle.disabled {
-  opacity: 0.5;
   cursor: not-allowed;
   background: var(--muted);
   border-color: var(--border);
+  opacity: 0.5;
 }
 
 .radioCircle.disabled.checked .radioDot {
@@ -102,8 +102,8 @@
 }
 
 .radioInput:disabled:hover + .radioCircle {
-  border-color: var(--border);
   background: var(--muted);
+  border-color: var(--border);
 }
 
 @media (prefers-reduced-motion: reduce) {

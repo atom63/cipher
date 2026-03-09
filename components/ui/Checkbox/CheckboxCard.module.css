@@ -2,15 +2,15 @@
 
 .card {
   display: flex;
-  align-items: flex-start;
   gap: var(--spacing-md);
+  align-items: flex-start;
   padding: var(--spacing-lg);
+  cursor: pointer;
+  user-select: none;
   background: var(--muted);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  cursor: pointer;
   transition: background-color var(--transition), border-color var(--transition);
-  user-select: none;
 }
 
 /* Smart layout: when icon exists, content grows and checkbox moves to right */
@@ -51,17 +51,17 @@
 /* Icon container */
 .icon {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  color: var(--primary);
-  flex-shrink: 0;
   padding-top: var(--spacing-2xs); /* Optical alignment with text baseline */
+  color: var(--primary); /* Optical alignment with text baseline */
 }
 
 /* Content container */
 .content {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--spacing-xs);
   min-width: 0; /* Allow text truncation */
@@ -71,15 +71,15 @@
 .label {
   font-size: var(--text-md);
   font-weight: var(--font-semibold);
-  color: var(--foreground);
   line-height: 1.4;
+  color: var(--foreground);
 }
 
 /* Description text */
 .description {
   font-size: var(--text-sm);
-  color: var(--muted-foreground);
   line-height: 1.4;
+  color: var(--muted-foreground);
 }
 
 /* Focus-visible state for accessibility */

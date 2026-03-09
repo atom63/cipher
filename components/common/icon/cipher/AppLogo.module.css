@@ -1,0 +1,86 @@
+/* App Logo Component Styles */
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+}
+
+.logoVertical {
+  flex-direction: column;
+}
+
+.colored {
+  color: var(--primary);
+}
+
+/* Animated Symbol */
+.symbolGroup {
+  display: inline-flex;
+  align-items: center;
+}
+
+.spinWrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+.logo:hover .spinWrapper {
+  animation: cipher-spin 1.5s linear forwards;
+}
+
+.logo:hover .symbolLeft {
+  animation: cipher-l 1.5s linear forwards;
+}
+
+.logo:hover .symbolRight {
+  animation: cipher-r 1.5s linear forwards;
+}
+
+@keyframes cipher-l {
+  0% {
+    translate: 0;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  50% {
+    translate: var(--symbol-shift);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  100% {
+    translate: 0;
+  }
+}
+
+@keyframes cipher-r {
+  0% {
+    translate: 0;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  50% {
+    translate: calc(var(--symbol-shift) * -1);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  100% {
+    translate: 0;
+  }
+}
+
+@keyframes cipher-spin {
+  0% {
+    rotate: 0deg;
+  }
+  50% {
+    rotate: 0deg;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  100% {
+    rotate: 180deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo:hover .spinWrapper,
+  .logo:hover .symbolLeft,
+  .logo:hover .symbolRight {
+    animation: none;
+  }
+}

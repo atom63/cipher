@@ -3,20 +3,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./Tabs.module.css";
 
 interface Tab {
+	disabled?: boolean;
+	icon?: React.ReactNode;
 	id: string;
 	label: string;
-	icon?: React.ReactNode;
-	disabled?: boolean;
 }
 
 interface TabsProps {
-	tabs: Tab[];
-	defaultTab?: string;
 	activeTab?: string;
+	children?: React.ReactNode;
+	className?: string;
+	defaultTab?: string;
 	onTabChange?: (tabId: string) => void;
 	size?: "sm" | "md";
-	className?: string;
-	children?: React.ReactNode;
+	tabs: Tab[];
 }
 
 export function Tabs({
@@ -94,7 +94,7 @@ export function Tabs({
 	useEffect(() => {
 		const list = tabListRef.current;
 		const indicator = indicatorRef.current;
-		if (!list || !indicator) return;
+		if (!(list && indicator)) return;
 
 		const activeEl = list.querySelector<HTMLElement>(`#tab-${activeTab}`);
 		if (!activeEl) return;
@@ -104,7 +104,7 @@ export function Tabs({
 
 		indicator.style.left = `${tabRect.left - listRect.left}px`;
 		indicator.style.width = `${tabRect.width}px`;
-	}, [activeTab, tabs]);
+	}, [activeTab]);
 
 	const containerClasses = [styles.tabsContainer, className]
 		.filter(Boolean)
@@ -115,40 +115,44 @@ export function Tabs({
 		.join(" ");
 
 	const tabClass = (isActive: boolean) =>
-		[styles.tab, size === "sm" ? styles.tabSm : "", isActive ? styles.active : ""]
+		[
+			styles.tab,
+			size === "sm" ? styles.tabSm : "",
+			isActive ? styles.active : "",
+		]
 			.filter(Boolean)
 			.join(" ");
 
 	return (
 		<div className={containerClasses}>
 			<div
-				ref={tabListRef}
 				className={listClasses}
-				role="tablist"
 				onKeyDown={handleKeyDown}
+				ref={tabListRef}
+				role="tablist"
 			>
 				{tabs.map((tab) => (
 					<button
-						key={tab.id}
-						type="button"
-						role="tab"
-						aria-selected={activeTab === tab.id}
 						aria-controls={`tabpanel-${tab.id}`}
-						id={`tab-${tab.id}`}
-						tabIndex={activeTab === tab.id ? 0 : -1}
+						aria-selected={activeTab === tab.id}
 						className={tabClass(activeTab === tab.id)}
-						onClick={() => handleTabClick(tab.id)}
 						disabled={tab.disabled}
+						id={`tab-${tab.id}`}
+						key={tab.id}
+						onClick={() => handleTabClick(tab.id)}
+						role="tab"
+						tabIndex={activeTab === tab.id ? 0 : -1}
+						type="button"
 					>
 						{tab.icon && (
-							<span className={styles.tabIcon} aria-hidden="true">
+							<span aria-hidden="true"className={styles.tabIcon} >
 								{tab.icon}
 							</span>
 						)}
 						<span className={styles.tabLabel}>{tab.label}</span>
 					</button>
 				))}
-				<div ref={indicatorRef} className={styles.indicator} />
+				<div className={styles.indicator} ref={indicatorRef} />
 			</div>
 			{children && <div className={styles.tabContent}>{children}</div>}
 		</div>
@@ -156,9 +160,9 @@ export function Tabs({
 }
 
 interface TabPanelProps {
-	id: string;
 	activeTab: string;
 	children: React.ReactNode;
+	id: string;
 }
 
 export function TabPanel({ id, activeTab, children }: TabPanelProps) {
@@ -166,10 +170,10 @@ export function TabPanel({ id, activeTab, children }: TabPanelProps) {
 
 	return (
 		<div
-			role="tabpanel"
-			id={`tabpanel-${id}`}
 			aria-labelledby={`tab-${id}`}
 			className={styles.tabPanel}
+			id={`tabpanel-${id}`}
+			role="tabpanel"
 		>
 			{children}
 		</div>

@@ -74,24 +74,24 @@ const StyleRow = React.memo(function StyleRow({
 }) {
 	return (
 		<div
-			className={`manage-row ${isSelected ? "manage-row-selected" : ""}`}
-			role="row"
-			tabIndex={0}
 			aria-selected={isSelected}
+			className={`manage-row ${isSelected ? "manage-row-selected" : ""}`}
 			onClick={(e) => onToggleSelect(style.id, e)}
+			onContextMenu={(e) => {
+				e.preventDefault();
+				onContextSelect(style.id);
+			}}
 			onKeyDown={(e) => {
 				if (e.key === "Enter" || e.key === " ") {
 					e.preventDefault();
 					onToggleSelect(style.id, e as unknown as React.MouseEvent);
 				}
 			}}
-			onContextMenu={(e) => {
-				e.preventDefault();
-				onContextSelect(style.id);
-			}}
+			role="row"
+			tabIndex={0}
 		>
 			<div className="manage-col-check">
-				<input type="checkbox" checked={isSelected} onChange={() => {}} />
+				<input checked={isSelected} onChange={() => {}} type="checkbox" />
 			</div>
 			<div className="manage-col-name">
 				<span className="manage-var-name" title={style.name}>
@@ -129,7 +129,9 @@ export function StylesPage() {
 
 	// Edit state
 	const [showEdit, setShowEdit] = useState(false);
-	const [editValues, setEditValues] = useState<Record<string, Partial<StyleEdit>>>({});
+	const [editValues, setEditValues] = useState<
+		Record<string, Partial<StyleEdit>>
+	>({});
 
 	const postMessage = usePostMessage();
 	const { showSuccess, showError } = useToast();
@@ -211,7 +213,9 @@ export function StylesPage() {
 			setRebindLoading(false);
 			setRebindExcluded(new Set());
 			if (msg.data.suggestions.length === 0) {
-				showSuccess("No unbound properties found that match any local variables");
+				showSuccess(
+					"No unbound properties found that match any local variables",
+				);
 				setShowRebind(false);
 			}
 		} else if (msg.type === "rebind-applied") {
@@ -419,7 +423,12 @@ export function StylesPage() {
 			selectedIds.size > 0
 				? Array.from(selectedIds)
 				: styles
-						.filter((s) => s.category === "paint" || s.category === "effect" || s.category === "text")
+						.filter(
+							(s) =>
+								s.category === "paint" ||
+								s.category === "effect" ||
+								s.category === "text",
+						)
 						.map((s) => s.id);
 		setRebindLoading(true);
 		setShowRebind(true);
@@ -455,12 +464,12 @@ export function StylesPage() {
 			} else if (s.preview.type === "text") {
 				edit.fontFamily = s.preview.fontFamily;
 				edit.fontStyle = s.preview.fontStyle;
-				edit.fontSize = parseFloat(s.preview.fontSize);
+				edit.fontSize = Number.parseFloat(s.preview.fontSize);
 				const lh = s.preview.lineHeight;
 				if (lh === "auto") {
 					// keep undefined
 				} else {
-					const num = parseFloat(lh);
+					const num = Number.parseFloat(lh);
 					if (!Number.isNaN(num)) {
 						edit.lineHeight = {
 							value: num,
@@ -526,11 +535,11 @@ export function StylesPage() {
 	};
 
 	// Render a single paint layer
-	const renderPaintLayer = (paint: PaintInfo, i: number) => {
+	const renderPaintLayer = useCallback((paint: PaintInfo, i: number) => {
 		if (paint.paintType === "SOLID") {
 			const solidColor = paint.color || "#000";
 			return (
-				<span key={i} className="styles-paint-layer">
+				<span className="styles-paint-layer"key={i} >
 					<ColorSwatch color={solidColor} opacity={paint.opacity} />
 					<span className="styles-preview-text">
 						{paint.colorVariable ? (
@@ -568,11 +577,11 @@ export function StylesPage() {
 			const gradientColors = stops.map((s) => s.color).join(", ");
 			const gradientBg = `linear-gradient(90deg, ${gradientColors})`;
 			return (
-				<span key={i} className="styles-paint-layer styles-gradient-layer">
+				<span className="styles-paint-layer styles-gradient-layer"key={i} >
 					<GradientSwatch gradient={gradientBg} opacity={paint.opacity} />
 					<span className="styles-gradient-stops">
 						{stops.map((s, j) => (
-							<span key={j} className="styles-gradient-stop">
+							<span className="styles-gradient-stop"key={j} >
 								<ColorSwatch color={s.color} size="sm" />
 								{s.variable ? (
 									<span className="styles-var-ref" data-tooltip={s.variable}>
@@ -609,25 +618,25 @@ export function StylesPage() {
 
 		if (paint.paintType === "IMAGE") {
 			return (
-				<span key={i} className="styles-paint-layer">
+				<span className="styles-paint-layer"key={i} >
 					<span className="styles-preview-text">Image fill</span>
 				</span>
 			);
 		}
 
 		return (
-			<span key={i} className="styles-preview-text">
+			<span className="styles-preview-text"key={i} >
 				{paint.paintType}
 			</span>
 		);
-	};
+	}, []);
 
 	// Render a single effect layer
-	const renderEffectLayer = (effect: EffectInfo, i: number) => {
+	const renderEffectLayer = useCallback((effect: EffectInfo, i: number) => {
 		const hasVars =
 			effect.colorVariable || effect.radiusVariable || effect.spreadVariable;
 		return (
-			<span key={i} className="styles-effect-layer">
+			<span className="styles-effect-layer"key={i} >
 				{effect.color && <ColorSwatch color={effect.color} />}
 				<span className="styles-preview-text">{effect.description}</span>
 				{hasVars && (
@@ -652,68 +661,71 @@ export function StylesPage() {
 				)}
 			</span>
 		);
-	};
+	}, []);
 
 	// Render preview (stable reference for memoized rows)
-	const renderPreview = useCallback((s: StyleInfo) => {
-		const p = s.preview;
-		if (p.type === "paint") {
-			return (
-				<span className="styles-preview-colors">
-					{p.paints.map((paint, i) => renderPaintLayer(paint, i))}
-					{p.paints.length === 0 && (
-						<span className="styles-preview-text">empty</span>
-					)}
-				</span>
-			);
-		}
-		if (p.type === "text") {
-			return (
-				<span className="styles-preview-text">
-					{p.fontFamily} {p.fontStyle} {p.fontSize}/{p.lineHeight}
-					{p.variables && Object.keys(p.variables).length > 0 && (
-						<span className="styles-var-refs">
-							{Object.entries(p.variables).map(([prop, varName]) => (
-								<span
-									key={prop}
-									className="styles-var-ref"
-									data-tooltip={`${prop}: ${varName}`}
-								>
-									<Link size={10} /> {varName.split("/").pop()}
-								</span>
-							))}
-						</span>
-					)}
-				</span>
-			);
-		}
-		if (p.type === "effect") {
-			return (
-				<span className="styles-preview-effects">
-					{p.effects.map((effect, i) => renderEffectLayer(effect, i))}
-					{p.effects.length === 0 && (
-						<span className="styles-preview-text">none</span>
-					)}
-				</span>
-			);
-		}
-		if (p.type === "grid") {
-			return (
-				<span className="styles-preview-text">
-					{p.patterns.join(", ") || "none"}
-				</span>
-			);
-		}
-		return null;
-	}, []);
+	const renderPreview = useCallback(
+		(s: StyleInfo) => {
+			const p = s.preview;
+			if (p.type === "paint") {
+				return (
+					<span className="styles-preview-colors">
+						{p.paints.map((paint, i) => renderPaintLayer(paint, i))}
+						{p.paints.length === 0 && (
+							<span className="styles-preview-text">empty</span>
+						)}
+					</span>
+				);
+			}
+			if (p.type === "text") {
+				return (
+					<span className="styles-preview-text">
+						{p.fontFamily} {p.fontStyle} {p.fontSize}/{p.lineHeight}
+						{p.variables && Object.keys(p.variables).length > 0 && (
+							<span className="styles-var-refs">
+								{Object.entries(p.variables).map(([prop, varName]) => (
+									<span
+										className="styles-var-ref"
+										data-tooltip={`${prop}: ${varName}`}
+										key={prop}
+									>
+										<Link size={10} /> {varName.split("/").pop()}
+									</span>
+								))}
+							</span>
+						)}
+					</span>
+				);
+			}
+			if (p.type === "effect") {
+				return (
+					<span className="styles-preview-effects">
+						{p.effects.map((effect, i) => renderEffectLayer(effect, i))}
+						{p.effects.length === 0 && (
+							<span className="styles-preview-text">none</span>
+						)}
+					</span>
+				);
+			}
+			if (p.type === "grid") {
+				return (
+					<span className="styles-preview-text">
+						{p.patterns.join(", ") || "none"}
+					</span>
+				);
+			}
+			return null;
+		},
+		[renderEffectLayer, renderPaintLayer],
+	);
 
 	if (loading) {
 		return (
 			<div className="manage-page">
 				<SectionHeader
-					variant="primary"
-					title="Styles"
 					description="Loading styles from Figma…"
+					title="Styles"
+					variant="primary"
 				/>
 				<LoadingState message="Loading styles…" />
 			</div>
@@ -723,13 +735,13 @@ export function StylesPage() {
 	return (
 		<div className="manage-page">
 			<SectionHeader
-				variant="primary"
-				title="Styles"
 				description={
 					counts
 						? `${counts.total} styles — ${counts.paint} color, ${counts.text} text, ${counts.effect} effect, ${counts.grid} grid`
 						: ""
 				}
+				title="Styles"
+				variant="primary"
 			/>
 
 			{/* Toolbar */}
@@ -738,19 +750,19 @@ export function StylesPage() {
 					<div className="manage-search">
 						<Search size={14} />
 						<input
-							type="text"
-							placeholder="Search styles…"
-							value={search}
 							onChange={(e) => setSearch(e.target.value)}
+							placeholder="Search styles…"
+							type="text"
+							value={search}
 						/>
 					</div>
 
 					<select
 						className="manage-filter-select"
-						value={filterCategory}
 						onChange={(e) =>
 							setFilterCategory(e.target.value as CategoryFilter)
 						}
+						value={filterCategory}
 					>
 						<option value="all">All types</option>
 						<option value="paint">Color ({counts?.paint ?? 0})</option>
@@ -762,13 +774,13 @@ export function StylesPage() {
 
 				<div className="manage-toolbar-right">
 					<Button
-						variant="ghost"
-						onClick={handleScanRebind}
 						data-tooltip="Rebind unbound colors to variables"
+						onClick={handleScanRebind}
+						variant="ghost"
 					>
 						<Unlink size={14} />
 					</Button>
-					<Button variant="ghost" onClick={loadStyles} data-tooltip="Refresh">
+					<Button data-tooltip="Refresh"onClick={loadStyles} variant="ghost" >
 						<RefreshCw size={14} />
 					</Button>
 				</div>
@@ -782,57 +794,57 @@ export function StylesPage() {
 					</span>
 					<div className="manage-actionbar-actions">
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => setShowRename(!showRename)}
 							disabled={selectedIds.size === 0}
+							onClick={() => setShowRename(!showRename)}
+							size="sm"
+							variant="outline"
 						>
 							<PenLine size={14} />
 							Rename
 						</Button>
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={openEdit}
 							disabled={selectedIds.size === 0}
+							onClick={openEdit}
+							size="sm"
+							variant="outline"
 						>
 							<Pencil size={14} />
 							Edit
 						</Button>
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleDuplicate}
 							disabled={operationPending || selectedIds.size === 0}
+							onClick={handleDuplicate}
+							size="sm"
+							variant="outline"
 						>
 							<Copy size={14} />
 							Duplicate
 						</Button>
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleScanRebind}
 							disabled={selectedIds.size === 0}
+							onClick={handleScanRebind}
+							size="sm"
+							variant="outline"
 						>
 							<Unlink size={14} />
 							Rebind
 						</Button>
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => setPendingDelete(true)}
 							disabled={selectedIds.size === 0}
+							onClick={() => setPendingDelete(true)}
+							size="sm"
+							variant="outline"
 						>
 							<Trash2 size={14} />
 							Delete
 						</Button>
 						<Button
-							variant="outline"
-							size="sm"
-							onClick={selectNone}
-							disabled={selectedIds.size === 0}
-							data-tooltip="Clear selection (Esc)"
 							aria-label="Clear selection"
+							data-tooltip="Clear selection (Esc)"
+							disabled={selectedIds.size === 0}
+							onClick={selectNone}
+							size="sm"
+							variant="outline"
 						>
 							<X size={14} />
 						</Button>
@@ -842,45 +854,45 @@ export function StylesPage() {
 
 			{/* Rename dialog */}
 			<RenameDialog
-				isOpen={showRename && selectedIds.size > 0}
-				onClose={() => setShowRename(false)}
-				itemLabel={`${selectedIds.size} ${selectedIds.size === 1 ? "style" : "styles"}`}
-				rename={rename}
-				onApply={handleRename}
 				disabled={operationPending}
+				isOpen={showRename && selectedIds.size > 0}
+				itemLabel={`${selectedIds.size} ${selectedIds.size === 1 ? "style" : "styles"}`}
+				onApply={handleRename}
+				onClose={() => setShowRename(false)}
+				rename={rename}
 			/>
 
 			{/* Edit dialog */}
 			<Dialog
-				isOpen={showEdit && editSelectedStyles.length > 0}
-				onClose={() => {
-					setShowEdit(false);
-					setEditValues({});
-				}}
-				title={`Edit ${editSelectedStyles.length} ${editSelectedStyles.length === 1 ? "style" : "styles"}`}
-				maxWidth="lg"
-				noPadding
 				footer={
 					<DialogActions>
 						<Button
-							variant="outline"
 							onClick={() => {
 								setShowEdit(false);
 								setEditValues({});
 							}}
+							variant="outline"
 						>
 							Cancel
 						</Button>
 						<Button
-							variant="primary"
-							onClick={handleEditApply}
 							disabled={operationPending}
+							onClick={handleEditApply}
+							variant="primary"
 						>
 							<Check size={14} />
 							Save changes
 						</Button>
 					</DialogActions>
 				}
+				isOpen={showEdit && editSelectedStyles.length > 0}
+				maxWidth="lg"
+				noPadding
+				onClose={() => {
+					setShowEdit(false);
+					setEditValues({});
+				}}
+				title={`Edit ${editSelectedStyles.length} ${editSelectedStyles.length === 1 ? "style" : "styles"}`}
 			>
 				<div className="manage-edit-table">
 					<div className="manage-edit-table-header">
@@ -891,7 +903,7 @@ export function StylesPage() {
 						{editSelectedStyles.map((s) => {
 							const ev = editValues[s.id] || {};
 							return (
-								<div key={s.id} className="manage-edit-row">
+								<div className="manage-edit-row"key={s.id} >
 									<div className="manage-edit-col-name" title={s.name}>
 										<span className="manage-edit-var-name">
 											{CATEGORY_ICONS[s.category]}
@@ -906,41 +918,41 @@ export function StylesPage() {
 												s.preview.paints[0].paintType === "SOLID" && (
 													<div className="manage-edit-input-row">
 														<input
-															type="color"
 															className="manage-edit-color-picker"
-															value={(ev.color || "#000000").slice(0, 7)}
 															onChange={(e) =>
 																updateEditField(s.id, "color", e.target.value)
 															}
+															type="color"
+															value={(ev.color || "#000000").slice(0, 7)}
 														/>
 														<input
-															type="text"
 															className="manage-edit-input"
-															value={ev.color || ""}
 															onChange={(e) =>
 																updateEditField(s.id, "color", e.target.value)
 															}
 															placeholder="#000000"
+															type="text"
+															value={ev.color || ""}
 														/>
 														<input
-															type="number"
 															className="manage-edit-input"
+															max={100}
+															min={0}
+															onChange={(e) =>
+																updateEditField(
+																	s.id,
+																	"opacity",
+																	Number.parseInt(e.target.value, 10) / 100,
+																)
+															}
+															placeholder="100"
 															style={{ width: 64 }}
+															type="number"
 															value={
 																ev.opacity != null
 																	? Math.round(ev.opacity * 100)
 																	: 100
 															}
-															min={0}
-															max={100}
-															onChange={(e) =>
-																updateEditField(
-																	s.id,
-																	"opacity",
-																	parseInt(e.target.value, 10) / 100,
-																)
-															}
-															placeholder="100"
 														/>
 														<span className="styles-edit-unit">%</span>
 													</div>
@@ -951,9 +963,7 @@ export function StylesPage() {
 												<>
 													<div className="manage-edit-input-row">
 														<input
-															type="text"
 															className="manage-edit-input"
-															value={ev.fontFamily || ""}
 															onChange={(e) =>
 																updateEditField(
 																	s.id,
@@ -962,12 +972,11 @@ export function StylesPage() {
 																)
 															}
 															placeholder="Font family"
+															type="text"
+															value={ev.fontFamily || ""}
 														/>
 														<input
-															type="text"
 															className="manage-edit-input"
-															style={{ width: 80 }}
-															value={ev.fontStyle || ""}
 															onChange={(e) =>
 																updateEditField(
 																	s.id,
@@ -976,39 +985,34 @@ export function StylesPage() {
 																)
 															}
 															placeholder="Style"
+															style={{ width: 80 }}
+															type="text"
+															value={ev.fontStyle || ""}
 														/>
 													</div>
 													<div className="manage-edit-input-row">
 														<input
-															type="number"
 															className="manage-edit-input"
-															style={{ width: 64 }}
-															value={ev.fontSize ?? ""}
 															min={1}
 															onChange={(e) =>
 																updateEditField(
 																	s.id,
 																	"fontSize",
-																	parseFloat(e.target.value) || undefined,
+																	Number.parseFloat(e.target.value) || undefined,
 																)
 															}
 															placeholder="Size"
+															style={{ width: 64 }}
+															type="number"
+															value={ev.fontSize ?? ""}
 														/>
 														<span className="styles-edit-unit">px</span>
 														<span className="styles-edit-separator">/</span>
 														<input
-															type="number"
 															className="manage-edit-input"
-															style={{ width: 64 }}
-															value={
-																ev.lineHeight &&
-																typeof ev.lineHeight === "object"
-																	? ev.lineHeight.value
-																	: ""
-															}
 															min={0}
 															onChange={(e) => {
-																const val = parseFloat(e.target.value);
+																const val = Number.parseFloat(e.target.value);
 																updateEditField(
 																	s.id,
 																	"lineHeight",
@@ -1018,6 +1022,14 @@ export function StylesPage() {
 																);
 															}}
 															placeholder="LH"
+															style={{ width: 64 }}
+															type="number"
+															value={
+																ev.lineHeight &&
+																typeof ev.lineHeight === "object"
+																	? ev.lineHeight.value
+																	: ""
+															}
 														/>
 														<span className="styles-edit-unit">px</span>
 													</div>
@@ -1042,13 +1054,13 @@ export function StylesPage() {
 
 											{/* Description — all types */}
 											<input
-												type="text"
 												className="manage-edit-input"
-												value={ev.description ?? ""}
 												onChange={(e) =>
 													updateEditField(s.id, "description", e.target.value)
 												}
 												placeholder="Description…"
+												type="text"
+												value={ev.description ?? ""}
 											/>
 										</div>
 									</div>
@@ -1063,15 +1075,17 @@ export function StylesPage() {
 			{showRebind && (
 				<div className="manage-action-panel">
 					<div className="manage-action-panel-header">
-						<span>Rebind — reconnect unbound properties to matching variables</span>
+						<span>
+							Rebind — reconnect unbound properties to matching variables
+						</span>
 						<button
-							type="button"
 							className="manage-panel-close"
+							data-tooltip="Close panel"
 							onClick={() => {
 								setShowRebind(false);
 								setRebindSuggestions([]);
 							}}
-							data-tooltip="Close panel"
+							type="button"
 						>
 							<X size={14} />
 						</button>
@@ -1091,18 +1105,20 @@ export function StylesPage() {
 							<div className="styles-rebind-items">
 								{rebindSuggestions.map((s, i) => (
 									<div
-										key={`${s.styleId}-${s.field}-${i}`}
 										className={`styles-rebind-item ${rebindExcluded.has(i) ? "styles-rebind-excluded" : ""}`}
+										key={`${s.styleId}-${s.field}-${i}`}
 									>
 										<input
-											type="checkbox"
 											checked={!rebindExcluded.has(i)}
 											onChange={() => toggleRebindExclude(i)}
+											type="checkbox"
 										/>
 										{s.currentColor ? (
 											<ColorSwatch color={s.currentColor} />
 										) : (
-											<span className="styles-rebind-value">{s.currentValue}</span>
+											<span className="styles-rebind-value">
+												{s.currentValue}
+											</span>
 										)}
 										<span
 											className="styles-rebind-style-name"
@@ -1111,17 +1127,17 @@ export function StylesPage() {
 											{s.styleName.split("/").pop()}
 											<span className="styles-rebind-field">
 												{s.field.startsWith("stop:")
-													? ` (gradient stop)`
+													? " (gradient stop)"
 													: s.field.startsWith("effect:")
-														? ` (effect)`
+														? " (effect)"
 														: s.field === "fontSize"
-															? ` (font size)`
+															? " (font size)"
 															: s.field === "lineHeight"
-																? ` (line height)`
+																? " (line height)"
 																: s.field === "fontFamily"
-																	? ` (font family)`
+																	? " (font family)"
 																	: s.field === "fontWeight"
-																		? ` (font weight)`
+																		? " (font weight)"
 																		: ""}
 											</span>
 										</span>
@@ -1141,25 +1157,26 @@ export function StylesPage() {
 							</div>
 							<div className="manage-panel-actions">
 								<Button
-									variant="ghost"
 									onClick={() => {
 										setShowRebind(false);
 										setRebindSuggestions([]);
 									}}
+									variant="ghost"
 								>
 									Cancel
 								</Button>
 								<Button
-									variant="primary"
-									onClick={handleApplyRebind}
 									disabled={
 										rebindExcluded.size === rebindSuggestions.length ||
 										operationPending
 									}
+									onClick={handleApplyRebind}
+									variant="primary"
 								>
 									<Check size={14} />
 									Rebind {rebindSuggestions.length - rebindExcluded.size}{" "}
-									propert{rebindSuggestions.length - rebindExcluded.size !== 1
+									propert
+									{rebindSuggestions.length - rebindExcluded.size !== 1
 										? "ies"
 										: "y"}
 								</Button>
@@ -1172,19 +1189,18 @@ export function StylesPage() {
 			{/* Style list */}
 			{filtered.length === 0 ? (
 				<EmptyState
-					title="No styles found"
 					description={
 						styles.length === 0
 							? "This file has no local styles."
 							: "No styles match your current filters."
 					}
+					title="No styles found"
 				/>
 			) : (
 				<div className="manage-list">
 					<div className="manage-list-header">
 						<div className="manage-col-check">
 							<input
-								type="checkbox"
 								checked={
 									selectedIds.size === filtered.length && filtered.length > 0
 								}
@@ -1193,12 +1209,10 @@ export function StylesPage() {
 										? selectNone()
 										: selectAll()
 								}
+								type="checkbox"
 							/>
 						</div>
 						<div
-							className="manage-col-name manage-sortable"
-							role="columnheader"
-							tabIndex={0}
 							aria-sort={
 								sortField === "name"
 									? sortDir === "asc"
@@ -1206,6 +1220,7 @@ export function StylesPage() {
 										: "descending"
 									: "none"
 							}
+							className="manage-col-name manage-sortable"
 							onClick={() => handleSort("name")}
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") {
@@ -1213,6 +1228,8 @@ export function StylesPage() {
 									handleSort("name");
 								}
 							}}
+							role="columnheader"
+							tabIndex={0}
 						>
 							Name{" "}
 							{sortField === "name" &&
@@ -1233,12 +1250,10 @@ export function StylesPage() {
 						const [cat, ...nameParts] = groupKey.split("/");
 						const groupLabel = nameParts.join("/") || "Root";
 						return (
-							<div key={groupKey} className="manage-group">
+							<div className="manage-group"key={groupKey} >
 								<div
-									className="manage-group-header"
-									role="button"
-									tabIndex={0}
 									aria-expanded={!isCollapsed}
+									className="manage-group-header"
 									onClick={() => toggleGroup(groupKey)}
 									onKeyDown={(e) => {
 										if (e.key === "Enter" || e.key === " ") {
@@ -1246,6 +1261,8 @@ export function StylesPage() {
 											toggleGroup(groupKey);
 										}
 									}}
+									role="button"
+									tabIndex={0}
 								>
 									{isCollapsed ? (
 										<ChevronRight size={14} />
@@ -1263,12 +1280,12 @@ export function StylesPage() {
 									<div className="manage-subgroup">
 										{groupStyles.map((s) => (
 											<StyleRow
-												key={s.id}
-												style={s}
 												isSelected={selectedIds.has(s.id)}
-												onToggleSelect={toggleSelect}
+												key={s.id}
 												onContextSelect={contextSelect}
+												onToggleSelect={toggleSelect}
 												renderPreview={renderPreview}
+												style={s}
 											/>
 										))}
 									</div>
@@ -1280,13 +1297,13 @@ export function StylesPage() {
 			)}
 
 			<ConfirmDialog
+				cancelText="Cancel"
+				confirmText="Delete"
 				isOpen={pendingDelete}
+				message={`Delete ${selectedIds.size} style${selectedIds.size !== 1 ? "s" : ""}? This cannot be undone.`}
 				onClose={() => setPendingDelete(false)}
 				onConfirm={handleDelete}
 				title="Delete Styles"
-				message={`Delete ${selectedIds.size} style${selectedIds.size !== 1 ? "s" : ""}? This cannot be undone.`}
-				confirmText="Delete"
-				cancelText="Cancel"
 			/>
 		</div>
 	);

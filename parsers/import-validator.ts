@@ -4,20 +4,19 @@
 import type { DesignToken } from "../types/tokens";
 
 export interface ValidationIssue {
+	message: string;
+	severity: "error" | "warning";
 	tokenId: string;
 	tokenName: string;
-	severity: "error" | "warning";
 	type:
 		| "circular-ref"
 		| "broken-ref"
 		| "type-mismatch"
 		| "duplicate-name"
 		| "self-ref";
-	message: string;
 }
 
 export interface ValidationResult {
-	valid: boolean;
 	issues: ValidationIssue[];
 	stats: {
 		errors: number;
@@ -27,6 +26,7 @@ export interface ValidationResult {
 		typeMismatches: number;
 		duplicateNames: number;
 	};
+	valid: boolean;
 }
 
 /**
@@ -123,11 +123,9 @@ function detectCircularRef(
 	if (!targets) return false; // broken ref handled separately
 
 	for (const target of targets) {
-		if (target.type === "reference") {
-			if (detectCircularRef(target, tokenMap, new Set(visited))) {
+		if (target.type === "reference" && detectCircularRef(target, tokenMap, new Set(visited))) {
 				return true;
 			}
-		}
 	}
 
 	return false;

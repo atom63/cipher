@@ -9,8 +9,8 @@
 
 .header {
   display: flex;
-  align-items: flex-start;
   gap: var(--spacing-lg);
+  align-items: flex-start;
   padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
   border-bottom: 1px solid var(--border);
 }
@@ -21,25 +21,25 @@
 }
 
 .title {
+  margin: 0 0 var(--spacing-xs);
   font-size: var(--text-xl);
   font-weight: var(--font-semibold);
-  margin: 0 0 var(--spacing-xs);
   color: var(--foreground);
 }
 
 .subtitle {
+  margin: 0;
   font-size: var(--text-sm);
   color: var(--muted-foreground);
-  margin: 0;
 }
 
 .content {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-xl);
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--spacing-2xl);
+  padding: var(--spacing-xl);
+  overflow-y: auto;
 }
 
 .options {
@@ -82,17 +82,17 @@
   display: flex;
   gap: 1px;
   height: 24px;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
   margin-top: var(--spacing-xs);
+  overflow: hidden;
+  border-radius: var(--radius-sm);
 }
 
 .colorSwatch {
   flex: 1;
-  cursor: default;
-  transition: all var(--transition) ease;
   min-width: 0;
+  cursor: default;
   border-right: 1px solid color-mix(in srgb, white 20%, transparent);
+  transition: all var(--transition) ease;
 }
 
 .colorSwatch:last-child {
@@ -100,9 +100,9 @@
 }
 
 .colorSwatch:hover {
-  transform: scaleY(1.2);
   z-index: 1;
   box-shadow: var(--shadow-shadow-3);
+  transform: scaleY(1.2);
 }
 
 .footer {
@@ -110,14 +110,14 @@
   flex-direction: column;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg) var(--spacing-xl);
-  border-top: 1px solid var(--border);
   background: var(--card);
+  border-top: 1px solid var(--border);
 }
 
 .tokenInfo {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   font-size: var(--text-sm);
 }
 
