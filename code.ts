@@ -1352,7 +1352,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 		}
 
 		case "create-variables": {
-			const { tokens, collectionName, importMode = "import" } = msg.data;
+			const { tokens, collectionName, importMode = "import", stylesData } = msg.data;
 			// Note: tokens are already filtered by selected collections in the UI
 			const results = await createVariablesFromTokens(
 				tokens,
@@ -1360,17 +1360,42 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				importMode,
 			);
 
+			// If combined JSON included styles, import them after variables are created
+			// This ensures variable bindings can be resolved
+			let stylesImported = 0;
+			if (stylesData) {
+				try {
+					const styleResults = await importStylesFromTokens(
+						{ styles: stylesData },
+						[], // import all styles — no cherry-picking
+						importMode,
+					);
+					stylesImported = styleResults.success;
+					// Merge style results into variable results
+					results.success += styleResults.success;
+					results.failed += styleResults.failed;
+					results.errors.push(...styleResults.errors);
+					if (styleResults.changes) {
+						results.changes.push(...styleResults.changes);
+					}
+				} catch (e) {
+					console.warn("Style import failed:", e);
+				}
+			}
+
 			figma.ui.postMessage({
 				type: "variables-created",
 				data: results,
 			});
 
 			const actionVerb = importMode === "override" ? "Updated" : "Created";
+			const varCount = results.success - stylesImported;
+			const styleMsg = stylesImported > 0 ? ` + ${stylesImported} styles` : "";
 			const skipMsg =
 				results.skipped > 0 ? ` (${results.skipped} skipped)` : "";
 			const failMsg = results.failed > 0 ? ` (${results.failed} failed)` : "";
 			figma.notify(
-				`✅ ${actionVerb} ${results.success} variables${skipMsg}${failMsg}`,
+				`✅ ${actionVerb} ${varCount} variables${styleMsg}${skipMsg}${failMsg}`,
 			);
 			break;
 		}

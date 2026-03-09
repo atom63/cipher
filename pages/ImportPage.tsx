@@ -37,6 +37,7 @@ export function ImportPage() {
 	const [collectionName, setCollectionName] = useState("Design Tokens");
 	const [importMode, setImportMode] = useState<"import" | "override">("import");
 	const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+	const [stylesData, setStylesData] = useState<any>(undefined);
 	const [conflicts, setConflicts] = useState<ImportConflict[]>([]);
 	const [result, setResult] = useState({
 		success: 0,
@@ -67,6 +68,10 @@ export function ImportPage() {
 
 			if (parsedData.tokens.length > 0) {
 				setTokens(parsedData.tokens);
+				// Capture styles section from combined export for round-trip import
+				if (parsedData.styles) {
+					setStylesData(parsedData.styles);
+				}
 				setView("collection");
 			} else {
 				showError("No tokens found in the file");
@@ -118,6 +123,9 @@ export function ImportPage() {
 
 	const handleTokensParsed = (parsed: ParsedTokens) => {
 		setTokens(parsed.tokens);
+		if (parsed.styles) {
+			setStylesData(parsed.styles);
+		}
 		setView("collection");
 	};
 
@@ -164,6 +172,7 @@ export function ImportPage() {
 				collectionName,
 				importMode,
 				selectedCollections,
+				stylesData,
 			},
 		});
 	};
@@ -197,6 +206,7 @@ export function ImportPage() {
 	const handleImportMore = () => {
 		setView("upload");
 		setTokens([]);
+		setStylesData(undefined);
 		setResult({
 			success: 0,
 			failed: 0,

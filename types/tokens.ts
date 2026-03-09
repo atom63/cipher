@@ -100,6 +100,8 @@ export interface ParsedTokens {
 		errors: number;
 	};
 	errors: ParseError[];
+	/** Styles section from combined JSON export (paint, text, effect, grid) */
+	styles?: any;
 }
 
 export interface ParseError {
@@ -192,6 +194,8 @@ export interface CreateVariablesMessage extends Message {
 		collectionName: string;
 		importMode?: "import" | "override";
 		selectedCollections?: string[];
+		/** Styles section from combined JSON export — imported after variables */
+		stylesData?: any;
 	};
 }
 

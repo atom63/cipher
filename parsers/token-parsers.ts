@@ -451,7 +451,12 @@ export function parseCollectionJSON(
 		errors: errors.length,
 	};
 
-	return { tokens, stats, errors };
+	// Pass through styles section from combined export for round-trip import
+	const result: ParsedTokens = { tokens, stats, errors };
+	if (data.styles) {
+		result.styles = data.styles;
+	}
+	return result;
 }
 
 // Parse tokens from JSON (supports both simple and collection formats)
@@ -462,9 +467,22 @@ export function parseJSON(content: string): ParsedTokens {
 	try {
 		const data = JSON.parse(content);
 
-		// Check if this is the new collection format
+		// Check if this is the new collection format (combined export with $collections)
 		if (data.$collections && data.tokens) {
 			return parseCollectionJSON(data, 0);
+		}
+
+		// Check for styles-only files and reject them
+		if (data.$schema === "figma-styles-export") {
+			errors.push({
+				message: "This is a Figma Styles file. Import supports variable token files (JSON or CSS).",
+				severity: "error",
+			});
+			return {
+				tokens: [],
+				stats: { total: 0, byCategory: {}, conflicts: 0, errors: errors.length },
+				errors,
+			};
 		}
 
 		// Check if this is a structured format with tokens key

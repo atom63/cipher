@@ -76,6 +76,8 @@ export interface CreateVariablesMessage {
 		collectionName: string;
 		importMode?: "import" | "override";
 		selectedCollections?: string[];
+		/** Styles section from combined JSON export — imported after variables */
+		stylesData?: any;
 	};
 }
 
