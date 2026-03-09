@@ -31,6 +31,7 @@ export { Radio, RadioCard, RadioWithHelper, RadioWithLabel } from "./Radio";
 export { RadioGroup } from "./RadioGroup";
 export { RenameDialog } from "./RenameDialog";
 // Layout Components
+export { ScrollArea } from "./ScrollArea";
 export { SectionHeader } from "./SectionHeader";
 export { Separator } from "./Separator";
 // Skeleton Components

@@ -33,6 +33,7 @@ import {
 	GradientSwatch,
 	LoadingState,
 	RenameDialog,
+	ScrollArea,
 	SectionHeader,
 	Separator,
 	useToast,
@@ -1270,6 +1271,7 @@ export function StylesPage() {
 						<div className="manage-col-value">Preview</div>
 					</div>
 
+					<ScrollArea className="manage-list-body">
 					{Array.from(grouped.entries()).map(([groupKey, groupStyles]) => {
 						const isCollapsed = collapsedGroups.has(groupKey);
 						const groupSelected = groupStyles.filter((s) =>
@@ -1321,6 +1323,7 @@ export function StylesPage() {
 							</div>
 						);
 					})}
+					</ScrollArea>
 				</div>
 			)}
 

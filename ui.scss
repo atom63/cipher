@@ -1262,9 +1262,15 @@ body {
 
 
 .manage-list {
+  display: flex;
   flex: 1;
-  overflow-y: auto;
+  flex-direction: column;
+  min-height: 0;
   margin-top: var(--spacing-sm);
+}
+
+.manage-list-body {
+  flex: 1;
 }
 
 .manage-list-header {

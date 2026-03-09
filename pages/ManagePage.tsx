@@ -38,6 +38,7 @@ import {
 	Input,
 	LoadingState,
 	RenameDialog,
+	ScrollArea,
 	SectionHeader,
 	Separator,
 	Tabs,
@@ -1515,6 +1516,7 @@ export function ManagePage({
 						<div className="manage-col-value">Value</div>
 					</div>
 
+					<ScrollArea className="manage-list-body">
 					{/* Grouped rows */}
 					{Array.from(grouped.entries()).map(([collectionName, subGroups]) => {
 						const isCollapsed = collapsedGroups.has(collectionName);
@@ -1615,6 +1617,7 @@ export function ManagePage({
 							</div>
 						);
 					})}
+					</ScrollArea>
 				</div>
 			)}
 
