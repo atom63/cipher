@@ -250,6 +250,9 @@ Visual preview of the token system. Already partially built.
 - [x] Styleguide page (basic)
 - [x] Type-safe message system between UI and plugin
 - [x] CSS Module architecture with scoped styles
+- [x] Direct CSS export from plugin (CSS generation engine embedded)
+- [x] CSS import (parse CSS custom properties → Figma variables)
+- [x] Import validation (broken refs, circular deps, duplicates, type mismatches)
 
 ### External (Not in Plugin)
 - [x] `generate-tokens.js` — Full CSS generation pipeline (1150 lines)
@@ -260,10 +263,7 @@ Visual preview of the token system. Already partially built.
   - Token reference → CSS variable resolution
 
 ### Not Built
-- [ ] Direct CSS export from plugin (currently requires external script)
-- [ ] CSS import
-- [ ] Import validation
-- [ ] Token structure templates/onboarding
+- [ ] Token structure templates/onboarding (P2)
 - [ ] CSS preview with syntax highlighting
 - [ ] Style → Variable migration helper
 
@@ -324,37 +324,19 @@ Auto-traverse `styles.json` to find opacity values rather than hardcoded mapping
 
 ## Release Plan
 
-### v0.5.0 — Current
-- JSON import/export working
-- Basic batch rename
-- Settings, toast, dialogs
-- Styleguide page
+### v0.9.0 — Current
+All three pillars built and functional:
+- Variable & Style Manager with batch CRUD, multi-select, keyboard shortcuts
+- CSS + JSON export with `color-mix()` opacity, `@theme inline`, Tailwind compat
+- JSON + CSS import with validation, batch rename, collection/mode support
+- Settings with theme persistence, toast notifications, confirmation dialogs
 
-### v0.6.0 — Variable Manager
-- Bulk rename improvements (prefix/suffix, regex preview)
-- Bulk delete with dependency check
-- Bulk value editing
-- Multi-select operations
-- Keyboard shortcuts
-
-### v0.7.0 — CSS Export
-- Embed CSS generation logic in plugin
+### v1.0.0 — Ship
+- UI polish and visual consistency across all pages
 - CSS preview with syntax highlighting
-- Copy/download CSS files
-- Color format selection (OKLCH, HEX, RGBA, HSL)
-- `@theme inline` and `color-mix()` output
-
-### v0.8.0 — Polish
-- Import validation (broken refs, circular deps)
-- Conflict resolution UI for imports
-- Token structure templates
-- Performance optimization for large token sets
-
-### v1.0.0 — Public Launch
-- All core features stable
+- Performance optimization for large token sets (500+ tokens)
 - Documentation complete
 - Plugin ID set for Figma Community
-- Community feedback integration
 
 ---
 
