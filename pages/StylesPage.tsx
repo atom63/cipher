@@ -4,9 +4,11 @@ import {
 	ChevronDown,
 	ChevronRight,
 	ChevronUp,
+	Copy,
 	Grid,
 	Link,
 	Palette,
+	Pencil,
 	PenLine,
 	RefreshCw,
 	Search,
@@ -22,6 +24,8 @@ import {
 	Button,
 	ColorSwatch,
 	ConfirmDialog,
+	Dialog,
+	DialogActions,
 	EmptyState,
 	GradientSwatch,
 	LoadingState,
@@ -39,6 +43,7 @@ import type {
 	PaintInfo,
 	RebindSuggestion,
 	StyleCounts,
+	StyleEdit,
 	StyleInfo,
 } from "../types/messages";
 
@@ -121,6 +126,10 @@ export function StylesPage() {
 	>([]);
 	const [rebindLoading, setRebindLoading] = useState(false);
 	const [rebindExcluded, setRebindExcluded] = useState<Set<number>>(new Set());
+
+	// Edit state
+	const [showEdit, setShowEdit] = useState(false);
+	const [editValues, setEditValues] = useState<Record<string, Partial<StyleEdit>>>({});
 
 	const postMessage = usePostMessage();
 	const { showSuccess, showError } = useToast();
@@ -231,6 +240,34 @@ export function StylesPage() {
 			if (failed > 0) showError(`${failed} unbind(s) failed`);
 			else showSuccess(`Unbound ${success} color${success !== 1 ? "s" : ""}`);
 			loadStyles();
+		} else if (msg.type === "styles-duplicated") {
+			const { success, failed, newStyleIds } = msg.data;
+			if (failed > 0) showError(`${failed} duplication(s) failed`);
+			else
+				showSuccess(
+					`Duplicated ${success} style${success !== 1 ? "s" : ""}`,
+					newStyleIds.length > 0
+						? {
+								label: "Undo",
+								onClick: () => {
+									for (const id of newStyleIds) {
+										postMessage({
+											type: "delete-styles",
+											data: { styleIds: [id], category: "paint" },
+										});
+									}
+								},
+							}
+						: undefined,
+				);
+			loadStyles();
+		} else if (msg.type === "styles-edited") {
+			const { success, failed } = msg.data;
+			if (failed > 0) showError(`${failed} edit(s) failed`);
+			else showSuccess(`Updated ${success} style${success !== 1 ? "s" : ""}`);
+			setShowEdit(false);
+			setEditValues({});
+			loadStyles();
 		}
 	});
 
@@ -293,7 +330,7 @@ export function StylesPage() {
 	useListKeyboard({
 		selectedIds,
 		allIds: filteredIds,
-		isPanelOpen: showRename || showRebind,
+		isPanelOpen: showRename || showRebind || showEdit,
 		setSelectedIds,
 		onClosePanel: useCallback(() => {
 			if (showRename) {
@@ -301,8 +338,11 @@ export function StylesPage() {
 			} else if (showRebind) {
 				setShowRebind(false);
 				setRebindSuggestions([]);
+			} else if (showEdit) {
+				setShowEdit(false);
+				setEditValues({});
 			}
-		}, [showRename, showRebind]),
+		}, [showRename, showRebind, showEdit]),
 		onDelete: useCallback(() => setPendingDelete(true), []),
 	});
 
@@ -385,6 +425,76 @@ export function StylesPage() {
 		setShowRebind(true);
 		setShowRename(false);
 		postMessage({ type: "scan-rebind", data: { styleIds: ids } });
+	};
+
+	const handleDuplicate = () => {
+		if (operationPending || selectedIds.size === 0) return;
+		setOperationPending(true);
+		postMessage({
+			type: "duplicate-styles",
+			data: { styleIds: Array.from(selectedIds) },
+		});
+	};
+
+	const editSelectedStyles = useMemo(() => {
+		if (!showEdit) return [];
+		return styles.filter((s) => selectedIds.has(s.id));
+	}, [showEdit, selectedIds, styles]);
+
+	const openEdit = () => {
+		const selected = styles.filter((s) => selectedIds.has(s.id));
+		const initial: Record<string, Partial<StyleEdit>> = {};
+		for (const s of selected) {
+			const edit: Partial<StyleEdit> = { description: s.description };
+			if (s.preview.type === "paint" && s.preview.paints.length > 0) {
+				const first = s.preview.paints[0];
+				if (first.paintType === "SOLID") {
+					edit.color = first.color || "#000000";
+					edit.opacity = first.opacity ?? 1;
+				}
+			} else if (s.preview.type === "text") {
+				edit.fontFamily = s.preview.fontFamily;
+				edit.fontStyle = s.preview.fontStyle;
+				edit.fontSize = parseFloat(s.preview.fontSize);
+				const lh = s.preview.lineHeight;
+				if (lh === "auto") {
+					// keep undefined
+				} else {
+					const num = parseFloat(lh);
+					if (!Number.isNaN(num)) {
+						edit.lineHeight = {
+							value: num,
+							unit: lh.includes("%") ? "PERCENT" : "PIXELS",
+						};
+					}
+				}
+			}
+			initial[s.id] = edit;
+		}
+		setEditValues(initial);
+		setShowEdit(true);
+		setShowRename(false);
+		setShowRebind(false);
+	};
+
+	const handleEditApply = () => {
+		if (operationPending) return;
+		const edits: StyleEdit[] = [];
+		for (const s of editSelectedStyles) {
+			const ev = editValues[s.id];
+			if (!ev) continue;
+			edits.push({ styleId: s.id, ...ev });
+		}
+		if (edits.length === 0) return;
+		setOperationPending(true);
+		postMessage({ type: "edit-styles", data: { edits } });
+	};
+
+	const updateEditField = (styleId: string, field: string, value: any) => {
+		setEditValues((prev) => ({
+			...prev,
+			[styleId]: { ...prev[styleId], [field]: value },
+		}));
 	};
 
 	const handleApplyRebind = () => {
@@ -683,6 +793,24 @@ export function StylesPage() {
 						<Button
 							variant="outline"
 							size="sm"
+							onClick={openEdit}
+							disabled={selectedIds.size === 0}
+						>
+							<Pencil size={14} />
+							Edit
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleDuplicate}
+							disabled={operationPending || selectedIds.size === 0}
+						>
+							<Copy size={14} />
+							Duplicate
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
 							onClick={handleScanRebind}
 							disabled={selectedIds.size === 0}
 						>
@@ -721,6 +849,215 @@ export function StylesPage() {
 				onApply={handleRename}
 				disabled={operationPending}
 			/>
+
+			{/* Edit dialog */}
+			<Dialog
+				isOpen={showEdit && editSelectedStyles.length > 0}
+				onClose={() => {
+					setShowEdit(false);
+					setEditValues({});
+				}}
+				title={`Edit ${editSelectedStyles.length} ${editSelectedStyles.length === 1 ? "style" : "styles"}`}
+				maxWidth="lg"
+				noPadding
+				footer={
+					<DialogActions>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setShowEdit(false);
+								setEditValues({});
+							}}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="primary"
+							onClick={handleEditApply}
+							disabled={operationPending}
+						>
+							<Check size={14} />
+							Save changes
+						</Button>
+					</DialogActions>
+				}
+			>
+				<div className="manage-edit-table">
+					<div className="manage-edit-table-header">
+						<div className="manage-edit-col-name">Style</div>
+						<div className="manage-edit-col-value">Properties</div>
+					</div>
+					<div className="manage-edit-table-body">
+						{editSelectedStyles.map((s) => {
+							const ev = editValues[s.id] || {};
+							return (
+								<div key={s.id} className="manage-edit-row">
+									<div className="manage-edit-col-name" title={s.name}>
+										<span className="manage-edit-var-name">
+											{CATEGORY_ICONS[s.category]}
+											{s.name}
+										</span>
+									</div>
+									<div className="manage-edit-col-value">
+										<div className="styles-edit-fields">
+											{/* Paint style: color + opacity */}
+											{s.preview.type === "paint" &&
+												s.preview.paints.length > 0 &&
+												s.preview.paints[0].paintType === "SOLID" && (
+													<div className="manage-edit-input-row">
+														<input
+															type="color"
+															className="manage-edit-color-picker"
+															value={(ev.color || "#000000").slice(0, 7)}
+															onChange={(e) =>
+																updateEditField(s.id, "color", e.target.value)
+															}
+														/>
+														<input
+															type="text"
+															className="manage-edit-input"
+															value={ev.color || ""}
+															onChange={(e) =>
+																updateEditField(s.id, "color", e.target.value)
+															}
+															placeholder="#000000"
+														/>
+														<input
+															type="number"
+															className="manage-edit-input"
+															style={{ width: 64 }}
+															value={
+																ev.opacity != null
+																	? Math.round(ev.opacity * 100)
+																	: 100
+															}
+															min={0}
+															max={100}
+															onChange={(e) =>
+																updateEditField(
+																	s.id,
+																	"opacity",
+																	parseInt(e.target.value, 10) / 100,
+																)
+															}
+															placeholder="100"
+														/>
+														<span className="styles-edit-unit">%</span>
+													</div>
+												)}
+
+											{/* Text style: font, size, line-height */}
+											{s.preview.type === "text" && (
+												<>
+													<div className="manage-edit-input-row">
+														<input
+															type="text"
+															className="manage-edit-input"
+															value={ev.fontFamily || ""}
+															onChange={(e) =>
+																updateEditField(
+																	s.id,
+																	"fontFamily",
+																	e.target.value,
+																)
+															}
+															placeholder="Font family"
+														/>
+														<input
+															type="text"
+															className="manage-edit-input"
+															style={{ width: 80 }}
+															value={ev.fontStyle || ""}
+															onChange={(e) =>
+																updateEditField(
+																	s.id,
+																	"fontStyle",
+																	e.target.value,
+																)
+															}
+															placeholder="Style"
+														/>
+													</div>
+													<div className="manage-edit-input-row">
+														<input
+															type="number"
+															className="manage-edit-input"
+															style={{ width: 64 }}
+															value={ev.fontSize ?? ""}
+															min={1}
+															onChange={(e) =>
+																updateEditField(
+																	s.id,
+																	"fontSize",
+																	parseFloat(e.target.value) || undefined,
+																)
+															}
+															placeholder="Size"
+														/>
+														<span className="styles-edit-unit">px</span>
+														<span className="styles-edit-separator">/</span>
+														<input
+															type="number"
+															className="manage-edit-input"
+															style={{ width: 64 }}
+															value={
+																ev.lineHeight &&
+																typeof ev.lineHeight === "object"
+																	? ev.lineHeight.value
+																	: ""
+															}
+															min={0}
+															onChange={(e) => {
+																const val = parseFloat(e.target.value);
+																updateEditField(
+																	s.id,
+																	"lineHeight",
+																	Number.isNaN(val)
+																		? "AUTO"
+																		: { value: val, unit: "PIXELS" as const },
+																);
+															}}
+															placeholder="LH"
+														/>
+														<span className="styles-edit-unit">px</span>
+													</div>
+												</>
+											)}
+
+											{/* Effect style: read-only summary */}
+											{s.preview.type === "effect" && (
+												<div className="styles-edit-readonly">
+													{s.preview.effects
+														.map((e) => e.description)
+														.join(", ") || "No effects"}
+												</div>
+											)}
+
+											{/* Grid style: read-only */}
+											{s.preview.type === "grid" && (
+												<div className="styles-edit-readonly">
+													{s.preview.patterns.join(", ") || "No grids"}
+												</div>
+											)}
+
+											{/* Description — all types */}
+											<input
+												type="text"
+												className="manage-edit-input"
+												value={ev.description ?? ""}
+												onChange={(e) =>
+													updateEditField(s.id, "description", e.target.value)
+												}
+												placeholder="Description…"
+											/>
+										</div>
+									</div>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+			</Dialog>
 
 			{/* Rebind panel */}
 			{showRebind && (

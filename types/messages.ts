@@ -308,6 +308,59 @@ export interface RebindUndoneMessage {
 	};
 }
 
+/** Duplicate styles */
+export interface DuplicateStylesMessage {
+	type: "duplicate-styles";
+	data: {
+		styleIds: string[];
+	};
+}
+
+/** Styles duplicated result */
+export interface StylesDuplicatedMessage {
+	type: "styles-duplicated";
+	data: {
+		success: number;
+		failed: number;
+		newStyleIds: string[];
+	};
+}
+
+/** Edit style properties */
+export interface EditStylesMessage {
+	type: "edit-styles";
+	data: {
+		edits: StyleEdit[];
+	};
+}
+
+/** A single style edit */
+export interface StyleEdit {
+	styleId: string;
+	/** For paint styles: new color hex (solid only) */
+	color?: string;
+	/** For paint styles: new opacity 0-1 */
+	opacity?: number;
+	/** For text styles */
+	fontSize?: number;
+	lineHeight?: { value: number; unit: "PIXELS" | "PERCENT" } | "AUTO";
+	fontFamily?: string;
+	fontStyle?: string;
+	letterSpacing?: number;
+	paragraphSpacing?: number;
+	/** Description (any style type) */
+	description?: string;
+}
+
+/** Styles edited result */
+export interface StylesEditedMessage {
+	type: "styles-edited";
+	data: {
+		success: number;
+		failed: number;
+	};
+}
+
 /** Import styles from token data */
 export interface ImportStylesMessage {
 	type: "import-styles";
@@ -590,6 +643,8 @@ export type UIToMainMessage =
 	| ImportStylesMessage
 	| DeleteStylesMessage
 	| RenameStylesMessage
+	| DuplicateStylesMessage
+	| EditStylesMessage
 	| RenameVariablesMessage
 	| CheckDependenciesMessage
 	| DeleteVariablesMessage
@@ -753,6 +808,8 @@ export type MainToUIMessage =
 	| StyleDetailsListMessage
 	| StylesDeletedMessage
 	| StylesRenamedMessage
+	| StylesDuplicatedMessage
+	| StylesEditedMessage
 	| RebindSuggestionsMessage
 	| RebindAppliedMessage
 	| RebindUndoneMessage
@@ -803,6 +860,8 @@ export function isUIToMainMessage(msg: unknown): msg is UIToMainMessage {
 		"import-styles",
 		"delete-styles",
 		"rename-styles",
+		"duplicate-styles",
+		"edit-styles",
 		"rename-variables",
 		"check-dependencies",
 		"delete-variables",
@@ -846,6 +905,8 @@ export function isMainToUIMessage(msg: unknown): msg is MainToUIMessage {
 		"css-export-complete",
 		"style-details-list",
 		"styles-deleted",
+		"styles-duplicated",
+		"styles-edited",
 		"rebind-suggestions",
 		"rebind-applied",
 		"rebind-undone",

@@ -1629,3 +1629,27 @@ body {
   color: var(--muted-foreground);
   white-space: nowrap;
 }
+
+.styles-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.styles-edit-unit {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.styles-edit-separator {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.styles-edit-readonly {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  padding: var(--spacing-xs) 0;
+}

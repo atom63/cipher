@@ -379,6 +379,154 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			break;
 		}
 
+
+		case "duplicate-styles": {
+			const { styleIds } = msg.data;
+			let success = 0;
+			let failed = 0;
+			const newStyleIds: string[] = [];
+			for (const id of styleIds) {
+				try {
+					const style = figma.getStyleById(id);
+					if (!style) { failed++; continue; }
+
+					if (style.type === "PAINT") {
+						const src = style as PaintStyle;
+						const dup = figma.createPaintStyle();
+						dup.name = src.name + " copy";
+						dup.description = src.description;
+						dup.paints = src.paints;
+						newStyleIds.push(dup.id);
+						success++;
+					} else if (style.type === "TEXT") {
+						const src = style as TextStyle;
+						const dup = figma.createTextStyle();
+						dup.name = src.name + " copy";
+						dup.description = src.description;
+						dup.fontSize = src.fontSize;
+						dup.letterSpacing = src.letterSpacing;
+						dup.lineHeight = src.lineHeight;
+						dup.paragraphSpacing = src.paragraphSpacing;
+						dup.textCase = src.textCase;
+						dup.textDecoration = src.textDecoration;
+						await figma.loadFontAsync(src.fontName);
+						dup.fontName = src.fontName;
+						newStyleIds.push(dup.id);
+						success++;
+					} else if (style.type === "EFFECT") {
+						const src = style as EffectStyle;
+						const dup = figma.createEffectStyle();
+						dup.name = src.name + " copy";
+						dup.description = src.description;
+						dup.effects = src.effects;
+						newStyleIds.push(dup.id);
+						success++;
+					} else if (style.type === "GRID") {
+						const src = style as GridStyle;
+						const dup = figma.createGridStyle();
+						dup.name = src.name + " copy";
+						dup.description = src.description;
+						dup.layoutGrids = src.layoutGrids;
+						newStyleIds.push(dup.id);
+						success++;
+					} else {
+						failed++;
+					}
+				} catch (err) {
+					console.error("[Cipher] duplicate style error:", err);
+					failed++;
+				}
+			}
+			figma.ui.postMessage({
+				type: "styles-duplicated",
+				data: { success, failed, newStyleIds },
+			});
+			figma.notify(
+				`Duplicated ${success} style${success !== 1 ? "s" : ""}${failed > 0 ? ` (${failed} failed)` : ""}`,
+			);
+			break;
+		}
+
+		case "edit-styles": {
+			const { edits } = msg.data;
+			let success = 0;
+			let failed = 0;
+			for (const edit of edits) {
+				try {
+					const style = figma.getStyleById(edit.styleId);
+					if (!style) { failed++; continue; }
+
+					// Description — applies to all types
+					if (edit.description != null) {
+						style.description = edit.description;
+					}
+
+					if (style.type === "PAINT") {
+						const paintStyle = style as PaintStyle;
+						if (edit.color != null || edit.opacity != null) {
+							const paints = [...paintStyle.paints];
+							if (paints.length > 0 && paints[0].type === "SOLID") {
+								const solid = paints[0] as SolidPaint;
+								let newColor = solid.color;
+								if (edit.color) {
+									const hex = edit.color.replace("#", "");
+									newColor = {
+										r: parseInt(hex.slice(0, 2), 16) / 255,
+										g: parseInt(hex.slice(2, 4), 16) / 255,
+										b: parseInt(hex.slice(4, 6), 16) / 255,
+									};
+								}
+								paints[0] = {
+									type: "SOLID",
+									color: newColor,
+									opacity: edit.opacity ?? solid.opacity ?? 1,
+									visible: solid.visible,
+									blendMode: solid.blendMode,
+								} as SolidPaint;
+								paintStyle.paints = paints;
+							}
+						}
+					} else if (style.type === "TEXT") {
+						const textStyle = style as TextStyle;
+						if (edit.fontFamily || edit.fontStyle) {
+							const newFont = {
+								family: edit.fontFamily || textStyle.fontName.family,
+								style: edit.fontStyle || textStyle.fontName.style,
+							};
+							await figma.loadFontAsync(newFont);
+							textStyle.fontName = newFont;
+						}
+						if (edit.fontSize != null) textStyle.fontSize = edit.fontSize;
+						if (edit.lineHeight != null) {
+							if (edit.lineHeight === "AUTO") {
+								textStyle.lineHeight = { unit: "AUTO" };
+							} else {
+								textStyle.lineHeight = edit.lineHeight;
+							}
+						}
+						if (edit.letterSpacing != null) {
+							textStyle.letterSpacing = { value: edit.letterSpacing, unit: "PIXELS" };
+						}
+						if (edit.paragraphSpacing != null) {
+							textStyle.paragraphSpacing = edit.paragraphSpacing;
+						}
+					}
+					success++;
+				} catch (err) {
+					console.error("[Cipher] edit style error:", err);
+					failed++;
+				}
+			}
+			figma.ui.postMessage({
+				type: "styles-edited",
+				data: { success, failed },
+			});
+			figma.notify(
+				`Updated ${success} style${success !== 1 ? "s" : ""}${failed > 0 ? ` (${failed} failed)` : ""}`,
+			);
+			break;
+		}
+
 		case "scan-rebind": {
 			const { styleIds } = msg.data;
 
@@ -475,8 +623,6 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				varStringMap.push({ id: v.id, name: v.name, values });
 			}
 
-			console.log("[Cipher] Float vars:", varFloatMap.length, varFloatMap.slice(0, 10).map(v => v.name + "=" + v.values.join("|")));
-			console.log("[Cipher] String vars:", varStringMap.length, varStringMap.map(v => v.name + "=" + v.values.join("|")));
 
 			const suggestions: any[] = [];
 
@@ -632,13 +778,11 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					const textStyle = style as TextStyle;
 					const bv = (textStyle as any).boundVariables || {};
 					const styleName = textStyle.name;
-					console.log("[Cipher] TEXT style:", styleName, "bv keys:", JSON.stringify(Object.keys(bv)), "fontSize:", textStyle.fontSize, "family:", textStyle.fontName.family, "style:", textStyle.fontName.style);
 
 					// fontSize — path-based: e.g. "typography/large-title" → "typography/large-title/font-size"
 					if (!bv.fontSize) {
 						const size = textStyle.fontSize as number;
 						const result = findFloatVar(size, styleName, "font-size");
-						console.log("[Cipher] fontSize scan:", styleName, "size=", size, "result=", result ? result.var.name : "none");
 						if (result) {
 							suggestions.push({
 								styleId,
