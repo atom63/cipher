@@ -4,16 +4,8 @@
   padding: 0;
 }
 
-.fileImport h2 {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-semibold);
-  margin-bottom: var(--spacing-sm);
-}
-
-.subtitle {
-  font-size: var(--text-md);
-  color: var(--muted-foreground);
-  margin-bottom: var(--spacing-xl);
+.hiddenInput {
+  display: none;
 }
 
 .dropZone {
@@ -23,7 +15,6 @@
   text-align: center;
   cursor: pointer;
   transition: border-color var(--transition), background-color var(--transition);
-  margin-bottom: var(--spacing-xl);
 }
 
 .dropZone:hover {
@@ -54,95 +45,8 @@
 }
 
 .uploadIcon {
-  font-size: var(--text-5xl);
+  color: var(--muted-foreground);
   margin-bottom: var(--spacing-md);
 }
 
-.divider {
-  text-align: center;
-  margin: var(--spacing-xl) 0;
-  position: relative;
-}
-
-.divider::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--border);
-}
-
-.divider span {
-  position: relative;
-  background: var(--background);
-  padding: 0 var(--spacing-md);
-  color: var(--muted-foreground);
-  font-size: var(--text-base);
-}
-
-.pasteArea {
-  margin-bottom: var(--spacing-xl);
-}
-
-.pasteArea label {
-  display: block;
-  font-weight: var(--font-medium);
-  margin-bottom: var(--spacing-sm);
-}
-
-.pasteArea textarea {
-  width: 100%;
-  padding: var(--spacing-md);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  resize: vertical;
-  margin-bottom: var(--spacing-md);
-  background: var(--background);
-  color: var(--foreground);
-}
-
-.example {
-  margin-top: var(--spacing-xl);
-}
-
-.example details {
-  cursor: pointer;
-}
-
-.example summary {
-  font-size: var(--text-base);
-  color: var(--muted-foreground);
-  padding: var(--spacing-sm);
-  background: var(--muted);
-  border-radius: var(--radius-sm);
-}
-
-.example pre {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-md);
-  background: var(--muted);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  overflow-x: auto;
-}
-
-.exampleSection {
-  margin-top: var(--spacing-lg);
-}
-
-.exampleSection:first-child {
-  margin-top: var(--spacing-md);
-}
-
-.exampleSection h4 {
-  font-size: var(--text-md);
-  font-weight: var(--font-semibold);
-  color: var(--foreground);
-  margin-bottom: var(--spacing-sm);
-}
 

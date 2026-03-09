@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Check, Link, Lightbulb, Package, Palette, Pencil, Ruler, Search, Sparkles, Square, Type, X } from "lucide-react";
+import { AlertTriangle, Check, Pencil, Search, X } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import {
 	type ValidationResult,
@@ -10,10 +10,9 @@ import type {
 	TokenCategory,
 } from "../../types/tokens";
 import {
-	Badge,
 	Button,
-	CheckboxWithLabel,
-	Dropdown,
+	Checkbox,
+	EmptyState,
 	SectionHeader,
 } from "../ui";
 import { Alert } from "../ui/Alert";
@@ -40,29 +39,6 @@ interface EditingState {
 	field: "figmaName" | "value";
 }
 
-// Badge variant for token type
-const getTypeBadgeVariant = (
-	type: string,
-): "default" | "secondary" | "success" | "warning" | "info" | "outline" => {
-	const variantMap: Record<
-		string,
-		"default" | "secondary" | "success" | "warning" | "info" | "outline"
-	> = {
-		color: "info",
-		spacing: "success",
-		sizing: "default",
-		borderRadius: "warning",
-		borderWidth: "warning",
-		number: "info",
-		dimension: "default",
-		string: "secondary",
-		fontFamily: "secondary",
-		fontWeight: "secondary",
-		reference: "info",
-	};
-	return variantMap[type] || "outline";
-};
-
 // Render a token's value display
 function renderTokenValue(token: DesignToken) {
 	if (
@@ -70,17 +46,7 @@ function renderTokenValue(token: DesignToken) {
 		typeof token.value === "object" &&
 		"r" in token.value
 	) {
-		const { r, g, b } = token.value;
-		const rgb = `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
-		return (
-			<div className={styles.colorPreviewWrapper}>
-				<div
-					className={styles.colorPreview}
-					style={{ backgroundColor: rgb }}
-				/>
-				<code className={styles.value}>{token.originalValue}</code>
-			</div>
-		);
+		return <code className={styles.value}>{token.originalValue}</code>;
 	}
 
 	if (
@@ -123,25 +89,21 @@ function renderTokenValue(token: DesignToken) {
 	return <code className={styles.value}>{token.originalValue}</code>;
 }
 
-// Memoized token row
+// Memoized token row — matches ManagePage column layout: check | name | value
 const TokenRow = React.memo(function TokenRow({
 	token,
-	typeDisplayText,
 	editing,
 	conflict,
 	onToggle,
-	onActionChange,
 	onNameChange,
 	onValueChange,
 	onStartEdit,
 	onCancelEdit,
 }: {
 	token: DesignToken;
-	typeDisplayText: string;
 	editing: EditingState | null;
 	conflict?: ImportConflict;
 	onToggle: (id: string) => void;
-	onActionChange: (id: string, action: TokenAction) => void;
 	onNameChange: (id: string, name: string) => void;
 	onValueChange: (id: string, value: string) => void;
 	onStartEdit: (state: EditingState) => void;
@@ -149,127 +111,131 @@ const TokenRow = React.memo(function TokenRow({
 }) {
 	const isEditing = editing?.tokenId === token.id;
 
+	const renderNameSwatch = () => {
+		if (
+			token.type !== "color" ||
+			typeof token.value !== "object" ||
+			!("r" in token.value)
+		)
+			return null;
+		const { r, g, b } = token.value;
+		const rgb = `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
+		return (
+			<div
+				className={styles.colorPreview}
+				style={{ backgroundColor: rgb }}
+				title={token.originalValue}
+			/>
+		);
+	};
+
+	// Show figmaName with path portion dimmed (like ManagePage)
+	const renderName = () => {
+		if (isEditing && editing.field === "figmaName") {
+			return (
+				<input
+					autoFocus
+					className={styles.inlineEdit}
+					onBlur={onCancelEdit}
+					onChange={(e) =>
+						onNameChange(token.id, (e.target as HTMLInputElement).value)
+					}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === "Escape") onCancelEdit();
+					}}
+					type="text"
+					value={token.figmaName}
+				/>
+			);
+		}
+
+		const name = token.figmaName;
+		const hasPath = name.includes("/");
+		return (
+			<span
+				className={`${styles.tokenName} ${styles.editable}`}
+				onClick={() => onStartEdit({ tokenId: token.id, field: "figmaName" })}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						onStartEdit({ tokenId: token.id, field: "figmaName" });
+					}
+				}}
+				role="button"
+				tabIndex={0}
+				title={`${token.name} → ${name}`}
+			>
+				{hasPath ? (
+					<>
+						<span className={styles.tokenPath}>
+							{name.substring(0, name.lastIndexOf("/") + 1)}
+						</span>
+						{name.substring(name.lastIndexOf("/") + 1)}
+					</>
+				) : (
+					name
+				)}
+				<Pencil size={8} className={styles.editIcon} />
+			</span>
+		);
+	};
+
+	const renderValue = () => {
+		if (isEditing && editing.field === "value") {
+			return (
+				<input
+					autoFocus
+					className={styles.inlineEdit}
+					onBlur={onCancelEdit}
+					onChange={(e) =>
+						onValueChange(token.id, (e.target as HTMLInputElement).value)
+					}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === "Escape") onCancelEdit();
+					}}
+					type="text"
+					value={token.originalValue}
+				/>
+			);
+		}
+
+		return (
+			<span
+				className={styles.editable}
+				onClick={() => onStartEdit({ tokenId: token.id, field: "value" })}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						onStartEdit({ tokenId: token.id, field: "value" });
+					}
+				}}
+				role="button"
+				tabIndex={0}
+				title="Click to edit value"
+			>
+				{renderTokenValue(token)}
+			</span>
+		);
+	};
+
 	return (
 		<div
-			className={`${styles.tokenRow} ${token.action === "skip" ? styles.skipped : ""}`}
+			className={`${styles.tokenRow} ${token.action === "skip" ? styles.skipped : ""} ${conflict ? styles.conflictRow : ""}`}
 		>
-			<label className={styles.tokenCheckbox}>
-				<input
-					checked={token.action === "import"}
-					onChange={() => onToggle(token.id)}
-					type="checkbox"
-				/>
-			</label>
-
-			<div className={styles.tokenInfo}>
-				<div className={styles.tokenNames}>
-					<span className={styles.originalName}>{token.name}</span>
-					<Badge variant={getTypeBadgeVariant(token.type)} size="sm">
-						{typeDisplayText}
-					</Badge>
-					<span className={styles.arrow}><ArrowRight size={12} /></span>
-					{isEditing && editing.field === "figmaName" ? (
-						<input
-							autoFocus
-							className={styles.inlineEdit}
-							onBlur={onCancelEdit}
-							onChange={(e) =>
-								onNameChange(
-									token.id,
-									(e.target as HTMLInputElement).value,
-								)
-							}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === "Escape") {
-									onCancelEdit();
-								}
-							}}
-							type="text"
-							value={token.figmaName}
-						/>
-					) : (
-						<span
-							className={`${styles.figmaName} ${styles.editable}`}
-							onClick={() =>
-								onStartEdit({ tokenId: token.id, field: "figmaName" })
-							}
-							title="Click to edit"
-						>
-							{token.figmaName} <Pencil size={10} />
-						</span>
-					)}
-				</div>
-
-				{isEditing && editing.field === "value" ? (
-					<input
-						autoFocus
-						className={styles.inlineEdit}
-						onBlur={onCancelEdit}
-						onChange={(e) =>
-							onValueChange(
-								token.id,
-								(e.target as HTMLInputElement).value,
-							)
-						}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" || e.key === "Escape") {
-								onCancelEdit();
-							}
-						}}
-						type="text"
-						value={token.originalValue}
-					/>
-				) : (
-					<div
-						onClick={() =>
-							onStartEdit({ tokenId: token.id, field: "value" })
-						}
-						style={{ cursor: "pointer" }}
-						title="Click to edit"
-					>
-						{renderTokenValue(token)}
-					</div>
-				)}
-
-				{conflict && (
-					<div className={styles.conflictInfo}>
-						<span className={styles.conflictLabel}>Existing:</span>
-						{Object.entries(conflict.existingValues).map(
-							([mode, value]) => (
-								<code key={mode} className={styles.conflictValue}>
-									{Object.keys(conflict.existingValues).length > 1
-										? `${mode}: `
-										: ""}
-									{value}
-								</code>
-							),
-						)}
-					</div>
-				)}
-			</div>
-
-			<div className={styles.tokenActions}>
-				<Dropdown
-					trigger={
-						token.action === "import"
-							? "Import"
-							: token.action === "skip"
-								? "Skip"
-								: "Overwrite"
-					}
-					options={[
-						{ value: "import", label: "Import" },
-						{ value: "skip", label: "Skip" },
-						{ value: "overwrite", label: "Overwrite" },
-					]}
-					variant="ghost"
+			<div className={styles.colCheck}>
+				<Checkbox
+					id={`token-${token.id}`}
+					checked={token.action !== "skip"}
 					size="sm"
-					align="right"
-					width={120}
-					onSelect={(value) =>
-						onActionChange(token.id, value as TokenAction)
-					}
+					onChange={() => onToggle(token.id)}
 				/>
+			</div>
+			<div className={styles.colName}>
+				{renderNameSwatch()}
+				{renderName()}
+			</div>
+			<div className={styles.colValue}>
+				{renderValue()}
 			</div>
 		</div>
 	);
@@ -283,7 +249,6 @@ export function TokenTable({
 	conflicts = [],
 }: TokenTableProps) {
 	const [filter, setFilter] = useState<TokenCategory | "all">("all");
-	const [selectAll, setSelectAll] = useState(true);
 	const [editing, setEditing] = useState<EditingState | null>(null);
 	const [showBatchRename, setShowBatchRename] = useState(false);
 
@@ -296,9 +261,9 @@ export function TokenTable({
 				token.id === tokenId
 					? {
 							...token,
-							action: (token.action === "import"
-								? "skip"
-								: "import") as TokenAction,
+							action: (token.action === "skip"
+								? "import"
+								: "skip") as TokenAction,
 						}
 					: token,
 			);
@@ -307,25 +272,14 @@ export function TokenTable({
 		[tokens, onTokensUpdated],
 	);
 
-	const handleToggleAll = useCallback(
-		(checked: boolean) => {
-			const newAction: TokenAction = checked ? "import" : "skip";
-			const updated = tokens.map((token) => ({ ...token, action: newAction }));
-			onTokensUpdated(updated);
-			setSelectAll(checked);
-		},
-		[tokens, onTokensUpdated],
-	);
+	const allSelected = tokens.every((t) => t.action !== "skip");
+	const noneSelected = tokens.every((t) => t.action === "skip");
 
-	const handleActionChange = useCallback(
-		(tokenId: string, action: TokenAction) => {
-			const updated = tokens.map((token) =>
-				token.id === tokenId ? { ...token, action } : token,
-			);
-			onTokensUpdated(updated);
-		},
-		[tokens, onTokensUpdated],
-	);
+	const handleToggleAll = useCallback(() => {
+		const newAction: TokenAction = allSelected ? "skip" : "import";
+		const updated = tokens.map((token) => ({ ...token, action: newAction }));
+		onTokensUpdated(updated);
+	}, [tokens, onTokensUpdated, allSelected]);
 
 	const handleNameChange = useCallback(
 		(tokenId: string, newName: string) => {
@@ -333,7 +287,6 @@ export function TokenTable({
 				token.id === tokenId ? { ...token, figmaName: newName } : token,
 			);
 			onTokensUpdated(updated);
-			setEditing(null);
 		},
 		[tokens, onTokensUpdated],
 	);
@@ -371,48 +324,24 @@ export function TokenTable({
 				return token;
 			});
 			onTokensUpdated(updated);
-			setEditing(null);
 		},
 		[tokens, onTokensUpdated],
 	);
 
 	const handleCancelEdit = useCallback(() => setEditing(null), []);
 
-	const handleBatchRename = (
-		find: string,
-		replace: string,
-		scope: "all" | "name" | "path",
-	) => {
-		const updated = tokens.map((token) => {
-			const regex = new RegExp(find, "gi");
-			const newToken = { ...token };
-
-			if (scope === "all" || scope === "name") {
-				newToken.name = token.name.replace(regex, replace);
-			}
-
-			if (scope === "all" || scope === "path") {
-				newToken.figmaName = token.figmaName.replace(regex, replace);
-			}
-
-			return newToken;
-		});
-		onTokensUpdated(updated);
-	};
-
-	const _handleGroupRename = (groupName: string, newGroupName: string) => {
-		const updated = tokens.map((token) => {
-			if (token.figmaName.startsWith(`${token.category}/${groupName}`)) {
-				return {
-					...token,
-					figmaName: token.figmaName.replace(
-						`${token.category}/${groupName}`,
-						`${token.category}/${newGroupName}`,
-					),
-				};
-			}
-			return token;
-		});
+	const handleBatchRename = (find: string, replace: string, useRegex: boolean) => {
+		let pattern: RegExp;
+		try {
+			pattern = useRegex ? new RegExp(find, "gi") : new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+		} catch {
+			return;
+		}
+		const updated = tokens.map((token) => ({
+			...token,
+			name: token.name.replace(pattern, replace),
+			figmaName: token.figmaName.replace(pattern, replace),
+		}));
 		onTokensUpdated(updated);
 	};
 
@@ -437,60 +366,6 @@ export function TokenTable({
 		[tokens],
 	);
 
-	// Get icon for token category
-	const getCategoryIcon = (category: string): React.ReactNode => {
-		const key = category.toLowerCase();
-		const iconMap: Record<string, React.ReactNode> = {
-			colors: <Palette size={12} />,
-			primitives: <Palette size={12} />,
-			spacing: <Ruler size={12} />,
-			radius: <Square size={12} />,
-			sizes: <Ruler size={12} />,
-			sizing: <Ruler size={12} />,
-			abstractions: <Link size={12} />,
-			semantic: <Lightbulb size={12} />,
-			typography: <Type size={12} />,
-			effects: <Sparkles size={12} />,
-			borders: <Square size={12} />,
-			other: <Package size={12} />,
-		};
-		return iconMap[key] || <Package size={12} />;
-	};
-
-	// Get display name for category
-	const getCategoryDisplayName = (category: string): string => {
-		return category.charAt(0).toUpperCase() + category.slice(1);
-	};
-
-	// Resolve reference to find the actual token type (follows reference chains)
-	const resolveReferenceType = useCallback(
-		(token: DesignToken, visited = new Set<string>()): string | null => {
-			if (
-				token.type !== "reference" ||
-				typeof token.originalValue !== "string"
-			) {
-				return null;
-			}
-
-			if (visited.has(token.id)) return null;
-			visited.add(token.id);
-
-			const refMatch = token.originalValue.match(/\{([^}]+)\}/);
-			if (!refMatch) return null;
-
-			const refPath = refMatch[1].replace(/\./g, "/");
-			const referencedToken = tokens.find((t) => t.figmaName === refPath);
-			if (!referencedToken) return null;
-
-			if (referencedToken.type === "reference") {
-				return resolveReferenceType(referencedToken, visited);
-			}
-
-			return referencedToken.type;
-		},
-		[tokens],
-	);
-
 	// Build conflict lookup map
 	const conflictMap = useMemo(() => {
 		const map = new Map<string, ImportConflict>();
@@ -500,29 +375,12 @@ export function TokenTable({
 		return map;
 	}, [conflicts]);
 
-	// Pre-compute type display text for all tokens
-	const typeDisplayTexts = useMemo(() => {
-		const map = new Map<string, string>();
-		for (const token of tokens) {
-			if (token.type === "reference") {
-				const actualType = resolveReferenceType(token);
-				map.set(
-					token.id,
-					actualType ? `ref: ${actualType}` : "reference",
-				);
-			} else {
-				map.set(token.id, token.type);
-			}
-		}
-		return map;
-	}, [tokens, resolveReferenceType]);
-
 	return (
 		<div className={styles.tokenTableContainer}>
 			<SectionHeader
 				variant="secondary"
-				title="Review & Confirm Import"
-				description={`Found ${stats.total} tokens • ${stats.toImport} will be imported`}
+				title="Review Tokens"
+				description={`${stats.total} ${stats.total === 1 ? "token" : "tokens"} found · ${stats.toImport} selected for import`}
 			/>
 
 			{/* Stats - Dynamic category filters */}
@@ -543,19 +401,16 @@ export function TokenTable({
 							onClick={() => setFilter(category as TokenCategory)}
 							type="button"
 						>
-							{getCategoryIcon(category)} {getCategoryDisplayName(category)} (
-							{count})
+							{category.charAt(0).toUpperCase() + category.slice(1)} ({count})
 						</button>
 					))}
 			</div>
 
 			{/* Conflict Summary */}
 			{conflicts.length > 0 && (
-				<Alert variant="warning" title={`${conflicts.length} conflict${conflicts.length !== 1 ? "s" : ""} detected`}>
-					{conflicts.length} token{conflicts.length !== 1 ? "s" : ""} already
-					exist{conflicts.length === 1 ? "s" : ""} in the target collection.
-					Conflicting tokens are set to &quot;Skip&quot; by default. Change to
-					&quot;Overwrite&quot; to replace existing values.
+				<Alert variant="warning" title={`${conflicts.length} ${conflicts.length === 1 ? "conflict" : "conflicts"} detected`}>
+					{conflicts.length} {conflicts.length === 1 ? "token already exists" : "tokens already exist"} in the target collection.
+					Deselect to skip, or keep selected to overwrite existing values.
 				</Alert>
 			)}
 
@@ -565,8 +420,8 @@ export function TokenTable({
 					variant={validation.valid ? "warning" : "error"}
 					title={
 						validation.valid
-							? `${validation.stats.warnings} warning${validation.stats.warnings !== 1 ? "s" : ""}`
-							: `${validation.stats.errors} error${validation.stats.errors !== 1 ? "s" : ""} found`
+							? `${validation.stats.warnings} ${validation.stats.warnings === 1 ? "warning" : "warnings"}`
+							: `${validation.stats.errors} ${validation.stats.errors === 1 ? "error" : "errors"} — fix before importing`
 					}
 				>
 					<ul className={styles.validationList}>
@@ -577,24 +432,27 @@ export function TokenTable({
 						))}
 						{validation.issues.length > 5 && (
 							<li>
-								…and {validation.issues.length - 5} more issue
-								{validation.issues.length - 5 !== 1 ? "s" : ""}
+								…and {validation.issues.length - 5} more
 							</li>
 						)}
 					</ul>
 				</Alert>
 			)}
 
-			{/* Controls */}
-			<div className={styles.tableControls}>
-				<CheckboxWithLabel
-					id="select-all"
-					label="Select All"
-					checked={selectAll}
-					onChange={handleToggleAll}
-				/>
-
-				<div className={styles.controlActions}>
+			{/* List Header */}
+			<div className={styles.listHeader}>
+				<div className={styles.colCheck}>
+					<Checkbox
+						id="select-all"
+						checked={allSelected}
+						indeterminate={!allSelected && !noneSelected}
+						size="sm"
+						onChange={handleToggleAll}
+					/>
+				</div>
+				<div className={styles.colName}>Name</div>
+				<div className={styles.colValue}>
+					<span>Value</span>
 					<Button
 						variant="ghost"
 						size="sm"
@@ -610,17 +468,20 @@ export function TokenTable({
 			{/* Token List */}
 			<div className={styles.tokenList}>
 				{filteredTokens.length === 0 ? (
-					<div className={styles.emptyState}>No tokens to display</div>
+					<EmptyState
+						icon={<Search size={24} />}
+						title={filter === "all" ? "No tokens found" : `No ${filter} tokens`}
+						description={filter === "all" ? undefined : "Select a different category or show all tokens."}
+						size="sm"
+					/>
 				) : (
 					filteredTokens.map((token) => (
 						<TokenRow
 							key={token.id}
 							token={token}
-							typeDisplayText={typeDisplayTexts.get(token.id) || token.type}
 							editing={editing}
 							conflict={conflictMap.get(token.id)}
 							onToggle={handleToggleToken}
-							onActionChange={handleActionChange}
 							onNameChange={handleNameChange}
 							onValueChange={handleValueChange}
 							onStartEdit={setEditing}
@@ -644,14 +505,12 @@ export function TokenTable({
 					{!validation.valid ? (
 						<>
 							<AlertTriangle size={14} />
-							Fix {validation.stats.errors} error
-							{validation.stats.errors !== 1 ? "s" : ""} to import
+							Fix {validation.stats.errors} {validation.stats.errors === 1 ? "error" : "errors"} to import
 						</>
 					) : (
 						<>
 							<Check size={14} />
-							Import {stats.toImport}{" "}
-							{stats.toImport === 1 ? "Token" : "Tokens"}
+							Import {stats.toImport} {stats.toImport === 1 ? "token" : "tokens"}
 						</>
 					)}
 				</Button>

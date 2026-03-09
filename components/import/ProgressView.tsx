@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Check, CheckCircle, FileText, Plus, Undo2, X, XCircle } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle, ChevronRight, Plus, Undo2, X, XCircle } from "lucide-react";
 import type { ImportUndoEntry } from "../../types/tokens";
 import { Button, LoadingState, Spinner } from "../ui";
 import styles from "./ProgressView.module.css";
@@ -59,39 +59,11 @@ export function SuccessView({
 	const unchangedTokens = changes.filter((c) => c.action === "unchanged");
 	const hasChanges = changedTokens.length > 0;
 
-	// Categorize errors for better user understanding
-	const errorCategories = {
-		typeConflict: errors.filter((e) => e.includes("Type conflict")),
-		unsupportedType: errors.filter((e) => e.includes("Unsupported type")),
-		referenceError: errors.filter(
-			(e) =>
-				e.includes("Referenced token not found") ||
-				e.includes("Invalid reference format"),
-		),
-		creationError: errors.filter(
-			(e) => e.includes("Failed to create") && !e.includes("reference"),
-		),
-		other: errors.filter(
-			(e) =>
-				!e.includes("Type conflict") &&
-				!e.includes("Unsupported type") &&
-				!e.includes("Referenced token not found") &&
-				!e.includes("Invalid reference format") &&
-				!e.includes("Failed to create"),
-		),
-	};
-
 	return (
 		<div className={styles.successView}>
 			<div
 				className={styles.successIcon}
-				style={{
-					background: allFailed
-						? "var(--destructive)"
-						: hasErrors
-							? "var(--warning)"
-							: "var(--success)",
-				}}
+				data-status={allFailed ? "error" : hasErrors ? "warning" : "success"}
 			>
 				{allFailed ? <X size={24} /> : hasErrors ? <AlertTriangle size={24} /> : <Check size={24} />}
 			</div>
@@ -127,52 +99,33 @@ export function SuccessView({
 				)}
 			</div>
 
-			{/* Changes Summary - Show when in override mode with changes */}
-			{isOverrideMode && hasChanges && (
-				<details className={styles.changesDetails} open={true}>
-					<summary><FileText size={14} /> Changes Summary ({changedTokens.length} updated)</summary>
-					<div className={styles.changesDetailsContent}>
-						<div className={styles.changesSummary}>
-							<p>
-								{createdTokens.length > 0 &&
-									`${createdTokens.length} created, `}
-								<strong>{changedTokens.length} updated</strong>
-								{unchangedTokens.length > 0 &&
-									`, ${unchangedTokens.length} unchanged`}
-							</p>
-						</div>
-
-						{/* Updated Tokens List */}
-						{changedTokens.length > 0 && (
-							<div className={styles.changesSection}>
-								<strong>Updated Tokens:</strong>
-								<ul className={styles.changesList}>
-									{changedTokens.slice(0, 20).map((change, i) => (
-										<li key={i} className={styles.changeItem}>
-											<div className={styles.changeName}>
-												<code>{change.name}</code>
-												<span className={styles.changeType}>{change.type}</span>
-											</div>
-											<div className={styles.changeValues}>
-												<span className={styles.oldValue}>
-													{change.oldValue}
-												</span>
-												<span className={styles.changeArrow}><ArrowRight size={12} /></span>
-												<span className={styles.newValue}>
-													{change.newValue}
-												</span>
-											</div>
-										</li>
-									))}
-									{changedTokens.length > 20 && (
-										<li className={styles.changeMore}>
-											…and {changedTokens.length - 20} more changes
-										</li>
-									)}
-								</ul>
-							</div>
+			{/* Changes Summary */}
+			{changes.length > 0 && (
+				<details className={styles.changesDetails} open={hasChanges}>
+					<summary>
+						{changedTokens.length > 0
+							? `${changedTokens.length} updated`
+							: `${changes.length} token${changes.length !== 1 ? "s" : ""}`}
+						{createdTokens.length > 0 && ` · ${createdTokens.length} created`}
+						{unchangedTokens.length > 0 && ` · ${unchangedTokens.length} unchanged`}
+					</summary>
+					<ul className={styles.changesList}>
+						{changedTokens.slice(0, 30).map((change, i) => (
+							<li key={i} className={styles.changeRow}>
+								<code className={styles.changeName}>{change.name}</code>
+								<span className={styles.changeValues}>
+									<span className={styles.oldValue}>{change.oldValue}</span>
+									<ChevronRight size={10} />
+									<span className={styles.newValue}>{change.newValue}</span>
+								</span>
+							</li>
+						))}
+						{changedTokens.length > 30 && (
+							<li className={styles.changeMore}>
+								…and {changedTokens.length - 30} more
+							</li>
 						)}
-					</div>
+					</ul>
 				</details>
 			)}
 
@@ -188,58 +141,11 @@ export function SuccessView({
 							: <><AlertTriangle size={14} /> View {isOverrideMode ? "Skipped Tokens" : "Error Details"} ({errors.length})</>}
 					</summary>
 					<div className={styles.errorDetailsContent}>
-						{/* Error Summary */}
-						<div className={styles.errorSummary}>
-							<strong>
-								{isOverrideMode ? "Skip Summary:" : "Error Summary:"}
-							</strong>
-							<ul className={styles.errorSummaryList}>
-								{errorCategories.typeConflict.length > 0 && (
-									<li>
-										{errorCategories.typeConflict.length} type conflict
-										{errorCategories.typeConflict.length !== 1 ? "s" : ""}{" "}
-										(existing variable has different type)
-									</li>
-								)}
-								{errorCategories.unsupportedType.length > 0 && (
-									<li>
-										{errorCategories.unsupportedType.length} unsupported type
-										{errorCategories.unsupportedType.length !== 1 ? "s" : ""}
-									</li>
-								)}
-								{errorCategories.referenceError.length > 0 && (
-									<li>
-										{errorCategories.referenceError.length} reference error
-										{errorCategories.referenceError.length !== 1 ? "s" : ""}{" "}
-										(token not found)
-									</li>
-								)}
-								{errorCategories.creationError.length > 0 && (
-									<li>
-										{errorCategories.creationError.length} creation error
-										{errorCategories.creationError.length !== 1 ? "s" : ""}
-									</li>
-								)}
-								{errorCategories.other.length > 0 && (
-									<li>
-										{errorCategories.other.length} other error
-										{errorCategories.other.length !== 1 ? "s" : ""}
-									</li>
-								)}
-							</ul>
-						</div>
-
-						{/* Detailed Errors */}
-						<div className={styles.errorDetailedSection}>
-							<strong>
-								{isOverrideMode ? "Skipped Tokens:" : "Detailed Errors:"}
-							</strong>
-							<ul className={styles.errorList}>
-								{errors.map((error, i) => (
-									<li key={i}>{error}</li>
-								))}
-							</ul>
-						</div>
+						<ul className={styles.errorList}>
+							{errors.map((error, i) => (
+								<li key={i}>{error}</li>
+							))}
+						</ul>
 					</div>
 				</details>
 			)}

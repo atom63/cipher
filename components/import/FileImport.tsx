@@ -1,11 +1,11 @@
-import { FileText, FolderOpen } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 import type React from "react";
 import { useRef, useState } from "react";
 import { usePostMessage } from "../../hooks/useFigmaMessage";
 import { parseCSS } from "../../parsers/css-parser";
 import type { ParsedTokens } from "../../types/tokens";
 import { getErrorMessage } from "../../utils/error-handler";
-import { Button, LoadingState, SectionHeader, Textarea, useToast } from "../ui";
+import { LoadingState, useToast } from "../ui";
 import styles from "./FileImport.module.css";
 
 interface FileImportProps {
@@ -17,12 +17,17 @@ export function FileImport({
 }: FileImportProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
-	const [pastedContent, setPastedContent] = useState("");
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const { showError } = useToast();
 	const postMessage = usePostMessage();
 
+	const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 	const handleFile = async (file: File) => {
+		if (file.size > MAX_FILE_SIZE) {
+			showError("File too large. Maximum size is 5MB.");
+			return;
+		}
 		setIsLoading(true);
 		try {
 			const content = await file.text();
@@ -114,20 +119,8 @@ export function FileImport({
 		}
 	};
 
-	const handlePaste = () => {
-		if (pastedContent.trim()) {
-			parseContent(pastedContent);
-		}
-	};
-
 	return (
 		<div className={styles.fileImport}>
-			<SectionHeader
-				variant="secondary"
-				title="Import Design Tokens"
-				description="Upload or paste your design tokens to sync with Figma"
-			/>
-
 			{/* File Drop Zone */}
 			<div
 				className={`${styles.dropZone} ${isDragging ? styles.dragging : ""}`}
@@ -149,7 +142,7 @@ export function FileImport({
 					accept=".json,.css"
 					onChange={handleFileSelect}
 					ref={fileInputRef}
-					style={{ display: "none" }}
+					className={styles.hiddenInput}
 					type="file"
 				/>
 
@@ -168,72 +161,6 @@ export function FileImport({
 				)}
 			</div>
 
-			{/* Or Divider */}
-			<div className={styles.divider}>
-				<span>OR</span>
-			</div>
-
-			{/* Paste Area */}
-			<div className={styles.pasteArea}>
-				<Textarea
-					label="Paste JSON"
-					onChange={(e) => setPastedContent(e.target.value)}
-					placeholder={`{\n  "$collections": {...},\n  "tokens": {...}\n}`}
-					rows={8}
-					value={pastedContent}
-				/>
-				<Button
-					variant="primary"
-					disabled={!pastedContent.trim() || isLoading}
-					onClick={handlePaste}
-				>
-					<FileText size={14} />
-					Parse Tokens
-				</Button>
-			</div>
-
-			{/* Example */}
-			<div className={styles.example}>
-				<details>
-					<summary>View example formats</summary>
-					<div className={styles.exampleSection}>
-						<h4>Multi-Collection Format:</h4>
-						<pre>{`{
-  "$collections": {
-    "primitives": { "name": "Primitives", "modes": ["Default"] },
-    "semantic": { "name": "Semantic", "modes": ["Light", "Dark"] }
-  },
-  "tokens": {
-    "primitives": {
-      "blue": { "value": "oklch(0.623 0.214 259.815)", "type": "color" }
-    },
-    "semantic": {
-      "background": {
-        "type": "color",
-        "modes": {
-          "Light": "{primitives.blue}",
-          "Dark": "#000000"
-        }
-      }
-    }
-  }
-}`}</pre>
-					</div>
-					<div className={styles.exampleSection}>
-						<h4>Simple Format (Legacy):</h4>
-						<pre>{`{
-  "colors": {
-    "primary": "#3B82F6",
-    "gray-100": "#F3F4F6"
-  },
-  "spacing": {
-    "xs": 4,
-    "md": 16
-  }
-}`}</pre>
-					</div>
-				</details>
-			</div>
 		</div>
 	);
 }

@@ -1,36 +1,3 @@
-/* Progress View Component Styles */
-
-.progressView {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  text-align: center;
-  padding: var(--spacing-4xl) var(--spacing-xl);
-  gap: var(--spacing-lg);
-}
-
-.progressView h2 {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-semibold);
-}
-
-.progressView .spinner {
-  margin-bottom: var(--spacing-md);
-}
-
-.progressMessage {
-  font-size: var(--text-md);
-  color: var(--foreground);
-  font-weight: var(--font-medium);
-}
-
-.progressHint {
-  font-size: var(--text-sm);
-  color: var(--muted-foreground);
-}
-
 /* Success View Styles */
 .successView {
   display: flex;
@@ -53,6 +20,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.successIcon[data-status="error"] {
+  background: var(--destructive);
+}
+
+.successIcon[data-status="warning"] {
+  background: var(--warning);
 }
 
 .successView h2 {
@@ -128,39 +103,8 @@
   border-radius: var(--radius);
   margin-top: var(--spacing-sm);
   border: 1px solid var(--border);
-}
-
-.errorSummary {
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--border);
-  font-size: var(--text-sm);
-}
-
-.errorSummary strong {
-  color: var(--foreground);
-  font-weight: var(--font-semibold);
-}
-
-.errorSummaryList {
-  margin-top: var(--spacing-xs);
-  margin-bottom: 0;
-  padding-left: var(--spacing-lg);
-  list-style: disc;
-}
-
-.errorSummaryList li {
-  color: var(--muted-foreground);
-  margin-bottom: var(--spacing-xs);
-}
-
-.errorDetailedSection {
-  font-size: var(--text-sm);
-}
-
-.errorDetailedSection strong {
-  color: var(--foreground);
-  font-weight: var(--font-semibold);
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .errorList {
@@ -206,29 +150,28 @@
   display: flex;
   gap: var(--spacing-md);
   justify-content: center;
+  margin-top: var(--spacing-xl);
 }
 
-/* === Changes Details (Override Mode) === */
+/* === Changes Details === */
 .changesDetails {
-  margin-top: var(--spacing-lg);
+  width: 100%;
+  margin-bottom: var(--spacing-md);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--background);
   overflow: hidden;
+  text-align: left;
 }
 
 .changesDetails summary {
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
   background: var(--muted);
-  border-bottom: 1px solid var(--border);
   cursor: pointer;
-  font-weight: var(--font-semibold);
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
   color: var(--foreground);
   list-style: none;
   user-select: none;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
 }
 
 .changesDetails summary::-webkit-details-marker {
@@ -239,107 +182,58 @@
   background: var(--accent);
 }
 
-.changesDetailsContent {
-  padding: var(--spacing-lg);
-}
-
-.changesSummary {
-  padding: var(--spacing-md);
-  background: color-mix(in oklch, var(--info) 10%, transparent);
-  border: 1px solid color-mix(in oklch, var(--info) 25%, transparent);
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--spacing-lg);
-  font-size: var(--text-sm);
-  color: var(--info);
-}
-
-.changesSection {
-  margin-top: var(--spacing-md);
-}
-
-.changesSection > strong {
-  display: block;
-  margin-bottom: var(--spacing-md);
-  color: var(--foreground);
-  font-size: var(--text-sm);
-}
-
 .changesList {
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
+  max-height: 240px;
+  overflow-y: auto;
 }
 
-.changeItem {
-  padding: var(--spacing-md);
-  background: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+.changeRow {
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  font-size: var(--text-sm);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--text-xs);
+  border-top: 1px solid var(--border);
+}
+
+.changeRow:hover {
+  background: var(--accent);
 }
 
 .changeName {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  font-weight: var(--font-semibold);
-}
-
-.changeName code {
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
   color: var(--foreground);
-}
-
-.changeType {
-  padding: var(--spacing-2xs) var(--spacing-sm);
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border-radius: var(--radius-xs);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .changeValues {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-2xs);
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
   color: var(--muted-foreground);
+  flex-shrink: 0;
 }
 
 .oldValue {
-  padding: var(--spacing-2xs) var(--spacing-sm);
-  background: color-mix(in oklch, var(--destructive) 10%, transparent);
-  border: 1px solid color-mix(in oklch, var(--destructive) 25%, transparent);
-  border-radius: var(--radius-xs);
   color: var(--destructive);
 }
 
-.changeArrow {
-  color: var(--muted-foreground);
-  font-weight: var(--font-bold);
-}
-
 .newValue {
-  padding: var(--spacing-2xs) var(--spacing-sm);
-  background: color-mix(in oklch, var(--success) 10%, transparent);
-  border: 1px solid color-mix(in oklch, var(--success) 25%, transparent);
-  border-radius: var(--radius-xs);
   color: var(--success);
 }
 
 .changeMore {
-  padding: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   text-align: center;
   color: var(--muted-foreground);
-  font-style: italic;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  border-top: 1px solid var(--border);
 }
 

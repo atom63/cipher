@@ -1,6 +1,7 @@
-import { ArrowRight, FolderOpen, FolderPlus, Lightbulb } from "lucide-react";
+import { ArrowRight, FolderOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFigmaMessage, usePostMessage } from "../../hooks/useFigmaMessage";
+import type { DesignToken } from "../../types/tokens";
 import {
 	Button,
 	CheckboxCard,
@@ -17,17 +18,6 @@ interface Collection {
 	id: string;
 	name: string;
 	variableCount: number;
-}
-
-interface DesignToken {
-	id: string;
-	name: string;
-	figmaName: string;
-	value: any;
-	originalValue: string;
-	type: string;
-	category: string;
-	action: string;
 }
 
 interface CollectionSelectorProps {
@@ -59,7 +49,6 @@ export function CollectionSelector({
 		new Set(tokens.map((t) => t.category)),
 	);
 	const isMultiCollection = detectedCollections.length > 1;
-	const [hasExistingCollections, setHasExistingCollections] = useState(false);
 
 	// Track selected collections for multi-collection imports
 	const [selectedCollections, setSelectedCollections] = useState<Set<string>>(
@@ -82,7 +71,6 @@ export function CollectionSelector({
 			const hasExisting = detectedCollections.some((dc) =>
 				existingNames.includes(dc.toLowerCase()),
 			);
-			setHasExistingCollections(hasExisting);
 			setImportMode(hasExisting ? "override" : "import");
 
 			if (cols.length > 0) {
@@ -179,23 +167,8 @@ export function CollectionSelector({
 			) : isMultiCollection ? (
 				<>
 					<div className={styles.collectionForm}>
-						{/* Smart suggestion based on existing collections */}
-						{hasExistingCollections && (
-							<div
-								className={styles.previewNote}
-								style={{ marginBottom: "var(--spacing-lg)" }}
-							>
-								<Lightbulb size={14} /> <strong>Tip:</strong> We detected existing collections with
-								matching names.
-								<strong> Override mode</strong> is recommended for updating them
-								safely.
-							</div>
-						)}
-
-						{/* Import vs Override Mode - Always show for consistency */}
 						<RadioGroup
-							label="Action Type"
-							description="Choose how to handle these tokens"
+							label="Action"
 							name="actionType"
 							value={importMode}
 							onChange={(value: string) =>
@@ -206,13 +179,13 @@ export function CollectionSelector({
 									value: "import",
 									label: "Import (Create & Update)",
 									description:
-										"Create new collections/variables and update existing ones. Errors if references are missing.",
+										"Create new and update existing. Errors on missing references.",
 								},
 								{
 									value: "override",
 									label: "Override (Update Only)",
 									description:
-										"Only update existing collections/variables. Silently skips missing tokens and references.",
+										"Only update existing. Skips missing tokens and references.",
 								},
 							]}
 						/>
@@ -221,12 +194,12 @@ export function CollectionSelector({
 					<div className={styles.multiCollectionPreview}>
 						<div className={styles.previewHeader}>
 							<p className={styles.previewIntro}>
-								Select which collections to import:
+								Collections
 							</p>
 							<Button
 								variant="ghost"
+								size="sm"
 								onClick={toggleAllCollections}
-								style={{ fontSize: "12px", padding: "4px 8px", height: "auto" }}
 							>
 								{selectedCollections.size === detectedCollections.length
 									? "Deselect All"
@@ -242,22 +215,8 @@ export function CollectionSelector({
 									description={`${count} variable${count !== 1 ? "s" : ""}`}
 									checked={selectedCollections.has(name)}
 									onChange={() => toggleCollection(name)}
-									icon={<FolderPlus size={20} />}
 								/>
 							))}
-						</div>
-						<div className={styles.previewNote}>
-							<strong>
-								{selectedCollections.size} of {detectedCollections.length}{" "}
-								collection{detectedCollections.length !== 1 ? "s" : ""} selected
-							</strong>
-							{" • "}
-							<strong>
-								{importMode === "override" ? "Override Mode:" : "Import Mode:"}
-							</strong>{" "}
-							{importMode === "override"
-								? "Will only update existing collections. Missing collections/variables will be skipped."
-								: "Will create new collections if they don't exist, and update existing ones."}
 						</div>
 					</div>
 
@@ -271,31 +230,15 @@ export function CollectionSelector({
 							disabled={selectedCollections.size === 0}
 						>
 							<ArrowRight size={14} />
-							Continue to Review ({selectedCollections.size} collection
-							{selectedCollections.size !== 1 ? "s" : ""})
+							Continue ({selectedCollections.size} of {detectedCollections.length})
 						</Button>
 					</div>
 				</>
 			) : (
 				<>
 					<div className={styles.collectionForm}>
-						{/* Smart suggestion based on existing collections */}
-						{hasExistingCollections && (
-							<div
-								className={styles.previewNote}
-								style={{ marginBottom: "var(--spacing-lg)" }}
-							>
-								<Lightbulb size={14} /> <strong>Tip:</strong> We detected existing collections with
-								matching names.
-								<strong> Override mode</strong> is recommended for updating them
-								safely.
-							</div>
-						)}
-
-						{/* Import vs Override Mode */}
 						<RadioGroup
-							label="Action Type"
-							description="Choose how to handle these tokens"
+							label="Action"
 							name="actionType"
 							value={importMode}
 							onChange={(value: string) =>
@@ -306,13 +249,13 @@ export function CollectionSelector({
 									value: "import",
 									label: "Import (Create & Update)",
 									description:
-										"Create new variables and update existing ones. Errors if references are missing.",
+										"Create new and update existing. Errors on missing references.",
 								},
 								{
 									value: "override",
 									label: "Override (Update Only)",
 									description:
-										"Only update existing variables. Silently skips missing tokens and references.",
+										"Only update existing. Skips missing tokens and references.",
 								},
 							]}
 						/>

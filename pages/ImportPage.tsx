@@ -177,14 +177,24 @@ export function ImportPage() {
 		});
 	};
 
-	const handleCancel = () => {
+	const resetState = () => {
 		setView("upload");
 		setTokens([]);
 		setCollectionName("Design Tokens");
 		setImportMode("import");
 		setSelectedCollections([]);
 		setConflicts([]);
+		setStylesData(undefined);
+		setResult({
+			success: 0,
+			failed: 0,
+			errors: [],
+			changes: [],
+			undoData: undefined,
+		});
 	};
+
+	const handleCancel = () => resetState();
 
 	const handleBackToCollection = () => {
 		setView("collection");
@@ -203,21 +213,7 @@ export function ImportPage() {
 		}
 	};
 
-	const handleImportMore = () => {
-		setView("upload");
-		setTokens([]);
-		setStylesData(undefined);
-		setResult({
-			success: 0,
-			failed: 0,
-			errors: [],
-			changes: [],
-			undoData: undefined,
-		});
-		setImportMode("import");
-		setSelectedCollections([]);
-		setConflicts([]);
-	};
+	const handleImportMore = () => resetState();
 
 	return (
 		<div className="page-content">
