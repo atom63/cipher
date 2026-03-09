@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
 	generateTokenId,
+	parseCollectionJSON,
 	parseJSON,
 	parseTokenObjectDynamic,
 	parseTokenValueGeneric,
@@ -359,5 +360,172 @@ describe("parseJSON", () => {
 		expect(result.tokens).toHaveLength(2);
 		expect(result.tokens[0].figmaName).toBe("colors/brand/primary/default");
 		expect(result.tokens[1].figmaName).toBe("colors/brand/primary/hover");
+	});
+
+	test("passes through styles section from combined export", () => {
+		const json = JSON.stringify({
+			$schema: "design-tokens-with-collections",
+			$version: "1.0",
+			$collections: {
+				primitives: {
+					name: "Primitives",
+					modes: ["Default"],
+				},
+			},
+			tokens: {
+				primitives: {
+					red: { value: "#ff0000", type: "color" },
+				},
+			},
+			styles: {
+				paint: {
+					semantics: {
+						background: {
+							id: "S:123",
+							type: "color",
+							fills: [{ type: "solid", color: "#ffffff", opacity: 1 }],
+						},
+					},
+				},
+				text: {
+					heading: {
+						id: "S:456",
+						type: "text",
+						fontFamily: "Inter",
+						fontSize: "24px",
+					},
+				},
+			},
+		});
+
+		const result = parseJSON(json);
+		expect(result.tokens.length).toBeGreaterThan(0);
+		expect(result.styles).toBeDefined();
+		expect(result.styles.paint).toBeDefined();
+		expect(result.styles.paint.semantics.background.id).toBe("S:123");
+		expect(result.styles.text).toBeDefined();
+		expect(result.styles.text.heading.fontFamily).toBe("Inter");
+	});
+
+	test("does not include styles when none in JSON", () => {
+		const json = JSON.stringify({
+			$collections: { primitives: { name: "Primitives", modes: ["Default"] } },
+			tokens: {
+				primitives: { red: { value: "#ff0000", type: "color" } },
+			},
+		});
+
+		const result = parseJSON(json);
+		expect(result.styles).toBeUndefined();
+	});
+
+	test("rejects styles-only files", () => {
+		const json = JSON.stringify({
+			$schema: "figma-styles-export",
+			$version: "1.0",
+			styles: {
+				paint: {},
+			},
+		});
+
+		const result = parseJSON(json);
+		expect(result.tokens).toHaveLength(0);
+		expect(result.errors.length).toBeGreaterThan(0);
+		expect(result.errors[0].message).toContain("Figma Styles file");
+	});
+});
+
+describe("parseCollectionJSON", () => {
+	test("parses multi-collection tokens", () => {
+		const data = {
+			$collections: {
+				primitives: { name: "Primitives", modes: ["Default"] },
+				semantics: { name: "Semantics", modes: ["Light", "Dark"] },
+			},
+			tokens: {
+				primitives: {
+					red: { value: "#ff0000", type: "color" },
+					blue: { value: "#0000ff", type: "color" },
+				},
+				semantics: {
+					background: {
+						type: "color",
+						modes: {
+							Light: "#ffffff",
+							Dark: "#000000",
+						},
+					},
+				},
+			},
+		};
+
+		const result = parseCollectionJSON(data, 0);
+		expect(result.tokens.length).toBeGreaterThanOrEqual(3);
+		expect(result.stats.byCategory.primitives).toBe(2);
+	});
+
+	test("passes through styles section", () => {
+		const data = {
+			$collections: {
+				primitives: { name: "Primitives", modes: ["Default"] },
+			},
+			tokens: {
+				primitives: {
+					red: { value: "#ff0000", type: "color" },
+				},
+			},
+			styles: {
+				paint: { bg: { id: "S:1", type: "color" } },
+				effect: { shadow: { id: "S:2", type: "effect" } },
+			},
+		};
+
+		const result = parseCollectionJSON(data, 0);
+		expect(result.styles).toBeDefined();
+		expect(result.styles.paint.bg.id).toBe("S:1");
+		expect(result.styles.effect.shadow.id).toBe("S:2");
+	});
+
+	test("omits styles when not present", () => {
+		const data = {
+			$collections: {
+				primitives: { name: "Primitives", modes: ["Default"] },
+			},
+			tokens: {
+				primitives: {
+					red: { value: "#ff0000", type: "color" },
+				},
+			},
+		};
+
+		const result = parseCollectionJSON(data, 0);
+		expect(result.styles).toBeUndefined();
+	});
+
+	test("handles references between collections", () => {
+		const data = {
+			$collections: {
+				primitives: { name: "Primitives", modes: ["Default"] },
+				semantics: { name: "Semantics", modes: ["Light"] },
+			},
+			tokens: {
+				primitives: {
+					blue: { value: "#3B82F6", type: "color" },
+				},
+				semantics: {
+					primary: {
+						type: "color",
+						modes: {
+							Light: "{primitives.blue}",
+						},
+					},
+				},
+			},
+		};
+
+		const result = parseCollectionJSON(data, 0);
+		const refToken = result.tokens.find((t) => t.type === "reference");
+		expect(refToken).toBeDefined();
+		expect(refToken!.value).toBe("{primitives.blue}");
 	});
 });
