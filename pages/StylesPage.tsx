@@ -202,7 +202,7 @@ export function StylesPage() {
 			setRebindLoading(false);
 			setRebindExcluded(new Set());
 			if (msg.data.suggestions.length === 0) {
-				showSuccess("No unbound colors found that match any local variables");
+				showSuccess("No unbound properties found that match any local variables");
 				setShowRebind(false);
 			}
 		} else if (msg.type === "rebind-applied") {
@@ -210,7 +210,7 @@ export function StylesPage() {
 			if (failed > 0) showError(`${failed} rebind(s) failed`);
 			else
 				showSuccess(
-					`Rebound ${success} color${success !== 1 ? "s" : ""} to variables`,
+					`Rebound ${success} propert${success !== 1 ? "ies" : "y"} to variables`,
 					applied.length > 0
 						? {
 								label: "Undo",
@@ -379,7 +379,7 @@ export function StylesPage() {
 			selectedIds.size > 0
 				? Array.from(selectedIds)
 				: styles
-						.filter((s) => s.category === "paint" || s.category === "effect")
+						.filter((s) => s.category === "paint" || s.category === "effect" || s.category === "text")
 						.map((s) => s.id);
 		setRebindLoading(true);
 		setShowRebind(true);
@@ -726,7 +726,7 @@ export function StylesPage() {
 			{showRebind && (
 				<div className="manage-action-panel">
 					<div className="manage-action-panel-header">
-						<span>Rebind — reconnect unbound colors to matching variables</span>
+						<span>Rebind — reconnect unbound properties to matching variables</span>
 						<button
 							type="button"
 							className="manage-panel-close"
@@ -742,7 +742,7 @@ export function StylesPage() {
 
 					{rebindLoading ? (
 						<div className="styles-rebind-loading">
-							Scanning for unbound colors…
+							Scanning for unbound properties…
 						</div>
 					) : rebindSuggestions.length > 0 ? (
 						<div className="styles-rebind-list">
@@ -762,7 +762,11 @@ export function StylesPage() {
 											checked={!rebindExcluded.has(i)}
 											onChange={() => toggleRebindExclude(i)}
 										/>
-										<ColorSwatch color={s.currentColor} />
+										{s.currentColor ? (
+											<ColorSwatch color={s.currentColor} />
+										) : (
+											<span className="styles-rebind-value">{s.currentValue}</span>
+										)}
 										<span
 											className="styles-rebind-style-name"
 											title={s.styleName}
@@ -773,7 +777,15 @@ export function StylesPage() {
 													? ` (gradient stop)`
 													: s.field.startsWith("effect:")
 														? ` (effect)`
-														: ""}
+														: s.field === "fontSize"
+															? ` (font size)`
+															: s.field === "lineHeight"
+																? ` (line height)`
+																: s.field === "fontFamily"
+																	? ` (font family)`
+																	: s.field === "fontWeight"
+																		? ` (font weight)`
+																		: ""}
 											</span>
 										</span>
 										<span className="manage-rename-arrow">
@@ -810,10 +822,9 @@ export function StylesPage() {
 								>
 									<Check size={14} />
 									Rebind {rebindSuggestions.length - rebindExcluded.size}{" "}
-									color
-									{rebindSuggestions.length - rebindExcluded.size !== 1
-										? "s"
-										: ""}
+									propert{rebindSuggestions.length - rebindExcluded.size !== 1
+										? "ies"
+										: "y"}
 								</Button>
 							</div>
 						</div>

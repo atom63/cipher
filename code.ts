@@ -222,21 +222,11 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						: "auto";
 				const bv = (s as any).boundVariables || {};
 				const variables: Record<string, string> = {};
-				if (bv.fontSize) {
-					const n = resolveVarName(bv.fontSize);
-					if (n) variables.fontSize = n;
-				}
-				if (bv.lineHeight) {
-					const n = resolveVarName(bv.lineHeight);
-					if (n) variables.lineHeight = n;
-				}
-				if (bv.letterSpacing) {
-					const n = resolveVarName(bv.letterSpacing);
-					if (n) variables.letterSpacing = n;
-				}
-				if (bv.paragraphSpacing) {
-					const n = resolveVarName(bv.paragraphSpacing);
-					if (n) variables.paragraphSpacing = n;
+				for (const field of ["fontSize", "lineHeight", "letterSpacing", "paragraphSpacing", "fontFamily", "fontWeight"]) {
+					if (bv[field]) {
+						const n = resolveVarName(bv[field]);
+						if (n) variables[field] = n;
+					}
 				}
 				styles.push({
 					id: s.id,
@@ -391,51 +381,117 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 		case "scan-rebind": {
 			const { styleIds } = msg.data;
-			// Build a map of all local COLOR variables with their resolved hex values per mode
-			const allVars = figma.variables.getLocalVariables("COLOR");
-			const varColorMap: { id: string; name: string; colors: string[] }[] = [];
-			for (const v of allVars) {
-				const collection = figma.variables.getVariableCollectionById(
-					v.variableCollectionId,
-				);
+
+			// --- Build variable lookup maps ---
+
+			// Color variables: keyed by RGBA (including alpha)
+			const colorVars = figma.variables.getLocalVariables("COLOR");
+			const varColorMap: { id: string; name: string; keys: string[] }[] = [];
+
+			const colorKey = (r: number, g: number, b: number, a: number) => {
+				return `${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)},${Math.round(a * 100)}`;
+			};
+
+			const rgbToHex = (c: RGB | RGBA, alpha?: number) => {
+				const r = Math.round(c.r * 255);
+				const g = Math.round(c.g * 255);
+				const b = Math.round(c.b * 255);
+				const hex = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+				const a = alpha ?? ("a" in c ? c.a : 1);
+				return a < 1 ? `${hex} ${Math.round(a * 100)}%` : hex;
+			};
+
+			for (const v of colorVars) {
+				const collection = figma.variables.getVariableCollectionById(v.variableCollectionId);
 				if (!collection) continue;
-				const colors: string[] = [];
+				const keys: string[] = [];
 				for (const modeId of collection.modes.map((m) => m.modeId)) {
 					const val = v.valuesByMode[modeId];
 					if (val && typeof val === "object" && "r" in val) {
 						const c = val as RGBA;
-						const r = Math.round(c.r * 255);
-						const g = Math.round(c.g * 255);
-						const b = Math.round(c.b * 255);
-						colors.push(
-							`#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`,
-						);
+						keys.push(colorKey(c.r, c.g, c.b, "a" in c ? c.a : 1));
 					}
 				}
-				varColorMap.push({ id: v.id, name: v.name, colors });
+				varColorMap.push({ id: v.id, name: v.name, keys });
 			}
+
+			// Float variables: keyed by numeric value (for fontSize, lineHeight)
+			const floatVars = figma.variables.getLocalVariables("FLOAT");
+			const varFloatMap: { id: string; name: string; values: number[] }[] = [];
+			const resolveFloat = (val: any, depth = 0): number | undefined => {
+				if (typeof val === "number") return val;
+				if (depth > 3) return undefined;
+				if (val && typeof val === "object" && "type" in val && val.type === "VARIABLE_ALIAS") {
+					const ref = figma.variables.getVariableById(val.id);
+					if (ref) {
+						const refCol = figma.variables.getVariableCollectionById(ref.variableCollectionId);
+						if (refCol) {
+							const firstMode = refCol.modes[0]?.modeId;
+							if (firstMode) return resolveFloat(ref.valuesByMode[firstMode], depth + 1);
+						}
+					}
+				}
+				return undefined;
+			};
+			for (const v of floatVars) {
+				const collection = figma.variables.getVariableCollectionById(v.variableCollectionId);
+				if (!collection) continue;
+				const values: number[] = [];
+				for (const modeId of collection.modes.map((m) => m.modeId)) {
+					const val = v.valuesByMode[modeId];
+					const resolved = resolveFloat(val);
+					if (resolved != null) values.push(resolved);
+				}
+				varFloatMap.push({ id: v.id, name: v.name, values });
+			}
+
+			// String variables: keyed by string value (for fontFamily, fontWeight)
+			const stringVars = figma.variables.getLocalVariables("STRING");
+			const varStringMap: { id: string; name: string; values: string[] }[] = [];
+			const resolveString = (val: any, depth = 0): string | undefined => {
+				if (typeof val === "string") return val;
+				if (depth > 3) return undefined;
+				if (val && typeof val === "object" && "type" in val && val.type === "VARIABLE_ALIAS") {
+					const ref = figma.variables.getVariableById(val.id);
+					if (ref) {
+						const refCol = figma.variables.getVariableCollectionById(ref.variableCollectionId);
+						if (refCol) {
+							const firstMode = refCol.modes[0]?.modeId;
+							if (firstMode) return resolveString(ref.valuesByMode[firstMode], depth + 1);
+						}
+					}
+				}
+				return undefined;
+			};
+			for (const v of stringVars) {
+				const collection = figma.variables.getVariableCollectionById(v.variableCollectionId);
+				if (!collection) continue;
+				const values: string[] = [];
+				for (const modeId of collection.modes.map((m) => m.modeId)) {
+					const val = v.valuesByMode[modeId];
+					const resolved = resolveString(val);
+					if (resolved != null) values.push(resolved);
+				}
+				varStringMap.push({ id: v.id, name: v.name, values });
+			}
+
+			console.log("[Cipher] Float vars:", varFloatMap.length, varFloatMap.slice(0, 10).map(v => v.name + "=" + v.values.join("|")));
+			console.log("[Cipher] String vars:", varStringMap.length, varStringMap.map(v => v.name + "=" + v.values.join("|")));
 
 			const suggestions: any[] = [];
 
-			// Helper to find matching variable by hex color
-			const findByColor = (hex: string) => {
-				const lower = hex.toLowerCase();
-				return varColorMap.find((v) =>
-					v.colors.some((c) => c.toLowerCase() === lower),
-				);
+			// --- Helpers ---
+
+			const findByColor = (key: string) => {
+				return varColorMap.find((v) => v.keys.some((k) => k === key));
 			};
-			// Helper to find matching variable by name similarity
-			const findByName = (styleName: string) => {
-				// Extract last segment of style name path
+
+			const findColorByName = (styleName: string) => {
 				const parts = styleName.split("/");
-				const leaf = parts[parts.length - 1]
-					.toLowerCase()
-					.replace(/[\s-_]/g, "");
+				const leaf = parts[parts.length - 1].toLowerCase().replace(/[\s-_]/g, "");
 				return varColorMap.find((v) => {
 					const vParts = v.name.split("/");
-					const vLeaf = vParts[vParts.length - 1]
-						.toLowerCase()
-						.replace(/[\s-_]/g, "");
+					const vLeaf = vParts[vParts.length - 1].toLowerCase().replace(/[\s-_]/g, "");
 					return (
 						vLeaf === leaf ||
 						v.name.toLowerCase().replace(/[\s-_/]/g, "") ===
@@ -444,12 +500,60 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				});
 			};
 
-			const rgbToHex = (c: RGB | RGBA) => {
-				const r = Math.round(c.r * 255);
-				const g = Math.round(c.g * 255);
-				const b = Math.round(c.b * 255);
-				return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+			// Normalize a path for comparison: lowercase, strip separators
+			const normalizePath = (p: string) => p.toLowerCase().replace(/[\s-_]/g, "");
+
+			// Find a float variable by style path + property suffix, then fall back to value + name hints
+			// e.g. styleName="typography/large-title", suffix="font-size" → looks for "typography/large-title/font-size"
+			const findFloatVar = (value: number, styleName: string, suffix: string, ...fallbackHints: string[]) => {
+				const styleNorm = normalizePath(styleName);
+				const suffixNorm = normalizePath(suffix);
+				// 1. Path-based: variable name ends with stylePath/suffix pattern
+				const pathMatch = varFloatMap.find((v) => {
+					const vNorm = normalizePath(v.name);
+					return v.values.some((val) => val === value) && (
+						vNorm.endsWith(`${styleNorm}/${suffixNorm}`) ||
+						vNorm.includes(`${styleNorm}/${suffixNorm}`)
+					);
+				});
+				if (pathMatch) return { var: pathMatch, type: "exact" as const };
+				// 2. Fallback: value match + name must contain one of the hints
+				for (const hint of [suffix, ...fallbackHints]) {
+					const hintNorm = normalizePath(hint);
+					const match = varFloatMap.find(
+						(v) => v.values.some((val) => val === value) && normalizePath(v.name).includes(hintNorm),
+					);
+					if (match) return { var: match, type: "name" as const };
+				}
+				return undefined;
 			};
+
+			// Find a string variable by style path + property suffix, then fall back to value + name hints
+			const findStringVar = (value: string, styleName: string, suffix: string, ...fallbackHints: string[]) => {
+				const lower = value.toLowerCase();
+				const styleNorm = normalizePath(styleName);
+				const suffixNorm = normalizePath(suffix);
+				// 1. Path-based
+				const pathMatch = varStringMap.find((v) => {
+					const vNorm = normalizePath(v.name);
+					return v.values.some((val) => val.toLowerCase() === lower) && (
+						vNorm.endsWith(`${styleNorm}/${suffixNorm}`) ||
+						vNorm.includes(`${styleNorm}/${suffixNorm}`)
+					);
+				});
+				if (pathMatch) return { var: pathMatch, type: "exact" as const };
+				// 2. Fallback: value match + name must contain one of the hints
+				for (const hint of [suffix, ...fallbackHints]) {
+					const hintNorm = normalizePath(hint);
+					const match = varStringMap.find(
+						(v) => v.values.some((val) => val.toLowerCase() === lower) && normalizePath(v.name).includes(hintNorm),
+					);
+					if (match) return { var: match, type: "name" as const };
+				}
+				return undefined;
+			};
+
+			// --- Scan styles ---
 
 			for (const styleId of styleIds) {
 				const style = figma.getStyleById(styleId);
@@ -461,18 +565,19 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						if (paint.type === "SOLID") {
 							const bv = (paint as any).boundVariables || {};
 							if (!bv.color) {
-								// Unbound solid — try to match
-								const hex = rgbToHex((paint as SolidPaint).color);
-								const match = findByColor(hex) || findByName(paintStyle.name);
+								const solid = paint as SolidPaint;
+								const alpha = solid.opacity ?? 1;
+								const key = colorKey(solid.color.r, solid.color.g, solid.color.b, alpha);
+								const match = findByColor(key) || findColorByName(paintStyle.name);
 								if (match) {
 									suggestions.push({
 										styleId,
 										styleName: paintStyle.name,
 										field: `solid:${pi}`,
-										currentColor: hex,
+										currentColor: rgbToHex(solid.color, alpha),
 										suggestedVariableId: match.id,
 										suggestedVariableName: match.name,
-										matchType: findByColor(hex) ? "exact" : "name",
+										matchType: findByColor(key) ? "exact" : "name",
 									});
 								}
 							}
@@ -481,14 +586,15 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							grad.gradientStops.forEach((stop, si) => {
 								const stopBv = (stop as any).boundVariables || {};
 								if (!stopBv.color) {
-									const hex = rgbToHex(stop.color);
-									const match = findByColor(hex);
+									const a = "a" in stop.color ? stop.color.a : 1;
+									const key = colorKey(stop.color.r, stop.color.g, stop.color.b, a);
+									const match = findByColor(key);
 									if (match) {
 										suggestions.push({
 											styleId,
 											styleName: paintStyle.name,
 											field: `stop:${pi}:${si}`,
-											currentColor: hex,
+											currentColor: rgbToHex(stop.color),
 											suggestedVariableId: match.id,
 											suggestedVariableName: match.name,
 											matchType: "exact",
@@ -504,14 +610,16 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						if (e.type === "DROP_SHADOW" || e.type === "INNER_SHADOW") {
 							const bv = (e as any).boundVariables || {};
 							if (!bv.color) {
-								const hex = rgbToHex((e as DropShadowEffect).color);
-								const match = findByColor(hex);
+								const shadow = e as DropShadowEffect;
+								const a = "a" in shadow.color ? shadow.color.a : 1;
+								const key = colorKey(shadow.color.r, shadow.color.g, shadow.color.b, a);
+								const match = findByColor(key);
 								if (match) {
 									suggestions.push({
 										styleId,
 										styleName: effectStyle.name,
 										field: `effect:${ei}`,
-										currentColor: hex,
+										currentColor: rgbToHex(shadow.color),
 										suggestedVariableId: match.id,
 										suggestedVariableName: match.name,
 										matchType: "exact",
@@ -520,6 +628,97 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							}
 						}
 					});
+				} else if (style.type === "TEXT") {
+					const textStyle = style as TextStyle;
+					const bv = (textStyle as any).boundVariables || {};
+					const styleName = textStyle.name;
+					console.log("[Cipher] TEXT style:", styleName, "bv keys:", JSON.stringify(Object.keys(bv)), "fontSize:", textStyle.fontSize, "family:", textStyle.fontName.family, "style:", textStyle.fontName.style);
+
+					// fontSize — path-based: e.g. "typography/large-title" → "typography/large-title/font-size"
+					if (!bv.fontSize) {
+						const size = textStyle.fontSize as number;
+						const result = findFloatVar(size, styleName, "font-size");
+						console.log("[Cipher] fontSize scan:", styleName, "size=", size, "result=", result ? result.var.name : "none");
+						if (result) {
+							suggestions.push({
+								styleId,
+								styleName,
+								field: "fontSize",
+								currentValue: `${size}px`,
+								suggestedVariableId: result.var.id,
+								suggestedVariableName: result.var.name,
+								matchType: result.type,
+							});
+						}
+					}
+
+					// lineHeight — path-based: e.g. "typography/large-title" → "typography/large-title/line-height"
+					if (!bv.lineHeight) {
+						const lh = textStyle.lineHeight as any;
+						if (lh && typeof lh === "object" && lh.unit === "PIXELS" && typeof lh.value === "number") {
+							const result = findFloatVar(lh.value, styleName, "line-height");
+							if (result) {
+								suggestions.push({
+									styleId,
+									styleName,
+									field: "lineHeight",
+									currentValue: `${lh.value}px`,
+									suggestedVariableId: result.var.id,
+									suggestedVariableName: result.var.name,
+									matchType: result.type,
+								});
+							}
+						}
+					}
+
+					// fontFamily — path-based, then fallback to any "family" variable
+					if (!bv.fontFamily) {
+						const family = textStyle.fontName.family;
+						const result = findStringVar(family, styleName, "font-family", "family");
+						if (result) {
+							suggestions.push({
+								styleId,
+								styleName,
+								field: "fontFamily",
+								currentValue: family,
+								suggestedVariableId: result.var.id,
+								suggestedVariableName: result.var.name,
+								matchType: result.type,
+							});
+						}
+					}
+
+					// fontWeight — match numeric weight against FLOAT variables
+					if (!bv.fontWeight) {
+						const fontStyleName = textStyle.fontName.style;
+						const weightMap: Record<string, number> = {
+							thin: 100, hairline: 100,
+							"extra light": 200, ultralight: 200,
+							light: 300,
+							regular: 400, normal: 400,
+							medium: 500,
+							"semi bold": 600, semibold: 600, demibold: 600,
+							bold: 700,
+							"extra bold": 800, ultrabold: 800, extrabold: 800,
+							black: 900, heavy: 900,
+							"extra black": 950, ultrablack: 950,
+						};
+						const numWeight = weightMap[fontStyleName.toLowerCase()];
+						if (numWeight != null) {
+							const result = findFloatVar(numWeight, styleName, "font-weight", "weight");
+							if (result) {
+								suggestions.push({
+									styleId,
+									styleName,
+									field: "fontWeight",
+									currentValue: `${fontStyleName} (${numWeight})`,
+									suggestedVariableId: result.var.id,
+									suggestedVariableName: result.var.name,
+									matchType: result.type,
+								});
+							}
+						}
+					}
 				}
 			}
 
@@ -613,6 +812,23 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						} else {
 							failed++;
 						}
+					} else if (style.type === "TEXT") {
+						const textStyle = style as TextStyle;
+						const fieldMap: Record<string, string> = {
+							fontSize: "fontSize",
+							lineHeight: "lineHeight",
+							fontFamily: "fontFamily",
+							fontStyle: "fontStyle",
+							fontWeight: "fontWeight",
+						};
+						const bindField = fieldMap[field];
+						if (bindField) {
+							textStyle.setBoundVariable(bindField as any, variable);
+							success++;
+							applied.push({ styleId, field });
+						} else {
+							failed++;
+						}
 					} else {
 						failed++;
 					}
@@ -627,7 +843,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				data: { success, failed, applied },
 			});
 			figma.notify(
-				`Rebound ${success} color${success !== 1 ? "s" : ""} to variables${failed > 0 ? ` (${failed} failed)` : ""}`,
+				`Rebound ${success} propert${success !== 1 ? "ies" : "y"} to variables${failed > 0 ? ` (${failed} failed)` : ""}`,
 			);
 			break;
 		}
@@ -704,6 +920,15 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							} else {
 								failed++;
 							}
+						} else {
+							failed++;
+						}
+					} else if (style.type === "TEXT") {
+						const textStyle = style as TextStyle;
+						const textFields = ["fontSize", "lineHeight", "fontFamily", "fontWeight", "fontStyle"];
+						if (textFields.includes(field)) {
+							textStyle.setBoundVariable(field as any, null);
+							success++;
 						} else {
 							failed++;
 						}

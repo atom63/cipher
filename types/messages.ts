@@ -242,13 +242,16 @@ export interface ScanRebindMessage {
 	};
 }
 
-/** A suggested rebinding: unbound color → matching variable */
+/** A suggested rebinding: unbound style property → matching variable */
 export interface RebindSuggestion {
 	styleId: string;
 	styleName: string;
-	/** 'solid' for paint color, 'stop:0', 'stop:1' for gradient stops, 'effect:0' for effect colors */
+	/** Field identifier: 'solid:0', 'stop:0:1', 'effect:0' for colors; 'fontSize', 'lineHeight', 'fontFamily', 'fontStyle' for text */
 	field: string;
-	currentColor: string;
+	/** Current color hex (for color bindings) */
+	currentColor?: string;
+	/** Current value display string (for text bindings) */
+	currentValue?: string;
 	suggestedVariableId: string;
 	suggestedVariableName: string;
 	matchType: "exact" | "name";
