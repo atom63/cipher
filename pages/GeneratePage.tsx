@@ -184,67 +184,30 @@ export function GeneratePage() {
 						/>
 
 						<div className={styles.configSection}>
-							{/* Primary color */}
-							<div className={styles.colorInputGroup}>
-								<label>Primary color</label>
-								<div className={styles.colorInputRow}>
-									<input
-										type="color"
-										className={styles.colorSwatch}
-										value={primaryColor}
-										onChange={(e) => setPrimaryColor(e.target.value)}
-										aria-label="Primary color picker"
-									/>
-									<Input
-										className={styles.colorHexInput}
-										value={primaryColor}
-										onChange={(e) => {
-											let v = e.target.value;
-											if (!v.startsWith("#")) v = `#${v}`;
-											if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
-												setPrimaryColor(v.toUpperCase());
-										}}
-										placeholder="#3B82F6"
-										maxLength={7}
-										spellCheck={false}
-										autoComplete="off"
-									/>
-								</div>
-								{generated && (
-									<ColorRampPreview
-										scale={generated.primitives.find((s) => s.name === "brand")}
-									/>
-								)}
-							</div>
-
-							{/* Secondary color */}
-							<div className={styles.colorInputGroup}>
-								<CheckboxWithLabel
-									id="has-secondary"
-									checked={hasSecondary}
-									onChange={setHasSecondary}
-									label="Secondary / accent color"
-								/>
-								{hasSecondary && (
-									<>
+							{/* ── Brand Colors ── */}
+							<section className={styles.section}>
+								<h3 className={styles.sectionTitle}>Brand Colors</h3>
+								<div className={styles.sectionContent}>
+									<div className={styles.fieldGroup}>
+										<label>Primary color</label>
 										<div className={styles.colorInputRow}>
 											<input
 												type="color"
 												className={styles.colorSwatch}
-												value={secondaryColor}
-												onChange={(e) => setSecondaryColor(e.target.value)}
-												aria-label="Secondary color picker"
+												value={primaryColor}
+												onChange={(e) => setPrimaryColor(e.target.value)}
+												aria-label="Primary color picker"
 											/>
 											<Input
 												className={styles.colorHexInput}
-												value={secondaryColor}
+												value={primaryColor}
 												onChange={(e) => {
 													let v = e.target.value;
 													if (!v.startsWith("#")) v = `#${v}`;
 													if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
-														setSecondaryColor(v.toUpperCase());
+														setPrimaryColor(v.toUpperCase());
 												}}
-												placeholder="#10B981"
+												placeholder="#3B82F6"
 												maxLength={7}
 												spellCheck={false}
 												autoComplete="off"
@@ -252,267 +215,316 @@ export function GeneratePage() {
 										</div>
 										{generated && (
 											<ColorRampPreview
-												scale={generated.primitives.find((s) => s.name === "secondary")}
+												scale={generated.primitives.find((s) => s.name === "brand")}
 											/>
 										)}
-									</>
-								)}
-							</div>
-
-							{/* Gray palette selector */}
-							<div className={styles.colorInputGroup}>
-								<label>Neutral palette</label>
-								<div className={styles.graySelector}>
-									{RADIX_GRAYS.map((g) => (
-										<button
-											key={g.name}
-											type="button"
-											className={styles.grayOption}
-											data-selected={grayName === g.name}
-											onClick={() => setGrayName(g.name)}
-											title={g.label}
-											aria-pressed={grayName === g.name}
-											aria-label={`${g.label} neutral palette`}
-										>
-											<div className={styles.grayPreview}>
-												{[0, 2, 4, 7, 10, 11].map((i) => (
-													<div
-														key={i}
-														className={styles.grayDot}
-														style={{ backgroundColor: g.light[i] }}
-													/>
-												))}
-											</div>
-											<span className={styles.grayName}>{g.name}</span>
-										</button>
-									))}
-								</div>
-							</div>
-
-							{/* Dark mode toggle */}
-							<CheckboxWithLabel
-								id="dark-mode"
-								checked={darkMode}
-								onChange={setDarkMode}
-								label="Generate Light + Dark modes"
-							/>
-
-							{/* Layer mode */}
-							<div className={styles.colorInputGroup}>
-								<label>Structure</label>
-								<div className={styles.layerOptions}>
-									{LAYER_OPTIONS.map((opt) => (
-										<RadioCard
-											key={opt.value}
-											id={`layer-${opt.value}`}
-											name="layers"
-											value={opt.value}
-											checked={layers === opt.value}
-											onChange={(v) => setLayers(v as LayerMode)}
-											title={opt.title}
-											description={opt.desc}
-										/>
-									))}
-								</div>
-							</div>
-
-							{/* Radius */}
-							<div className={styles.colorInputGroup}>
-								<label>Radius anchor (px)</label>
-								<div className={styles.radiusAnchorRow}>
-									<NumberField
-										value={radiusAnchor}
-										onChange={setRadiusAnchor}
-										onBlur={() =>
-											setRadiusAnchor(Math.min(32, Math.max(0, radiusAnchor || 0)))
-										}
-										min={0}
-										max={32}
-										className={styles.radiusAnchorInput}
-									/>
-									<span className={styles.hint}>
-										Base "lg" — other sizes derived via offsets
-									</span>
-								</div>
-								{generated?.radiusScale && (
-									<RadiusPreview scale={generated.radiusScale} />
-								)}
-							</div>
-
-							{/* Typescale */}
-							<div className={styles.colorInputGroup}>
-								<label>Typescale</label>
-								<div className={styles.typescaleConfig}>
-									<div className={styles.typescaleRow}>
-										<div className={styles.optionGroup}>
-											<label>Base (px)</label>
-											<NumberField
-												value={typescale.base}
-												onChange={(v) => setTypescale({ ...typescale, base: v })}
-												onBlur={() =>
-													setTypescale({
-														...typescale,
-														base: Math.min(48, Math.max(8, typescale.base || 16)),
-													})
-												}
-												min={8}
-												max={48}
-											/>
-										</div>
-										<div className={styles.optionGroup}>
-											<label>Body line height (%)</label>
-											<NumberField
-												value={typescale.lineHeightBody}
-												onChange={(v) => setTypescale({ ...typescale, lineHeightBody: v })}
-												onBlur={() =>
-													setTypescale({
-														...typescale,
-														lineHeightBody: Math.min(200, Math.max(100, typescale.lineHeightBody || 150)),
-													})
-												}
-												min={100}
-												max={200}
-												step={5}
-											/>
-										</div>
-										<div className={styles.optionGroup}>
-											<label>Heading line height (%)</label>
-											<NumberField
-												value={typescale.lineHeightHeading}
-												onChange={(v) => setTypescale({ ...typescale, lineHeightHeading: v })}
-												onBlur={() =>
-													setTypescale({
-														...typescale,
-														lineHeightHeading: Math.min(175, Math.max(100, typescale.lineHeightHeading || 125)),
-													})
-												}
-												min={100}
-												max={175}
-												step={5}
-											/>
-										</div>
 									</div>
 
-									<div className={styles.optionGroup}>
-										<label>Scale ratio</label>
-										<div className={styles.ratioSelector}>
-											{Object.entries(TYPESCALE_RATIOS).map(([key, r]) => (
+									<div className={styles.fieldGroup}>
+										<CheckboxWithLabel
+											id="has-secondary"
+											checked={hasSecondary}
+											onChange={setHasSecondary}
+											label="Secondary / accent color"
+										/>
+										{hasSecondary && (
+											<>
+												<div className={styles.colorInputRow}>
+													<input
+														type="color"
+														className={styles.colorSwatch}
+														value={secondaryColor}
+														onChange={(e) => setSecondaryColor(e.target.value)}
+														aria-label="Secondary color picker"
+													/>
+													<Input
+														className={styles.colorHexInput}
+														value={secondaryColor}
+														onChange={(e) => {
+															let v = e.target.value;
+															if (!v.startsWith("#")) v = `#${v}`;
+															if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
+																setSecondaryColor(v.toUpperCase());
+														}}
+														placeholder="#10B981"
+														maxLength={7}
+														spellCheck={false}
+														autoComplete="off"
+													/>
+												</div>
+												{generated && (
+													<ColorRampPreview
+														scale={generated.primitives.find((s) => s.name === "secondary")}
+													/>
+												)}
+											</>
+										)}
+									</div>
+
+									<div className={styles.fieldGroup}>
+										<label>Neutral palette</label>
+										<div className={styles.graySelector}>
+											{RADIX_GRAYS.map((g) => (
 												<button
-													key={key}
+													key={g.name}
 													type="button"
-													className={styles.ratioOption}
-													data-selected={typescale.ratio === key}
-													aria-pressed={typescale.ratio === key}
-													onClick={() =>
-														setTypescale({ ...typescale, ratio: key })
-													}
-													title={`${r.label} (${r.value})`}
+													className={styles.grayOption}
+													data-selected={grayName === g.name}
+													onClick={() => setGrayName(g.name)}
+													title={g.label}
+													aria-pressed={grayName === g.name}
+													aria-label={`${g.label} neutral palette`}
 												>
-													<span className={styles.ratioLabel}>{r.label}</span>
-													<span className={styles.ratioValue}>{r.value}</span>
+													<div className={styles.grayPreview}>
+														{[0, 2, 4, 7, 10, 11].map((i) => (
+															<div
+																key={i}
+																className={styles.grayDot}
+																style={{ backgroundColor: g.light[i] }}
+															/>
+														))}
+													</div>
+													<span className={styles.grayName}>{g.name}</span>
 												</button>
 											))}
 										</div>
 									</div>
+								</div>
+							</section>
 
-									<div className={styles.typescaleRow}>
-										<div className={styles.optionGroup}>
-											<label>Steps up</label>
+							{/* ── Appearance ── */}
+							<section className={styles.section}>
+								<h3 className={styles.sectionTitle}>Appearance</h3>
+								<div className={styles.sectionContent}>
+									<CheckboxWithLabel
+										id="dark-mode"
+										checked={darkMode}
+										onChange={setDarkMode}
+										label="Generate Light + Dark modes"
+									/>
+
+									<div className={styles.fieldGroup}>
+										<label>Structure</label>
+										<div className={styles.layerOptions}>
+											{LAYER_OPTIONS.map((opt) => (
+												<RadioCard
+													key={opt.value}
+													id={`layer-${opt.value}`}
+													name="layers"
+													value={opt.value}
+													checked={layers === opt.value}
+													onChange={(v) => setLayers(v as LayerMode)}
+													title={opt.title}
+													description={opt.desc}
+												/>
+											))}
+										</div>
+									</div>
+
+									<div className={styles.fieldGroup}>
+										<label>Radius anchor (px)</label>
+										<div className={styles.radiusAnchorRow}>
 											<NumberField
-												value={typescale.stepsUp}
-												onChange={(v) => setTypescale({ ...typescale, stepsUp: v })}
+												value={radiusAnchor}
+												onChange={setRadiusAnchor}
 												onBlur={() =>
-													setTypescale({
-														...typescale,
-														stepsUp: Math.min(7, Math.max(0, typescale.stepsUp || 0)),
-													})
+													setRadiusAnchor(Math.min(32, Math.max(0, radiusAnchor || 0)))
 												}
 												min={0}
-												max={7}
+												max={32}
+												className={styles.radiusAnchorInput}
 											/>
+											<span className={styles.hint}>
+												Base "lg" — other sizes derived via offsets
+											</span>
 										</div>
-										<div className={styles.optionGroup}>
-											<label>Steps down</label>
-											<NumberField
-												value={typescale.stepsDown}
-												onChange={(v) => setTypescale({ ...typescale, stepsDown: v })}
-												onBlur={() =>
-													setTypescale({
-														...typescale,
-														stepsDown: Math.min(4, Math.max(0, typescale.stepsDown || 0)),
-													})
-												}
-												min={0}
-												max={4}
-											/>
+										{generated?.radiusScale && (
+											<RadiusPreview scale={generated.radiusScale} />
+										)}
+									</div>
+								</div>
+							</section>
+
+							{/* ── Typography ── */}
+							<section className={styles.section}>
+								<h3 className={styles.sectionTitle}>Typography</h3>
+								<div className={styles.sectionContent}>
+									<div className={styles.typescaleConfig}>
+										<div className={styles.typescaleRow}>
+											<div className={styles.optionGroup}>
+												<label>Base (px)</label>
+												<NumberField
+													value={typescale.base}
+													onChange={(v) => setTypescale({ ...typescale, base: v })}
+													onBlur={() =>
+														setTypescale({
+															...typescale,
+															base: Math.min(48, Math.max(8, typescale.base || 16)),
+														})
+													}
+													min={8}
+													max={48}
+												/>
+											</div>
+											<div className={styles.optionGroup}>
+												<label>Body line height (%)</label>
+												<NumberField
+													value={typescale.lineHeightBody}
+													onChange={(v) => setTypescale({ ...typescale, lineHeightBody: v })}
+													onBlur={() =>
+														setTypescale({
+															...typescale,
+															lineHeightBody: Math.min(200, Math.max(100, typescale.lineHeightBody || 150)),
+														})
+													}
+													min={100}
+													max={200}
+													step={5}
+												/>
+											</div>
+											<div className={styles.optionGroup}>
+												<label>Heading line height (%)</label>
+												<NumberField
+													value={typescale.lineHeightHeading}
+													onChange={(v) => setTypescale({ ...typescale, lineHeightHeading: v })}
+													onBlur={() =>
+														setTypescale({
+															...typescale,
+															lineHeightHeading: Math.min(175, Math.max(100, typescale.lineHeightHeading || 125)),
+														})
+													}
+													min={100}
+													max={175}
+													step={5}
+												/>
+											</div>
 										</div>
+
 										<div className={styles.optionGroup}>
+											<label>Scale ratio</label>
+											<div className={styles.ratioSelector}>
+												{Object.entries(TYPESCALE_RATIOS).map(([key, r]) => (
+													<button
+														key={key}
+														type="button"
+														className={styles.ratioOption}
+														data-selected={typescale.ratio === key}
+														aria-pressed={typescale.ratio === key}
+														onClick={() =>
+															setTypescale({ ...typescale, ratio: key })
+														}
+														title={`${r.label} (${r.value})`}
+													>
+														<span className={styles.ratioLabel}>{r.label}</span>
+														<span className={styles.ratioValue}>{r.value}</span>
+													</button>
+												))}
+											</div>
+										</div>
+
+										<div className={styles.typescaleRow}>
+											<div className={styles.optionGroup}>
+												<label>Steps up</label>
+												<NumberField
+													value={typescale.stepsUp}
+													onChange={(v) => setTypescale({ ...typescale, stepsUp: v })}
+													onBlur={() =>
+														setTypescale({
+															...typescale,
+															stepsUp: Math.min(7, Math.max(0, typescale.stepsUp || 0)),
+														})
+													}
+													min={0}
+													max={7}
+												/>
+											</div>
+											<div className={styles.optionGroup}>
+												<label>Steps down</label>
+												<NumberField
+													value={typescale.stepsDown}
+													onChange={(v) => setTypescale({ ...typescale, stepsDown: v })}
+													onBlur={() =>
+														setTypescale({
+															...typescale,
+															stepsDown: Math.min(4, Math.max(0, typescale.stepsDown || 0)),
+														})
+													}
+													min={0}
+													max={4}
+												/>
+											</div>
+											<div className={styles.optionGroup} />
+										</div>
+									</div>
+
+									<TypescalePreview config={typescale} />
+
+									<div className={styles.fieldGroup}>
+										<label>Font families</label>
+										<div className={styles.fontInputs}>
+											<div className={styles.fontInputRow}>
+												<label>Sans</label>
+												<Input
+													value={fonts.sans ?? ""}
+													onChange={(e) =>
+														setFonts({ ...fonts, sans: e.target.value })
+													}
+													placeholder="System default"
+													maxLength={64}
+													spellCheck={false}
+													autoComplete="off"
+												/>
+											</div>
+											<div className={styles.fontInputRow}>
+												<label>Serif</label>
+												<Input
+													value={fonts.serif ?? ""}
+													onChange={(e) =>
+														setFonts({ ...fonts, serif: e.target.value })
+													}
+													placeholder="System default"
+													maxLength={64}
+													spellCheck={false}
+													autoComplete="off"
+												/>
+											</div>
+											<div className={styles.fontInputRow}>
+												<label>Mono</label>
+												<Input
+													value={fonts.mono ?? ""}
+													onChange={(e) =>
+														setFonts({ ...fonts, mono: e.target.value })
+													}
+													placeholder="System default"
+													maxLength={64}
+													spellCheck={false}
+													autoComplete="off"
+												/>
+											</div>
 										</div>
 									</div>
 								</div>
-								<TypescalePreview config={typescale} />
-							</div>
+							</section>
 
-							{/* Font names */}
-							<div className={styles.colorInputGroup}>
-								<label>Fonts</label>
-								<div className={styles.fontInputs}>
-									<div className={styles.fontInputRow}>
-										<label>Sans</label>
+							{/* ── Output ── */}
+							<section className={styles.section}>
+								<h3 className={styles.sectionTitle}>Output</h3>
+								<div className={styles.sectionContent}>
+									<div className={styles.fieldGroup}>
+										<label>Collection name</label>
 										<Input
-											value={fonts.sans ?? ""}
-											onChange={(e) =>
-												setFonts({ ...fonts, sans: e.target.value })
-											}
-											placeholder="System default"
+											value={collectionName}
+											onChange={(e) => setCollectionName(e.target.value)}
+											onBlur={() => {
+												if (!collectionName.trim()) setCollectionName("generated");
+											}}
+											placeholder="generated"
 											maxLength={64}
 											spellCheck={false}
-											autoComplete="off"
-										/>
-									</div>
-									<div className={styles.fontInputRow}>
-										<label>Serif</label>
-										<Input
-											value={fonts.serif ?? ""}
-											onChange={(e) =>
-												setFonts({ ...fonts, serif: e.target.value })
-											}
-											placeholder="System default"
-											maxLength={64}
-											spellCheck={false}
-											autoComplete="off"
-										/>
-									</div>
-									<div className={styles.fontInputRow}>
-										<label>Mono</label>
-										<Input
-											value={fonts.mono ?? ""}
-											onChange={(e) =>
-												setFonts({ ...fonts, mono: e.target.value })
-											}
-											placeholder="System default"
-											maxLength={64}
-											spellCheck={false}
-											autoComplete="off"
 										/>
 									</div>
 								</div>
-							</div>
-
-							{/* Collection name */}
-							<div className={styles.colorInputGroup}>
-								<label>Collection name</label>
-								<Input
-									value={collectionName}
-									onChange={(e) => setCollectionName(e.target.value)}
-									onBlur={() => {
-										if (!collectionName.trim()) setCollectionName("generated");
-									}}
-									placeholder="generated"
-									maxLength={64}
-									spellCheck={false}
-								/>
-							</div>
+							</section>
 
 							{/* Preview button */}
 							<div className={styles.actions}>
