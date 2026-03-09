@@ -553,7 +553,6 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: var(--spacing-md);
-  padding: var(--spacing-sm) 0;
   flex-shrink: 0;
 }
 
@@ -581,6 +580,17 @@ body {
   padding: var(--spacing-xs) var(--spacing-sm);
   flex: 1;
   max-width: 240px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+
+  &:focus-within {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 1px var(--ring);
+  }
+
+  .manage-search-icon {
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+  }
 
   input {
     border: none;
@@ -592,6 +602,24 @@ body {
 
     &::placeholder {
       color: var(--muted-foreground);
+    }
+  }
+
+  .manage-search-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    border-radius: var(--radius-xs);
+    transition: color var(--transition);
+
+    &:hover {
+      color: var(--foreground);
     }
   }
 }
@@ -608,42 +636,45 @@ body {
   max-width: 100%;
   transition: border-color var(--transition), box-shadow var(--transition);
 
-  &:focus {
+  &:hover {
+    border-color: var(--muted-foreground);
+  }
+
+  &:focus-visible {
     border-color: var(--ring);
-    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+    box-shadow: 0 0 0 1px var(--ring);
   }
 }
 
 .manage-actionbar {
   display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  border-top: 1px solid var(--border);
-  padding-top: var(--spacing-xs);
-}
-
-.manage-actionbar-row {
-  display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
+  min-height: var(--size-7, 1.75rem);
+  flex-shrink: 0;
 }
 
-.manage-actionbar-row + .manage-actionbar-row {
-  margin-top: var(--spacing-2xs);
-}
-
-.manage-actionbar-label,
 .manage-selection-count {
   font-size: var(--text-xs);
   color: var(--muted-foreground);
   white-space: nowrap;
+  min-width: max-content;
 }
 
 .manage-actionbar-actions {
   display: flex;
   align-items: center;
   gap: var(--spacing-2xs);
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+
+  hr {
+    align-self: center;
+    height: 14px;
+  }
 }
+
 
 .manage-action-panel {
   border: 1px solid var(--border);
@@ -698,12 +729,6 @@ body {
   border-top: 1px solid var(--border);
 }
 
-.manage-action-separator {
-  width: 1px;
-  height: 16px;
-  background: var(--border);
-  flex-shrink: 0;
-}
 
 .manage-rename-inputs {
   display: flex;

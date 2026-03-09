@@ -32,10 +32,14 @@ import {
 	Dialog,
 	DialogActions,
 	EmptyState,
+	Frame,
+	FrameFooter,
+	FramePanel,
 	Input,
 	LoadingState,
 	RenameDialog,
 	SectionHeader,
+	Separator,
 	Tabs,
 	useToast,
 } from "../components/ui";
@@ -849,17 +853,29 @@ export function ManagePage({
 				variant="primary"
 			/>
 
-			{/* Toolbar */}
+			{/* Toolbar + Action bar */}
+			<Frame>
+			<FramePanel>
 			<div className="manage-toolbar">
 				<div className="manage-toolbar-left">
 					<div className="manage-search">
-						<Search size={14} />
+						<Search className="manage-search-icon" size={14} />
 						<input
 							onChange={(e) => setSearch(e.target.value)}
 							placeholder="Search variables…"
 							type="text"
 							value={search}
 						/>
+						{search && (
+							<button
+								aria-label="Clear search"
+								className="manage-search-clear"
+								onClick={() => setSearch("")}
+								type="button"
+							>
+								<X size={12} />
+							</button>
+						)}
 					</div>
 
 					<select
@@ -894,97 +910,97 @@ export function ManagePage({
 						aria-label="Refresh variables"
 						data-tooltip="Refresh"
 						onClick={loadVariables}
+						size="icon-sm"
 						variant="ghost"
 					>
 						<RefreshCw size={14} />
 					</Button>
 				</div>
 			</div>
-
-			{/* Action bar */}
-			<div className="manage-actionbar">
-				<div className="manage-actionbar-row">
-					<span className="manage-selection-count">
-						{selectedIds.size} selected
-					</span>
-					<div className="manage-actionbar-actions">
-						<Button
-							disabled={selectedIds.size === 0}
-							onClick={() => openPanel("rename")}
-							size="sm"
-							variant="outline"
-						>
-							<PenLine size={14} />
-							Rename
-						</Button>
-						<Button
-							disabled={selectedIds.size === 0}
-							onClick={() => openPanel("edit")}
-							size="sm"
-							variant="outline"
-						>
-							<Pencil size={14} />
-							Edit
-						</Button>
-						<Button
-							disabled={selectedIds.size === 0}
-							onClick={() => openPanel("move")}
-							size="sm"
-							variant="outline"
-						>
-							<FolderInput size={14} />
-							Move
-						</Button>
-						<Button
-							disabled={operationPending || selectedIds.size === 0}
-							onClick={handleDuplicate}
-							size="sm"
-							variant="outline"
-						>
-							<Copy size={14} />
-							Duplicate
-						</Button>
-						<Button
-							disabled={selectedIds.size === 0}
-							onClick={() => {
-								postMessage({
-									type: "check-dependencies",
-									data: { variableIds: Array.from(selectedIds) },
-								});
-							}}
-							size="sm"
-							variant="outline"
-						>
-							<Trash2 size={14} />
-							Delete
-						</Button>
-						<Button
-							aria-label="Clear selection"
-							data-tooltip="Clear selection (Esc)"
-							disabled={selectedIds.size === 0}
-							onClick={selectNone}
-							size="sm"
-							variant="outline"
-						>
-							<X size={14} />
-						</Button>
-					</div>
+			</FramePanel>
+			<FrameFooter className="manage-actionbar">
+				<span className="manage-selection-count">
+					{selectedIds.size} selected
+				</span>
+				<div className="manage-actionbar-actions">
+					{/* Edit group */}
+					<Button
+						disabled={selectedIds.size === 0}
+						onClick={() => openPanel("rename")}
+						size="sm"
+						variant="ghost"
+					>
+						<PenLine size={14} />
+						Rename
+					</Button>
+					<Button
+						disabled={selectedIds.size === 0}
+						onClick={() => openPanel("edit")}
+						size="sm"
+						variant="ghost"
+					>
+						<Pencil size={14} />
+						Edit
+					</Button>
+					<Button
+						disabled={selectedIds.size === 0}
+						onClick={() => openPanel("move")}
+						size="sm"
+						variant="ghost"
+					>
+						<FolderInput size={14} />
+						Move
+					</Button>
+					<Separator orientation="vertical" />
+					{/* Transform group */}
+					<Button
+						disabled={operationPending || selectedIds.size === 0}
+						onClick={handleDuplicate}
+						size="sm"
+						variant="ghost"
+					>
+						<Copy size={14} />
+						Duplicate
+					</Button>
+					<Button
+						disabled={selectedIds.size === 0}
+						onClick={() => openPanel("scale")}
+						size="sm"
+						variant="ghost"
+					>
+						<ArrowUpDown size={14} />
+						Scale
+					</Button>
+					<Separator orientation="vertical" />
+					{/* Destructive */}
+					<Button
+						disabled={selectedIds.size === 0}
+						onClick={() => {
+							postMessage({
+								type: "check-dependencies",
+								data: { variableIds: Array.from(selectedIds) },
+							});
+						}}
+						size="sm"
+						variant="ghost"
+					>
+						<Trash2 size={14} />
+						Delete
+					</Button>
 				</div>
-				<div className="manage-actionbar-row">
-					<span className="manage-actionbar-label">Transform</span>
-					<div className="manage-actionbar-actions">
-						<Button
-							disabled={selectedIds.size === 0}
-							onClick={() => openPanel("scale")}
-							size="sm"
-							variant="outline"
-						>
-							<ArrowUpDown size={14} />
-							Scale
-						</Button>
-					</div>
-				</div>
-			</div>
+				{selectedIds.size > 0 && (
+					<Button
+						aria-label="Clear selection"
+						data-tooltip="Clear selection (Esc)"
+						onClick={selectNone}
+						size="icon-sm"
+						variant="ghost"
+					>
+						<X size={14} />
+					</Button>
+				)}
+			</FrameFooter>
+			</Frame>
 
 			{/* Rename dialog */}
 			<RenameDialog

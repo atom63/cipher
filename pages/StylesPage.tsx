@@ -27,10 +27,14 @@ import {
 	Dialog,
 	DialogActions,
 	EmptyState,
+	Frame,
+	FrameFooter,
+	FramePanel,
 	GradientSwatch,
 	LoadingState,
 	RenameDialog,
 	SectionHeader,
+	Separator,
 	useToast,
 } from "../components/ui";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
@@ -744,17 +748,29 @@ export function StylesPage() {
 				variant="primary"
 			/>
 
-			{/* Toolbar */}
+			{/* Toolbar + Action bar */}
+			<Frame>
+			<FramePanel>
 			<div className="manage-toolbar">
 				<div className="manage-toolbar-left">
 					<div className="manage-search">
-						<Search size={14} />
+						<Search className="manage-search-icon" size={14} />
 						<input
 							onChange={(e) => setSearch(e.target.value)}
 							placeholder="Search styles…"
 							type="text"
 							value={search}
 						/>
+						{search && (
+							<button
+								aria-label="Clear search"
+								className="manage-search-clear"
+								onClick={() => setSearch("")}
+								type="button"
+							>
+								<X size={12} />
+							</button>
+						)}
 					</div>
 
 					<select
@@ -774,83 +790,95 @@ export function StylesPage() {
 
 				<div className="manage-toolbar-right">
 					<Button
-						data-tooltip="Rebind unbound colors to variables"
+						aria-label="Rebind unbound colors to variables"
+						data-tooltip="Rebind"
 						onClick={handleScanRebind}
+						size="icon-sm"
 						variant="ghost"
 					>
 						<Unlink size={14} />
 					</Button>
-					<Button data-tooltip="Refresh"onClick={loadStyles} variant="ghost" >
+					<Button
+						aria-label="Refresh styles"
+						data-tooltip="Refresh"
+						onClick={loadStyles}
+						size="icon-sm"
+						variant="ghost"
+					>
 						<RefreshCw size={14} />
 					</Button>
 				</div>
 			</div>
-
-			{/* Action bar */}
-			<div className="manage-actionbar">
-				<div className="manage-actionbar-row">
-					<span className="manage-selection-count">
-						{selectedIds.size} selected
-					</span>
-					<div className="manage-actionbar-actions">
-						<Button
-							disabled={selectedIds.size === 0}
-							onClick={() => setShowRename(!showRename)}
-							size="sm"
-							variant="outline"
-						>
-							<PenLine size={14} />
-							Rename
-						</Button>
-						<Button
-							disabled={selectedIds.size === 0}
-							onClick={openEdit}
-							size="sm"
-							variant="outline"
-						>
-							<Pencil size={14} />
-							Edit
-						</Button>
-						<Button
-							disabled={operationPending || selectedIds.size === 0}
-							onClick={handleDuplicate}
-							size="sm"
-							variant="outline"
-						>
-							<Copy size={14} />
-							Duplicate
-						</Button>
-						<Button
-							disabled={selectedIds.size === 0}
-							onClick={handleScanRebind}
-							size="sm"
-							variant="outline"
-						>
-							<Unlink size={14} />
-							Rebind
-						</Button>
-						<Button
-							disabled={selectedIds.size === 0}
-							onClick={() => setPendingDelete(true)}
-							size="sm"
-							variant="outline"
-						>
-							<Trash2 size={14} />
-							Delete
-						</Button>
-						<Button
-							aria-label="Clear selection"
-							data-tooltip="Clear selection (Esc)"
-							disabled={selectedIds.size === 0}
-							onClick={selectNone}
-							size="sm"
-							variant="outline"
-						>
-							<X size={14} />
-						</Button>
-					</div>
+			</FramePanel>
+			<FrameFooter className="manage-actionbar">
+				<span className="manage-selection-count">
+					{selectedIds.size} selected
+				</span>
+				<div className="manage-actionbar-actions">
+					{/* Edit group */}
+					<Button
+						disabled={selectedIds.size === 0}
+						onClick={() => setShowRename(!showRename)}
+						size="sm"
+						variant="ghost"
+					>
+						<PenLine size={14} />
+						Rename
+					</Button>
+					<Button
+						disabled={selectedIds.size === 0}
+						onClick={openEdit}
+						size="sm"
+						variant="ghost"
+					>
+						<Pencil size={14} />
+						Edit
+					</Button>
+					<Separator orientation="vertical" />
+					{/* Transform group */}
+					<Button
+						disabled={operationPending || selectedIds.size === 0}
+						onClick={handleDuplicate}
+						size="sm"
+						variant="ghost"
+					>
+						<Copy size={14} />
+						Duplicate
+					</Button>
+					<Button
+						disabled={selectedIds.size === 0}
+						onClick={handleScanRebind}
+						size="sm"
+						variant="ghost"
+					>
+						<Unlink size={14} />
+						Rebind
+					</Button>
+					<Separator orientation="vertical" />
+					{/* Destructive */}
+					<Button
+						disabled={selectedIds.size === 0}
+						onClick={() => setPendingDelete(true)}
+						size="sm"
+						variant="ghost"
+					>
+						<Trash2 size={14} />
+						Delete
+					</Button>
 				</div>
-			</div>
+				{selectedIds.size > 0 && (
+					<Button
+						aria-label="Clear selection"
+						data-tooltip="Clear selection (Esc)"
+						onClick={selectNone}
+						size="icon-sm"
+						variant="ghost"
+					>
+						<X size={14} />
+					</Button>
+				)}
+			</FrameFooter>
+			</Frame>
 
 			{/* Rename dialog */}
 			<RenameDialog

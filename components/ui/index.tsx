@@ -24,6 +24,7 @@ export { ConfirmDialog, Dialog, DialogActions } from "./Dialog";
 export { Dropdown } from "./Dropdown";
 export { EmptyState } from "./EmptyState";
 export { ErrorBoundary, PageErrorBoundary } from "./ErrorBoundary";
+export { Frame, FrameFooter, FrameHeader, FramePanel } from "./Frame";
 export { Input } from "./Input";
 export { NumberField } from "./NumberField";
 export { Radio, RadioCard, RadioWithHelper, RadioWithLabel } from "./Radio";
@@ -31,6 +32,7 @@ export { RadioGroup } from "./RadioGroup";
 export { RenameDialog } from "./RenameDialog";
 // Layout Components
 export { SectionHeader } from "./SectionHeader";
+export { Separator } from "./Separator";
 // Skeleton Components
 export { Skeleton } from "./Skeleton";
 export { LoadingState, Spinner } from "./Spinner";

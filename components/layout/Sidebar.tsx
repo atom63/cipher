@@ -9,6 +9,7 @@ import {
 	Sparkles,
 	Upload,
 } from "lucide-react";
+import { Separator } from "../ui";
 import styles from "./Sidebar.module.css";
 
 export type PageId =
@@ -128,8 +129,7 @@ export function Sidebar({
 					{featureItems.map(renderMenuItem)}
 				</div>
 
-				{/* Separator */}
-				<div className={styles.sidebarSeparator} />
+				<Separator className={styles.sidebarSeparator} />
 
 				{/* Config Section */}
 				<div className={styles.sidebarSection}>

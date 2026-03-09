@@ -31,9 +31,7 @@
 }
 
 .sidebarSeparator {
-  height: 1px;
   margin: var(--spacing-sm) var(--spacing-xs);
-  background: var(--border);
 }
 
 .sidebarItem {
