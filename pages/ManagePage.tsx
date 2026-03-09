@@ -820,10 +820,31 @@ export function ManagePage({
 		);
 	}
 
+	// First-run: no variables at all — show wizard without toolbar/header chrome
+	if (variables.length === 0) {
+		return (
+			<div className="manage-page" ref={listRef}>
+				<FirstRunWizard
+					onCreateTokens={(tokens: DesignToken[]) => {
+						postMessage({
+							type: "create-variables",
+							data: {
+								tokens,
+								collectionName: "Starter Kit",
+								importMode: "import",
+							},
+						});
+					}}
+					onNavigate={(page) => onNavigate?.(page)}
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<div className="manage-page" ref={listRef}>
 			<SectionHeader
-				description={`${variables.length} variables across ${collections.length} collection${collections.length !== 1 ? "s" : ""}`}
+				description={`${variables.length} variable${variables.length !== 1 ? "s" : ""} across ${collections.length} collection${collections.length !== 1 ? "s" : ""}`}
 				title="Manage Variables"
 				variant="primary"
 			/>
@@ -1409,22 +1430,7 @@ export function ManagePage({
 
 			{/* Variable list */}
 			{filtered.length === 0 ? (
-				variables.length === 0 ? (
-					<FirstRunWizard
-						onCreateTokens={(tokens: DesignToken[]) => {
-							postMessage({
-								type: "create-variables",
-								data: {
-									tokens,
-									collectionName: "Starter Kit",
-									importMode: "import",
-								},
-							});
-						}}
-						onNavigate={(page) => onNavigate?.(page)}
-					/>
-				) : (
-					<EmptyState
+				<EmptyState
 						action={
 							<Button
 								onClick={() => {
@@ -1442,7 +1448,6 @@ export function ManagePage({
 						icon={<Search size={24} />}
 						title="No variables found"
 					/>
-				)
 			) : (
 				<div className="manage-list">
 					{/* Header */}

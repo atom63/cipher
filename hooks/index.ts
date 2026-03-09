@@ -3,6 +3,7 @@
  * Hooks barrel export
  */
 
+export { useDebouncedValue } from "./useDebouncedValue";
 export {
 	useFigmaMessage,
 	useFigmaMessages,
@@ -10,8 +11,7 @@ export {
 	usePostMessage,
 	useRequestOnMount,
 } from "./useFigmaMessage";
-export { useDebouncedValue } from "./useDebouncedValue";
 export { useListKeyboard } from "./useListKeyboard";
-export { useRename } from "./useRename";
 export type { RenameMode, RenamePreviewItem } from "./useRename";
+export { useRename } from "./useRename";
 export { useSelection } from "./useSelection";

@@ -6,19 +6,21 @@ interface UseSelectionOptions {
 }
 
 interface UseSelectionReturn {
+	contextSelect: (id: string) => void;
+	selectAll: () => void;
 	selectedIds: Set<string>;
+	selectNone: () => void;
 	setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
 	toggleSelect: (id: string, event?: React.MouseEvent) => void;
-	selectAll: () => void;
-	selectNone: () => void;
-	contextSelect: (id: string) => void;
 }
 
 /**
  * Shared selection logic with shift-click range selection.
  * Used by both ManagePage (variables) and StylesPage (styles).
  */
-export function useSelection({ allIds }: UseSelectionOptions): UseSelectionReturn {
+export function useSelection({
+	allIds,
+}: UseSelectionOptions): UseSelectionReturn {
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [lastClickedId, setLastClickedId] = useState<string | null>(null);
 

@@ -167,6 +167,14 @@ export function FirstRunWizard({
 						data-selected={selected === tpl.id}
 						key={tpl.id}
 						onClick={() => setSelected(tpl.id)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								e.preventDefault();
+								setSelected(tpl.id);
+							}
+						}}
+						role="button"
+						tabIndex={0}
 					>
 						<div className={styles.templateIcon}>{tpl.icon}</div>
 						<div className={styles.templateBody}>
@@ -191,11 +199,9 @@ export function FirstRunWizard({
 			</div>
 
 			<Button
-				className={styles.confirm}
 				disabled={!selected || creating}
 				loading={creating}
 				onClick={handleConfirm}
-				style={{ alignSelf: "stretch" }}
 				variant="primary"
 			>
 				{!selected

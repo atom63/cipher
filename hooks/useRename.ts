@@ -4,8 +4,8 @@ export type RenameMode = "find-replace" | "prefix" | "suffix";
 
 export interface RenamePreviewItem {
 	id: string;
-	oldName: string;
 	newName: string | null;
+	oldName: string;
 }
 
 interface UseRenameOptions {
@@ -14,24 +14,24 @@ interface UseRenameOptions {
 }
 
 export interface UseRenameReturn {
-	renameMode: RenameMode;
-	setRenameMode: (mode: RenameMode) => void;
-	findText: string;
-	setFindText: (text: string) => void;
-	replaceText: string;
-	setReplaceText: (text: string) => void;
-	useRegex: boolean;
-	setUseRegex: (val: boolean) => void;
-	renamePrefix: string;
-	setRenamePrefix: (text: string) => void;
-	renameSuffix: string;
-	setRenameSuffix: (text: string) => void;
-	/** All selected items with their computed new names (null = unchanged) */
-	preview: RenamePreviewItem[];
 	/** Only items that will actually change */
 	changes: { id: string; oldName: string; newName: string }[];
+	findText: string;
+	/** All selected items with their computed new names (null = unchanged) */
+	preview: RenamePreviewItem[];
+	renameMode: RenameMode;
+	renamePrefix: string;
+	renameSuffix: string;
+	replaceText: string;
 	/** Reset all rename state */
 	reset: () => void;
+	setFindText: (text: string) => void;
+	setRenameMode: (mode: RenameMode) => void;
+	setRenamePrefix: (text: string) => void;
+	setRenameSuffix: (text: string) => void;
+	setReplaceText: (text: string) => void;
+	setUseRegex: (val: boolean) => void;
+	useRegex: boolean;
 }
 
 /**
@@ -68,7 +68,15 @@ export function useRename({ items }: UseRenameOptions): UseRenameReturn {
 
 			return { id: item.id, oldName: item.name, newName };
 		});
-	}, [items, renameMode, findText, replaceText, useRegex, renamePrefix, renameSuffix]);
+	}, [
+		items,
+		renameMode,
+		findText,
+		replaceText,
+		useRegex,
+		renamePrefix,
+		renameSuffix,
+	]);
 
 	const changes = useMemo(
 		() =>
