@@ -10,7 +10,7 @@
 
 /// <reference types="@figma/plugin-typings" />
 
-import { convertColor, convertColorOpaque } from "../libraries/color-converters";
+import { convertColor } from "../libraries/color-converters";
 import {
 	isVariableAlias,
 	resolveVariableReference,
@@ -147,45 +147,84 @@ function inferPrefix(name: string, resolvedType: string): string {
 	const lower = name.toLowerCase();
 	const firstSegment = lower.split("/")[0];
 
-	if (resolvedType === "COLOR") {
-		return "color";
-	}
-
+	// Spacing → --spacing-*
 	if (firstSegment === "spacing" || lower.includes("/spacing/"))
 		return "spacing";
-	if (firstSegment === "radius" || lower.includes("/radius/")) return "radius";
+	// Sizes → --size-* (note: "sizes" category maps to "size" prefix)
 	if (firstSegment === "size" || firstSegment === "sizes") return "size";
-	if (firstSegment === "z-index" || firstSegment === "zindex") return "z";
-	if (firstSegment === "opacity") return "opacity";
-	if (firstSegment === "font-size" || lower.includes("font-size"))
-		return "font-size";
-	if (firstSegment === "line-height" || lower.includes("line-height"))
-		return "line-height";
-	if (firstSegment === "letter-spacing" || lower.includes("letter-spacing"))
-		return "letter-spacing";
-	if (firstSegment === "duration" || firstSegment === "motion")
-		return "duration";
-	if (firstSegment === "shadow" || firstSegment === "elevation")
-		return "shadow";
+	// Radius → --radius-*
+	if (firstSegment === "radius" || lower.includes("/radius/")) return "radius";
+	// Rounded → --rounded-*
+	if (firstSegment === "rounded") return "rounded";
+	// Z-index → --z-*
+	if (firstSegment === "z-index" || firstSegment === "zindex" || firstSegment === "zlayer") return "z";
+	// Size (also matches deeper paths like font/typescale/*/size/*)
+	if (lower.includes("/size/")) return "size";
+	// Duration — any path containing "duration" (but not easing)
+	if (lower.includes("duration")) return "duration";
+	// Gap → --gap-*
+	if (firstSegment === "gap") return "gap";
+	// Margin → --margin-*
+	if (firstSegment === "margin") return "margin";
+	// Gutter → --gutter-*
+	if (firstSegment === "gutter") return "gutter";
 
-	if (resolvedType === "FLOAT") return "size";
-
-	return "";
+	// Default: --color-* for all types (matches external generate-tokens.js)
+	return "color";
 }
 
-// Convert variable name (e.g. "color/zinc/50") to CSS variable name (e.g. "--color-zinc-50")
-function toVarName(name: string, resolvedType: string): string {
+/**
+ * Convert variable name to CSS variable name.
+ *
+ * Naming rules (matching generate-tokens.js):
+ * - Semantics collection: strip "shadcn/" prefix, no type prefix → --background
+ * - Spacing: strip "spacing/" from path, add --spacing- prefix → --spacing-4
+ * - Sizes: strip "sizes/" from path, add --size- prefix → --size-0
+ * - Radius: strip "radius/" from path, add --radius- prefix → --radius-lg
+ * - Duration/Motion: keep full path, add --duration- prefix → --duration-motion-duration-250
+ * - Color: strip "color/" from path, add --color- prefix → --color-zinc-50
+ * - Everything else: add --color- prefix → --color-font-family-sans
+ */
+function toVarName(name: string, resolvedType: string, collectionName?: string): string {
 	const cssName = name.replace(/\//g, "-").replace(/\s+/g, "-").toLowerCase();
-	const prefix = inferPrefix(name, resolvedType);
 
-	if (prefix) {
-		if (cssName.startsWith(`${prefix}-`)) {
-			return `--${cssName}`;
-		}
-		return `--${prefix}-${cssName}`;
+	// Semantics: strip "shadcn-" prefix, no type prefix
+	if (collectionName?.toLowerCase() === "semantics") {
+		const stripped = cssName.replace(/^shadcn-/, "");
+		return `--${stripped}`;
 	}
 
-	return `--${cssName}`;
+	const prefix = inferPrefix(name, resolvedType);
+
+	// Strip redundant category from the path to avoid double-prefix
+	let cleanName = cssName;
+
+	if (prefix === "color") {
+		// Strip leading "color-" from path since prefix adds it
+		if (cleanName.startsWith("color-")) {
+			cleanName = cleanName.substring("color-".length);
+		}
+	} else {
+		// For non-color prefixes, strip the matching category segment
+		const prefixPattern = `${prefix}-`;
+		if (cleanName.startsWith(prefixPattern)) {
+			cleanName = cleanName.substring(prefixPattern.length);
+		}
+		// Also strip legacy category names that map to different prefixes
+		if (cleanName.startsWith("spacing-")) {
+			cleanName = cleanName.replace(/^spacing-/, "");
+		} else if (cleanName.startsWith("sizes-")) {
+			cleanName = cleanName.replace(/^sizes-/, "");
+		} else if (cleanName.startsWith("radius-")) {
+			cleanName = cleanName.replace(/^radius-/, "");
+		} else if (cleanName.startsWith("rounded-")) {
+			cleanName = cleanName.replace(/^rounded-/, "");
+		} else if (cleanName.startsWith("zlayer-")) {
+			cleanName = cleanName.replace(/^zlayer-/, "layer-");
+		}
+	}
+
+	return `--${prefix}-${cleanName}`;
 }
 
 // ============================================================================
@@ -203,6 +242,7 @@ function valueToCSS(
 	colorFormat: ColorFormat,
 	includeColorMix: boolean,
 	opacityMap: Map<string, number>,
+	collectionName?: string,
 ): string {
 	if (isVariableAlias(value)) {
 		const aliasId = (value as VariableAlias).id;
@@ -210,7 +250,10 @@ function valueToCSS(
 		if (ref) {
 			const refVar = figma.variables.getVariableById(aliasId);
 			if (refVar) {
-				const cssRef = `var(${toVarName(refVar.name, refVar.resolvedType)})`;
+				// Resolve the referenced variable's collection name for correct naming
+				const refCollection = figma.variables.getVariableCollectionById(refVar.variableCollectionId);
+				const refCollectionName = refCollection?.name;
+				const cssRef = `var(${toVarName(refVar.name, refVar.resolvedType, refCollectionName)})`;
 
 				// Check if THIS variable (not the referenced one) has style-level opacity
 				if (includeColorMix && variable.resolvedType === "COLOR") {
@@ -231,17 +274,20 @@ function valueToCSS(
 		case "COLOR":
 			if (typeof value === "object" && value !== null && "r" in value) {
 				const color = value as RGB & { a?: number };
-				const alpha = "a" in color && color.a !== undefined ? color.a : 1;
-				if (includeColorMix && alpha < 1) {
-					const opaqueColor = convertColorOpaque(color, colorFormat);
-					const percentage = Math.round(alpha * 100);
-					return `color-mix(in oklch, ${opaqueColor} ${percentage}%, transparent)`;
-				}
+				// Direct color values: always use rgba() — color-mix is only for
+				// style-level opacity on referenced variables (handled above for aliases)
 				return convertColor(color, colorFormat);
 			}
 			return String(value);
-		case "FLOAT":
+		case "FLOAT": {
+			// Duration variables should use ms, not px
+			// Only actual duration values (not easing cubic-bezier params)
+			const varLower = variable.name.toLowerCase();
+			if (varLower.includes("duration")) {
+				return `${value}ms`;
+			}
 			return `${value}px`;
+		}
 		case "STRING":
 			return String(value);
 		case "BOOLEAN":
@@ -271,6 +317,15 @@ function generateCollectionCSS(
 	lines.push(`/* ${collection.name} — ${variables.length} variables */`);
 	lines.push("");
 
+	const colName = collection.name;
+	const isPrimitives = colName.toLowerCase() === "primitives";
+
+	// @theme inline always comes before :root (matching generate-tokens.js)
+	// Skip for primitives — no borderRadius tokens there, so nothing to register
+	if (options.includeThemeInline && !isPrimitives) {
+		lines.push(generateThemeInline(variables, collection));
+	}
+
 	if (hasModes) {
 		for (let i = 0; i < collection.modes.length; i++) {
 			const mode = collection.modes[i];
@@ -280,8 +335,8 @@ function generateCollectionCSS(
 				for (const variable of variables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
-					const varName = toVarName(variable.name, variable.resolvedType);
-					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap);
+					const varName = toVarName(variable.name, variable.resolvedType, colName);
+					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap, colName);
 					lines.push(`  ${varName}: ${cssValue};`);
 				}
 				lines.push("}");
@@ -293,8 +348,8 @@ function generateCollectionCSS(
 				for (const variable of variables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
-					const varName = toVarName(variable.name, variable.resolvedType);
-					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap);
+					const varName = toVarName(variable.name, variable.resolvedType, colName);
+					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap, colName);
 					lines.push(`    ${varName}: ${cssValue};`);
 				}
 				lines.push("  }");
@@ -306,8 +361,8 @@ function generateCollectionCSS(
 				for (const variable of variables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
-					const varName = toVarName(variable.name, variable.resolvedType);
-					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap);
+					const varName = toVarName(variable.name, variable.resolvedType, colName);
+					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap, colName);
 					lines.push(`  ${varName}: ${cssValue};`);
 				}
 				lines.push("}");
@@ -320,16 +375,12 @@ function generateCollectionCSS(
 		for (const variable of variables) {
 			const value = variable.valuesByMode[mode.modeId];
 			if (value === undefined) continue;
-			const varName = toVarName(variable.name, variable.resolvedType);
-			const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap);
+			const varName = toVarName(variable.name, variable.resolvedType, colName);
+			const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap, colName);
 			lines.push(`  ${varName}: ${cssValue};`);
 		}
 		lines.push("}");
 		lines.push("");
-	}
-
-	if (options.includeThemeInline) {
-		lines.push(generateThemeInline(variables, collection));
 	}
 
 	return {
@@ -381,18 +432,41 @@ function modeToSelector(modeName: string): string {
 
 function generateThemeInline(
 	variables: Variable[],
-	_collection: VariableCollection,
+	collection: VariableCollection,
 ): string {
-	const colorVars = variables.filter((v) => v.resolvedType === "COLOR");
-	if (colorVars.length === 0) return "";
+	if (variables.length === 0) return "";
 
+	const colName = collection.name;
+	const isSemantics = colName.toLowerCase() === "semantics";
 	const lines: string[] = [];
 	lines.push("/* Tailwind CSS v4 @theme inline */");
 	lines.push("@theme inline {");
 
-	for (const variable of colorVars) {
-		const varName = toVarName(variable.name, variable.resolvedType);
-		lines.push(`  ${varName}: ${varName.replace("--", "var(--")});`);
+	// Build entries for ALL variable types
+	const entries: string[] = [];
+
+	for (const variable of variables) {
+		const varName = toVarName(variable.name, variable.resolvedType, colName);
+
+		if (isSemantics) {
+			// Semantics: --color-{name}: var(--{name})
+			const unprefixed = varName; // e.g., "--background"
+			entries.push(`  --color-${unprefixed.replace("--", "")}: var(${unprefixed});`);
+		} else {
+			// Other collections: self-reference for Tailwind registration
+			entries.push(`  ${varName}: var(${varName});`);
+		}
+	}
+
+	// Sort alphabetically by variable name for consistent output
+	entries.sort((a, b) => {
+		const aName = a.split(":")[0];
+		const bName = b.split(":")[0];
+		return aName.localeCompare(bName);
+	});
+
+	for (const entry of entries) {
+		lines.push(entry);
 	}
 
 	lines.push("}");
@@ -440,10 +514,12 @@ function generateShadowCSS(): CSSFile | null {
 				.filter((e) => e.type === "DROP_SHADOW" && e.visible !== false)
 				.map((effect) => {
 					const e = effect as DropShadowEffect;
-					const x = `${e.offset.x}px`;
-					const y = `${e.offset.y}px`;
-					const blur = `${e.radius}px`;
-					const spread = `${e.spread ?? 0}px`;
+					const x = `${Math.round(e.offset.x)}px`;
+					const y = `${Math.round(e.offset.y)}px`;
+					const blur = `${Math.round(e.radius)}px`;
+					// Figma uses 'spread' property on DropShadowEffect
+					const spreadVal = (e as any).spread ?? 0;
+					const spread = `${Math.round(spreadVal)}px`;
 					const r = Math.round((e.color?.r ?? 0) * 255);
 					const g = Math.round((e.color?.g ?? 0) * 255);
 					const b = Math.round((e.color?.b ?? 0) * 255);
@@ -690,28 +766,54 @@ function generateTypescalesCSS(): CSSFile | null {
 function generateRadiusCSS(): CSSFile | null {
 	try {
 		const collections = figma.variables.getLocalVariableCollections();
-		const primitives = collections.find(
-			(c) => c.name.toLowerCase() === "primitives",
-		);
-		if (!primitives) return null;
 
-		const variables = primitives.variableIds
-			.map((id) => figma.variables.getVariableById(id))
-			.filter((v): v is Variable => v !== null);
+		// Find the radius anchor value. Strategy:
+		// 1. Look for "rounded/lg" in abstractions (the anchor point at 10px)
+		// 2. Fall back to "corner-radius" or "corner/radius" in primitives
+		let anchor: number | null = null;
 
-		// Find the corner-radius anchor variable
-		const cornerRadius = variables.find(
-			(v) => v.name.toLowerCase().includes("corner-radius") || v.name.toLowerCase().includes("corner/radius"),
-		);
-		if (!cornerRadius) return null;
+		for (const col of collections) {
+			const variables = col.variableIds
+				.map((id) => figma.variables.getVariableById(id))
+				.filter((v): v is Variable => v !== null);
+			const modeId = col.modes[0].modeId;
 
-		// Get the anchor value
-		const modeId = primitives.modes[0].modeId;
-		let anchorValue = cornerRadius.valuesByMode[modeId];
-		if (isVariableAlias(anchorValue)) return null; // skip if alias
-		if (typeof anchorValue !== "number") return null;
+			// Look for rounded/lg (the anchor)
+			const roundedLg = variables.find(
+				(v) => v.name.toLowerCase() === "rounded/lg",
+			);
+			if (roundedLg) {
+				let value = roundedLg.valuesByMode[modeId];
+				// Follow aliases to get the resolved value
+				let depth = 0;
+				while (isVariableAlias(value) && depth < 10) {
+					const refVar = figma.variables.getVariableById((value as VariableAlias).id);
+					if (!refVar) break;
+					const refCol = figma.variables.getVariableCollectionById(refVar.variableCollectionId);
+					if (!refCol) break;
+					value = refVar.valuesByMode[refCol.modes[0].modeId];
+					depth++;
+				}
+				if (typeof value === "number") {
+					anchor = value;
+					break;
+				}
+			}
 
-		const anchor = anchorValue;
+			// Fall back to corner-radius variable
+			const cornerRadius = variables.find(
+				(v) => v.name.toLowerCase().includes("corner-radius") || v.name.toLowerCase().includes("corner/radius"),
+			);
+			if (cornerRadius) {
+				const value = cornerRadius.valuesByMode[modeId];
+				if (typeof value === "number") {
+					anchor = value;
+					break;
+				}
+			}
+		}
+
+		if (anchor === null) return null;
 		const lines: string[] = [];
 
 		lines.push("@theme inline {");
@@ -755,6 +857,18 @@ function generateRadiusCSS(): CSSFile | null {
 // MAIN EXPORT
 // ============================================================================
 
+// Exported for testing
+export {
+	toVarName,
+	inferPrefix,
+	normalizeName,
+	modeToSelector,
+	isResponsiveMode,
+	modeToMediaQuery,
+	TYPESCALE_BREAKPOINTS,
+	TAILWIND_TEXT_MAP,
+};
+
 export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 	const collections = figma.variables.getLocalVariableCollections();
 	const selected =
@@ -783,6 +897,17 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 	let totalVariables = 0;
 
 	for (const collection of sorted) {
+		const colLower = collection.name.toLowerCase();
+		// Skip the "responsive" collection — its typography variables are
+		// consumed by generateTypescalesCSS() which resolves aliases to px,
+		// adds @media queries, [data-window-size] selectors, and utility classes.
+		// Emitting it as a raw collection would duplicate data as var() aliases.
+		if (colLower === "responsive") continue;
+		// Skip the "tailwind-colors" collection — these palette colors
+		// (red-50..950, blue-50..950, etc.) are built into Tailwind CSS v4.
+		// Exporting them would duplicate what Tailwind provides natively.
+		if (colLower === "tailwind-colors" || colLower === "tailwind colors") continue;
+
 		const file = generateCollectionCSS(collection, options.colorFormat, {
 			includeThemeInline: options.includeThemeInline,
 			includeColorMix: options.includeColorMix,
@@ -812,7 +937,7 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 
 	// Generate index file that imports all
 	if (files.length > 1) {
-		const indexContent = `${files.map((f) => `@import './${f.name}';`).join("\n")}\n`;
+		const indexContent = `${files.map((f) => `@import "./${f.name}";`).join("\n")}\n`;
 		files.push({
 			name: "index.css",
 			content: indexContent,

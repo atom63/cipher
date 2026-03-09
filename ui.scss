@@ -357,8 +357,9 @@ body {
 /* === Page Content === */
 .page-content {
   width: 100%;
-  /* height: 100%; - Removed to allow natural content height for proper scrolling */
-  min-height: 100%; /* Ensures full height for short content */
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* === Coming Soon Pages === */

@@ -657,6 +657,288 @@ describe("font weight parity with dev primitives.css", () => {
 });
 
 // =========================================================================
+// Shadow CSS structure — validate dev shadow-tokens.css format
+// =========================================================================
+
+describe("shadow-tokens.css structure", () => {
+	test("has :root block with --shadow-N custom properties", () => {
+		const vars = parseCssVars(devShadowCss);
+		const shadowLevels = [...vars.keys()].filter((k) => /^--shadow-\d+$/.test(k));
+		expect(shadowLevels.length).toBeGreaterThanOrEqual(7);
+	});
+
+	test("shadow values use rgba() format", () => {
+		const vars = parseCssVars(devShadowCss);
+		for (const [name, value] of vars) {
+			if (/^--shadow-\d+$/.test(name)) {
+				expect(value).toMatch(/rgba\(/);
+			}
+		}
+	});
+
+	test("has @layer utilities block with .shadow-N classes", () => {
+		expect(devShadowCss).toContain("@layer utilities");
+		for (let i = 0; i <= 6; i++) {
+			expect(devShadowCss).toContain(`.shadow-${i}`);
+			expect(devShadowCss).toContain(`var(--shadow-${i})`);
+		}
+	});
+
+	test("shadow levels are ordered 0-6", () => {
+		const vars = parseCssVars(devShadowCss);
+		for (let i = 0; i <= 6; i++) {
+			expect(vars.has(`--shadow-${i}`), `--shadow-${i} missing`).toBe(true);
+		}
+	});
+});
+
+// =========================================================================
+// Typescales CSS structure — validate dev typescales.css format
+// =========================================================================
+
+describe("typescales.css structure", () => {
+	const expectedScales = [
+		"large-title", "title-1", "title-2", "title-3",
+		"headline", "body", "callout", "subhead",
+		"footnote", "caption-1", "caption-2",
+	];
+
+	test("has :root block with all typescale custom properties", () => {
+		const rootVars = parseCssBlock(devTypescalesCss, ":root");
+		for (const scale of expectedScales) {
+			expect(rootVars.has(`--typography-${scale}-font-size`), `Missing --typography-${scale}-font-size`).toBe(true);
+			expect(rootVars.has(`--typography-${scale}-line-height`), `Missing --typography-${scale}-line-height`).toBe(true);
+		}
+	});
+
+	test("all values use calc() with --typography-scale multiplier", () => {
+		const rootVars = parseCssBlock(devTypescalesCss, ":root");
+		for (const [name, value] of rootVars) {
+			if (name.startsWith("--typography-")) {
+				expect(value).toContain("calc(");
+				expect(value).toContain("var(--typography-scale, 1)");
+			}
+		}
+	});
+
+	test("has @media breakpoints at 40rem, 48rem, 64rem, 80rem", () => {
+		expect(devTypescalesCss).toContain("@media (min-width: 40rem)");
+		expect(devTypescalesCss).toContain("@media (min-width: 48rem)");
+		expect(devTypescalesCss).toContain("@media (min-width: 64rem)");
+		expect(devTypescalesCss).toContain("@media (min-width: 80rem)");
+	});
+
+	test("has [data-window-size] selectors for xs, sm, md, lg, xl", () => {
+		for (const size of ["xs", "sm", "md", "lg", "xl"]) {
+			expect(devTypescalesCss).toContain(`[data-window-size="${size}"]`);
+		}
+	});
+
+	test("has .size-* utility classes for each scale", () => {
+		for (const scale of expectedScales) {
+			expect(devTypescalesCss).toContain(`.size-${scale}`);
+		}
+	});
+
+	test("has .leading-* utility classes for each scale", () => {
+		for (const scale of expectedScales) {
+			expect(devTypescalesCss).toContain(`.leading-${scale}`);
+		}
+	});
+
+	test("has .type-* combined utility classes for each scale", () => {
+		for (const scale of expectedScales) {
+			expect(devTypescalesCss).toContain(`.type-${scale}`);
+		}
+	});
+
+	test("has Tailwind .text-* utility mappings", () => {
+		const tailwindSizes = ["text-xs", "text-sm", "text-base", "text-lg", "text-xl",
+			"text-2xl", "text-3xl", "text-4xl", "text-5xl", "text-6xl",
+			"text-7xl", "text-8xl", "text-9xl"];
+		for (const tw of tailwindSizes) {
+			expect(devTypescalesCss).toContain(`.${tw}`);
+		}
+	});
+
+	test("font sizes decrease from large-title to caption-2 at :root", () => {
+		const rootVars = parseCssBlock(devTypescalesCss, ":root");
+		const sizes: number[] = [];
+		for (const scale of expectedScales) {
+			const value = rootVars.get(`--typography-${scale}-font-size`);
+			if (value) {
+				const px = extractPxValue(value);
+				if (px !== null) sizes.push(px);
+			}
+		}
+		// Sizes should be monotonically non-increasing
+		for (let i = 1; i < sizes.length; i++) {
+			expect(sizes[i]).toBeLessThanOrEqual(sizes[i - 1]);
+		}
+	});
+});
+
+// =========================================================================
+// Radius CSS structure — validate dev radius.css format
+// =========================================================================
+
+describe("radius.css structure", () => {
+	test("has @theme inline block", () => {
+		expect(devRadiusCss).toContain("@theme inline");
+	});
+
+	test("defines radius scale from 2xs to full", () => {
+		const sizes = ["2xs", "xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "full"];
+		for (const size of sizes) {
+			expect(devRadiusCss).toContain(`--radius-${size}`);
+		}
+	});
+
+	test("all radius values use calc() with --radius-multiplier", () => {
+		const regex = /--radius-([\w-]+):\s*([^;]+);/g;
+		let match: RegExpExecArray | null;
+		while ((match = regex.exec(devRadiusCss)) !== null) {
+			const [, name, value] = match;
+			if (name === "multiplier") continue; // skip the multiplier itself
+			expect(value, `--radius-${name} should use calc()`).toContain("calc(");
+			expect(value, `--radius-${name} should use --radius-multiplier`).toContain("var(--radius-multiplier)");
+		}
+	});
+
+	test("has :root with --corner-radius anchor and --radius-multiplier", () => {
+		const rootVars = parseCssBlock(devRadiusCss, ":root");
+		expect(rootVars.has("--corner-radius")).toBe(true);
+		expect(rootVars.has("--radius-multiplier")).toBe(true);
+	});
+
+	test("--corner-radius anchor is 10px", () => {
+		const rootVars = parseCssBlock(devRadiusCss, ":root");
+		const anchor = rootVars.get("--corner-radius");
+		expect(anchor).toBeDefined();
+		const px = extractPxValue(anchor!);
+		expect(px).toBe(10);
+	});
+
+	test("--radius-multiplier defaults to 1", () => {
+		const rootVars = parseCssBlock(devRadiusCss, ":root");
+		expect(rootVars.get("--radius-multiplier")).toBe("1");
+	});
+
+	test("--radius-full uses 9999px for pill shape", () => {
+		expect(devRadiusCss).toContain("9999px");
+	});
+
+	test("--radius-lg is the anchor (no offset)", () => {
+		expect(devRadiusCss).toMatch(/--radius-lg:\s*calc\(var\(--corner-radius\)\s*\*\s*var\(--radius-multiplier\)\)/);
+	});
+});
+
+// =========================================================================
+// CSS generator naming — validate prefix and naming conventions
+// =========================================================================
+
+describe("CSS variable naming conventions match dev output", () => {
+	test("primitives has no @theme inline block", () => {
+		expect(devPrimitivesCss).not.toContain("@theme inline");
+	});
+
+	test("abstractions has @theme inline before :root", () => {
+		const themePos = devAbstractionsCss.indexOf("@theme inline");
+		const rootPos = devAbstractionsCss.indexOf(":root");
+		expect(themePos).toBeGreaterThan(-1);
+		expect(rootPos).toBeGreaterThan(-1);
+		expect(themePos).toBeLessThan(rootPos);
+	});
+
+	test("abstractions uses --z-layer-* naming (not --z-zlayer-*)", () => {
+		const absVars = parseCssBlock(devAbstractionsCss, ":root");
+		const zVars = [...absVars.keys()].filter((k) => k.startsWith("--z-"));
+		expect(zVars.length).toBeGreaterThan(0);
+		for (const name of zVars) {
+			expect(name).toMatch(/^--z-layer-/);
+			expect(name).not.toContain("zlayer");
+		}
+	});
+
+	test("abstractions typescale size vars use --size- prefix", () => {
+		const absVars = parseCssBlock(devAbstractionsCss, ":root");
+		const sizeVars = [...absVars.keys()].filter((k) =>
+			k.includes("typescale") && k.includes("size") && !k.includes("line-height"),
+		);
+		expect(sizeVars.length).toBeGreaterThan(0);
+		for (const name of sizeVars) {
+			expect(name).toMatch(/^--size-/);
+		}
+	});
+
+	test("abstractions typescale line-height vars use --color- prefix", () => {
+		const absVars = parseCssBlock(devAbstractionsCss, ":root");
+		const lhVars = [...absVars.keys()].filter((k) =>
+			k.includes("typescale") && k.includes("line-height"),
+		);
+		expect(lhVars.length).toBeGreaterThan(0);
+		for (const name of lhVars) {
+			expect(name).toMatch(/^--color-/);
+		}
+	});
+
+	test("primitives motion easing vars use --color- prefix (not --duration-)", () => {
+		const primVars = parseCssVars(devPrimitivesCss);
+		const easingVars = [...primVars.keys()].filter((k) => k.includes("easing"));
+		expect(easingVars.length).toBeGreaterThan(0);
+		for (const name of easingVars) {
+			expect(name).toMatch(/^--color-motion-easing-/);
+		}
+	});
+
+	test("primitives direct alpha colors use rgba() not color-mix()", () => {
+		const primVars = parseCssVars(devPrimitivesCss);
+		// white-0 and black-0 have alpha = 0
+		const white0 = primVars.get("--color-white-0");
+		const black0 = primVars.get("--color-black-0");
+		expect(white0).toBeDefined();
+		expect(black0).toBeDefined();
+		expect(white0).toMatch(/^rgba\(/);
+		expect(black0).toMatch(/^rgba\(/);
+		expect(white0).not.toContain("color-mix");
+		expect(black0).not.toContain("color-mix");
+	});
+
+	test("semantics @theme inline entries are alphabetically sorted by name", () => {
+		const themeMatch = devSemanticsCss.match(/@theme inline\s*\{([^}]+)\}/);
+		expect(themeMatch).not.toBeNull();
+		const entries = themeMatch![1]
+			.split("\n")
+			.map((l) => l.trim())
+			.filter((l) => l.startsWith("--"));
+		expect(entries.length).toBeGreaterThan(0);
+		// Sort by variable name (before the colon), not the full line
+		const names = entries.map((e) => e.split(":")[0]);
+		const sortedNames = [...names].sort((a, b) => a.localeCompare(b));
+		expect(names).toEqual(sortedNames);
+	});
+
+	test("abstractions @theme inline includes non-color vars (rounded, z-layer, duration)", () => {
+		const themeMatch = devAbstractionsCss.match(/@theme inline\s*\{([^}]+)\}/);
+		expect(themeMatch).not.toBeNull();
+		const content = themeMatch![1];
+		expect(content).toContain("--rounded-");
+		expect(content).toContain("--z-layer-");
+		expect(content).toContain("--duration-");
+	});
+
+	test("index.css uses double quotes for imports", () => {
+		const indexCss = readDevCss("index.css");
+		const imports = indexCss.split("\n").filter((l) => l.startsWith("@import"));
+		expect(imports.length).toBeGreaterThan(0);
+		for (const imp of imports) {
+			expect(imp).toContain('"');
+			expect(imp).not.toMatch(/@import\s+'/);
+		}
+	});
+});
+
+// =========================================================================
 // Coverage report — list tokens in dev but not in generator
 // =========================================================================
 

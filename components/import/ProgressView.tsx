@@ -248,16 +248,15 @@ export function SuccessView({
 				{onUndo && undoData && undoData.length > 0 && (
 					<Button variant="ghost" onClick={onUndo}>
 						<Undo2 size={14} />
-						Undo Import
+						Undo
 					</Button>
 				)}
-				<Button variant="ghost" onClick={onImportMore}>
+				<Button variant="secondary" onClick={onClose}>
+					Close
+				</Button>
+				<Button variant="default" onClick={onImportMore}>
 					<Plus size={14} />
 					{actionVerb} More
-				</Button>
-				<Button variant="primary" onClick={onClose}>
-					<X size={14} />
-					Close
 				</Button>
 			</div>
 		</div>

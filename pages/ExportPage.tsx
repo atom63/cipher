@@ -335,7 +335,7 @@ export function ExportPage() {
 					</div>
 
 					<div className={styles.successActions}>
-						<Button variant="ghost" onClick={handleExportAgain}>
+						<Button variant="default" onClick={handleExportAgain}>
 							<FileDown size={14} />
 							Export Again
 						</Button>

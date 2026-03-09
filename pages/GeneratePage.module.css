@@ -3,6 +3,9 @@
 .page {
 	max-height: 100%;
 	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	min-height: 100%;
 }
 
 /* Config step */
