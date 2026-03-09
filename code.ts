@@ -45,7 +45,7 @@ function groupStylesByRoot(
 // Settings persistence via clientStorage
 const DEFAULT_SETTINGS: PluginSettings = {
 	colorFormat: "oklch",
-	lastExportTab: "variables",
+	lastExportTab: "json",
 	theme: "system",
 };
 

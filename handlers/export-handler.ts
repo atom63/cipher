@@ -225,6 +225,145 @@ export function figmaTypeToTokenType(
 	}
 }
 
+/**
+ * Gather all local styles (paint, text, effect, grid) into a structured object.
+ * Returns null if no styles exist — caller silently skips.
+ * This preserves opacity, variable bindings, and effect data that variables alone don't carry.
+ */
+function gatherStyles(colorFormat: string): any | null {
+	const paintStyles = figma.getLocalPaintStyles();
+	const textStyles = figma.getLocalTextStyles();
+	const effectStyles = figma.getLocalEffectStyles();
+	const gridStyles = figma.getLocalGridStyles();
+
+	const totalStyles =
+		paintStyles.length + textStyles.length + effectStyles.length + gridStyles.length;
+
+	if (totalStyles === 0) return null;
+
+	const styles: any = {};
+
+	// Paint styles — carries opacity + variable bindings (critical for color-mix)
+	if (paintStyles.length > 0) {
+		styles.paint = {};
+		for (const style of paintStyles) {
+			setNested(styles.paint, style.name, {
+				id: style.id,
+				key: style.key,
+				type: "color",
+				fills: style.paints.map((paint) => paintToValue(paint, colorFormat)),
+				description: style.description || undefined,
+				value:
+					style.paints.length === 1 && style.paints[0].type === "SOLID"
+						? paintToValue(style.paints[0], colorFormat).color
+						: style.paints.map((p) => paintToValue(p, colorFormat)),
+			});
+		}
+	}
+
+	// Text styles
+	if (textStyles.length > 0) {
+		styles.text = {};
+		for (const style of textStyles) {
+			const data: any = {
+				id: style.id,
+				key: style.key,
+				type: "text",
+				fontFamily: style.fontName.family,
+				fontStyle: style.fontName.style,
+				fontWeight: (style as any).fontWeight,
+				fontSize: `${style.fontSize}px`,
+				lineHeight:
+					typeof style.lineHeight === "object" && "value" in style.lineHeight
+						? `${style.lineHeight.value}${style.lineHeight.unit === "PIXELS" ? "px" : style.lineHeight.unit === "PERCENT" ? "%" : ""}`
+						: style.lineHeight,
+				letterSpacing:
+					typeof style.letterSpacing === "object" && "value" in style.letterSpacing
+						? `${style.letterSpacing.value}${style.letterSpacing.unit === "PIXELS" ? "px" : style.letterSpacing.unit === "PERCENT" ? "%" : ""}`
+						: style.letterSpacing,
+				paragraphSpacing: `${style.paragraphSpacing}px`,
+				textCase: style.textCase,
+				textDecoration: style.textDecoration,
+				description: style.description || undefined,
+			};
+
+			// Capture variable bindings on text properties
+			for (const prop of ["fontSize", "lineHeight", "fontFamily", "fontWeight", "letterSpacing", "paragraphSpacing"]) {
+				try {
+					const bound = (style as any).boundVariables?.[prop];
+					if (bound?.id) {
+						const variable = figma.variables.getVariableById(bound.id);
+						if (variable) {
+							const collection = figma.variables.getVariableCollectionById(variable.variableCollectionId);
+							data[`${prop}BoundVariable`] = {
+								type: "variable",
+								variableId: variable.id,
+								variableName: variable.name,
+								collectionName: collection?.name ?? "Unknown",
+							};
+						}
+					}
+				} catch (_e) { /* skip unreadable bindings */ }
+			}
+
+			setNested(styles.text, style.name, data);
+		}
+	}
+
+	// Effect styles (shadows, blurs)
+	if (effectStyles.length > 0) {
+		styles.effect = {};
+		for (const style of effectStyles) {
+			setNested(styles.effect, style.name, {
+				id: style.id,
+				key: style.key,
+				type: "effect",
+				effects: style.effects.map((effect) => effectToToken(effect)),
+				description: style.description || undefined,
+			});
+		}
+	}
+
+	// Grid styles
+	if (gridStyles.length > 0) {
+		styles.grid = {};
+		for (const style of gridStyles) {
+			setNested(styles.grid, style.name, {
+				id: style.id,
+				key: style.key,
+				type: "grid",
+				layoutGrids: style.layoutGrids.map((grid) => ({
+					pattern: grid.pattern,
+					sectionSize: grid.sectionSize,
+					visible: grid.visible,
+					color: grid.color
+						? `rgba(${Math.round(grid.color.r * 255)}, ${Math.round(grid.color.g * 255)}, ${Math.round(grid.color.b * 255)}, ${grid.color.a})`
+						: undefined,
+					alignment: "alignment" in grid ? grid.alignment : undefined,
+					count: "count" in grid ? grid.count : undefined,
+					offset: "offset" in grid ? grid.offset : undefined,
+					gutterSize: "gutterSize" in grid ? grid.gutterSize : undefined,
+				})),
+				description: style.description || undefined,
+			});
+		}
+	}
+
+	return styles;
+}
+
+/** Set a value at a nested path (e.g. "folder/subfolder/name") in an object */
+function setNested(obj: any, path: string, value: any) {
+	const parts = path.split("/");
+	const name = parts.pop()!;
+	let current = obj;
+	for (const part of parts) {
+		if (!current[part]) current[part] = {};
+		current = current[part];
+	}
+	current[name] = value;
+}
+
 // Export Figma variables as design tokens
 // Supports nested structures - example output:
 // {
@@ -360,6 +499,12 @@ export async function exportVariablesAsTokens(
 					}
 				}
 			}
+		}
+
+		// Gather styles (paint, text, effect, grid) — silently skip if none exist
+		const stylesSection = gatherStyles(colorFormat);
+		if (stylesSection) {
+			tokenData.styles = stylesSection;
 		}
 
 		// Send to UI with the format that was used

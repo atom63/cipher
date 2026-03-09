@@ -1,41 +1,13 @@
-/* Import Page Styles - using design tokens from ui.scss */
-
-.reviewContent {
-  padding: var(--spacing-2xl);
-  max-height: min(600px, calc(100vh - 150px));
-  overflow-y: auto;
-}
-
-.reviewHeader {
-  margin-bottom: var(--spacing-xl);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-semibold);
-}
-
-.alertContainer {
-  margin-bottom: var(--spacing-xl);
-}
-
-.selectAllSection {
-  margin-bottom: var(--spacing-xl);
-}
+/* Import Page Styles */
 
 .actions {
-  display: flex;
-  gap: var(--spacing-lg);
-  margin-top: var(--spacing-2xl);
-  padding-top: var(--spacing-xl);
-  border-top: 1px solid var(--border);
+	display: flex;
+	gap: var(--spacing-lg);
+	margin-top: var(--spacing-2xl);
+	padding-top: var(--spacing-xl);
+	border-top: 1px solid var(--border);
 }
 
 .actions > * {
-  flex: 1;
+	flex: 1;
 }
-
-/* Style categories container - category styles reused from ExportPage.module.css */
-.styleCategoriesContainer {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2xl);
-}
-

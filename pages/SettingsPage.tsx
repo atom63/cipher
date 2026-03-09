@@ -6,7 +6,7 @@ import type { PluginSettings } from "../types/messages";
 
 const DEFAULT_SETTINGS: PluginSettings = {
 	colorFormat: "oklch",
-	lastExportTab: "variables",
+	lastExportTab: "json",
 	theme: "light",
 };
 

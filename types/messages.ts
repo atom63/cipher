@@ -556,7 +556,7 @@ export interface CloseMessage {
 /** Plugin settings stored via clientStorage */
 export interface PluginSettings {
 	colorFormat: "oklch" | "hex" | "rgba" | "hsl";
-	lastExportTab: "variables" | "styles";
+	lastExportTab: "json" | "css";
 	theme: "system" | "light" | "dark";
 }
 

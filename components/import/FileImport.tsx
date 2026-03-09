@@ -10,12 +10,10 @@ import styles from "./FileImport.module.css";
 
 interface FileImportProps {
 	onTokensParsed: (tokens: ParsedTokens) => void;
-	onFileParsed?: (data: any) => void;
 }
 
 export function FileImport({
 	onTokensParsed: _onTokensParsed,
-	onFileParsed,
 }: FileImportProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
@@ -72,17 +70,15 @@ export function FileImport({
 			return;
 		}
 
-		// Try to parse as JSON first to detect file type
+		// Try to detect styles-only files and show a helpful message
 		try {
 			const data = JSON.parse(content);
-
-			// Check if it's a styles export file
-			if (data.$schema === "figma-styles-export" && onFileParsed) {
-				onFileParsed(data);
+			if (data.$schema === "figma-styles-export") {
+				showError("This is a Figma Styles file. Import supports variable token files (JSON or CSS).");
 				return;
 			}
 		} catch (_e) {
-			// If JSON parse fails, fall back to backend parser
+			// Not valid JSON on its own — fall through to backend parser
 		}
 
 		// Send to plugin backend for parsing (for variable tokens)

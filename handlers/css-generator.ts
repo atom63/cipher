@@ -1,5 +1,12 @@
 // CSS Generator — converts Figma variables to CSS custom properties
 // Runs in the main thread (Figma sandbox), generates CSS strings to send to UI
+//
+// Key feature: Opacity preservation via color-mix()
+// Figma stores opacity on paint styles, not on variable values. A variable might
+// hold {primitives.black} but the style using it applies 20% opacity. This generator
+// traverses all local paint styles to build an opacity lookup map, then wraps
+// referenced variables in color-mix(in srgb, var(--token), transparent N%) when
+// the style-level opacity < 1. This is the core differentiator from other token tools.
 
 /// <reference types="@figma/plugin-typings" />
 
@@ -30,6 +37,111 @@ interface CSSExportResult {
 	totalCollections: number;
 }
 
+// ============================================================================
+// OPACITY DETECTION FROM PAINT STYLES
+// ============================================================================
+
+/**
+ * Build a lookup map of variable IDs → opacity from local paint styles.
+ *
+ * Figma stores opacity on the paint fill, not on the variable itself.
+ * A semantic token like "muted-foreground" might reference {primitives.gray.11}
+ * via a variable alias, but the paint style applying it has opacity 0.9.
+ *
+ * We traverse all local paint styles, and for each fill that:
+ *   1. Has a bound variable (via boundVariables.color)
+ *   2. Has opacity < 1
+ * We record: variableId → opacity
+ *
+ * Important: Multiple styles may use the same variable at different opacities
+ * (e.g., utility styles at 10%, 20%, etc.). We match by checking if the style
+ * name path corresponds to the variable name to avoid picking up utility styles.
+ */
+function buildStyleOpacityMap(): Map<string, number> {
+	const opacityMap = new Map<string, number>();
+
+	try {
+		const paintStyles = figma.getLocalPaintStyles();
+
+		for (const style of paintStyles) {
+			for (const paint of style.paints) {
+				if (paint.type !== "SOLID" && paint.type !== "GRADIENT_LINEAR" &&
+					paint.type !== "GRADIENT_RADIAL" && paint.type !== "GRADIENT_ANGULAR" &&
+					paint.type !== "GRADIENT_DIAMOND") {
+					continue;
+				}
+
+				// Check solid fills
+				if (paint.type === "SOLID") {
+					const opacity = paint.opacity ?? 1;
+					if (opacity >= 1) continue;
+
+					// Check if color is bound to a variable
+					const boundVars = paint.boundVariables;
+					if (boundVars?.color) {
+						const varId = boundVars.color.id;
+						const variable = figma.variables.getVariableById(varId);
+						if (!variable) continue;
+
+						// Match: style name should correspond to the variable name
+						// Style: "semantics/muted-foreground" → Variable: "shadcn/muted-foreground"
+						// Normalize both for comparison
+						const normalizedStyleName = normalizeName(style.name);
+						const normalizedVarName = normalizeName(variable.name);
+
+						if (normalizedStyleName === normalizedVarName) {
+							opacityMap.set(varId, opacity);
+						}
+					}
+				}
+
+				// Check gradient stops
+				if ("gradientStops" in paint && Array.isArray(paint.gradientStops)) {
+					const opacity = paint.opacity ?? 1;
+					if (opacity >= 1) continue;
+
+					for (const stop of paint.gradientStops) {
+						const boundVars = stop.boundVariables;
+						if (boundVars?.color) {
+							const varId = boundVars.color.id;
+							const variable = figma.variables.getVariableById(varId);
+							if (!variable) continue;
+
+							const normalizedStyleName = normalizeName(style.name);
+							const normalizedVarName = normalizeName(variable.name);
+
+							if (normalizedStyleName === normalizedVarName) {
+								opacityMap.set(varId, opacity);
+							}
+						}
+					}
+				}
+			}
+		}
+	} catch (_e) {
+		// Styles API may not be available in all contexts
+	}
+
+	return opacityMap;
+}
+
+/**
+ * Normalize a style or variable name for comparison.
+ * Strips collection prefixes (semantics/, abstractions/, primitives/)
+ * and common intermediary segments (status/, shadcn/) to match across naming conventions.
+ */
+function normalizeName(name: string): string {
+	return name
+		.replace(/^(semantics|abstractions|primitives)\//i, "")
+		.replace(/\/status\//g, "/")
+		.replace(/^shadcn\//i, "")
+		.toLowerCase();
+}
+
+// ============================================================================
+// CSS VARIABLE NAME GENERATION
+// ============================================================================
+
 // Infer CSS variable prefix from variable name path
 function inferPrefix(name: string, resolvedType: string): string {
 	const lower = name.toLowerCase();
@@ -39,7 +151,6 @@ function inferPrefix(name: string, resolvedType: string): string {
 		return "color";
 	}
 
-	// Common naming conventions
 	if (firstSegment === "spacing" || lower.includes("/spacing/"))
 		return "spacing";
 	if (firstSegment === "radius" || lower.includes("/radius/")) return "radius";
@@ -57,22 +168,17 @@ function inferPrefix(name: string, resolvedType: string): string {
 	if (firstSegment === "shadow" || firstSegment === "elevation")
 		return "shadow";
 
-	// FLOAT without clear category
 	if (resolvedType === "FLOAT") return "size";
 
 	return "";
 }
 
-// Convert variable name (e.g. "color/zinc/50") to CSS variable name (e.g. "color-zinc-50")
+// Convert variable name (e.g. "color/zinc/50") to CSS variable name (e.g. "--color-zinc-50")
 function toVarName(name: string, resolvedType: string): string {
-	// Replace / with - and normalize
 	const cssName = name.replace(/\//g, "-").replace(/\s+/g, "-").toLowerCase();
-
-	// Determine prefix
 	const prefix = inferPrefix(name, resolvedType);
 
 	if (prefix) {
-		// Check if name already starts with the prefix to avoid duplication
 		if (cssName.startsWith(`${prefix}-`)) {
 			return `--${cssName}`;
 		}
@@ -82,22 +188,40 @@ function toVarName(name: string, resolvedType: string): string {
 	return `--${cssName}`;
 }
 
-// Convert a Figma variable value to a CSS value string
+// ============================================================================
+// VALUE CONVERSION
+// ============================================================================
+
+/**
+ * Convert a Figma variable value to a CSS value string.
+ * When the value is a variable alias and that variable has style-level opacity,
+ * wraps the reference in color-mix().
+ */
 function valueToCSS(
 	value: VariableValue,
 	variable: Variable,
 	colorFormat: ColorFormat,
-	includeColorMix: boolean = false,
+	includeColorMix: boolean,
+	opacityMap: Map<string, number>,
 ): string {
 	if (isVariableAlias(value)) {
-		const ref = resolveVariableReference((value as VariableAlias).id);
+		const aliasId = (value as VariableAlias).id;
+		const ref = resolveVariableReference(aliasId);
 		if (ref) {
-			// Get the referenced variable to build the correct CSS var name
-			const refVar = figma.variables.getVariableById(
-				(value as VariableAlias).id,
-			);
+			const refVar = figma.variables.getVariableById(aliasId);
 			if (refVar) {
-				return `var(${toVarName(refVar.name, refVar.resolvedType)})`;
+				const cssRef = `var(${toVarName(refVar.name, refVar.resolvedType)})`;
+
+				// Check if THIS variable (not the referenced one) has style-level opacity
+				if (includeColorMix && variable.resolvedType === "COLOR") {
+					const opacity = opacityMap.get(variable.id);
+					if (opacity !== undefined && opacity < 1) {
+						const transparencyPercent = Math.round((1 - opacity) * 100);
+						return `color-mix(in srgb, ${cssRef}, transparent ${transparencyPercent}%)`;
+					}
+				}
+
+				return cssRef;
 			}
 		}
 		return "var(--unknown-ref)";
@@ -127,11 +251,15 @@ function valueToCSS(
 	}
 }
 
-// Generate CSS for a single collection
+// ============================================================================
+// COLLECTION CSS GENERATION
+// ============================================================================
+
 function generateCollectionCSS(
 	collection: VariableCollection,
 	colorFormat: ColorFormat,
 	options: { includeThemeInline: boolean; includeColorMix: boolean },
+	opacityMap: Map<string, number>,
 ): CSSFile {
 	const variables = collection.variableIds
 		.map((id) => figma.variables.getVariableById(id))
@@ -144,76 +272,62 @@ function generateCollectionCSS(
 	lines.push("");
 
 	if (hasModes) {
-		// Multi-mode: generate :root for first mode, selectors/media queries for rest
 		for (let i = 0; i < collection.modes.length; i++) {
 			const mode = collection.modes[i];
 
 			if (i === 0) {
-				// First mode always goes under :root
 				lines.push(":root {");
-
 				for (const variable of variables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
 					const varName = toVarName(variable.name, variable.resolvedType);
-					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix);
+					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap);
 					lines.push(`  ${varName}: ${cssValue};`);
 				}
-
 				lines.push("}");
 				lines.push("");
 			} else if (isResponsiveMode(mode.name)) {
-				// Responsive mode: wrap variables in a media query with :root inside
 				const mediaQuery = modeToMediaQuery(mode.name)!;
 				lines.push(`${mediaQuery} {`);
 				lines.push("  :root {");
-
 				for (const variable of variables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
 					const varName = toVarName(variable.name, variable.resolvedType);
-					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix);
+					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap);
 					lines.push(`    ${varName}: ${cssValue};`);
 				}
-
 				lines.push("  }");
 				lines.push("}");
 				lines.push("");
 			} else {
-				// Non-responsive mode: use selector approach
 				const selector = modeToSelector(mode.name);
 				lines.push(`${selector} {`);
-
 				for (const variable of variables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
 					const varName = toVarName(variable.name, variable.resolvedType);
-					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix);
+					const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap);
 					lines.push(`  ${varName}: ${cssValue};`);
 				}
-
 				lines.push("}");
 				lines.push("");
 			}
 		}
 	} else {
-		// Single mode: everything under :root
 		const mode = collection.modes[0];
 		lines.push(":root {");
-
 		for (const variable of variables) {
 			const value = variable.valuesByMode[mode.modeId];
 			if (value === undefined) continue;
 			const varName = toVarName(variable.name, variable.resolvedType);
-			const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix);
+			const cssValue = valueToCSS(value, variable, colorFormat, options.includeColorMix, opacityMap);
 			lines.push(`  ${varName}: ${cssValue};`);
 		}
-
 		lines.push("}");
 		lines.push("");
 	}
 
-	// Optional @theme inline block for Tailwind
 	if (options.includeThemeInline) {
 		lines.push(generateThemeInline(variables, collection));
 	}
@@ -225,7 +339,10 @@ function generateCollectionCSS(
 	};
 }
 
-// Responsive breakpoint mode names mapped to min-width values
+// ============================================================================
+// RESPONSIVE MODES
+// ============================================================================
+
 const RESPONSIVE_BREAKPOINTS: Record<string, string> = {
 	mobile: "640px",
 	sm: "640px",
@@ -240,38 +357,31 @@ const RESPONSIVE_BREAKPOINTS: Record<string, string> = {
 	wide: "1280px",
 };
 
-// Check if a mode name corresponds to a responsive breakpoint
 function isResponsiveMode(modeName: string): boolean {
-	const lower = modeName.toLowerCase();
-	return lower in RESPONSIVE_BREAKPOINTS;
+	return modeName.toLowerCase() in RESPONSIVE_BREAKPOINTS;
 }
 
-// Return a media query string for responsive mode names, or null
 function modeToMediaQuery(modeName: string): string | null {
-	const lower = modeName.toLowerCase();
-	const minWidth = RESPONSIVE_BREAKPOINTS[lower];
-	if (minWidth) {
-		return `@media (min-width: ${minWidth})`;
-	}
-	return null;
+	const minWidth = RESPONSIVE_BREAKPOINTS[modeName.toLowerCase()];
+	return minWidth ? `@media (min-width: ${minWidth})` : null;
 }
 
-// Map mode names to CSS selectors
 function modeToSelector(modeName: string): string {
 	const lower = modeName.toLowerCase();
 	if (lower === "dark") return ".dark";
 	if (lower === "light") return ":root";
-	// Check for responsive mode names — return media query
 	const mediaQuery = modeToMediaQuery(modeName);
 	if (mediaQuery) return mediaQuery;
-	// data attribute for custom modes
 	return `[data-mode="${lower}"]`;
 }
 
-// Generate @theme inline block for Tailwind CSS v4
+// ============================================================================
+// TAILWIND @theme inline
+// ============================================================================
+
 function generateThemeInline(
 	variables: Variable[],
-	collection: VariableCollection,
+	_collection: VariableCollection,
 ): string {
 	const colorVars = variables.filter((v) => v.resolvedType === "COLOR");
 	if (colorVars.length === 0) return "";
@@ -280,12 +390,8 @@ function generateThemeInline(
 	lines.push("/* Tailwind CSS v4 @theme inline */");
 	lines.push("@theme inline {");
 
-	// Map each color variable to a Tailwind-compatible --color-* reference
-	const _mode = collection.modes[0];
 	for (const variable of colorVars) {
 		const varName = toVarName(variable.name, variable.resolvedType);
-		// Tailwind expects --color-{name}: oklch(... / <alpha-value>)
-		// For references, point to the CSS variable
 		lines.push(`  ${varName}: ${varName.replace("--", "var(--")});`);
 	}
 
@@ -295,7 +401,10 @@ function generateThemeInline(
 	return lines.join("\n");
 }
 
-// Main export function
+// ============================================================================
+// MAIN EXPORT
+// ============================================================================
+
 export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 	const collections = figma.variables.getLocalVariableCollections();
 	const selected =
@@ -306,6 +415,13 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 	if (selected.length === 0) {
 		return { files: [], totalVariables: 0, totalCollections: 0 };
 	}
+
+	// Build opacity map from paint styles — the core differentiator
+	// This detects opacity stored on Figma styles (not on variable values)
+	// and preserves it via color-mix() in the CSS output
+	const opacityMap = options.includeColorMix
+		? buildStyleOpacityMap()
+		: new Map<string, number>();
 
 	// Sort collections: single-mode first (primitives), multi-mode after (semantics)
 	const sorted = [...selected].sort((a, b) => {
@@ -320,7 +436,7 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 		const file = generateCollectionCSS(collection, options.colorFormat, {
 			includeThemeInline: options.includeThemeInline,
 			includeColorMix: options.includeColorMix,
-		});
+		}, opacityMap);
 		files.push(file);
 		totalVariables += file.variableCount;
 	}
