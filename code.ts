@@ -1834,6 +1834,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				importMode = "import",
 				stylesData,
 			} = msg.data;
+			console.log("[create-variables] stylesData present:", !!stylesData, stylesData ? Object.keys(stylesData) : "none");
 			// Note: tokens are already filtered by selected collections in the UI
 			const results = await createVariablesFromTokens(
 				tokens,
@@ -1845,6 +1846,11 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			// This ensures variable bindings can be resolved
 			let stylesImported = 0;
 			if (stylesData) {
+				console.log("[create-variables] Starting style import...", {
+					paint: stylesData.paint ? Object.keys(stylesData.paint) : "none",
+					text: stylesData.text ? Object.keys(stylesData.text) : "none",
+					effect: stylesData.effect ? Object.keys(stylesData.effect) : "none",
+				});
 				try {
 					const styleResults = await importStylesFromTokens(
 						{ styles: stylesData },
@@ -1852,6 +1858,11 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						importMode,
 					);
 					stylesImported = styleResults.success;
+					console.log("[create-variables] Style import done:", {
+						success: styleResults.success,
+						failed: styleResults.failed,
+						errors: styleResults.errors,
+					});
 					// Merge style results into variable results
 					results.success += styleResults.success;
 					results.failed += styleResults.failed;
@@ -1862,6 +1873,8 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				} catch (e) {
 					console.warn("Style import failed:", e);
 				}
+			} else {
+				console.log("[create-variables] No stylesData in message");
 			}
 
 			figma.ui.postMessage({

@@ -616,7 +616,7 @@ export async function importStylesFromTokens(
 		};
 
 		// Helper to process nested style objects recursively
-		const processStyleGroup = (
+		const processStyleGroup = async (
 			obj: any,
 			parentPath: string,
 			category: string,
@@ -633,19 +633,21 @@ export async function importStylesFromTokens(
 					"type" in value
 				) {
 					if (shouldImportStyle(fullPath, category)) {
-						processor(fullPath, value).catch((err) => {
+						try {
+							await processor(fullPath, value);
+						} catch (err: any) {
 							console.error(`Failed to process style ${fullPath}:`, err);
 							results.failed++;
 							results.errors.push(
 								`Failed to import ${fullPath}: ${err.message}`,
 							);
-						});
+						}
 					} else {
 						results.skipped++;
 					}
 				} else if (value && typeof value === "object") {
 					// Recurse into nested groups
-					processStyleGroup(value, fullPath, category, processor);
+					await processStyleGroup(value, fullPath, category, processor);
 				}
 			}
 		};

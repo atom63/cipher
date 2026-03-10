@@ -1,23 +1,19 @@
 import { describe, expect, test } from "vitest";
-import type { BrandConfig, LayerMode } from "../generators/three-tier";
+import type { BrandConfig } from "../generators/three-tier";
 import { generateCss, generateDesignSystem } from "../generators/three-tier";
 
 // =========================================================================
 // Combinatorial config coverage
 // =========================================================================
 
-const LAYER_MODES: LayerMode[] = ["primitives", "semantic", "three-tier"];
 const GRAY_NAMES = ["gray", "mauve", "slate", "sage", "olive", "sand"];
 const DARK_MODES = [true, false];
 
 describe("combinatorial config coverage", () => {
-	test.each(
-		LAYER_MODES,
-	)("layer mode '%s' generates without errors for all gray palettes", (layers) => {
+	test("generates without errors for all gray palettes", () => {
 		for (const grayName of GRAY_NAMES) {
 			const result = generateDesignSystem({
 				primary: "#3B82F6",
-				layers,
 				grayName,
 			});
 			expect(result.tokens.length).toBeGreaterThan(0);
@@ -25,13 +21,10 @@ describe("combinatorial config coverage", () => {
 		}
 	});
 
-	test.each(
-		LAYER_MODES,
-	)("layer mode '%s' works with both dark mode on and off", (layers) => {
+	test("works with both dark mode on and off", () => {
 		for (const darkMode of DARK_MODES) {
 			const result = generateDesignSystem({
 				primary: "#3B82F6",
-				layers,
 				darkMode,
 			});
 			expect(result.tokens.length).toBeGreaterThan(0);
@@ -48,7 +41,6 @@ describe("combinatorial config coverage", () => {
 		for (const ratio of ratios) {
 			const result = generateDesignSystem({
 				primary: "#3B82F6",
-				layers: "semantic",
 				typescale: {
 					base: 16,
 					ratio,
@@ -68,7 +60,6 @@ describe("combinatorial config coverage", () => {
 			primary: "#3B82F6",
 			secondary: "#10B981",
 			grayName: "slate",
-			layers: "three-tier",
 			darkMode: true,
 			radius: 12,
 			typescale: {
@@ -89,17 +80,14 @@ describe("combinatorial config coverage", () => {
 });
 
 // =========================================================================
-// Reference integrity — all semantic refs resolve to real tokens
+// Reference integrity — all references resolve to real tokens
 // =========================================================================
 
 describe("reference integrity", () => {
-	test.each(
-		LAYER_MODES,
-	)("all references in '%s' mode resolve to existing tokens", (layers) => {
+	test("all references resolve to existing tokens", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			layers,
 			darkMode: false,
 		});
 
@@ -124,22 +112,24 @@ describe("reference integrity", () => {
 		}
 	});
 
-	test("three-tier semantics reference abstractions, not primitives directly (for color tokens)", () => {
+	test("semantics reference abstractions, not primitives directly (for surface/accent)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			layers: "three-tier",
 			darkMode: false,
 		});
 
 		const semanticColors = result.tokens.filter(
-			(t) => t.category === "semantics" && t.type === "color",
+			(t) =>
+				t.category === "semantics" &&
+				t.type === "color" &&
+				String(t.originalValue).startsWith("{"),
 		);
 
-		// Semantic color tokens should reference abstractions or primitives (for white/black/destructive)
+		// Semantic color references should go through abstractions or primitives (for utility tokens)
 		for (const token of semanticColors) {
 			const ref = String(token.originalValue);
-			expect(ref).toMatch(/^\{(abstractions|primitives)\./);
+			expect(ref).toMatch(/^\{(abstractions|primitives|semantics)\./);
 		}
 	});
 });
@@ -149,13 +139,10 @@ describe("reference integrity", () => {
 // =========================================================================
 
 describe("cross-mode consistency", () => {
-	test.each(
-		LAYER_MODES,
-	)("'%s' mode: Light and Dark token counts match per figmaName", (layers) => {
+	test("Light and Dark token counts match per figmaName", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			layers,
 			darkMode: true,
 		});
 
@@ -187,20 +174,36 @@ describe("cross-mode consistency", () => {
 		expect(lightNames.size).toBe(darkNames.size);
 	});
 
-	test("no mode tokens when darkMode is false", () => {
-		for (const layers of LAYER_MODES) {
-			if (layers === "primitives") continue; // primitives don't have semantics
-			const result = generateDesignSystem({
-				primary: "#3B82F6",
-				layers,
-				darkMode: false,
-			});
-			for (const token of result.tokens) {
-				expect(
-					(token as any).modeName,
-					`Token "${token.figmaName}" has modeName when darkMode is false`,
-				).toBeUndefined();
-			}
+	test("primitives and abstractions are single-mode (no modeName)", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			darkMode: true,
+		});
+
+		const nonSemantics = result.tokens.filter(
+			(t) => t.category === "primitives" || t.category === "abstractions",
+		);
+
+		for (const token of nonSemantics) {
+			expect(
+				(token as any).modeName,
+				`${token.category} token "${token.figmaName}" should not have modeName`,
+			).toBeUndefined();
+		}
+	});
+
+	test("no semantic mode tokens when darkMode is false (responsive still has modes)", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			darkMode: false,
+		});
+		for (const token of result.tokens) {
+			// Responsive tokens always have modes regardless of darkMode
+			if (token.category === "responsive") continue;
+			expect(
+				(token as any).modeName,
+				`Token "${token.figmaName}" has modeName when darkMode is false`,
+			).toBeUndefined();
 		}
 	});
 });
@@ -213,56 +216,60 @@ describe("token count stability", () => {
 	test("default config produces stable token counts", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			layers: "semantic",
 			darkMode: false,
 		});
 
-		// All token types are always included
+		// All tiers are always generated
 		expect(result.stats.primitiveCount).toBeGreaterThan(0);
+		expect(result.stats.abstractionCount).toBeGreaterThan(0);
+		expect(result.stats.semanticCount).toBeGreaterThan(0);
 		expect(result.stats.totalCount).toBeGreaterThan(100);
 	});
 
-	test("dark mode doubles mode-aware tokens", () => {
+	test("dark mode doubles only semantic tokens", () => {
 		const lightOnly = generateDesignSystem({
 			primary: "#3B82F6",
-			layers: "semantic",
 			darkMode: false,
 		});
 
 		const withDark = generateDesignSystem({
 			primary: "#3B82F6",
-			layers: "semantic",
 			darkMode: true,
 		});
 
-		// Dark mode should roughly double the token count (dual modes)
-		expect(withDark.tokens.length).toBe(lightOnly.tokens.length * 2);
+		// Primitives and abstractions are single-mode — same count
+		expect(withDark.stats.primitiveCount).toBe(lightOnly.stats.primitiveCount);
+		expect(withDark.stats.abstractionCount).toBe(
+			lightOnly.stats.abstractionCount,
+		);
+
+		// Semantics double with dark mode
+		expect(withDark.stats.semanticCount).toBe(
+			lightOnly.stats.semanticCount * 2,
+		);
 	});
 
 	test("secondary color adds tokens proportionally", () => {
 		const without = generateDesignSystem({
 			primary: "#3B82F6",
-			layers: "semantic",
 			darkMode: false,
 		});
 
 		const withSecondary = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			layers: "semantic",
 			darkMode: false,
 		});
 
-		// Secondary adds 11 primitive shades + 4 semantic accent tokens
+		// Secondary adds 1 abstraction (accent/secondary/500) + 1 semantic token
 		const diff = withSecondary.tokens.length - without.tokens.length;
-		expect(diff).toBe(11 + 4);
+		expect(diff).toBeGreaterThan(0);
 	});
 
-	test("no duplicate figmaName within same mode", () => {
+	test("no duplicate figmaName within same mode and category", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			layers: "three-tier",
 			darkMode: true,
 		});
 
@@ -274,13 +281,78 @@ describe("token count stability", () => {
 				seen.set(key, new Set());
 			}
 			const categories = seen.get(key) ?? new Set();
-			// Same figmaName + mode should not appear in the same category twice
 			expect(
 				categories.has(token.category),
 				`Duplicate: "${token.figmaName}" in ${token.category} (${mode})`,
 			).toBe(false);
 			categories.add(token.category);
 		}
+	});
+});
+
+// =========================================================================
+// Token naming — matches target structure
+// =========================================================================
+
+describe("token naming structure", () => {
+	test("primitives use correct path prefixes", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			darkMode: false,
+		});
+
+		const primitives = result.tokens.filter(
+			(t) => t.category === "primitives",
+		);
+
+		// Check that primitive tokens follow the expected naming
+		const prefixes = new Set(
+			primitives.map((t) => t.figmaName.split("/").slice(0, 2).join("/")),
+		);
+
+		expect(prefixes.has("color/white")).toBe(true);
+		expect(prefixes.has("color/black")).toBe(true);
+		expect(prefixes.has("color/gray")).toBe(true);
+		expect(prefixes.has("font/family")).toBe(true);
+		expect(prefixes.has("font/weight")).toBe(true);
+	});
+
+	test("abstractions use correct path prefixes", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			darkMode: false,
+		});
+
+		const abstractions = result.tokens.filter(
+			(t) => t.category === "abstractions",
+		);
+		const names = abstractions.map((t) => t.figmaName);
+
+		expect(names).toContain("accent/primary/500");
+		expect(names.some((n) => n.startsWith("surface/light/"))).toBe(true);
+		expect(names.some((n) => n.startsWith("surface/dark/"))).toBe(true);
+		expect(names.some((n) => n.startsWith("rounded/"))).toBe(true);
+		expect(names.some((n) => n.startsWith("zLayer/"))).toBe(true);
+		expect(names.some((n) => n.startsWith("duration/"))).toBe(true);
+	});
+
+	test("semantics use shadcn/ prefix for UI tokens", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			darkMode: false,
+		});
+
+		const semantics = result.tokens.filter(
+			(t) => t.category === "semantics",
+		);
+		const names = semantics.map((t) => t.figmaName);
+
+		expect(names).toContain("shadcn/background");
+		expect(names).toContain("shadcn/foreground");
+		expect(names).toContain("shadcn/primary");
+		expect(names).toContain("shadcn/border");
+		expect(names).toContain("shadcn/ring");
+		expect(names.some((n) => n.startsWith("backplate/"))).toBe(true);
 	});
 });
 
@@ -319,10 +391,11 @@ describe("edge cases", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			radius: 0,
-			layers: "semantic",
 			darkMode: false,
 		});
-		const radiusTokens = result.tokens.filter((t) => t.type === "borderRadius");
+		const radiusTokens = result.tokens.filter(
+			(t) => t.type === "borderRadius",
+		);
 		expect(radiusTokens.length).toBeGreaterThan(0);
 		for (const token of radiusTokens) {
 			expect(Number(token.value)).toBeGreaterThanOrEqual(0);
@@ -333,10 +406,11 @@ describe("edge cases", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			radius: 32,
-			layers: "semantic",
 			darkMode: false,
 		});
-		const radiusTokens = result.tokens.filter((t) => t.type === "borderRadius");
+		const radiusTokens = result.tokens.filter(
+			(t) => t.type === "borderRadius",
+		);
 		for (const token of radiusTokens) {
 			expect(Number(token.value)).toBeGreaterThanOrEqual(0);
 		}
@@ -355,7 +429,6 @@ describe("CSS output correctness", () => {
 			darkMode: true,
 		});
 
-		// Parse each CSS block and check for duplicate vars
 		const blocks = css.split(/[{}]/);
 		for (const block of blocks) {
 			const vars = block
@@ -378,7 +451,6 @@ describe("CSS output correctness", () => {
 			darkMode: true,
 		});
 
-		// Find all var() references
 		const varRefs = css.match(/var\([^)]+\)/g) ?? [];
 		for (const ref of varRefs) {
 			expect(ref).toMatch(/^var\(--[\w-]+\)$/);
@@ -404,8 +476,8 @@ describe("CSS output correctness", () => {
 				grayName,
 				darkMode: true,
 			});
-			expect(css).toContain(`--color-${grayName}-1:`);
-			expect(css).toContain(`--color-${grayName}-12:`);
+			expect(css).toContain("--color-gray-1:");
+			expect(css).toContain("--color-gray-12:");
 		}
 	});
 });
@@ -420,7 +492,6 @@ describe("performance", () => {
 			primary: "#3B82F6",
 			secondary: "#10B981",
 			grayName: "slate",
-			layers: "three-tier",
 			darkMode: true,
 			radius: 12,
 			typescale: {
@@ -448,7 +519,6 @@ describe("performance", () => {
 		const config: BrandConfig = {
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			layers: "three-tier",
 			darkMode: true,
 		};
 

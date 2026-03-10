@@ -180,9 +180,9 @@ export interface TypescaleConfig {
 	lineHeightHeading: number;
 	/** Scale ratio key or numeric value (default: "major-third" = 1.25) */
 	ratio: string;
-	/** Number of sizes below base (default: 2, max: 4) */
+	/** Number of sizes below base (default: 2, max: 2 — matches Tailwind xs/sm) */
 	stepsDown: number;
-	/** Number of sizes above base (default: 4, max: 7) */
+	/** Number of sizes above base (default: 6, max: 10 — matches Tailwind lg…9xl) */
 	stepsUp: number;
 }
 
@@ -191,13 +191,13 @@ export const DEFAULT_TYPESCALE: TypescaleConfig = {
 	ratio: "major-third",
 	lineHeightBody: 150,
 	lineHeightHeading: 125,
-	stepsUp: 4,
+	stepsUp: 6,
 	stepsDown: 2,
 };
 
-// Step names indexed from base outward
-const STEP_NAMES_UP = ["lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"];
-const STEP_NAMES_DOWN = ["sm", "xs", "2xs", "3xs"];
+// Step names indexed from base outward — matches Tailwind CSS text sizes
+const STEP_NAMES_UP = ["lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl"];
+const STEP_NAMES_DOWN = ["sm", "xs"];
 
 /** Resolve ratio key to numeric value */
 export function resolveRatio(ratioKey: string): number {
@@ -235,9 +235,10 @@ export function computeTypescale(config?: TypescaleConfig): TypeStep[] {
 		lineHeight: round(baseSize * bodyLh),
 	});
 
-	// Downscales — body line-height
+	// Downscales — body line-height (floor at 11px for web legibility)
+	const MIN_FONT_SIZE = 11;
 	for (let i = 1; i <= stepsDown; i++) {
-		const size = round(c.base / ratio ** i);
+		const size = Math.max(MIN_FONT_SIZE, round(c.base / ratio ** i));
 		steps.push({
 			name: STEP_NAMES_DOWN[i - 1],
 			size,
@@ -313,6 +314,24 @@ export function buildFontFamilies(
 	return result;
 }
 
+/** Default font names for Figma (single family, no CSS stack) */
+export const DEFAULT_FONT_NAMES: Record<string, string> = {
+	sans: "Inter",
+	serif: "PT Serif",
+	mono: "Geist Mono",
+};
+
+/** Resolve clean font names for Figma variable binding (no CSS fallback stacks) */
+export function resolveFontNames(
+	overrides?: FontOverrides,
+): Record<string, string> {
+	return {
+		sans: overrides?.sans?.trim() || DEFAULT_FONT_NAMES.sans,
+		serif: overrides?.serif?.trim() || DEFAULT_FONT_NAMES.serif,
+		mono: overrides?.mono?.trim() || DEFAULT_FONT_NAMES.mono,
+	};
+}
+
 // =========================================================================
 // Font weights — Named weight scale
 // =========================================================================
@@ -327,6 +346,154 @@ export const FONT_WEIGHTS: Record<string, number> = {
 	bold: 700,
 	extrabold: 800,
 	black: 900,
+};
+
+/** Numeric key → label (for primitives: font/weight/100 = "thin") */
+export const FONT_WEIGHT_LABELS: Record<string, string> = {
+	"100": "thin",
+	"200": "extra light",
+	"300": "light",
+	"400": "regular",
+	"500": "medium",
+	"600": "semi bold",
+	"700": "bold",
+	"800": "extra bold",
+	"900": "black",
+	"950": "extra black",
+};
+
+/** Named key → numeric value (for primitives: font/weight/variable/thin = 100) */
+export const FONT_WEIGHT_VARIABLE: Record<string, number> = {
+	thin: 100,
+	"extra-light": 200,
+	light: 300,
+	regular: 400,
+	medium: 500,
+	"semi-bold": 600,
+	bold: 700,
+	"extra-bold": 800,
+	black: 900,
+	"extra-black": 950,
+};
+
+// =========================================================================
+// Z-index layers — Semantic stacking context scale
+// =========================================================================
+
+export const ZLAYER_SCALE: Record<string, number> = {
+	default: 0,
+	base: 10,
+	header: 50,
+	dropdown: 100,
+	smoke: 500,
+	modal: 900,
+	toast: 999,
+};
+
+// =========================================================================
+// Sizes — Same as spacing (used for width/height)
+// =========================================================================
+
+export const SIZES_SCALE: Record<string, number> = {
+	"0": 0,
+	"1": 1,
+	"2": 2,
+	"3": 3,
+	"4": 4,
+	"5": 5,
+	"6": 6,
+	"7": 7,
+	"8": 8,
+	"9": 9,
+	"10": 10,
+	"11": 11,
+	"12": 12,
+	"14": 14,
+	"16": 16,
+	"20": 20,
+	"24": 24,
+	"28": 28,
+	"32": 32,
+	"36": 36,
+	"40": 40,
+	"44": 44,
+	"48": 48,
+	"52": 52,
+	"56": 56,
+	"60": 60,
+	"64": 64,
+	"72": 72,
+	"80": 80,
+	"96": 96,
+};
+
+// =========================================================================
+// Containers — Named max-width scale
+// =========================================================================
+
+export const CONTAINER_SCALE: Record<string, string> = {
+	"3xs": "256px",
+	"2xs": "288px",
+	xs: "320px",
+	sm: "384px",
+	md: "448px",
+	lg: "512px",
+	xl: "576px",
+	"2xl": "672px",
+	"3xl": "768px",
+	"4xl": "896px",
+	"5xl": "1024px",
+	"6xl": "1152px",
+	"7xl": "1280px",
+};
+
+// =========================================================================
+// Breakpoints — Responsive breakpoints
+// =========================================================================
+
+export const BREAKPOINTS: Record<string, string> = {
+	sm: "640px",
+	md: "768px",
+	lg: "1024px",
+	xl: "1280px",
+	"2xl": "1536px",
+};
+
+// =========================================================================
+// Motion easing — Cubic bezier curves
+// =========================================================================
+
+export const EASING_CURVES: Record<string, string> = {
+	linear: "cubic-bezier(0, 0, 0, 0)",
+	fast: "cubic-bezier(0, 0, 0, 1)",
+	pointToPoint: "cubic-bezier(0.55, 0.55, 0, 1)",
+	spring: "cubic-bezier(0.13, 1.62, 0, 0.92)",
+	soft: "cubic-bezier(1, 0, 1, 1)",
+	inOut: "cubic-bezier(0.63, 0.05, 0.01, 0.99)",
+};
+
+// =========================================================================
+// Screen — Device screen widths
+// =========================================================================
+
+export const SCREEN_SIZES: Record<string, string> = {
+	"iphone-16-pro": "402px",
+	"ipad-pro-11": "834px",
+	"macbook-air": "1280px",
+	"macbook-pro-16": "1728px",
+};
+
+// =========================================================================
+// Additional accent colors — Static palette beyond primary/secondary
+// =========================================================================
+
+export const ACCENT_PALETTE: Record<string, string> = {
+	red: "rgba(229, 72, 77, 1)",
+	crimson: "rgba(233, 61, 130, 1)",
+	jade: "rgba(41, 163, 131, 1)",
+	amber: "rgba(255, 197, 61, 1)",
+	orange: "rgba(247, 107, 21, 1)",
+	purple: "rgba(142, 78, 198, 1)",
 };
 
 // =========================================================================

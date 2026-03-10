@@ -14,15 +14,14 @@ import { Button } from "../components/ui/Button";
 import { CheckboxWithLabel } from "../components/ui/Checkbox";
 import { Input } from "../components/ui/Input";
 import { NumberField } from "../components/ui/NumberField";
-import { RadioCard } from "../components/ui/Radio";
 import { SHADE_STEPS } from "../generators/color-scale";
 import { RADIX_GRAYS } from "../generators/radix-grays";
 import {
 	type BrandConfig,
 	type GeneratedSystem,
+	type StatusColorOverrides,
 	generateCss,
 	generateDesignSystem,
-	type LayerMode,
 } from "../generators/three-tier";
 import {
 	computeTypescale,
@@ -37,27 +36,6 @@ import styles from "./GeneratePage.module.css";
 
 type ViewState = "config" | "preview" | "progress" | "success";
 
-const LAYER_OPTIONS: {
-	value: LayerMode;
-	title: string;
-	desc: string;
-}[] = [
-	{
-		value: "primitives",
-		title: "Primitives only",
-		desc: "Raw color scales — use when you already have your own semantic layer",
-	},
-	{
-		value: "semantic",
-		title: "Primitives + Semantics",
-		desc: "Color scales plus contextual tokens (background, text, border). Good default.",
-	},
-	{
-		value: "three-tier",
-		title: "Three-tier (with abstractions)",
-		desc: "Adds an indirection layer between primitives and semantics for easy rebranding",
-	},
-];
 
 /** Map token types to readable group labels */
 function getTokenTypeGroup(type: string): string {
@@ -94,13 +72,17 @@ export function GeneratePage() {
 	const [secondaryColor, setSecondaryColor] = useState("#10B981");
 	const [hasSecondary, setHasSecondary] = useState(false);
 	const [grayName, setGrayName] = useState("slate");
-	const [layers, setLayers] = useState<LayerMode>("semantic");
 	const [darkMode, setDarkMode] = useState(true);
 	const [radiusAnchor, setRadiusAnchor] = useState(10);
 	const [typescale, setTypescale] = useState<TypescaleConfig>({
 		...DEFAULT_TYPESCALE,
 	});
-	const [fonts, setFonts] = useState<FontOverrides>({});
+	const [fonts, setFonts] = useState<FontOverrides>({
+		sans: "Inter",
+		serif: "PT Serif",
+		mono: "Geist Mono",
+	});
+	const [statusColors, setStatusColors] = useState<StatusColorOverrides>({});
 	const [collectionName, setCollectionName] = useState("generated");
 
 	// Result state
@@ -115,26 +97,29 @@ export function GeneratePage() {
 		)
 			return null;
 
+		const hasStatusOverrides =
+			statusColors.danger || statusColors.success || statusColors.warning || statusColors.info;
+
 		return {
 			primary: primaryColor,
 			secondary: hasSecondary ? secondaryColor : undefined,
 			grayName,
-			layers,
 			darkMode,
 			radius: radiusAnchor,
 			typescale,
-			fonts: fonts.sans || fonts.serif || fonts.mono ? fonts : undefined,
+			fonts,
+			statusColors: hasStatusOverrides ? statusColors : undefined,
 		};
 	}, [
 		primaryColor,
 		secondaryColor,
 		hasSecondary,
 		grayName,
-		layers,
 		darkMode,
 		radiusAnchor,
 		typescale,
 		fonts,
+		statusColors,
 	]);
 
 	// Generate preview
@@ -173,6 +158,7 @@ export function GeneratePage() {
 				tokens: generated.tokens,
 				collectionName,
 				importMode: "import",
+				stylesData: generated.styles,
 			},
 		});
 	}, [generated, collectionName, postMessage]);
@@ -320,6 +306,52 @@ export function GeneratePage() {
 								</FramePanel>
 							</Frame>
 
+							{/* ── Status Colors ── */}
+							<Frame>
+								<FrameHeader><h3 className={styles.sectionTitle}>Status Colors</h3></FrameHeader>
+								<FramePanel className={styles.sectionContent}>
+									<div className={styles.statusColorGrid}>
+										{(
+											[
+												{ key: "danger", label: "Destructive", fallback: "#EF4444" },
+												{ key: "success", label: "Success", fallback: "#10B981" },
+												{ key: "warning", label: "Warning", fallback: "#F59E0B" },
+												{ key: "info", label: "Info", fallback: "#3B82F6" },
+											] as const
+										).map(({ key, label, fallback }) => (
+											<div className={styles.statusColorItem} key={key}>
+												<label>{label}</label>
+												<div className={styles.colorInputRow}>
+													<input
+														aria-label={`${label} color picker`}
+														className={styles.colorSwatch}
+														onChange={(e) =>
+															setStatusColors({ ...statusColors, [key]: e.target.value })
+														}
+														type="color"
+														value={statusColors[key] || fallback}
+													/>
+													<Input
+														autoComplete="off"
+														className={styles.colorHexInput}
+														maxLength={7}
+														onChange={(e) => {
+															let v = e.target.value;
+															if (!v.startsWith("#")) v = `#${v}`;
+															if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
+																setStatusColors({ ...statusColors, [key]: v.toUpperCase() });
+														}}
+														placeholder={fallback}
+														spellCheck={false}
+														value={statusColors[key] ?? ""}
+													/>
+												</div>
+											</div>
+										))}
+									</div>
+								</FramePanel>
+							</Frame>
+
 							{/* ── Appearance ── */}
 							<Frame>
 								<FrameHeader><h3 className={styles.sectionTitle}>Appearance</h3></FrameHeader>
@@ -330,26 +362,6 @@ export function GeneratePage() {
 										label="Generate Light + Dark modes"
 										onChange={setDarkMode}
 									/>
-
-									<Separator />
-
-									<div className={styles.fieldGroup}>
-										<label>Structure</label>
-										<div className={styles.layerOptions}>
-											{LAYER_OPTIONS.map((opt) => (
-												<RadioCard
-													checked={layers === opt.value}
-													description={opt.desc}
-													id={`layer-${opt.value}`}
-													key={opt.value}
-													name="layers"
-													onChange={(v) => setLayers(v as LayerMode)}
-													title={opt.title}
-													value={opt.value}
-												/>
-											))}
-										</div>
-									</div>
 
 									<Separator />
 
@@ -478,13 +490,13 @@ export function GeneratePage() {
 											<div className={styles.optionGroup}>
 												<label>Steps up</label>
 												<NumberField
-													max={7}
+													max={10}
 													min={0}
 													onBlur={() =>
 														setTypescale({
 															...typescale,
 															stepsUp: Math.min(
-																7,
+																10,
 																Math.max(0, typescale.stepsUp || 0),
 															),
 														})
@@ -498,13 +510,13 @@ export function GeneratePage() {
 											<div className={styles.optionGroup}>
 												<label>Steps down</label>
 												<NumberField
-													max={4}
+													max={2}
 													min={0}
 													onBlur={() =>
 														setTypescale({
 															...typescale,
 															stepsDown: Math.min(
-																4,
+																2,
 																Math.max(0, typescale.stepsDown || 0),
 															),
 														})
@@ -622,17 +634,13 @@ export function GeneratePage() {
 								<div className={styles.statItem}>
 									<strong>{generated.stats.primitiveCount}</strong> primitives
 								</div>
-								{generated.stats.abstractionCount > 0 && (
-									<div className={styles.statItem}>
-										<strong>{generated.stats.abstractionCount}</strong>{" "}
-										abstractions
-									</div>
-								)}
-								{generated.stats.semanticCount > 0 && (
-									<div className={styles.statItem}>
-										<strong>{generated.stats.semanticCount}</strong> semantics
-									</div>
-								)}
+								<div className={styles.statItem}>
+									<strong>{generated.stats.abstractionCount}</strong>{" "}
+									abstractions
+								</div>
+								<div className={styles.statItem}>
+									<strong>{generated.stats.semanticCount}</strong> semantics
+								</div>
 							</div>
 
 							{/* Color scale previews */}

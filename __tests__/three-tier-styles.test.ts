@@ -1,0 +1,395 @@
+import { describe, expect, test } from "vitest";
+import type { BrandConfig } from "../generators/three-tier";
+import { generateDesignSystem } from "../generators/three-tier";
+import { SHADOW_SCALE } from "../generators/token-presets";
+
+const defaultConfig: BrandConfig = {
+	primary: "#3B82F6",
+};
+
+const configWithSecondary: BrandConfig = {
+	primary: "#3B82F6",
+	secondary: "#8B5CF6",
+};
+
+// =========================================================================
+// Helper: recursively collect all leaf style definitions (objects with id + type)
+// Mirrors the logic of processStyleGroup in import-handler.ts
+// =========================================================================
+
+interface StyleLeaf {
+	path: string;
+	data: Record<string, any>;
+}
+
+function collectStyleLeaves(
+	obj: Record<string, any>,
+	parentPath = "",
+): StyleLeaf[] {
+	const leaves: StyleLeaf[] = [];
+	for (const [key, value] of Object.entries(obj)) {
+		const fullPath = parentPath ? `${parentPath}/${key}` : key;
+		if (value && typeof value === "object" && "id" in value && "type" in value) {
+			leaves.push({ path: fullPath, data: value });
+		} else if (value && typeof value === "object") {
+			leaves.push(...collectStyleLeaves(value, fullPath));
+		}
+	}
+	return leaves;
+}
+
+// =========================================================================
+// Top-level styles structure
+// =========================================================================
+
+describe("generateStyles — structure", () => {
+	test("styles object has paint, text, effect keys", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		expect(styles).toHaveProperty("paint");
+		expect(styles).toHaveProperty("text");
+		expect(styles).toHaveProperty("effect");
+	});
+
+	test("no empty top-level style categories", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		for (const category of ["paint", "text", "effect"]) {
+			const leaves = collectStyleLeaves(styles[category]);
+			expect(leaves.length).toBeGreaterThan(0);
+		}
+	});
+});
+
+// =========================================================================
+// Every leaf has id + type (import-handler compatibility)
+// =========================================================================
+
+describe("generateStyles — import-handler compatibility", () => {
+	test("every paint leaf has id and type", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.paint);
+		expect(leaves.length).toBeGreaterThan(0);
+		for (const leaf of leaves) {
+			expect(leaf.data).toHaveProperty("id");
+			expect(leaf.data).toHaveProperty("type");
+			expect(typeof leaf.data.id).toBe("string");
+			expect(leaf.data.id.length).toBeGreaterThan(0);
+		}
+	});
+
+	test("every text leaf has id and type", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.text);
+		expect(leaves.length).toBeGreaterThan(0);
+		for (const leaf of leaves) {
+			expect(leaf.data).toHaveProperty("id");
+			expect(leaf.data).toHaveProperty("type");
+			expect(typeof leaf.data.id).toBe("string");
+			expect(leaf.data.id.length).toBeGreaterThan(0);
+		}
+	});
+
+	test("every effect leaf has id and type", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.effect);
+		expect(leaves.length).toBeGreaterThan(0);
+		for (const leaf of leaves) {
+			expect(leaf.data).toHaveProperty("id");
+			expect(leaf.data).toHaveProperty("type");
+			expect(typeof leaf.data.id).toBe("string");
+			expect(leaf.data.id.length).toBeGreaterThan(0);
+		}
+	});
+
+	test("all style leaf ids are unique across all categories", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const allIds: string[] = [];
+		for (const category of ["paint", "text", "effect"]) {
+			const leaves = collectStyleLeaves(styles[category]);
+			allIds.push(...leaves.map((l) => l.data.id));
+		}
+		expect(new Set(allIds).size).toBe(allIds.length);
+	});
+});
+
+// =========================================================================
+// Paint styles
+// =========================================================================
+
+describe("generateStyles — paint", () => {
+	test("paint styles are nested under semantics/shadcn", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		expect(styles.paint).toHaveProperty("semantics");
+		expect(styles.paint.semantics).toHaveProperty("shadcn");
+	});
+
+	test("paint leaves have type 'color' and fills array", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.paint);
+		for (const leaf of leaves) {
+			expect(leaf.data.type).toBe("color");
+			expect(Array.isArray(leaf.data.fills)).toBe(true);
+			expect(leaf.data.fills.length).toBeGreaterThan(0);
+		}
+	});
+
+	test("paint fills have boundVariable with variableName and collectionName", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.paint);
+		for (const leaf of leaves) {
+			const fill = leaf.data.fills[0];
+			expect(fill.type).toBe("solid");
+			expect(fill.boundVariable).toBeDefined();
+			expect(fill.boundVariable.variableName).toBeDefined();
+			expect(fill.boundVariable.collectionName).toBe("semantics");
+		}
+	});
+
+	test("includes core shadcn semantic colors", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.paint);
+		const names = leaves.map((l) => l.path);
+		// Core shadcn tokens should be present as paint styles
+		const expected = [
+			"semantics/shadcn/background",
+			"semantics/shadcn/foreground",
+			"semantics/shadcn/primary",
+			"semantics/shadcn/primary-foreground",
+			"semantics/shadcn/border",
+			"semantics/shadcn/ring",
+			"semantics/shadcn/muted",
+			"semantics/shadcn/muted-foreground",
+		];
+		for (const name of expected) {
+			expect(names).toContain(name);
+		}
+	});
+});
+
+// =========================================================================
+// Text styles
+// =========================================================================
+
+describe("generateStyles — text", () => {
+	test("text styles are nested under typography", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		expect(styles.text).toHaveProperty("typography");
+	});
+
+	test("text leaves have type 'text' and required font properties", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.text);
+		for (const leaf of leaves) {
+			expect(leaf.data.type).toBe("text");
+			expect(leaf.data.fontFamily).toBeDefined();
+			expect(leaf.data.fontStyle).toBeDefined();
+			expect(leaf.data.fontSize).toMatch(/^\d+px$/);
+			expect(leaf.data.lineHeight).toMatch(/^\d+px$/);
+		}
+	});
+
+	test("generates regular and strong variants for each typescale step", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.text);
+		const names = leaves.map((l) => l.path);
+
+		// Default typescale: stepsUp=6 (lg…5xl) + base + stepsDown=2 (sm,xs) = 9 steps × 2 variants = 18
+		const expectedSteps = ["5xl", "4xl", "3xl", "2xl", "xl", "lg", "base", "sm", "xs"];
+		for (const step of expectedSteps) {
+			expect(names).toContain(`typography/${step}`);
+			expect(names).toContain(`typography/${step}-strong`);
+		}
+	});
+
+	test("regular variants use 'Regular' fontStyle, strong use 'Medium'", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.text);
+		for (const leaf of leaves) {
+			if (leaf.path.endsWith("-strong")) {
+				expect(leaf.data.fontStyle).toBe("Medium");
+			} else {
+				expect(leaf.data.fontStyle).toBe("Regular");
+			}
+		}
+	});
+
+	test("text styles bind fontSize to responsive collection variables", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.text);
+		for (const leaf of leaves) {
+			expect(leaf.data.fontSizeBoundVariable).toBeDefined();
+			expect(leaf.data.fontSizeBoundVariable.collectionName).toBe("responsive");
+			expect(leaf.data.fontSizeBoundVariable.variableName).toMatch(
+				/^typography\/.+\/font-size$/,
+			);
+		}
+	});
+
+	test("text styles bind lineHeight to responsive collection variables", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.text);
+		for (const leaf of leaves) {
+			expect(leaf.data.lineHeightBoundVariable).toBeDefined();
+			expect(leaf.data.lineHeightBoundVariable.collectionName).toBe("responsive");
+			expect(leaf.data.lineHeightBoundVariable.variableName).toMatch(
+				/^typography\/.+\/line-height$/,
+			);
+		}
+	});
+
+	test("text styles bind fontFamily to primary font abstraction", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.text);
+		for (const leaf of leaves) {
+			expect(leaf.data.fontFamilyBoundVariable).toBeDefined();
+			expect(leaf.data.fontFamilyBoundVariable.variableName).toBe("font/family/primary");
+			expect(leaf.data.fontFamilyBoundVariable.collectionName).toBe("abstractions");
+		}
+	});
+
+	test("text styles bind fontWeight — regular to default, strong to strong", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const leaves = collectStyleLeaves(styles.text);
+		for (const leaf of leaves) {
+			expect(leaf.data.fontWeightBoundVariable).toBeDefined();
+			if (leaf.path.endsWith("-strong")) {
+				expect(leaf.data.fontWeightBoundVariable.variableName).toBe("font/weight/strong");
+			} else {
+				expect(leaf.data.fontWeightBoundVariable.variableName).toBe("font/weight/default");
+			}
+		}
+	});
+
+	test("respects custom font family", () => {
+		const config: BrandConfig = {
+			primary: "#3B82F6",
+			fonts: { sans: "Geist" },
+		};
+		const { styles } = generateDesignSystem(config);
+		const leaves = collectStyleLeaves(styles.text);
+		for (const leaf of leaves) {
+			expect(leaf.data.fontFamily).toBe("Geist");
+		}
+	});
+});
+
+// =========================================================================
+// Effect styles
+// =========================================================================
+
+describe("generateStyles — effect", () => {
+	test("effect styles include shadow, blur, and backdrop-blur groups", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		expect(styles.effect).toHaveProperty("shadow");
+		expect(styles.effect).toHaveProperty("blur");
+		expect(styles.effect).toHaveProperty("backdrop-blur");
+	});
+
+	test("shadow styles match SHADOW_SCALE levels (0-6)", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const shadowKeys = Object.keys(SHADOW_SCALE);
+		for (const level of shadowKeys) {
+			expect(styles.effect.shadow).toHaveProperty(level);
+			expect(styles.effect.shadow[level].type).toBe("effect");
+			expect(styles.effect.shadow[level].id).toBeDefined();
+		}
+	});
+
+	test("shadow effects have correct drop-shadow structure", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		// Level 2 has 2 layers
+		const shadow2 = styles.effect.shadow["2"];
+		expect(shadow2.effects.length).toBe(2);
+		for (const eff of shadow2.effects) {
+			expect(eff.type).toBe("drop-shadow");
+			expect(eff.offsetX).toMatch(/px$/);
+			expect(eff.offsetY).toMatch(/px$/);
+			expect(eff.radius).toMatch(/px$/);
+			expect(eff.spread).toMatch(/px$/);
+			expect(eff.color).toMatch(/^rgba\(/);
+			expect(eff.visible).toBe(true);
+		}
+	});
+
+	test("blur styles have layer-blur effects", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		for (const key of ["1", "2", "3", "4"]) {
+			const blur = styles.effect.blur[key];
+			expect(blur.type).toBe("effect");
+			expect(blur.id).toBeDefined();
+			expect(blur.effects[0].type).toBe("layer-blur");
+			expect(blur.effects[0].radius).toMatch(/px$/);
+		}
+	});
+
+	test("backdrop-blur has background-blur effect", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const bb = styles.effect["backdrop-blur"]["1"];
+		expect(bb.type).toBe("effect");
+		expect(bb.id).toBeDefined();
+		expect(bb.effects[0].type).toBe("background-blur");
+	});
+});
+
+// =========================================================================
+// processStyleGroup simulation — ensures no leaf is missed
+// =========================================================================
+
+describe("generateStyles — processStyleGroup simulation", () => {
+	test("collectStyleLeaves finds all leaves that processStyleGroup would find", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		let totalLeaves = 0;
+		for (const category of ["paint", "text", "effect"]) {
+			const leaves = collectStyleLeaves(styles[category]);
+			totalLeaves += leaves.length;
+		}
+		// Should have: paint (shadcn semantics) + text (typescale×2) + effect (7 shadow + 4 blur + 1 backdrop)
+		// Paint: at least 10 shadcn colors
+		// Text: 9 steps × 2 = 18 (with default 6 up + 2 down)
+		// Effect: 7 + 4 + 1 = 12
+		expect(totalLeaves).toBeGreaterThanOrEqual(40);
+	});
+
+	test("no nested object without id+type is mistakenly treated as a leaf", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+
+		// Walk the full tree and confirm every object with both id and type
+		// is actually a valid style definition (has fills or effects)
+		for (const category of ["paint", "text", "effect"]) {
+			const leaves = collectStyleLeaves(styles[category]);
+			for (const leaf of leaves) {
+				const hasContent =
+					leaf.data.fills ||
+					leaf.data.effects ||
+					leaf.data.fontFamily;
+				expect(hasContent).toBeTruthy();
+			}
+		}
+	});
+
+	test("no objects without id are silently skipped (regression guard)", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+
+		// Walk every nested value and confirm that any object with 'type'
+		// also has 'id' — if not, processStyleGroup would skip it
+		function assertAllTypedHaveId(obj: any, path = "") {
+			for (const [key, value] of Object.entries(obj)) {
+				const fullPath = path ? `${path}/${key}` : key;
+				if (value && typeof value === "object" && !Array.isArray(value)) {
+					if ("type" in value) {
+						expect(value).toHaveProperty(
+							"id",
+							expect.any(String),
+						);
+					} else {
+						// Recurse into groups
+						assertAllTypedHaveId(value, fullPath);
+					}
+				}
+			}
+		}
+
+		assertAllTypedHaveId(styles.paint);
+		assertAllTypedHaveId(styles.text);
+		assertAllTypedHaveId(styles.effect);
+	});
+});

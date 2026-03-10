@@ -328,8 +328,8 @@ describe("shadow parity with dev shadow-tokens.css", () => {
 describe("mathematical typescale generation", () => {
 	test("default config produces correct number of steps", () => {
 		const steps = computeTypescale(DEFAULT_TYPESCALE);
-		// 4 up + 1 base + 2 down = 7
-		expect(steps.length).toBe(7);
+		// 6 up + 1 base + 2 down = 9
+		expect(steps.length).toBe(9);
 	});
 
 	test("base step matches configured base size", () => {
@@ -395,36 +395,35 @@ describe("semantic token coverage vs dev semantics.css", () => {
 
 		expect(coreDevNames.length).toBeGreaterThan(0);
 
-		// Map dev names to generator naming convention
+		// Map dev names to generator naming convention (shadcn/ prefix)
 		const nameMapping: Record<string, string> = {
-			background: "background/default",
-			foreground: "foreground/default",
-			card: "card/default",
-			"card-foreground": "card/foreground",
-			popover: "popover/default",
-			"popover-foreground": "popover/foreground",
-			primary: "background/emphasis",
-			"primary-foreground": "foreground/on-emphasis",
-			secondary: "background/muted",
-			"secondary-foreground": "foreground/muted",
-			muted: "background/muted",
-			"muted-foreground": "foreground/muted",
-			accent: "background/accent",
-			"accent-foreground": "foreground/accent",
-			destructive: "destructive/default",
-			border: "border/default",
-			input: "input/default",
-			ring: "ring/default",
-			success: "success/default",
-			warning: "warning/default",
-			info: "info/default",
+			background: "shadcn/background",
+			foreground: "shadcn/foreground",
+			card: "shadcn/card",
+			"card-foreground": "shadcn/card-foreground",
+			popover: "shadcn/popover",
+			"popover-foreground": "shadcn/popover-foreground",
+			primary: "shadcn/primary",
+			"primary-foreground": "shadcn/primary-foreground",
+			secondary: "shadcn/secondary",
+			"secondary-foreground": "shadcn/secondary-foreground",
+			muted: "shadcn/muted",
+			"muted-foreground": "shadcn/muted-foreground",
+			accent: "shadcn/accent",
+			"accent-foreground": "shadcn/accent-foreground",
+			destructive: "shadcn/destructive",
+			border: "shadcn/border",
+			input: "shadcn/input",
+			ring: "shadcn/ring",
+			success: "shadcn/success",
+			warning: "shadcn/warning",
+			info: "shadcn/info",
 		};
 
 		const result = generateDesignSystem({
 			primary: "#0090FF",
 			secondary: "#10B981",
 			grayName: "gray",
-			layers: "semantic",
 			darkMode: true,
 		});
 		const genNames = new Set(
@@ -463,7 +462,6 @@ describe("semantic token coverage vs dev semantics.css", () => {
 		const result = generateDesignSystem({
 			primary: "#0090FF",
 			grayName: "gray",
-			layers: "semantic",
 			darkMode: true,
 		});
 
@@ -473,14 +471,14 @@ describe("semantic token coverage vs dev semantics.css", () => {
 			genName: string;
 			mode: "light" | "dark";
 		}[] = [
-			{ devName: "--card", genName: "card/default", mode: "light" },
-			{ devName: "--card", genName: "card/default", mode: "dark" },
-			{ devName: "--popover", genName: "popover/default", mode: "light" },
-			{ devName: "--popover", genName: "popover/default", mode: "dark" },
-			{ devName: "--input", genName: "input/default", mode: "light" },
-			{ devName: "--input", genName: "input/default", mode: "dark" },
-			{ devName: "--ring", genName: "ring/default", mode: "light" },
-			{ devName: "--ring", genName: "ring/default", mode: "dark" },
+			{ devName: "--card", genName: "shadcn/card", mode: "light" },
+			{ devName: "--card", genName: "shadcn/card", mode: "dark" },
+			{ devName: "--popover", genName: "shadcn/popover", mode: "light" },
+			{ devName: "--popover", genName: "shadcn/popover", mode: "dark" },
+			{ devName: "--input", genName: "shadcn/input", mode: "light" },
+			{ devName: "--input", genName: "shadcn/input", mode: "dark" },
+			{ devName: "--ring", genName: "shadcn/ring", mode: "light" },
+			{ devName: "--ring", genName: "shadcn/ring", mode: "dark" },
 		];
 
 		for (const check of checks) {
@@ -532,26 +530,25 @@ describe("abstraction layer parity with dev abstractions.css", () => {
 
 		expect(devSurfaceSteps.size).toBe(12);
 
-		// Generator produces neutral/1 through neutral/12 in three-tier mode
+		// Generator produces surface/light/1 through surface/light/12 in abstractions
 		const result = generateDesignSystem({
 			primary: "#0090FF",
 			grayName: "gray",
-			layers: "three-tier",
 			darkMode: true,
 		});
 
-		const genNeutralSteps = new Set<number>();
+		const genSurfaceSteps = new Set<number>();
 		for (const token of result.tokens) {
 			if (token.category === "abstractions") {
-				const match = token.figmaName.match(/^neutral\/(\d+)$/);
-				if (match) genNeutralSteps.add(Number(match[1]));
+				const match = token.figmaName.match(/^surface\/light\/(\d+)$/);
+				if (match) genSurfaceSteps.add(Number(match[1]));
 			}
 		}
 
 		for (const step of devSurfaceSteps) {
 			expect(
-				genNeutralSteps.has(step),
-				`Dev surface step ${step} missing from generator neutral abstractions`,
+				genSurfaceSteps.has(step),
+				`Dev surface step ${step} missing from generator surface abstractions`,
 			).toBe(true);
 		}
 	});
@@ -994,7 +991,6 @@ describe("gap analysis", () => {
 			primary: "#0090FF",
 			secondary: "#10B981",
 			grayName: "gray",
-			layers: "semantic",
 			darkMode: true,
 		});
 		const _genNames = new Set(

@@ -190,13 +190,6 @@
 	color: var(--muted-foreground);
 }
 
-/* Layer mode radio cards */
-.layerOptions {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-sm);
-}
-
 /* Preview step */
 .previewSection {
 	display: flex;
@@ -553,4 +546,24 @@
 
 .actions > *:last-child {
 	margin-left: auto;
+}
+
+/* Status Colors */
+
+.statusColorGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--spacing-md);
+}
+
+.statusColorItem {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+}
+
+.statusColorItem > label {
+	font-size: var(--text-xs);
+	font-weight: var(--font-medium);
+	color: var(--muted-foreground);
 }
