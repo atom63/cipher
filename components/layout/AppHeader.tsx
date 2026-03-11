@@ -32,20 +32,19 @@ export function AppHeader({
 				</Button>
 				<Button
 					onClick={onToggleViewMode}
-					size="sm"
+					size="icon-sm"
 					title={
 						viewMode === "default"
 							? "Switch to Compact Mode"
 							: "Switch to Default Mode"
 					}
-					variant="soft"
+					variant="ghost"
 				>
 					{viewMode === "default" ? (
 						<Columns2 size={14} />
 					) : (
 						<Square size={14} />
 					)}
-					{viewMode === "default" ? "Compact" : "Expand"}
 				</Button>
 			</div>
 		</header>

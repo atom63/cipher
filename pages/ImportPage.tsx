@@ -6,7 +6,12 @@ import {
 	SuccessView,
 	TokenTable,
 } from "../components/import";
-import { SectionHeader, useToast } from "../components/ui";
+import {
+	Frame,
+	FramePanel,
+	SectionHeader,
+	useToast,
+} from "../components/ui";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type {
 	DesignToken,
@@ -222,7 +227,11 @@ export function ImportPage() {
 						variant="primary"
 					/>
 
-					<FileImport onTokensParsed={handleTokensParsed} />
+					<Frame>
+						<FramePanel>
+							<FileImport onTokensParsed={handleTokensParsed} />
+						</FramePanel>
+					</Frame>
 				</>
 			)}
 

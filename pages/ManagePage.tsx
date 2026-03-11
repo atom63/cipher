@@ -39,7 +39,6 @@ import {
 	LoadingState,
 	RenameDialog,
 	ScrollArea,
-	SectionHeader,
 	Separator,
 	Tabs,
 	useToast,
@@ -815,11 +814,6 @@ export function ManagePage({
 	if (loading) {
 		return (
 			<div className="manage-page">
-				<SectionHeader
-					description="Loading variables from Figma…"
-					title="Manage Variables"
-					variant="primary"
-				/>
 				<LoadingState message="Loading variables…" />
 			</div>
 		);
@@ -848,159 +842,156 @@ export function ManagePage({
 
 	return (
 		<div className="manage-page" ref={listRef}>
-			<SectionHeader
-				description={`${variables.length} variable${variables.length !== 1 ? "s" : ""} across ${collections.length} collection${collections.length !== 1 ? "s" : ""}`}
-				title="Manage Variables"
-				variant="primary"
-			/>
-
 			{/* Toolbar + Action bar */}
 			<Frame>
-			<FramePanel>
-			<div className="manage-toolbar">
-				<div className="manage-toolbar-left">
-					<div className="manage-search">
-						<Search className="manage-search-icon" size={14} />
-						<input
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder="Search variables…"
-							type="text"
-							value={search}
-						/>
-						{search && (
-							<button
-								aria-label="Clear search"
-								className="manage-search-clear"
-								onClick={() => setSearch("")}
-								type="button"
-							>
-								<X size={12} />
-							</button>
-						)}
+			<FramePanel className="manage-toolbar-stack">
+				{/* Top row: search + filters */}
+				<div className="manage-toolbar">
+					<div className="manage-toolbar-left">
+						<div className="manage-search">
+							<Search className="manage-search-icon" size={14} />
+							<input
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder="Search variables…"
+								type="text"
+								value={search}
+							/>
+							{search && (
+								<button
+									aria-label="Clear search"
+									className="manage-search-clear"
+									onClick={() => setSearch("")}
+									type="button"
+								>
+									<X size={12} />
+								</button>
+							)}
+						</div>
+
+						<select
+							className="manage-filter-select"
+							onChange={(e) => setFilterCollection(e.target.value)}
+							value={filterCollection}
+						>
+							<option value="all">All collections</option>
+							{collections.map((c) => (
+								<option key={c.id} value={c.id}>
+									{c.name} ({c.variableCount})
+								</option>
+							))}
+						</select>
+
+						<select
+							className="manage-filter-select"
+							onChange={(e) => setFilterType(e.target.value)}
+							value={filterType}
+						>
+							<option value="all">All types</option>
+							{uniqueTypes.map((t) => (
+								<option key={t} value={t}>
+									{t}
+								</option>
+							))}
+						</select>
 					</div>
 
-					<select
-						className="manage-filter-select"
-						onChange={(e) => setFilterCollection(e.target.value)}
-						value={filterCollection}
-					>
-						<option value="all">All collections</option>
-						{collections.map((c) => (
-							<option key={c.id} value={c.id}>
-								{c.name} ({c.variableCount})
-							</option>
-						))}
-					</select>
-
-					<select
-						className="manage-filter-select"
-						onChange={(e) => setFilterType(e.target.value)}
-						value={filterType}
-					>
-						<option value="all">All types</option>
-						{uniqueTypes.map((t) => (
-							<option key={t} value={t}>
-								{t}
-							</option>
-						))}
-					</select>
+					<div className="manage-toolbar-right">
+						<Button
+							aria-label="Refresh variables"
+							data-tooltip="Refresh"
+							onClick={loadVariables}
+							size="icon-sm"
+							variant="ghost"
+						>
+							<RefreshCw size={14} />
+						</Button>
+					</div>
 				</div>
 
-				<div className="manage-toolbar-right">
-					<Button
-						aria-label="Refresh variables"
-						data-tooltip="Refresh"
-						onClick={loadVariables}
-						size="icon-sm"
-						variant="ghost"
-					>
-						<RefreshCw size={14} />
-					</Button>
+				{/* Bottom row: actions */}
+				<div className="manage-actionbar">
+					<span className="manage-selection-count">
+						{selectedIds.size} selected
+					</span>
+					<div className="manage-actionbar-actions">
+						{/* Edit group */}
+						<Button
+							disabled={selectedIds.size === 0}
+							onClick={() => openPanel("rename")}
+							size="sm"
+							variant="ghost"
+						>
+							<PenLine size={14} />
+							Rename
+						</Button>
+						<Button
+							disabled={selectedIds.size === 0}
+							onClick={() => openPanel("edit")}
+							size="sm"
+							variant="ghost"
+						>
+							<Pencil size={14} />
+							Edit
+						</Button>
+						<Button
+							disabled={selectedIds.size === 0}
+							onClick={() => openPanel("move")}
+							size="sm"
+							variant="ghost"
+						>
+							<FolderInput size={14} />
+							Move
+						</Button>
+						<Separator orientation="vertical" />
+						{/* Transform group */}
+						<Button
+							disabled={operationPending || selectedIds.size === 0}
+							onClick={handleDuplicate}
+							size="sm"
+							variant="ghost"
+						>
+							<Copy size={14} />
+							Duplicate
+						</Button>
+						<Button
+							disabled={selectedIds.size === 0}
+							onClick={() => openPanel("scale")}
+							size="sm"
+							variant="ghost"
+						>
+							<ArrowUpDown size={14} />
+							Scale
+						</Button>
+						<Separator orientation="vertical" />
+						{/* Destructive */}
+						<Button
+							disabled={selectedIds.size === 0}
+							onClick={() => {
+								postMessage({
+									type: "check-dependencies",
+									data: { variableIds: Array.from(selectedIds) },
+								});
+							}}
+							size="sm"
+							variant="ghost"
+						>
+							<Trash2 size={14} />
+							Delete
+						</Button>
+					</div>
+					{selectedIds.size > 0 && (
+						<Button
+							aria-label="Clear selection"
+							data-tooltip="Clear selection (Esc)"
+							onClick={selectNone}
+							size="icon-sm"
+							variant="ghost"
+						>
+							<X size={14} />
+						</Button>
+					)}
 				</div>
-			</div>
 			</FramePanel>
-			<FrameFooter className="manage-actionbar">
-				<span className="manage-selection-count">
-					{selectedIds.size} selected
-				</span>
-				<div className="manage-actionbar-actions">
-					{/* Edit group */}
-					<Button
-						disabled={selectedIds.size === 0}
-						onClick={() => openPanel("rename")}
-						size="sm"
-						variant="ghost"
-					>
-						<PenLine size={14} />
-						Rename
-					</Button>
-					<Button
-						disabled={selectedIds.size === 0}
-						onClick={() => openPanel("edit")}
-						size="sm"
-						variant="ghost"
-					>
-						<Pencil size={14} />
-						Edit
-					</Button>
-					<Button
-						disabled={selectedIds.size === 0}
-						onClick={() => openPanel("move")}
-						size="sm"
-						variant="ghost"
-					>
-						<FolderInput size={14} />
-						Move
-					</Button>
-					<Separator orientation="vertical" />
-					{/* Transform group */}
-					<Button
-						disabled={operationPending || selectedIds.size === 0}
-						onClick={handleDuplicate}
-						size="sm"
-						variant="ghost"
-					>
-						<Copy size={14} />
-						Duplicate
-					</Button>
-					<Button
-						disabled={selectedIds.size === 0}
-						onClick={() => openPanel("scale")}
-						size="sm"
-						variant="ghost"
-					>
-						<ArrowUpDown size={14} />
-						Scale
-					</Button>
-					<Separator orientation="vertical" />
-					{/* Destructive */}
-					<Button
-						disabled={selectedIds.size === 0}
-						onClick={() => {
-							postMessage({
-								type: "check-dependencies",
-								data: { variableIds: Array.from(selectedIds) },
-							});
-						}}
-						size="sm"
-						variant="ghost"
-					>
-						<Trash2 size={14} />
-						Delete
-					</Button>
-				</div>
-				{selectedIds.size > 0 && (
-					<Button
-						aria-label="Clear selection"
-						data-tooltip="Clear selection (Esc)"
-						onClick={selectNone}
-						size="icon-sm"
-						variant="ghost"
-					>
-						<X size={14} />
-					</Button>
-				)}
-			</FrameFooter>
 			</Frame>
 
 			{/* Rename dialog */}

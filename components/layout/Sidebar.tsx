@@ -2,6 +2,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Download,
+	Info,
 	LayoutGrid,
 	Palette,
 	Settings,
@@ -19,7 +20,8 @@ export type PageId =
 	| "import"
 	| "export"
 	| "settings"
-	| "styleguide";
+	| "styleguide"
+	| "about";
 
 interface MenuItem {
 	enabled: boolean;
@@ -38,9 +40,9 @@ interface SidebarProps {
 
 const menuItems: MenuItem[] = [
 	{
-		id: "manage",
-		label: "Manage",
-		icon: LayoutGrid,
+		id: "generate",
+		label: "Generate",
+		icon: Sparkles,
 		enabled: true,
 		section: "features",
 	},
@@ -52,9 +54,9 @@ const menuItems: MenuItem[] = [
 		section: "features",
 	},
 	{
-		id: "generate",
-		label: "Generate",
-		icon: Sparkles,
+		id: "manage",
+		label: "Manage",
+		icon: LayoutGrid,
 		enabled: true,
 		section: "features",
 	},
@@ -83,6 +85,13 @@ const menuItems: MenuItem[] = [
 		id: "styleguide",
 		label: "Styleguide",
 		icon: Palette,
+		enabled: true,
+		section: "config",
+	},
+	{
+		id: "about",
+		label: "About",
+		icon: Info,
 		enabled: true,
 		section: "config",
 	},

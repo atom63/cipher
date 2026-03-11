@@ -383,11 +383,11 @@ export function CustomizePage() {
 		);
 	}
 
-	// ---- Config / Preview ----
-	return (
-		<div className={styles.page}>
-			{view === "config" && (
-				<>
+	// ---- Config ----
+	if (view === "config") {
+		return (
+			<div className={styles.page}>
+				<div className={styles.pageBody}>
 					<SectionHeader
 						action={
 							<Button onClick={handleRefresh} size="sm" variant="ghost">
@@ -753,23 +753,27 @@ export function CustomizePage() {
 							</FramePanel>
 						</Frame>
 
-						{/* Update button */}
-						<div className={styles.actions}>
-							<Button
-								disabled={!generated}
-								onClick={() => setView("preview")}
-								variant="primary"
-							>
-								<Wand2 size={14} />
-								Preview Changes
-							</Button>
 						</div>
-					</div>
-				</>
-			)}
+				</div>
+				<div className={styles.actions}>
+					<Button
+						disabled={!generated}
+						onClick={() => setView("preview")}
+						variant="primary"
+					>
+						<Wand2 size={14} />
+						Preview Changes
+					</Button>
+				</div>
+			</div>
+		);
+	}
 
-			{view === "preview" && generated && (
-				<>
+	// ---- Preview ----
+	if (view === "preview" && generated) {
+		return (
+			<div className={styles.page}>
+				<div className={styles.pageBody}>
 					<SectionHeader
 						description={`${generated.stats.totalCount} tokens will be updated`}
 						title="Preview Changes"
@@ -842,26 +846,27 @@ export function CustomizePage() {
 						{/* Radius preview */}
 						<RadiusPreview scale={generated.radiusScale} />
 
-						{/* Actions */}
-						<div className={styles.actions}>
-							<Button onClick={() => setView("config")} variant="ghost">
-								<ArrowLeft size={14} />
-								Back
-							</Button>
-							<Button onClick={handleCopyCss} variant="ghost">
-								<ClipboardCopy size={14} />
-								Copy CSS
-							</Button>
-							<Button onClick={handleUpdate} variant="primary">
-								<Wand2 size={14} />
-								Update in Figma
-							</Button>
 						</div>
-					</div>
-				</>
-			)}
-		</div>
-	);
+				</div>
+				<div className={styles.actions}>
+					<Button onClick={() => setView("config")} variant="ghost">
+						<ArrowLeft size={14} />
+						Back
+					</Button>
+					<Button onClick={handleCopyCss} variant="ghost">
+						<ClipboardCopy size={14} />
+						Copy CSS
+					</Button>
+					<Button onClick={handleUpdate} variant="primary">
+						<Wand2 size={14} />
+						Update in Figma
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	return null;
 }
 
 // --- Shared sub-components (same as GeneratePage) ---

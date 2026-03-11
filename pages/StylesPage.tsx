@@ -34,7 +34,6 @@ import {
 	LoadingState,
 	RenameDialog,
 	ScrollArea,
-	SectionHeader,
 	Separator,
 	useToast,
 } from "../components/ui";
@@ -727,11 +726,6 @@ export function StylesPage() {
 	if (loading) {
 		return (
 			<div className="manage-page">
-				<SectionHeader
-					description="Loading styles from Figma…"
-					title="Styles"
-					variant="primary"
-				/>
 				<LoadingState message="Loading styles…" />
 			</div>
 		);
@@ -739,16 +733,6 @@ export function StylesPage() {
 
 	return (
 		<div className="manage-page">
-			<SectionHeader
-				description={
-					counts
-						? `${counts.total} styles — ${counts.paint} color, ${counts.text} text, ${counts.effect} effect, ${counts.grid} grid`
-						: ""
-				}
-				title="Styles"
-				variant="primary"
-			/>
-
 			{/* Toolbar + Action bar */}
 			<Frame>
 			<FramePanel>

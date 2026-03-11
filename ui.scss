@@ -360,6 +360,7 @@ body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  padding: var(--spacing-xl);
 }
 
 /* === Coming Soon Pages === */
@@ -430,6 +431,7 @@ body {
 .settings-page {
   max-width: min(700px, 100%);
   margin: 0 auto;
+  padding: var(--spacing-xl);
 }
 
 .settings-header {
@@ -500,8 +502,6 @@ body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--spacing-xl);
-  padding-bottom: var(--spacing-xl);
   min-height: 0;
   background: var(--background);
 }
@@ -547,16 +547,21 @@ body {
   height: 100%;
   overflow: hidden;
 
-  > [class*="tabsContainer"] {
-    flex-shrink: 0;
-    padding: var(--spacing-sm) var(--spacing-md) 0;
-    border-bottom: 1px solid var(--border);
-  }
-
   > [role="tabpanel"] {
     flex: 1;
     min-height: 0;
     overflow: hidden;
+  }
+}
+
+.manage-tabs-header {
+  flex-shrink: 0;
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md);
+
+  /* Remove default SectionHeader bottom margin/padding — tabs sit right below */
+  > [class*="header"] {
+    padding-bottom: 0;
+    margin-bottom: var(--spacing-sm);
   }
 }
 
@@ -566,18 +571,26 @@ body {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  padding: 0 var(--spacing-xl);
+}
+
+.manage-toolbar-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 .manage-toolbar {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex-shrink: 0;
 }
 
 .manage-toolbar-left {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-sm);
   flex: 1;
@@ -588,6 +601,7 @@ body {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
+  margin-left: auto;
 }
 
 .manage-search {
@@ -598,7 +612,8 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
-  flex: 1;
+  flex: 1 1 180px;
+  min-width: 120px;
   max-width: 240px;
   transition: border-color var(--transition), box-shadow var(--transition);
 
@@ -653,6 +668,8 @@ body {
   color: var(--foreground);
   outline: none;
   cursor: pointer;
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 100%;
   transition: border-color var(--transition), box-shadow var(--transition);
 
@@ -668,8 +685,9 @@ body {
 
 .manage-actionbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs) var(--spacing-sm);
   min-height: var(--size-7, 1.75rem);
   flex-shrink: 0;
 }
@@ -678,7 +696,6 @@ body {
   font-size: var(--text-xs);
   color: var(--muted-foreground);
   white-space: nowrap;
-  min-width: max-content;
 }
 
 .manage-actionbar-actions {

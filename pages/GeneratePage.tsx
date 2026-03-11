@@ -173,11 +173,10 @@ export function GeneratePage() {
 	}, []);
 
 	// ---- Config View ----
-	if (view === "config" || view === "preview") {
+	if (view === "config") {
 		return (
 			<div className={styles.page}>
-				{view === "config" && (
-					<>
+				<div className={styles.pageBody}>
 						<SectionHeader
 							description="Create a complete token system from your brand colors"
 							title="Generate Design System"
@@ -570,23 +569,26 @@ export function GeneratePage() {
 								</FramePanel>
 							</Frame>
 
-							{/* Preview button */}
-							<div className={styles.actions}>
-								<Button
-									disabled={!generated}
-									onClick={() => setView("preview")}
-									variant="primary"
-								>
-									<Sparkles size={14} />
-									Preview
-								</Button>
 							</div>
-						</div>
-					</>
-				)}
+				</div>
+				<div className={styles.actions}>
+					<Button
+						disabled={!generated}
+						onClick={() => setView("preview")}
+						variant="primary"
+					>
+						<Sparkles size={14} />
+						Preview
+					</Button>
+				</div>
+			</div>
+		);
+	}
 
-				{view === "preview" && generated && (
-					<>
+	if (view === "preview" && generated) {
+		return (
+			<div className={styles.page}>
+				<div className={styles.pageBody}>
 						<SectionHeader
 							description={`${generated.stats.totalCount} tokens across 4 collections`}
 							title="Preview"
@@ -665,24 +667,22 @@ export function GeneratePage() {
 							{/* Token list */}
 							<TokenPreviewList generated={generated} />
 
-							{/* Actions */}
-							<div className={styles.actions}>
-								<Button onClick={() => setView("config")}variant="ghost" >
-									<ArrowLeft size={14} />
-									Back
-								</Button>
-								<Button onClick={handleCopyCss}variant="ghost" >
-									<ClipboardCopy size={14} />
-									Copy CSS
-								</Button>
-								<Button onClick={handleGenerate}variant="primary" >
-									<Wand2 size={14} />
-									Create in Figma
-								</Button>
-							</div>
 						</div>
-					</>
-				)}
+				</div>
+				<div className={styles.actions}>
+					<Button onClick={() => setView("config")} variant="ghost">
+						<ArrowLeft size={14} />
+						Back
+					</Button>
+					<Button onClick={handleCopyCss} variant="ghost">
+						<ClipboardCopy size={14} />
+						Copy CSS
+					</Button>
+					<Button onClick={handleGenerate} variant="primary">
+						<Wand2 size={14} />
+						Create in Figma
+					</Button>
+				</div>
 			</div>
 		);
 	}
