@@ -110,14 +110,13 @@
 /* Gray palette selector */
 .graySelector {
 	display: flex;
-	flex-wrap: wrap;
+	flex-direction: column;
 	gap: var(--spacing-sm);
 }
 
 .grayOption {
 	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-xs);
+	gap: var(--spacing-md);
 	align-items: center;
 	padding: var(--spacing-sm) var(--spacing-md);
 	cursor: pointer;
@@ -128,7 +127,6 @@
 }
 
 .grayOption:hover {
-	background-color: color-mix(in oklch, var(--primary) 20%, transparent);
 	border-color: var(--primary);
 }
 
@@ -138,7 +136,7 @@
 }
 
 .grayOption:active {
-	transform: scale(0.97);
+	transform: scale(0.98);
 }
 
 .grayOption[data-selected="true"] {
@@ -146,19 +144,43 @@
 	border-color: var(--primary);
 }
 
-.grayPreview {
+.grayScalePreview {
 	display: flex;
-	gap: var(--spacing-2xs);
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
+	min-width: 0;
 }
 
-.grayDot {
-	width: 10px;
-	height: 10px;
-	border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
-	border-radius: 50%;
+.grayPreview {
+	display: flex;
+	gap: 1px;
+}
+
+.grayStep {
+	flex: 1;
+	height: 12px;
+}
+
+.grayPreview:first-child .grayStep:first-child {
+	border-radius: var(--radius-sm) 0 0 0;
+}
+
+.grayPreview:first-child .grayStep:last-child {
+	border-radius: 0 var(--radius-sm) 0 0;
+}
+
+.grayPreview:last-child .grayStep:first-child {
+	border-radius: 0 0 0 var(--radius-sm);
+}
+
+.grayPreview:last-child .grayStep:last-child {
+	border-radius: 0 0 var(--radius-sm) 0;
 }
 
 .grayName {
+	flex-shrink: 0;
+	width: 36px;
 	font-size: var(--text-xs);
 	color: var(--muted-foreground);
 	text-transform: capitalize;

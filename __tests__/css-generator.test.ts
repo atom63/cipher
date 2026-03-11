@@ -1,11 +1,14 @@
 import { describe, expect, test } from "vitest";
 import {
+	detectFontCategory,
 	inferPrefix,
+	isFontFamilyVariable,
 	isResponsiveMode,
 	modeToMediaQuery,
 	modeToSelector,
 	normalizeName,
 	TAILWIND_TEXT_MAP,
+	toFontStack,
 	TYPESCALE_BREAKPOINTS,
 	toVarName,
 } from "../handlers/css-generator";
@@ -106,19 +109,16 @@ describe("toVarName", () => {
 		expect(toVarName("sizes/icon", "FLOAT")).toBe("--size-icon");
 	});
 
-	test("strips shadcn/ prefix for semantics collection", () => {
-		expect(toVarName("shadcn/background", "COLOR", "semantics")).toBe(
+	test("semantics vars have no prefix", () => {
+		expect(toVarName("background", "COLOR", "semantics")).toBe(
 			"--background",
 		);
-		expect(toVarName("shadcn/foreground", "COLOR", "semantics")).toBe(
+		expect(toVarName("foreground", "COLOR", "semantics")).toBe(
 			"--foreground",
 		);
-		expect(toVarName("shadcn/card-foreground", "COLOR", "semantics")).toBe(
+		expect(toVarName("card-foreground", "COLOR", "semantics")).toBe(
 			"--card-foreground",
 		);
-	});
-
-	test("semantics non-shadcn vars have no prefix", () => {
 		expect(toVarName("theme/theme", "STRING", "semantics")).toBe(
 			"--theme-theme",
 		);
@@ -188,8 +188,8 @@ describe("normalizeName", () => {
 		expect(normalizeName("primitives/gray/5")).toBe("gray/5");
 	});
 
-	test("strips shadcn prefix", () => {
-		expect(normalizeName("shadcn/muted-foreground")).toBe("muted-foreground");
+	test("handles names without collection prefix", () => {
+		expect(normalizeName("muted-foreground")).toBe("muted-foreground");
 	});
 
 	test("removes /status/ segment from middle of path", () => {
@@ -339,5 +339,96 @@ describe("TAILWIND_TEXT_MAP", () => {
 				`"${scale}" is not a valid typescale name`,
 			).toBe(true);
 		}
+	});
+});
+
+// =========================================================================
+// isFontFamilyVariable — detects font family variables
+// =========================================================================
+
+describe("isFontFamilyVariable", () => {
+	test("recognizes font/family/ paths", () => {
+		expect(isFontFamilyVariable("font/family/sans")).toBe(true);
+		expect(isFontFamilyVariable("font/family/primary")).toBe(true);
+		expect(isFontFamilyVariable("font/family/mono")).toBe(true);
+	});
+
+	test("recognizes font-family/ paths", () => {
+		expect(isFontFamilyVariable("font-family/heading")).toBe(true);
+	});
+
+	test("rejects non-font-family paths", () => {
+		expect(isFontFamilyVariable("font/weight/400")).toBe(false);
+		expect(isFontFamilyVariable("font/typescale/base/size/md")).toBe(false);
+		expect(isFontFamilyVariable("color/brand/500")).toBe(false);
+	});
+});
+
+// =========================================================================
+// detectFontCategory — classifies font variables by category
+// =========================================================================
+
+describe("detectFontCategory", () => {
+	test("detects sans from variable path", () => {
+		expect(detectFontCategory("font/family/sans", "Inter")).toBe("sans");
+		expect(detectFontCategory("font/family/primary", "Geist")).toBe("sans");
+	});
+
+	test("detects serif from variable path", () => {
+		expect(detectFontCategory("font/family/serif", "Georgia")).toBe("serif");
+		expect(detectFontCategory("font/family/secondary", "Merriweather")).toBe("serif");
+	});
+
+	test("detects mono from variable path", () => {
+		expect(detectFontCategory("font/family/mono", "Fira Code")).toBe("mono");
+		expect(detectFontCategory("font/family/tertiary", "JetBrains Mono")).toBe("mono");
+	});
+
+	test("falls back to font name pattern matching", () => {
+		expect(detectFontCategory("font/family/custom", "Fira Code")).toBe("mono");
+		expect(detectFontCategory("font/family/custom", "Source Code Pro")).toBe("mono");
+		expect(detectFontCategory("font/family/custom", "Playfair Display")).toBe("serif");
+	});
+
+	test("defaults to sans for unknown fonts", () => {
+		expect(detectFontCategory("font/family/custom", "CustomFont")).toBe("sans");
+	});
+});
+
+// =========================================================================
+// toFontStack — enriches bare font names with CSS fallbacks
+// =========================================================================
+
+describe("toFontStack", () => {
+	test("wraps sans font with system fallbacks", () => {
+		const stack = toFontStack("Inter", "font/family/sans");
+		expect(stack).toContain('"Inter"');
+		expect(stack).toContain("system-ui");
+		expect(stack).toContain("sans-serif");
+	});
+
+	test("wraps serif font with serif fallbacks", () => {
+		const stack = toFontStack("Merriweather", "font/family/serif");
+		expect(stack).toContain('"Merriweather"');
+		expect(stack).toContain("Georgia");
+		expect(stack).toContain("serif");
+	});
+
+	test("wraps mono font with monospace fallbacks", () => {
+		const stack = toFontStack("Fira Code", "font/family/mono");
+		expect(stack).toContain('"Fira Code"');
+		expect(stack).toContain("monospace");
+		expect(stack).toContain("Consolas");
+	});
+
+	test("quotes font name even without spaces", () => {
+		const stack = toFontStack("Inter", "font/family/primary");
+		expect(stack.startsWith('"Inter"')).toBe(true);
+	});
+
+	test("defaults to sans fallbacks for unknown font", () => {
+		const stack = toFontStack("CustomFont", "font/family/custom");
+		expect(stack).toContain('"CustomFont"');
+		expect(stack).toContain("sans-serif");
 	});
 });

@@ -342,10 +342,10 @@ describe("abstractions", () => {
 		const names = result.tokens
 			.filter((t) => t.category === "primitives")
 			.map((t) => t.figmaName);
-		expect(names).toContain("color/status/danger");
-		expect(names).toContain("color/status/success");
-		expect(names).toContain("color/status/warning");
-		expect(names).toContain("color/status/info");
+		expect(names).toContain("color/danger/500");
+		expect(names).toContain("color/success/500");
+		expect(names).toContain("color/warning/500");
+		expect(names).toContain("color/info/500");
 	});
 
 	test("custom status colors override defaults", () => {
@@ -357,7 +357,7 @@ describe("abstractions", () => {
 		const dangerToken = result.tokens.find(
 			(t) =>
 				t.category === "primitives" &&
-				t.figmaName === "color/status/danger",
+				t.figmaName === "color/danger/500",
 		);
 		expect(dangerToken).toBeDefined();
 		expect(dangerToken?.originalValue).toBeDefined();
@@ -365,7 +365,7 @@ describe("abstractions", () => {
 		const successToken = result.tokens.find(
 			(t) =>
 				t.category === "primitives" &&
-				t.figmaName === "color/status/success",
+				t.figmaName === "color/success/500",
 		);
 		expect(successToken).toBeDefined();
 	});
@@ -397,6 +397,34 @@ describe("abstractions", () => {
 			.map((t) => t.figmaName);
 		expect(names).toContain("zLayer/default");
 		expect(names).toContain("zLayer/modal");
+	});
+
+	test("includes font family abstraction aliases (primary/secondary/tertiary)", () => {
+		const result = generateDesignSystem(defaultConfig);
+		const absNames = result.tokens
+			.filter((t) => t.category === "abstractions")
+			.map((t) => t.figmaName);
+		expect(absNames).toContain("font/family/primary");
+		expect(absNames).toContain("font/family/secondary");
+		expect(absNames).toContain("font/family/tertiary");
+	});
+
+	test("font family abstractions reference primitives", () => {
+		const result = generateDesignSystem(defaultConfig);
+		const primary = result.tokens.find(
+			(t) => t.category === "abstractions" && t.figmaName === "font/family/primary",
+		);
+		expect(primary?.originalValue).toBe("{primitives.font.family.sans}");
+
+		const secondary = result.tokens.find(
+			(t) => t.category === "abstractions" && t.figmaName === "font/family/secondary",
+		);
+		expect(secondary?.originalValue).toBe("{primitives.font.family.serif}");
+
+		const tertiary = result.tokens.find(
+			(t) => t.category === "abstractions" && t.figmaName === "font/family/tertiary",
+		);
+		expect(tertiary?.originalValue).toBe("{primitives.font.family.mono}");
 	});
 
 	test("includes font weight aliases", () => {
@@ -442,48 +470,48 @@ describe("semantics", () => {
 		expect(lightTokens.length).toBeGreaterThan(0);
 	});
 
-	test("includes shadcn/ prefixed UI tokens", () => {
+	test("includes UI semantic tokens", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
 		const names = semantics.map((t) => t.figmaName);
-		expect(names).toContain("shadcn/background");
-		expect(names).toContain("shadcn/foreground");
-		expect(names).toContain("shadcn/card");
-		expect(names).toContain("shadcn/card-foreground");
-		expect(names).toContain("shadcn/popover");
-		expect(names).toContain("shadcn/popover-foreground");
-		expect(names).toContain("shadcn/primary");
-		expect(names).toContain("shadcn/primary-foreground");
-		expect(names).toContain("shadcn/secondary");
-		expect(names).toContain("shadcn/secondary-foreground");
-		expect(names).toContain("shadcn/muted");
-		expect(names).toContain("shadcn/muted-foreground");
-		expect(names).toContain("shadcn/accent");
-		expect(names).toContain("shadcn/accent-foreground");
-		expect(names).toContain("shadcn/destructive");
-		expect(names).toContain("shadcn/border");
-		expect(names).toContain("shadcn/input");
-		expect(names).toContain("shadcn/ring");
+		expect(names).toContain("background");
+		expect(names).toContain("foreground");
+		expect(names).toContain("card");
+		expect(names).toContain("card-foreground");
+		expect(names).toContain("popover");
+		expect(names).toContain("popover-foreground");
+		expect(names).toContain("primary");
+		expect(names).toContain("primary-foreground");
+		expect(names).toContain("secondary");
+		expect(names).toContain("secondary-foreground");
+		expect(names).toContain("muted");
+		expect(names).toContain("muted-foreground");
+		expect(names).toContain("accent");
+		expect(names).toContain("accent-foreground");
+		expect(names).toContain("destructive");
+		expect(names).toContain("border");
+		expect(names).toContain("input");
+		expect(names).toContain("ring");
 	});
 
 	test("includes status, chart, and sidebar tokens", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
 		const names = semantics.map((t) => t.figmaName);
-		expect(names).toContain("shadcn/success");
-		expect(names).toContain("shadcn/warning");
-		expect(names).toContain("shadcn/info");
-		expect(names).toContain("shadcn/chart-1");
-		expect(names).toContain("shadcn/chart-5");
-		expect(names).toContain("shadcn/sidebar");
-		expect(names).toContain("shadcn/sidebar-foreground");
-		expect(names).toContain("shadcn/sidebar-border");
+		expect(names).toContain("success");
+		expect(names).toContain("warning");
+		expect(names).toContain("info");
+		expect(names).toContain("chart-1");
+		expect(names).toContain("chart-5");
+		expect(names).toContain("sidebar");
+		expect(names).toContain("sidebar-foreground");
+		expect(names).toContain("sidebar-border");
 	});
 
-	test("shadcn/background references surface abstractions", () => {
+	test("background references surface abstractions", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const bgTokens = result.tokens.filter(
-			(t) => t.category === "semantics" && t.figmaName === "shadcn/background",
+			(t) => t.category === "semantics" && t.figmaName === "background",
 		);
 		const light = bgTokens.find((t) => (t as any).modeName === "Light");
 		const dark = bgTokens.find((t) => (t as any).modeName === "Dark");
@@ -508,23 +536,23 @@ describe("semantics", () => {
 		}
 	});
 
-	test("includes shadcn/secondary-accent when secondary provided", () => {
+	test("includes secondary-accent when secondary provided", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
 			secondary: "#10B981",
 		});
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
 		const names = semantics.map((t) => t.figmaName);
-		expect(names).toContain("shadcn/secondary-accent");
+		expect(names).toContain("secondary-accent");
 	});
 
-	test("shadcn/light and shadcn/dark for forced-mode contexts", () => {
+	test("light and dark for forced-mode contexts", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const names = result.tokens
 			.filter((t) => t.category === "semantics")
 			.map((t) => t.figmaName);
-		expect(names).toContain("shadcn/light");
-		expect(names).toContain("shadcn/dark");
+		expect(names).toContain("light");
+		expect(names).toContain("dark");
 	});
 });
 
@@ -638,6 +666,21 @@ describe("generateCss", () => {
 		// Typography
 		expect(css).toContain("--typography-base-font-size:");
 		expect(css).toContain("--typography-base-line-height:");
+	});
+
+	test("includes status color tokens in CSS", () => {
+		const css = generateCss(defaultConfig);
+		expect(css).toContain("--color-danger-500:");
+		expect(css).toContain("--color-success-500:");
+		expect(css).toContain("--color-warning-500:");
+		expect(css).toContain("--color-info-500:");
+	});
+
+	test("includes font family tokens in CSS", () => {
+		const css = generateCss(defaultConfig);
+		expect(css).toContain("--font-sans:");
+		expect(css).toContain("--font-serif:");
+		expect(css).toContain("--font-mono:");
 	});
 });
 

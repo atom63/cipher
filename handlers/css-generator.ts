@@ -88,7 +88,7 @@ function buildStyleOpacityMap(): Map<string, number> {
 						if (!variable) continue;
 
 						// Match: style name should correspond to the variable name
-						// Style: "semantics/muted-foreground" → Variable: "shadcn/muted-foreground"
+						// Style: "semantics/muted-foreground" → Variable: "muted-foreground"
 						// Normalize both for comparison
 						const normalizedStyleName = normalizeName(style.name);
 						const normalizedVarName = normalizeName(variable.name);
@@ -132,13 +132,12 @@ function buildStyleOpacityMap(): Map<string, number> {
 /**
  * Normalize a style or variable name for comparison.
  * Strips collection prefixes (semantics/, abstractions/, primitives/)
- * and common intermediary segments (status/, shadcn/) to match across naming conventions.
+ * and common intermediary segments (status/) to match across naming conventions.
  */
 function normalizeName(name: string): string {
 	return name
 		.replace(/^(semantics|abstractions|primitives)\//i, "")
 		.replace(/\/status\//g, "/")
-		.replace(/^shadcn\//i, "")
 		.toLowerCase();
 }
 
@@ -204,7 +203,7 @@ function inferPrefix(name: string, _resolvedType: string): string {
  * Convert variable name to CSS variable name.
  *
  * Naming rules (matching generate-tokens.js):
- * - Semantics collection: strip "shadcn/" prefix, no type prefix → --background
+ * - Semantics collection: no type prefix → --background
  * - Spacing: strip "spacing/" from path, add --spacing- prefix → --spacing-4
  * - Sizes: strip "sizes/" from path, add --size- prefix → --size-0
  * - Radius: strip "radius/" from path, add --radius- prefix → --radius-lg
@@ -219,10 +218,9 @@ function toVarName(
 ): string {
 	const cssName = name.replace(/\//g, "-").replace(/\s+/g, "-").toLowerCase();
 
-	// Semantics: strip "shadcn-" prefix, no type prefix
+	// Semantics: no type prefix, use name directly
 	if (collectionName?.toLowerCase() === "semantics") {
-		const stripped = cssName.replace(/^shadcn-/, "");
-		return `--${stripped}`;
+		return `--${cssName}`;
 	}
 
 	const prefix = inferPrefix(name, resolvedType);
@@ -1088,6 +1086,9 @@ export {
 	modeToMediaQuery,
 	TYPESCALE_BREAKPOINTS,
 	TAILWIND_TEXT_MAP,
+	detectFontCategory,
+	toFontStack,
+	isFontFamilyVariable,
 };
 
 export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {

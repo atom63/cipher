@@ -116,10 +116,9 @@ describe("generateStyles — import-handler compatibility", () => {
 // =========================================================================
 
 describe("generateStyles — paint", () => {
-	test("paint styles are nested under semantics/shadcn", () => {
+	test("paint styles are nested under semantics", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		expect(styles.paint).toHaveProperty("semantics");
-		expect(styles.paint.semantics).toHaveProperty("shadcn");
 	});
 
 	test("paint leaves have type 'color' and fills array", () => {
@@ -156,7 +155,7 @@ describe("generateStyles — paint", () => {
 	test("accent paint style uses gradient fill with 80% fill-level opacity", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		const accentLeaf = collectStyleLeaves(styles.paint).find(
-			(l) => l.path === "semantics/shadcn/accent",
+			(l) => l.path === "semantics/accent",
 		);
 		expect(accentLeaf).toBeDefined();
 		const fill = accentLeaf!.data.fills[0];
@@ -164,24 +163,24 @@ describe("generateStyles — paint", () => {
 		expect(fill.opacity).toBe(0.8);
 		expect(fill.gradientStops).toHaveLength(2);
 		for (const stop of fill.gradientStops) {
-			expect(stop.boundVariable.variableName).toBe("shadcn/accent");
+			expect(stop.boundVariable.variableName).toBe("accent");
 		}
 	});
 
-	test("includes core shadcn semantic colors", () => {
+	test("includes core semantic colors", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		const leaves = collectStyleLeaves(styles.paint);
 		const names = leaves.map((l) => l.path);
-		// Core shadcn tokens should be present as paint styles
+		// Core semantic tokens should be present as paint styles
 		const expected = [
-			"semantics/shadcn/background",
-			"semantics/shadcn/foreground",
-			"semantics/shadcn/primary",
-			"semantics/shadcn/primary-foreground",
-			"semantics/shadcn/border",
-			"semantics/shadcn/ring",
-			"semantics/shadcn/muted",
-			"semantics/shadcn/muted-foreground",
+			"semantics/background",
+			"semantics/foreground",
+			"semantics/primary",
+			"semantics/primary-foreground",
+			"semantics/border",
+			"semantics/ring",
+			"semantics/muted",
+			"semantics/muted-foreground",
 		];
 		for (const name of expected) {
 			expect(names).toContain(name);
@@ -264,12 +263,12 @@ describe("generateStyles — text", () => {
 		}
 	});
 
-	test("each font family binds to its corresponding primitive variable", () => {
+	test("each font family binds to its corresponding abstraction variable", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		const familyMap: Record<string, string> = {
-			primary: "font/family/sans",
-			secondary: "font/family/serif",
-			tertiary: "font/family/mono",
+			primary: "font/family/primary",
+			secondary: "font/family/secondary",
+			tertiary: "font/family/tertiary",
 		};
 
 		for (const [familyKey, varName] of Object.entries(familyMap)) {
@@ -278,7 +277,7 @@ describe("generateStyles — text", () => {
 			for (const leaf of leaves) {
 				expect(leaf.data.fontFamilyBoundVariable).toBeDefined();
 				expect(leaf.data.fontFamilyBoundVariable.variableName).toBe(varName);
-				expect(leaf.data.fontFamilyBoundVariable.collectionName).toBe("primitives");
+				expect(leaf.data.fontFamilyBoundVariable.collectionName).toBe("abstractions");
 			}
 		}
 	});

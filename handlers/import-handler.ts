@@ -1434,7 +1434,7 @@ function findVariableByName(
 			}
 
 			// Try alternative formats:
-			// 1. If variableName is "shadcn.background", also try "shadcn/background"
+			// 1. Try dot-to-slash conversion (e.g., "background" → "background")
 			const alternativeName = variableName.replace(/\./g, "/");
 			if (variable.name === alternativeName) {
 				debug(
@@ -1443,8 +1443,7 @@ function findVariableByName(
 				return variable;
 			}
 
-			// 2. If variableName is "shadcn.background" and collection is "semantics",
-			//    also try "semantics/shadcn/background" or "semantics.shadcn.background"
+			// 2. Try with collection prefix (e.g., "semantics/background")
 			if (collectionName) {
 				const fullPathSlash = `${collectionName}/${alternativeName}`;
 				const fullPathDot = `${collectionName}.${variableName}`;

@@ -457,7 +457,7 @@ export function GeneratePage() {
 									<CheckboxWithLabel
 										checked={hasSecondary}
 										id="has-secondary"
-										label="Secondary / accent color"
+										label="Accent secondary color"
 										onChange={setHasSecondary}
 									/>
 									{hasSecondary && (
@@ -512,14 +512,25 @@ export function GeneratePage() {
 												title={g.label}
 												type="button"
 											>
-												<div className={styles.grayPreview}>
-													{[0, 2, 4, 7, 10, 11].map((i) => (
-														<div
-															className={styles.grayDot}
-															key={i}
-															style={{ backgroundColor: g.light[i] }}
-														/>
-													))}
+												<div className={styles.grayScalePreview}>
+													<div className={styles.grayPreview}>
+														{g.light.map((hex, i) => (
+															<div
+																className={styles.grayStep}
+																key={i}
+																style={{ backgroundColor: hex }}
+															/>
+														))}
+													</div>
+													<div className={styles.grayPreview}>
+														{g.dark.map((hex, i) => (
+															<div
+																className={styles.grayStep}
+																key={i}
+																style={{ backgroundColor: hex }}
+															/>
+														))}
+													</div>
 												</div>
 												<span className={styles.grayName}>{g.name}</span>
 											</button>

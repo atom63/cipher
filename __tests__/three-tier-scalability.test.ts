@@ -295,7 +295,7 @@ describe("token naming structure", () => {
 		expect(primNames.some((n) => n.startsWith("zLayer/"))).toBe(true);
 	});
 
-	test("semantics use shadcn/ prefix for UI tokens", () => {
+	test("semantics use direct names for UI tokens", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 		});
@@ -305,12 +305,12 @@ describe("token naming structure", () => {
 		);
 		const names = semantics.map((t) => t.figmaName);
 
-		expect(names).toContain("shadcn/background");
-		expect(names).toContain("shadcn/foreground");
-		expect(names).toContain("shadcn/primary");
-		expect(names).toContain("shadcn/border");
-		expect(names).toContain("shadcn/ring");
-});
+		expect(names).toContain("background");
+		expect(names).toContain("foreground");
+		expect(names).toContain("primary");
+		expect(names).toContain("border");
+		expect(names).toContain("ring");
+	});
 });
 
 // =========================================================================
@@ -366,6 +366,51 @@ describe("edge cases", () => {
 		for (const token of radiusTokens) {
 			expect(Number(token.value)).toBeGreaterThanOrEqual(0);
 		}
+	});
+
+	test("custom font overrides generate proper abstraction references", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			fonts: { sans: "Geist", serif: "Lora", mono: "JetBrains Mono" },
+		});
+		// Primitives should have the custom font names
+		const sansPrim = result.tokens.find(
+			(t) => t.category === "primitives" && t.figmaName === "font/family/sans",
+		);
+		expect(sansPrim?.value).toBe("Geist");
+
+		// Abstractions should reference primitives
+		const primaryAbs = result.tokens.find(
+			(t) => t.category === "abstractions" && t.figmaName === "font/family/primary",
+		);
+		expect(primaryAbs?.originalValue).toBe("{primitives.font.family.sans}");
+	});
+
+	test("status colors generate full ramps (not single values)", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+		});
+		const dangerTokens = result.tokens.filter(
+			(t) => t.category === "primitives" && t.figmaName.startsWith("color/danger/"),
+		);
+		// Should have 11 shades: 50, 100, 200, ..., 900, 950
+		expect(dangerTokens.length).toBe(11);
+	});
+
+	test("semantic tokens never have shadcn/ prefix", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			secondary: "#10B981",
+		});
+		const semantics = result.tokens.filter((t) => t.category === "semantics");
+		for (const token of semantics) {
+			expect(token.figmaName).not.toMatch(/^shadcn\//);
+		}
+	});
+
+	test("CSS output always includes dark mode regardless of config", () => {
+		const css = generateCss({ primary: "#3B82F6" });
+		expect(css).toContain(".dark {");
 	});
 });
 

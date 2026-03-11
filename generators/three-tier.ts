@@ -431,7 +431,7 @@ function generatePrimitives(config: BrandConfig): {
 		for (const step of SHADE_STEPS) {
 			tokens.push(
 				makeToken(
-					`color/status/${status.name}/${step}`,
+					`color/${status.name}/${step}`,
 					scale.shades[step],
 					"primitives",
 					{
@@ -441,18 +441,6 @@ function generatePrimitives(config: BrandConfig): {
 				),
 			);
 		}
-		// Convenience alias at 500
-		tokens.push(
-			makeToken(
-				`color/status/${status.name}`,
-				`{primitives.color.status.${status.name}.500}`,
-				"primitives",
-				{
-					description: `${status.name} status color`,
-					originalValue: `{primitives.color.status.${status.name}.500}`,
-				},
-			),
-		);
 	}
 
 	// --- Typescale with responsive variants (min, sm, md) ---
@@ -639,135 +627,135 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 	const surfL = (step: number) => `{abstractions.surface.light.${step}}`;
 	const surfD = (step: number) => `{abstractions.surface.dark.${step}}`;
 	const primary = "{primitives.color.brand.500}";
-	const danger = "{primitives.color.status.danger}";
-	const success = "{primitives.color.status.success}";
-	const warning = "{primitives.color.status.warning}";
-	const info = "{primitives.color.status.info}";
+	const danger = "{primitives.color.danger.500}";
+	const success = "{primitives.color.success.500}";
+	const warning = "{primitives.color.warning.500}";
+	const info = "{primitives.color.info.500}";
 
 	const defs: SemanticDef[] = [
-		// --- shadcn core tokens ---
+		// --- Core semantic tokens ---
 		{
-			name: "shadcn/background",
+			name: "background",
 			light: surfL(2),
 			dark: surfD(1),
 			description: "Default page background",
 		},
 		{
-			name: "shadcn/foreground",
+			name: "foreground",
 			light: surfL(12),
 			dark: surfD(12),
 			description: "Default text color",
 		},
 		{
-			name: "shadcn/card",
+			name: "card",
 			light: surfL(1),
 			dark: surfD(2),
 			description: "Card background",
 		},
 		{
-			name: "shadcn/card-foreground",
+			name: "card-foreground",
 			light: surfL(12),
 			dark: surfD(12),
 			description: "Card text color",
 		},
 		{
-			name: "shadcn/popover",
+			name: "popover",
 			light: surfL(1),
 			dark: surfD(4),
 			description: "Popover/dropdown background",
 		},
 		{
-			name: "shadcn/popover-foreground",
+			name: "popover-foreground",
 			light: surfL(12),
 			dark: surfD(12),
 			description: "Popover text color",
 		},
 		{
-			name: "shadcn/primary",
+			name: "primary",
 			light: primary,
 			dark: primary,
 			description: "Primary color",
 		},
 		{
-			name: "shadcn/primary-foreground",
+			name: "primary-foreground",
 			light: surfL(1),
 			dark: surfD(12),
 			description: "Text on primary background",
 		},
 		{
-			name: "shadcn/secondary",
+			name: "secondary",
 			light: surfL(3),
 			dark: surfD(3),
 			description: "Secondary/component background",
 		},
 		{
-			name: "shadcn/secondary-foreground",
+			name: "secondary-foreground",
 			light: surfL(11),
 			dark: surfD(11),
 			description: "Secondary foreground text",
 		},
 		{
-			name: "shadcn/muted",
+			name: "muted",
 			light: surfL(3),
 			dark: surfD(3),
 			description: "Muted background",
 		},
 		{
-			name: "shadcn/muted-foreground",
+			name: "muted-foreground",
 			light: surfL(11),
 			dark: surfD(11),
 			description: "Muted/secondary text",
 		},
 		{
-			name: "shadcn/accent",
+			name: "accent",
 			light: surfL(4),
 			dark: surfD(6),
 			description: "Accent background",
 		},
 		{
-			name: "shadcn/accent-foreground",
+			name: "accent-foreground",
 			light: surfL(12),
 			dark: surfD(12),
 			description: "Accent foreground text",
 		},
 		{
-			name: "shadcn/destructive",
+			name: "destructive",
 			light: danger,
 			dark: danger,
 			description: "Destructive action color",
 		},
 		{
-			name: "shadcn/success",
+			name: "success",
 			light: success,
 			dark: success,
 			description: "Success status color",
 		},
 		{
-			name: "shadcn/warning",
+			name: "warning",
 			light: warning,
 			dark: warning,
 			description: "Warning status color",
 		},
 		{
-			name: "shadcn/info",
+			name: "info",
 			light: info,
 			dark: info,
 			description: "Info status color",
 		},
 		{
-			name: "shadcn/border",
+			name: "border",
 			light: surfL(4),
 			dark: surfD(6),
 			description: "Default border color",
 		},
 		{
-			name: "shadcn/input",
+			name: "input",
 			light: surfL(5),
 			dark: surfD(7),
 			description: "Input border color",
 		},
 		{
-			name: "shadcn/ring",
+			name: "ring",
 			light: surfL(6),
 			dark: surfD(8),
 			description: "Focus ring color",
@@ -775,95 +763,95 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 
 		// --- Chart colors ---
 		{
-			name: "shadcn/chart-1",
+			name: "chart-1",
 			light: primary,
 			dark: primary,
 			description: "Chart color 1",
 		},
 		{
-			name: "shadcn/chart-2",
+			name: "chart-2",
 			light: primary,
 			dark: primary,
 			description: "Chart color 2",
 		},
 		{
-			name: "shadcn/chart-3",
+			name: "chart-3",
 			light: primary,
 			dark: primary,
 			description: "Chart color 3",
 		},
 		{
-			name: "shadcn/chart-4",
+			name: "chart-4",
 			light: primary,
 			dark: primary,
 			description: "Chart color 4",
 		},
 		{
-			name: "shadcn/chart-5",
+			name: "chart-5",
 			light: primary,
 			dark: primary,
 			description: "Chart color 5",
 		},
 
-		// --- Sidebar tokens (reference shadcn core) ---
+		// --- Sidebar tokens ---
 		{
-			name: "shadcn/sidebar",
-			light: "{semantics.shadcn.card}",
-			dark: "{semantics.shadcn.background}",
+			name: "sidebar",
+			light: "{semantics.card}",
+			dark: "{semantics.background}",
 			description: "Sidebar background",
 		},
 		{
-			name: "shadcn/sidebar-foreground",
-			light: "{semantics.shadcn.foreground}",
-			dark: "{semantics.shadcn.foreground}",
+			name: "sidebar-foreground",
+			light: "{semantics.foreground}",
+			dark: "{semantics.foreground}",
 			description: "Sidebar text",
 		},
 		{
-			name: "shadcn/sidebar-primary",
-			light: "{semantics.shadcn.primary}",
-			dark: "{semantics.shadcn.primary}",
+			name: "sidebar-primary",
+			light: "{semantics.primary}",
+			dark: "{semantics.primary}",
 			description: "Sidebar primary color",
 		},
 		{
-			name: "shadcn/sidebar-primary-foreground",
-			light: "{semantics.shadcn.primary-foreground}",
-			dark: "{semantics.shadcn.primary-foreground}",
+			name: "sidebar-primary-foreground",
+			light: "{semantics.primary-foreground}",
+			dark: "{semantics.primary-foreground}",
 			description: "Sidebar primary foreground",
 		},
 		{
-			name: "shadcn/sidebar-accent",
-			light: "{semantics.shadcn.accent}",
-			dark: "{semantics.shadcn.accent}",
+			name: "sidebar-accent",
+			light: "{semantics.accent}",
+			dark: "{semantics.accent}",
 			description: "Sidebar accent background",
 		},
 		{
-			name: "shadcn/sidebar-accent-foreground",
-			light: "{semantics.shadcn.accent-foreground}",
-			dark: "{semantics.shadcn.accent-foreground}",
+			name: "sidebar-accent-foreground",
+			light: "{semantics.accent-foreground}",
+			dark: "{semantics.accent-foreground}",
 			description: "Sidebar accent text",
 		},
 		{
-			name: "shadcn/sidebar-border",
-			light: "{semantics.shadcn.border}",
-			dark: "{semantics.shadcn.border}",
+			name: "sidebar-border",
+			light: "{semantics.border}",
+			dark: "{semantics.border}",
 			description: "Sidebar border",
 		},
 		{
-			name: "shadcn/sidebar-ring",
-			light: "{semantics.shadcn.ring}",
-			dark: "{semantics.shadcn.ring}",
+			name: "sidebar-ring",
+			light: "{semantics.ring}",
+			dark: "{semantics.ring}",
 			description: "Sidebar focus ring",
 		},
 
 		// --- Static mode references ---
 		{
-			name: "shadcn/light",
+			name: "light",
 			light: surfL(1),
 			dark: surfL(1),
 			description: "Always-light surface (for forced-light contexts)",
 		},
 		{
-			name: "shadcn/dark",
+			name: "dark",
 			light: "{primitives.color.gray.dark.1}",
 			dark: "{primitives.color.gray.dark.1}",
 			description: "Always-dark surface (for forced-dark contexts)",
@@ -874,7 +862,7 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 	if (hasSecondary) {
 		defs.push(
 			{
-				name: "shadcn/secondary-accent",
+				name: "secondary-accent",
 				light: "{primitives.color.secondary.500}",
 				dark: "{primitives.color.secondary.500}",
 				description: "Secondary accent color",
@@ -1064,10 +1052,7 @@ export function generateCss(config: BrandConfig): string {
 	// Semantic color registrations for Tailwind
 	const defs = buildSemanticDefs(!!config.secondary);
 	for (const def of defs) {
-		if (def.name.startsWith("shadcn/")) {
-			const cssName = def.name.replace("shadcn/", "");
-			lines.push(`  --color-${cssName}: var(--${cssName});`);
-		}
+		lines.push(`  --color-${def.name}: var(--${def.name});`);
 	}
 
 	lines.push("}");
@@ -1083,10 +1068,7 @@ export function generateCss(config: BrandConfig): string {
 
 	// Semantic color references (light mode)
 	for (const def of defs) {
-		if (def.name.startsWith("shadcn/")) {
-			const cssName = def.name.replace("shadcn/", "");
-			lines.push(`  --${cssName}: ${refToCssVar(def.light)};`);
-		}
+		lines.push(`  --${def.name}: ${refToCssVar(def.light)};`);
 	}
 
 	lines.push("}");
@@ -1099,10 +1081,7 @@ export function generateCss(config: BrandConfig): string {
 	}
 
 	for (const def of defs) {
-		if (def.name.startsWith("shadcn/")) {
-			const cssName = def.name.replace("shadcn/", "");
-			lines.push(`  --${cssName}: ${refToCssVar(def.dark)};`);
-		}
+		lines.push(`  --${def.name}: ${refToCssVar(def.dark)};`);
 	}
 
 	lines.push("}");
@@ -1135,8 +1114,8 @@ function refToCssVar(ref: string): string {
 	}
 
 	// Self-references within semantics
-	if (path.startsWith("semantics.shadcn.")) {
-		return `var(--${path.replace(/^semantics\.shadcn\./, "")})`;
+	if (path.startsWith("semantics.")) {
+		return `var(--${path.replace(/^semantics\./, "")})`;
 	}
 
 	return `var(--${path.replace(/\./g, "-")})`;
@@ -1168,65 +1147,60 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 	};
 
 	// --- Paint styles: semantic colors bound to variables ---
-	const shadcnPaint: Record<string, any> = {};
+	const semanticPaint: Record<string, any> = {};
 	const semanticDefs = buildSemanticDefs(!!config.secondary);
 	for (const def of semanticDefs) {
-		if (def.name.startsWith("shadcn/")) {
-			const styleName = def.name.replace("shadcn/", "");
-			const opacity = styleName === "accent" ? 0.8 : 1;
-			const binding = {
-				type: "variable",
-				variableName: def.name,
-				collectionName: "semantics",
-			};
+		const styleName = def.name;
+		const opacity = styleName === "accent" ? 0.8 : 1;
+		const binding = {
+			type: "variable",
+			variableName: def.name,
+			collectionName: "semantics",
+		};
 
-			if (opacity < 1) {
-				// Use a linear gradient with two identical stops to apply opacity
-				// while keeping the variable binding on each stop.
-				// Fill-level opacity controls the actual transparency.
-				shadcnPaint[styleName] = {
-					id: `generated-paint-${styleName}`,
-					type: "color",
-					fills: [
-						{
-							type: "linear",
-							opacity,
-							gradientStops: [
-								{
-									position: 0,
-									color: "rgba(0, 0, 0, 1)",
-									boundVariable: binding,
-								},
-								{
-									position: 1,
-									color: "rgba(0, 0, 0, 1)",
-									boundVariable: binding,
-								},
-							],
-							gradientTransform: [
-								[1, 0, 0],
-								[0, 1, 0],
-							],
-						},
-					],
-				};
-			} else {
-				shadcnPaint[styleName] = {
-					id: `generated-paint-${styleName}`,
-					type: "color",
-					fills: [
-						{
-							type: "solid",
-							color: "rgba(0, 0, 0, 1)",
-							opacity: 1,
-							boundVariable: binding,
-						},
-					],
-				};
-			}
+		if (opacity < 1) {
+			semanticPaint[styleName] = {
+				id: `generated-paint-${styleName}`,
+				type: "color",
+				fills: [
+					{
+						type: "linear",
+						opacity,
+						gradientStops: [
+							{
+								position: 0,
+								color: "rgba(0, 0, 0, 1)",
+								boundVariable: binding,
+							},
+							{
+								position: 1,
+								color: "rgba(0, 0, 0, 1)",
+								boundVariable: binding,
+							},
+						],
+						gradientTransform: [
+							[1, 0, 0],
+							[0, 1, 0],
+						],
+					},
+				],
+			};
+		} else {
+			semanticPaint[styleName] = {
+				id: `generated-paint-${styleName}`,
+				type: "color",
+				fills: [
+					{
+						type: "solid",
+						color: "rgba(0, 0, 0, 1)",
+						opacity: 1,
+						boundVariable: binding,
+					},
+				],
+			};
 		}
 	}
-	styles.paint = { semantics: { shadcn: shadcnPaint } };
+	styles.paint = { semantics: semanticPaint };
 
 	// --- Text styles: primary, secondary, tertiary (each font family) ---
 	// Each family gets regular + strong variants for every typescale step
