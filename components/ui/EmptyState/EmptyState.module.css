@@ -1,5 +1,5 @@
 /* ============================================
-   EMPTY STATE - Enhanced Design
+   EMPTY STATE
    ============================================ */
 
 .emptyState {
@@ -14,58 +14,57 @@
   text-align: center;
 }
 
-/* Icon container with gradient background */
+/* Icon container — confident circle with layered depth */
 .icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
-  margin-bottom: var(--spacing-lg);
-  font-size: var(--text-3xl);
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--spacing-xl);
   color: var(--primary);
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklch, var(--primary) 10%, transparent),
-    color-mix(in oklch, var(--muted) 50%, transparent)
-  );
-  border-radius: var(--radius-full);
+  background: color-mix(in oklch, var(--primary) 8%, var(--muted));
+  border: 1px solid color-mix(in oklch, var(--primary) 12%, transparent);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 0 0 4px color-mix(in oklch, var(--primary) 4%, transparent),
+    0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 /* Smaller variant */
 .emptyState[data-size="sm"] .icon {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   margin-bottom: var(--spacing-md);
-  font-size: var(--text-2xl);
 }
 
 /* Large variant */
 .emptyState[data-size="lg"] .icon {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   margin-bottom: var(--spacing-xl);
-  font-size: var(--text-4xl);
 }
 
 .title {
-  margin: 0 0 var(--spacing-xs) 0;
+  margin: 0 0 var(--spacing-2xs) 0;
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
   color: var(--foreground);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .description {
-  max-width: min(320px, calc(100vw - 4rem));
+  max-width: min(280px, calc(100vw - 4rem));
   margin: 0;
-  font-size: var(--text-sm);
-  line-height: 1.5;
+  font-size: var(--text-xs);
+  line-height: 1.6;
   color: var(--muted-foreground);
+  text-wrap: balance;
 }
 
 .action {
-  margin-top: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
 }
 
 /* ============================================
@@ -89,7 +88,6 @@
   width: 40px;
   height: 40px;
   margin-bottom: var(--spacing-sm);
-  font-size: var(--text-lg);
 }
 
 .compact .title {
@@ -121,16 +119,62 @@
    ============================================ */
 
 .emptyState {
-  animation: empty-state-fade-in 0.3s ease-out;
+  animation: empty-state-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes empty-state-fade-in {
+.icon {
+  animation: empty-state-icon-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+}
+
+.title {
+  animation: empty-state-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.description {
+  animation: empty-state-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+.action {
+  animation: empty-state-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+@keyframes empty-state-enter {
   from {
     opacity: 0;
-    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes empty-state-icon-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes empty-state-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emptyState,
+  .icon,
+  .title,
+  .description,
+  .action {
+    animation: none;
   }
 }

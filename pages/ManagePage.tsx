@@ -8,6 +8,7 @@ import {
 	Copy,
 	FolderInput,
 	Link,
+	Palette,
 	Pencil,
 	PenLine,
 	RefreshCw,
@@ -22,7 +23,6 @@ import React, {
 	useRef,
 	useState,
 } from "react";
-import { FirstRunWizard } from "../components/manage";
 import {
 	Badge,
 	Button,
@@ -53,7 +53,6 @@ import type {
 	DeletedVariableSnapshot,
 	VariableInfo,
 } from "../types/messages";
-import type { DesignToken } from "../types/tokens";
 
 // Value rendering helpers (shared between row component and edit panel)
 const isColorValue = (val: string) =>
@@ -819,33 +818,11 @@ export function ManagePage({
 		);
 	}
 
-	// First-run: no variables at all — show wizard without toolbar/header chrome
-	if (variables.length === 0) {
-		return (
-			<div className="manage-page" ref={listRef}>
-				<FirstRunWizard
-					onCreateTokens={(tokens: DesignToken[]) => {
-						postMessage({
-							type: "create-variables",
-							data: {
-								tokens,
-								collectionName: "Starter Kit",
-								importMode: "import",
-							},
-						});
-					}}
-					onNavigate={(page) => onNavigate?.(page)}
-				/>
-			</div>
-		);
-	}
-
 	return (
 		<div className="manage-page" ref={listRef}>
 			{/* Toolbar + Action bar */}
 			<Frame>
-			<FramePanel className="manage-toolbar-stack">
-				{/* Top row: search + filters */}
+			<FramePanel>
 				<div className="manage-toolbar">
 					<div className="manage-toolbar-left">
 						<div className="manage-search">
@@ -907,12 +884,11 @@ export function ManagePage({
 						</Button>
 					</div>
 				</div>
-
-				{/* Bottom row: actions */}
-				<div className="manage-actionbar">
-					<span className="manage-selection-count">
-						{selectedIds.size} selected
-					</span>
+			</FramePanel>
+			<FrameFooter className="manage-actionbar">
+				<span className="manage-selection-count">
+					{selectedIds.size} selected
+				</span>
 					<div className="manage-actionbar-actions">
 						{/* Edit group */}
 						<Button
@@ -979,19 +955,18 @@ export function ManagePage({
 							Delete
 						</Button>
 					</div>
-					{selectedIds.size > 0 && (
-						<Button
-							aria-label="Clear selection"
-							data-tooltip="Clear selection (Esc)"
-							onClick={selectNone}
-							size="icon-sm"
-							variant="ghost"
-						>
-							<X size={14} />
-						</Button>
-					)}
-				</div>
-			</FramePanel>
+				{selectedIds.size > 0 && (
+					<Button
+						aria-label="Clear selection"
+						data-tooltip="Clear selection (Esc)"
+						onClick={selectNone}
+						size="icon-sm"
+						variant="ghost"
+					>
+						<X size={14} />
+					</Button>
+				)}
+			</FrameFooter>
 			</Frame>
 
 			{/* Rename dialog */}
@@ -1440,21 +1415,31 @@ export function ManagePage({
 			{filtered.length === 0 ? (
 				<EmptyState
 						action={
-							<Button
-								onClick={() => {
-									setSearch("");
-									setFilterCollection("all");
-									setFilterType("all");
-								}}
-								size="sm"
-								variant="outline"
-							>
-								Clear filters
-							</Button>
+							variables.length === 0 ? (
+								<Button onClick={() => onNavigate?.("generate")} variant="primary">
+									Create Design System
+								</Button>
+							) : (
+								<Button
+									onClick={() => {
+										setSearch("");
+										setFilterCollection("all");
+										setFilterType("all");
+									}}
+									size="sm"
+									variant="outline"
+								>
+									Clear filters
+								</Button>
+							)
 						}
-						description="Try adjusting your search or filters."
-						icon={<Search size={24} />}
-						title="No variables found"
+						description={
+							variables.length === 0
+								? "Generate a complete token system from your brand colors."
+								: "Try adjusting your search or filters."
+						}
+						icon={variables.length === 0 ? <Palette size={24} /> : <Search size={24} />}
+						title={variables.length === 0 ? "No tokens yet" : "No variables found"}
 					/>
 			) : (
 				<div className="manage-list">
@@ -1656,3 +1641,4 @@ export function ManagePage({
 		</div>
 	);
 }
+

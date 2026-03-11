@@ -1202,11 +1202,23 @@ export function StylesPage() {
 			{/* Style list */}
 			{filtered.length === 0 ? (
 				<EmptyState
+					action={
+						styles.length > 0 ? (
+							<Button
+								onClick={() => setSearch("")}
+								size="sm"
+								variant="outline"
+							>
+								Clear filters
+							</Button>
+						) : undefined
+					}
 					description={
 						styles.length === 0
 							? "This file has no local styles."
-							: "No styles match your current filters."
+							: "Try adjusting your search or filters."
 					}
+					icon={<Search size={24} />}
 					title="No styles found"
 				/>
 			) : (

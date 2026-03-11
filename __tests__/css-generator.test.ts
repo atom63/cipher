@@ -8,8 +8,8 @@ import {
 	modeToSelector,
 	normalizeName,
 	TAILWIND_TEXT_MAP,
-	toFontStack,
 	TYPESCALE_BREAKPOINTS,
+	toFontStack,
 	toVarName,
 } from "../handlers/css-generator";
 

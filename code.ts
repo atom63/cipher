@@ -110,12 +110,12 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					type: "available-fonts",
 					data: { fonts: families },
 				});
-			} catch (e) {
-				figma.ui.postMessage({
-					type: "available-fonts",
-					data: { fonts: [] },
-				});
-			}
+		} catch (_e) {
+			figma.ui.postMessage({
+				type: "available-fonts",
+				data: { fonts: [] },
+			});
+		}
 			break;
 		}
 

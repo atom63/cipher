@@ -7,7 +7,7 @@ const defaultConfig: BrandConfig = {
 	primary: "#3B82F6",
 };
 
-const configWithSecondary: BrandConfig = {
+const _configWithSecondary: BrandConfig = {
 	primary: "#3B82F6",
 	secondary: "#8B5CF6",
 };
@@ -18,8 +18,8 @@ const configWithSecondary: BrandConfig = {
 // =========================================================================
 
 interface StyleLeaf {
-	path: string;
 	data: Record<string, any>;
+	path: string;
 }
 
 function collectStyleLeaves(
@@ -158,7 +158,7 @@ describe("generateStyles — paint", () => {
 			(l) => l.path === "semantics/accent",
 		);
 		expect(accentLeaf).toBeDefined();
-		const fill = accentLeaf!.data.fills[0];
+		const fill = accentLeaf?.data.fills[0];
 		expect(fill.type).toBe("linear");
 		expect(fill.opacity).toBe(0.8);
 		expect(fill.gradientStops).toHaveLength(2);

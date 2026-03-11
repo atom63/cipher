@@ -1,12 +1,11 @@
-import { LayoutGrid, Paintbrush } from "lucide-react";
 import { useState } from "react";
 import { SectionHeader, TabPanel, Tabs } from "../components/ui";
 import { ManagePage } from "./ManagePage";
 import { StylesPage } from "./StylesPage";
 
 const TABS = [
-	{ id: "variables", label: "Variables", icon: <LayoutGrid size={14} /> },
-	{ id: "styles", label: "Styles", icon: <Paintbrush size={14} /> },
+	{ id: "variables", label: "Variables" },
+	{ id: "styles", label: "Styles" },
 ];
 
 export function ManageTabsPage({
@@ -20,6 +19,7 @@ export function ManageTabsPage({
 		<div className="manage-tabs-page">
 			<div className="manage-tabs-header">
 				<SectionHeader
+					description="Browse and edit your variables and styles"
 					title="Manage"
 					variant="primary"
 				/>
