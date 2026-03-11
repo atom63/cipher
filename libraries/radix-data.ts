@@ -268,12 +268,6 @@ export function generateRadixTokens(
 			const colorHex = getRadixColor(paletteName, "light", shade);
 			const colorRgb = hexToRgb(colorHex);
 
-			// Debug: log first and last shades
-			if (shade === 1 || shade === 12) {
-				console.log(
-					`${paletteName}-${shade}: ${colorHex} -> RGB(${colorRgb.r.toFixed(3)}, ${colorRgb.g.toFixed(3)}, ${colorRgb.b.toFixed(3)})`,
-				);
-			}
 
 			tokens.push({
 				id: `${namePrefix}-${paletteName}-${shade}`,

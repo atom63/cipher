@@ -460,7 +460,7 @@ export async function exportVariablesAsTokens(
 				// - "background/primary" -> ["background", "primary"]
 				// - "data/calories" -> ["data", "calories"]
 				const parts = variable.name.split("/");
-				const tokenName = parts.at(-1);
+				const tokenName = parts.at(-1)!;
 				const parentPath = parts.slice(0, -1); // All parts except the last (the token name)
 
 				// Build nested structure by traversing/creating parent objects
@@ -636,7 +636,7 @@ export async function exportStylesAsTokens(
 		// Process Color Styles (colors, gradients, images)
 		for (const style of paintStyles) {
 			const parts = style.name.split("/");
-			const styleName = parts.at(-1);
+			const styleName = parts.at(-1)!;
 			const parentPath = parts.slice(0, -1);
 
 			let current = stylesData.styles.paint;
@@ -669,7 +669,7 @@ export async function exportStylesAsTokens(
 		// Process Text Styles (typography)
 		for (const style of textStyles) {
 			const parts = style.name.split("/");
-			const styleName = parts.at(-1);
+			const styleName = parts.at(-1)!;
 			const parentPath = parts.slice(0, -1);
 
 			let current = stylesData.styles.text;
@@ -751,7 +751,7 @@ export async function exportStylesAsTokens(
 		// Process Effect Styles (shadows, blurs)
 		for (const style of effectStyles) {
 			const parts = style.name.split("/");
-			const styleName = parts.at(-1);
+			const styleName = parts.at(-1)!;
 			const parentPath = parts.slice(0, -1);
 
 			let current = stylesData.styles.effect;
@@ -774,7 +774,7 @@ export async function exportStylesAsTokens(
 		// Process Layout grid styles
 		for (const style of gridStyles) {
 			const parts = style.name.split("/");
-			const styleName = parts.at(-1);
+			const styleName = parts.at(-1)!;
 			const parentPath = parts.slice(0, -1);
 
 			let current = stylesData.styles.grid;

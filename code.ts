@@ -697,12 +697,12 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			const findColorByName = (styleName: string) => {
 				const parts = styleName.split("/");
-				const leaf = parts.at(-1)
+				const leaf = (parts.at(-1) ?? "")
 					.toLowerCase()
 					.replace(/[\s-_]/g, "");
 				return varColorMap.find((v) => {
 					const vParts = v.name.split("/");
-					const vLeaf = vParts.at(-1)
+					const vLeaf = (vParts.at(-1) ?? "")
 						.toLowerCase()
 						.replace(/[\s-_]/g, "");
 					return (
@@ -1860,11 +1860,11 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				importMode = "import",
 				stylesData,
 			} = msg.data;
-			console.log("[create-variables] stylesData present:", !!stylesData, stylesData ? Object.keys(stylesData) : "none");
+			debug("[create-variables] stylesData present:", !!stylesData, stylesData ? Object.keys(stylesData) : "none");
 			// Note: tokens are already filtered by selected collections in the UI
 			const results = await createVariablesFromTokens(
 				tokens,
-				collectionName,
+				collectionName ?? "tokens",
 				importMode,
 			);
 
@@ -1872,7 +1872,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			// This ensures variable bindings can be resolved
 			let stylesImported = 0;
 			if (stylesData) {
-				console.log("[create-variables] Starting style import...", {
+				debug("[create-variables] Starting style import...", {
 					paint: stylesData.paint ? Object.keys(stylesData.paint) : "none",
 					text: stylesData.text ? Object.keys(stylesData.text) : "none",
 					effect: stylesData.effect ? Object.keys(stylesData.effect) : "none",
@@ -1884,7 +1884,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						importMode,
 					);
 					stylesImported = styleResults.success;
-					console.log("[create-variables] Style import done:", {
+					debug("[create-variables] Style import done:", {
 						success: styleResults.success,
 						failed: styleResults.failed,
 						errors: styleResults.errors,
@@ -1900,7 +1900,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					console.warn("Style import failed:", e);
 				}
 			} else {
-				console.log("[create-variables] No stylesData in message");
+				debug("[create-variables] No stylesData in message");
 			}
 
 			figma.ui.postMessage({

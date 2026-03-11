@@ -566,7 +566,7 @@ describe("responsive", () => {
 		const responsive = result.tokens.filter((t) => t.category === "responsive");
 		expect(responsive.length).toBeGreaterThan(0);
 
-		const modes = new Set(responsive.map((t) => t.modeName));
+		const modes = new Set(responsive.map((t) => (t as any).modeName));
 		expect(modes).toContain("desktop (md)");
 		expect(modes).toContain("tablet (sm)");
 		expect(modes).toContain("mobile (min)");
@@ -581,12 +581,12 @@ describe("responsive", () => {
 		);
 		expect(fontSizeTokens.length).toBe(3); // one per mode
 
-		const desktop = fontSizeTokens.find((t) => t.modeName === "desktop (md)");
+		const desktop = fontSizeTokens.find((t) => (t as any).modeName === "desktop (md)");
 		expect(desktop?.originalValue).toBe(
 			"{primitives.font.typescale.base.size.md}",
 		);
 
-		const mobile = fontSizeTokens.find((t) => t.modeName === "mobile (min)");
+		const mobile = fontSizeTokens.find((t) => (t as any).modeName === "mobile (min)");
 		expect(mobile?.originalValue).toBe(
 			"{primitives.font.typescale.base.size.min}",
 		);
@@ -601,7 +601,7 @@ describe("responsive", () => {
 		);
 		expect(lhTokens.length).toBe(3);
 
-		const tablet = lhTokens.find((t) => t.modeName === "tablet (sm)");
+		const tablet = lhTokens.find((t) => (t as any).modeName === "tablet (sm)");
 		expect(tablet?.originalValue).toBe(
 			"{primitives.font.typescale.base.line-height.sm}",
 		);
@@ -616,7 +616,7 @@ describe("responsive", () => {
 		);
 		expect(viewport.length).toBe(3);
 
-		const desktop = viewport.find((t) => t.modeName === "desktop (md)");
+		const desktop = viewport.find((t) => (t as any).modeName === "desktop (md)");
 		expect(desktop?.originalValue).toBe("{primitives.screen.macbook-air}");
 	});
 });
