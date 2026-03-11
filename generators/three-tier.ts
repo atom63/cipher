@@ -11,13 +11,13 @@ import {
 } from "./color-scale";
 import { getRadixGray, RADIX_GRAYS, type RadixGrayScale } from "./radix-grays";
 import {
+	BLUR_SCALE,
 	BREAKPOINTS,
 	buildFontFamilies,
+	CONTAINER_SCALE,
 	computeRadiusScale,
 	computeTypescale,
-	CONTAINER_SCALE,
 	DEFAULT_RADIUS,
-	BLUR_SCALE,
 	DURATION_RAW,
 	DURATION_SEMANTIC,
 	EASING_CURVES,
@@ -28,9 +28,9 @@ import {
 	resolveFontNames,
 	SCREEN_SIZES,
 	SHADOW_SCALE,
-	shadowToCss,
 	SIZES_SCALE,
 	SPACING_SCALE,
+	shadowToCss,
 	type TypescaleConfig,
 	ZLAYER_SCALE,
 } from "./token-presets";
@@ -62,12 +62,12 @@ export interface StatusColorOverrides {
 }
 
 export interface GeneratedSystem {
+	/** Color scale data for preview UI (brand, secondary, etc.) */
+	primitives: ColorScale[];
 	/** Computed radius scale (t-shirt sizes -> px) */
 	radiusScale: Record<string, number>;
 	/** The selected Radix gray palette (null if name didn't match) */
 	radixGray: RadixGrayScale | null;
-	/** Color scale data for preview UI (brand, secondary, etc.) */
-	primitives: ColorScale[];
 	stats: {
 		primitiveCount: number;
 		abstractionCount: number;
@@ -501,7 +501,7 @@ function generatePrimitives(config: BrandConfig): {
 // Abstractions — indirection layer, SINGLE MODE
 // =========================================================================
 
-function generateAbstractions(config: BrandConfig): DesignToken[] {
+function generateAbstractions(_config: BrandConfig): DesignToken[] {
 	const tokens: DesignToken[] = [];
 
 	// --- Surface (light/dark gray references) ---

@@ -74,22 +74,25 @@ interface AnimatedLogoProps {
 	className?: string;
 	colored?: boolean;
 	height?: number;
+	variant?: "horizontal" | "vertical";
 }
 
 export function AnimatedLogo({
 	height = 32,
 	colored = false,
 	className,
+	variant = "horizontal",
 }: AnimatedLogoProps) {
 	const halfWidth = height * (43 / 80);
 	const symbolGap = height * (4 / 80);
 	const shift = halfWidth + symbolGap;
-	const wordmarkHeight = height * (80 / 120);
-	const logoGap = height / 3;
+	const isVertical = variant === "vertical";
+	const wordmarkHeight = isVertical ? height * 0.35 : height * (80 / 120);
+	const logoGap = isVertical ? height * 0.3 : height / 3;
 
 	return (
 		<div
-			className={`${styles.logo} ${className || ""}`}
+			className={`${styles.logo} ${isVertical ? styles.logoVertical : ""} ${className || ""}`}
 			style={
 				{
 					gap: logoGap,

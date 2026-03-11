@@ -25,7 +25,7 @@
 /* === Variant: Primary === */
 /* Page-level headers */
 .primary {
-  padding-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
   margin-bottom: var(--spacing-xl);
 }
 

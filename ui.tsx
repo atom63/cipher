@@ -24,8 +24,6 @@ import { ExportPage } from "./pages/ExportPage";
 import { GeneratePage } from "./pages/GeneratePage";
 import { ImportPage } from "./pages/ImportPage";
 import { ManageTabsPage } from "./pages/ManageTabsPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { StyleguidePage } from "./pages/StyleguidePage";
 import type { PluginSettings } from "./types/messages";
 import { applyTheme } from "./utils/theme";
 
@@ -87,18 +85,6 @@ function App() {
 				return (
 					<PageErrorBoundary pageName="Export">
 						<ExportPage />
-					</PageErrorBoundary>
-				);
-			case "settings":
-				return (
-					<PageErrorBoundary pageName="Settings">
-						<SettingsPage />
-					</PageErrorBoundary>
-				);
-			case "styleguide":
-				return (
-					<PageErrorBoundary pageName="Styleguide">
-						<StyleguidePage />
 					</PageErrorBoundary>
 				);
 			case "about":

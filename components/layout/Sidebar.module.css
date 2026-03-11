@@ -1,4 +1,6 @@
-/* Sidebar Component Styles */
+/* ============================================
+   SIDEBAR
+   ============================================ */
 
 .sidebar {
   position: relative;
@@ -7,19 +9,22 @@
   flex-direction: column;
   width: var(--sidebar-width);
   background: var(--muted);
-  border-right: 1px solid var(--border);
-  transition: width var(--transition) ease;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sidebar.collapsed {
   width: var(--sidebar-collapsed);
 }
 
+/* ============================================
+   CONTENT
+   ============================================ */
+
 .sidebarContent {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-2xs);
   padding: var(--spacing-md) var(--spacing-sm);
   overflow-y: auto;
 }
@@ -27,34 +32,46 @@
 .sidebarSection {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: 1px;
 }
 
 .sidebarSeparator {
-  margin: var(--spacing-sm) var(--spacing-xs);
+  margin: var(--spacing-xs) var(--spacing-sm);
+  opacity: 0.5;
 }
+
+/* ============================================
+   NAV ITEM
+   ============================================ */
 
 .sidebarItem {
   position: relative;
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   align-items: center;
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--text-base);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--muted-foreground);
   text-align: left;
   cursor: pointer;
   background: transparent;
   border: none;
-  border-radius: var(--radius);
-  transition: background-color var(--transition), color var(--transition);
+  border-radius: var(--radius-sm);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
 }
 
 .sidebarItem:hover:not(.disabled) {
   color: var(--foreground);
-  background: var(--accent);
+  background: color-mix(in oklch, var(--foreground) 5%, transparent);
+}
+
+.sidebarItem:active:not(.disabled) {
+  transform: scale(0.98);
 }
 
 .sidebarItem:focus-visible {
@@ -62,74 +79,94 @@
   box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
+/* Active — confident but restrained */
 .sidebarItem.active {
-  color: var(--primary);
+  color: var(--foreground);
   background: var(--background);
-  box-shadow: var(--shadow-shadow-1);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
+.sidebarItem.active .sidebarIcon {
+  color: var(--primary);
+}
+
+/* Active indicator — thin left accent */
 .sidebarItem.active::before {
   position: absolute;
-  top: var(--spacing-xs);
-  bottom: var(--spacing-xs);
+  top: 6px;
+  bottom: 6px;
   left: 0;
-  width: 3px;
+  width: 2px;
   content: "";
   background: var(--primary);
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 1px 1px 0;
 }
 
 .sidebarItem.disabled {
-  color: var(--muted-foreground-light);
+  color: var(--muted-foreground);
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
+/* ============================================
+   ICON & LABEL
+   ============================================ */
+
 .sidebarIcon {
+  display: flex;
   flex-shrink: 0;
-  width: 20px;
-  font-size: var(--text-xl);
-  text-align: center;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: inherit;
+  transition: color 0.15s ease;
 }
 
 .sidebarLabel {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: var(--font-medium);
   white-space: nowrap;
 }
 
 .sidebarBadge {
-  display: inline-block;
-  padding: var(--spacing-2xs) var(--spacing-xs);
-  font-size: var(--text-xs);
+  padding: 1px var(--spacing-xs);
+  font-size: 9px;
   font-weight: var(--font-semibold);
-  color: var(--accent-foreground);
+  color: var(--muted-foreground);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background: var(--accent);
+  letter-spacing: 0.05em;
+  background: color-mix(in oklch, var(--foreground) 6%, transparent);
   border-radius: var(--radius-xs);
 }
+
+/* ============================================
+   COLLAPSE TOGGLE
+   ============================================ */
 
 .sidebarCollapseToggle {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: var(--spacing-sm);
-  font-size: var(--text-xl);
+  padding: var(--spacing-xs);
   color: var(--muted-foreground);
   cursor: pointer;
   background: transparent;
   border: none;
   border-top: 1px solid var(--border);
-  transition: background-color var(--transition), color var(--transition);
+  opacity: 0.5;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .sidebarCollapseToggle:hover {
-  color: var(--primary);
-  background: var(--accent);
+  color: var(--foreground);
+  background: color-mix(in oklch, var(--foreground) 4%, transparent);
+  opacity: 1;
 }
 
 .sidebarCollapseToggle:focus-visible {
@@ -137,7 +174,10 @@
   box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
-/* Collapsed sidebar styles */
+/* ============================================
+   COLLAPSED STATE
+   ============================================ */
+
 .sidebar.collapsed .sidebarLabel,
 .sidebar.collapsed .sidebarBadge {
   display: none;
@@ -145,6 +185,10 @@
 
 .sidebar.collapsed .sidebarItem {
   justify-content: center;
-  padding: var(--spacing-sm);
+  padding: var(--spacing-xs);
 }
 
+.sidebar.collapsed .sidebarItem.active::before {
+  top: 4px;
+  bottom: 4px;
+}

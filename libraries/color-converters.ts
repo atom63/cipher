@@ -28,7 +28,7 @@ export function rgbToRgba(color: RGB & { a?: number }): string {
 	const g = Math.round(color.g * 255);
 	const b = Math.round(color.b * 255);
 	const rawA = "a" in color && color.a !== undefined ? color.a : 1;
-	const a = Math.round(rawA * 10000) / 10000;
+	const a = Math.round(rawA * 10_000) / 10_000;
 	return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 

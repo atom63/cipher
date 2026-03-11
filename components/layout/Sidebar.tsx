@@ -4,8 +4,6 @@ import {
 	Download,
 	Info,
 	LayoutGrid,
-	Palette,
-	Settings,
 	Sparkles,
 	Upload,
 } from "lucide-react";
@@ -17,8 +15,6 @@ export type PageId =
 	| "generate"
 	| "import"
 	| "export"
-	| "settings"
-	| "styleguide"
 	| "about";
 
 interface MenuItem {
@@ -64,20 +60,6 @@ const menuItems: MenuItem[] = [
 		icon: Upload,
 		enabled: true,
 		section: "features",
-	},
-	{
-		id: "settings",
-		label: "Settings",
-		icon: Settings,
-		enabled: true,
-		section: "config",
-	},
-	{
-		id: "styleguide",
-		label: "Styleguide",
-		icon: Palette,
-		enabled: true,
-		section: "config",
 	},
 	{
 		id: "about",

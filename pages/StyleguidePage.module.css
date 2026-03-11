@@ -1,8 +1,8 @@
 /* Styleguide Page */
 .styleguide {
   max-width: 1200px;
-  margin: 0 auto;
   padding: var(--spacing-xl);
+  margin: 0 auto;
 }
 
 

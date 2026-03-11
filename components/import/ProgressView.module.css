@@ -1,4 +1,7 @@
-/* Success View Styles */
+/* ============================================
+   SUCCESS VIEW
+   ============================================ */
+
 .successView {
   display: flex;
   flex: 1;
@@ -7,54 +10,71 @@
   justify-content: center;
   padding: var(--spacing-3xl) var(--spacing-xl);
   text-align: center;
+  animation: success-fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* --- Status Icon --- */
 
 .successIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   margin: 0 auto var(--spacing-lg);
-  font-size: var(--text-4xl);
   color: var(--primary-foreground);
   background: var(--success);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--success) 15%, transparent);
+  animation: success-icon-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
 
 .successIcon[data-status="error"] {
   background: var(--destructive);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--destructive) 15%, transparent);
 }
 
 .successIcon[data-status="warning"] {
   background: var(--warning);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--warning) 15%, transparent);
 }
+
+/* --- Title --- */
 
 .successView h2 {
-  margin-bottom: var(--spacing-xl);
-  font-size: var(--text-2xl);
+  margin: 0 0 var(--spacing-lg);
+  font-size: var(--text-lg);
   font-weight: var(--font-semibold);
+  color: var(--foreground);
+  text-wrap: balance;
+  animation: success-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 }
 
+/* --- Stats Card --- */
+
 .successStats {
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  margin-bottom: var(--spacing-lg);
+  overflow: hidden;
   text-align: left;
-  background: var(--muted);
-  border-radius: var(--radius);
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  animation: success-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 }
 
 .successStats p {
   display: flex;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
   align-items: center;
-  margin-bottom: var(--spacing-sm);
-  font-size: var(--text-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin: 0;
+  font-size: var(--text-sm);
   color: var(--foreground);
-}
-
-.successStats p:last-child {
-  margin-bottom: 0;
+  background: var(--background);
 }
 
 .successStats p strong {
@@ -75,21 +95,26 @@
   color: var(--warning);
 }
 
+/* --- Error Details --- */
+
 .errorDetails {
-  margin-bottom: var(--spacing-xl);
+  width: 100%;
+  margin-bottom: var(--spacing-md);
   text-align: left;
 }
 
 .errorDetails summary {
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--foreground);
   cursor: pointer;
   background: var(--muted);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  transition: all var(--transition);
+  border-radius: var(--radius-md);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .errorDetails summary:hover {
@@ -100,25 +125,28 @@
 .errorDetailsContent {
   max-height: 200px;
   padding: var(--spacing-md);
-  margin-top: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
   background: var(--muted);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
 }
 
 .errorList {
   padding-left: var(--spacing-lg);
-  margin-top: var(--spacing-xs);
-  margin-bottom: 0;
+  margin: 0;
   list-style: none;
 }
 
 .errorList li {
   padding: var(--spacing-xs) 0;
-  margin-bottom: var(--spacing-sm);
+  font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--foreground);
   word-break: break-word;
+}
+
+.errorList li + li {
+  border-top: 1px solid var(--border);
 }
 
 /* Override mode - warning colors */
@@ -129,7 +157,6 @@
 }
 
 .errorDetails[data-override-mode="true"] summary:hover {
-  background: var(--warning);
   opacity: 0.9;
 }
 
@@ -141,25 +168,19 @@
 }
 
 .errorDetails[data-override-mode="false"] summary:hover {
-  background: var(--destructive);
   opacity: 0.9;
 }
 
-.successActions {
-  display: flex;
-  gap: var(--spacing-md);
-  justify-content: center;
-  margin-top: var(--spacing-xl);
-}
+/* --- Changes Details --- */
 
-/* === Changes Details === */
 .changesDetails {
   width: 100%;
   margin-bottom: var(--spacing-md);
   overflow: hidden;
   text-align: left;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
+  animation: success-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
 }
 
 .changesDetails summary {
@@ -171,6 +192,7 @@
   user-select: none;
   list-style: none;
   background: var(--muted);
+  transition: background-color 0.15s ease;
 }
 
 .changesDetails summary::-webkit-details-marker {
@@ -197,6 +219,7 @@
   padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--text-xs);
   border-top: 1px solid var(--border);
+  transition: background-color 0.1s ease;
 }
 
 .changeRow:hover {
@@ -207,9 +230,9 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
   font-family: var(--font-mono);
   color: var(--foreground);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -238,3 +261,58 @@
   border-top: 1px solid var(--border);
 }
 
+/* --- Actions --- */
+
+.successActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  margin-top: var(--spacing-lg);
+  animation: success-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes success-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes success-icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes success-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .successView,
+  .successIcon,
+  .successView h2,
+  .successStats,
+  .changesDetails,
+  .successActions {
+    animation: none;
+  }
+}

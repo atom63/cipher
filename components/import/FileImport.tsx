@@ -153,14 +153,18 @@ export function FileImport({
 				) : (
 					<>
 						<div className={styles.uploadIcon}>
-							<FolderOpen size={32} />
+							<FolderOpen size={20} />
 						</div>
 						<p className={styles.dropZonePrimary}>
 							Drop a file here or click to browse
 						</p>
 						<p className={styles.dropZoneSecondary}>
-							Supports JSON and CSS files with design tokens
+							Supported formats
 						</p>
+						<div className={styles.formatBadges}>
+							<span className={styles.formatBadge}>.json</span>
+							<span className={styles.formatBadge}>.css</span>
+						</div>
 					</>
 				)}
 			</div>

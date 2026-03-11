@@ -414,6 +414,7 @@ export function ExportPage() {
 					<Tabs
 						activeTab={activeTab}
 						onTabChange={handleTabChange}
+						size="sm"
 						tabs={[
 							{ id: "json", label: "JSON" },
 							{ id: "css", label: "CSS" },
