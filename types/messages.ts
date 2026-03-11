@@ -72,7 +72,7 @@ export interface GetStylesMessage {
 export interface CreateVariablesMessage {
 	data: {
 		tokens: DesignToken[];
-		collectionName: string;
+		collectionName?: string;
 		importMode?: "import" | "override";
 		selectedCollections?: string[];
 		/** Styles section from combined JSON export — imported after variables */

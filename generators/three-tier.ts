@@ -38,8 +38,6 @@ import {
 // --- Configuration types ---
 
 export interface BrandConfig {
-	/** Whether to generate light+dark semantic modes (default: true) */
-	darkMode?: boolean;
 	/** Custom font name overrides (prepended to system fallback stacks) */
 	fonts?: FontOverrides;
 	/** Neutral gray palette name — matches a Radix gray preset (default: "slate") */
@@ -400,20 +398,7 @@ function generatePrimitives(config: BrandConfig): {
 		);
 	}
 
-	// --- Accent alias pointing to brand 500 ---
-	tokens.push(
-		makeToken(
-			"color/accent/primary",
-			`{primitives.color.brand.500}`,
-			"primitives",
-			{
-				description: "Primary brand color",
-				originalValue: `{primitives.color.brand.500}`,
-			},
-		),
-	);
-
-	// --- Secondary full ramp + accent alias (if provided) ---
+	// --- Secondary full ramp (if provided) ---
 	if (config.secondary) {
 		const secondaryScale = generateColorScale("secondary", config.secondary);
 		for (const step of SHADE_STEPS) {
@@ -429,17 +414,6 @@ function generatePrimitives(config: BrandConfig): {
 				),
 			);
 		}
-		tokens.push(
-			makeToken(
-				"color/accent/secondary",
-				`{primitives.color.secondary.500}`,
-				"primitives",
-				{
-					description: "Secondary brand color",
-					originalValue: `{primitives.color.secondary.500}`,
-				},
-			),
-		);
 	}
 
 	// --- Status colors with full ramps ---
@@ -453,6 +427,7 @@ function generatePrimitives(config: BrandConfig): {
 
 	for (const status of statusColors) {
 		const scale = generateColorScale(status.name, status.hex);
+		scales.push(scale);
 		for (const step of SHADE_STEPS) {
 			tokens.push(
 				makeToken(
@@ -625,7 +600,7 @@ interface SemanticDef {
 function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 	const surfL = (step: number) => `{abstractions.surface.light.${step}}`;
 	const surfD = (step: number) => `{abstractions.surface.dark.${step}}`;
-	const primary = "{primitives.color.accent.primary}";
+	const primary = "{primitives.color.brand.500}";
 	const danger = "{primitives.color.status.danger}";
 	const success = "{primitives.color.status.success}";
 	const warning = "{primitives.color.status.warning}";
@@ -862,8 +837,8 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 		defs.push(
 			{
 				name: "shadcn/secondary-accent",
-				light: "{primitives.color.accent.secondary}",
-				dark: "{primitives.color.accent.secondary}",
+				light: "{primitives.color.secondary.500}",
+				dark: "{primitives.color.secondary.500}",
 				description: "Secondary accent color",
 			},
 		);
@@ -873,33 +848,20 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 }
 
 function generateSemantics(config: BrandConfig): DesignToken[] {
-	const darkMode = config.darkMode !== false;
 	const defs = buildSemanticDefs(!!config.secondary);
 	const tokens: DesignToken[] = [];
 
-	if (darkMode) {
-		for (const def of defs) {
-			for (const [modeName, modeValue] of [
-				["Light", def.light],
-				["Dark", def.dark],
-			] as const) {
-				tokens.push(
-					makeToken(def.name, modeValue, "semantics", {
-						description: def.description,
-						originalValue: modeValue,
-						type: def.type,
-						modeName,
-					}),
-				);
-			}
-		}
-	} else {
-		for (const def of defs) {
+	for (const def of defs) {
+		for (const [modeName, modeValue] of [
+			["Light", def.light],
+			["Dark", def.dark],
+		] as const) {
 			tokens.push(
-				makeToken(def.name, def.light, "semantics", {
+				makeToken(def.name, modeValue, "semantics", {
 					description: def.description,
-					originalValue: def.light,
+					originalValue: modeValue,
 					type: def.type,
+					modeName,
 				}),
 			);
 		}
@@ -992,8 +954,6 @@ export function generateCss(config: BrandConfig): string {
 	const radiusScale = computeRadiusScale(
 		config.radius ?? DEFAULT_RADIUS.anchor,
 	);
-	const darkMode = config.darkMode !== false;
-
 	const lines: string[] = [];
 
 	// Primitives as @theme inline
@@ -1093,23 +1053,21 @@ export function generateCss(config: BrandConfig): string {
 
 	lines.push("}");
 
-	if (darkMode) {
-		lines.push("");
-		lines.push(".dark {");
+	lines.push("");
+	lines.push(".dark {");
 
-		for (let i = 0; i < 12; i++) {
-			lines.push(`  --color-gray-${i + 1}: ${radixGray.dark[i]};`);
-		}
-
-		for (const def of defs) {
-			if (def.name.startsWith("shadcn/")) {
-				const cssName = def.name.replace("shadcn/", "");
-				lines.push(`  --${cssName}: ${refToCssVar(def.dark)};`);
-			}
-		}
-
-		lines.push("}");
+	for (let i = 0; i < 12; i++) {
+		lines.push(`  --color-gray-${i + 1}: ${radixGray.dark[i]};`);
 	}
+
+	for (const def of defs) {
+		if (def.name.startsWith("shadcn/")) {
+			const cssName = def.name.replace("shadcn/", "");
+			lines.push(`  --${cssName}: ${refToCssVar(def.dark)};`);
+		}
+	}
+
+	lines.push("}");
 
 	// Typography
 	lines.push("");
@@ -1359,8 +1317,6 @@ function generateStyles(config: BrandConfig): Record<string, any> {
  */
 export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 	tokenIdCounter = 0;
-
-	const darkMode = config.darkMode !== false;
 
 	// Generate all three tiers
 	const {

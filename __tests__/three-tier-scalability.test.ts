@@ -7,7 +7,6 @@ import { generateCss, generateDesignSystem } from "../generators/three-tier";
 // =========================================================================
 
 const GRAY_NAMES = ["gray", "mauve", "slate", "sage", "olive", "sand"];
-const DARK_MODES = [true, false];
 
 describe("combinatorial config coverage", () => {
 	test("generates without errors for all gray palettes", () => {
@@ -18,16 +17,6 @@ describe("combinatorial config coverage", () => {
 			});
 			expect(result.tokens.length).toBeGreaterThan(0);
 			expect(result.stats.totalCount).toBe(result.tokens.length);
-		}
-	});
-
-	test("works with both dark mode on and off", () => {
-		for (const darkMode of DARK_MODES) {
-			const result = generateDesignSystem({
-				primary: "#3B82F6",
-				darkMode,
-			});
-			expect(result.tokens.length).toBeGreaterThan(0);
 		}
 	});
 
@@ -60,7 +49,6 @@ describe("combinatorial config coverage", () => {
 			primary: "#3B82F6",
 			secondary: "#10B981",
 			grayName: "slate",
-			darkMode: true,
 			radius: 12,
 			typescale: {
 				base: 16,
@@ -88,7 +76,6 @@ describe("reference integrity", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			darkMode: false,
 		});
 
 		// Build set of all token paths (category.figmaName with / → .)
@@ -116,7 +103,6 @@ describe("reference integrity", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			darkMode: false,
 		});
 
 		const semanticColors = result.tokens.filter(
@@ -143,7 +129,6 @@ describe("cross-mode consistency", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			darkMode: true,
 		});
 
 		const lightNames = new Set<string>();
@@ -177,7 +162,6 @@ describe("cross-mode consistency", () => {
 	test("primitives and abstractions are single-mode (no modeName)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: true,
 		});
 
 		const nonSemantics = result.tokens.filter(
@@ -191,21 +175,6 @@ describe("cross-mode consistency", () => {
 			).toBeUndefined();
 		}
 	});
-
-	test("no semantic mode tokens when darkMode is false (responsive still has modes)", () => {
-		const result = generateDesignSystem({
-			primary: "#3B82F6",
-			darkMode: false,
-		});
-		for (const token of result.tokens) {
-			// Responsive tokens always have modes regardless of darkMode
-			if (token.category === "responsive") continue;
-			expect(
-				(token as any).modeName,
-				`Token "${token.figmaName}" has modeName when darkMode is false`,
-			).toBeUndefined();
-		}
-	});
 });
 
 // =========================================================================
@@ -216,7 +185,6 @@ describe("token count stability", () => {
 	test("default config produces stable token counts", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 
 		// All tiers are always generated
@@ -226,39 +194,26 @@ describe("token count stability", () => {
 		expect(result.stats.totalCount).toBeGreaterThan(100);
 	});
 
-	test("dark mode doubles only semantic tokens", () => {
-		const lightOnly = generateDesignSystem({
+	test("semantics always have Light + Dark modes", () => {
+		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 
-		const withDark = generateDesignSystem({
-			primary: "#3B82F6",
-			darkMode: true,
-		});
-
-		// Primitives and abstractions are single-mode — same count
-		expect(withDark.stats.primitiveCount).toBe(lightOnly.stats.primitiveCount);
-		expect(withDark.stats.abstractionCount).toBe(
-			lightOnly.stats.abstractionCount,
-		);
-
-		// Semantics double with dark mode
-		expect(withDark.stats.semanticCount).toBe(
-			lightOnly.stats.semanticCount * 2,
-		);
+		const semantics = result.tokens.filter((t) => t.category === "semantics");
+		const lightCount = semantics.filter((t) => (t as any).modeName === "Light").length;
+		const darkCount = semantics.filter((t) => (t as any).modeName === "Dark").length;
+		expect(lightCount).toBe(darkCount);
+		expect(lightCount).toBeGreaterThan(0);
 	});
 
 	test("secondary color adds tokens proportionally", () => {
 		const without = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 
 		const withSecondary = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			darkMode: false,
 		});
 
 		// Secondary adds 1 primitive (color/secondary) + 1 semantic token
@@ -270,7 +225,6 @@ describe("token count stability", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			darkMode: true,
 		});
 
 		const seen = new Map<string, Set<string>>();
@@ -298,7 +252,6 @@ describe("token naming structure", () => {
 	test("primitives use correct path prefixes", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 
 		const primitives = result.tokens.filter(
@@ -320,7 +273,6 @@ describe("token naming structure", () => {
 	test("abstractions use correct path prefixes", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 
 		const abstractions = result.tokens.filter(
@@ -338,7 +290,7 @@ describe("token naming structure", () => {
 			(t) => t.category === "primitives",
 		);
 		const primNames = primitives.map((t) => t.figmaName);
-		expect(primNames).toContain("color/accent/primary");
+		expect(primNames).toContain("color/brand/500");
 		expect(primNames.some((n) => n.startsWith("rounded/"))).toBe(true);
 		expect(primNames.some((n) => n.startsWith("zLayer/"))).toBe(true);
 	});
@@ -346,7 +298,6 @@ describe("token naming structure", () => {
 	test("semantics use shadcn/ prefix for UI tokens", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 
 		const semantics = result.tokens.filter(
@@ -371,7 +322,6 @@ describe("edge cases", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			grayName: "nonexistent",
-			darkMode: false,
 		});
 		expect(result.radixGray).not.toBeNull();
 		expect(result.tokens.length).toBeGreaterThan(0);
@@ -380,7 +330,6 @@ describe("edge cases", () => {
 	test("handles 3-digit hex color", () => {
 		const result = generateDesignSystem({
 			primary: "#38F",
-			darkMode: false,
 		});
 		expect(result.tokens.length).toBeGreaterThan(0);
 	});
@@ -388,7 +337,6 @@ describe("edge cases", () => {
 	test("handles lowercase hex color", () => {
 		const result = generateDesignSystem({
 			primary: "#3b82f6",
-			darkMode: false,
 		});
 		expect(result.tokens.length).toBeGreaterThan(0);
 	});
@@ -397,7 +345,6 @@ describe("edge cases", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			radius: 0,
-			darkMode: false,
 		});
 		const radiusTokens = result.tokens.filter(
 			(t) => t.type === "borderRadius",
@@ -412,7 +359,6 @@ describe("edge cases", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			radius: 32,
-			darkMode: false,
 		});
 		const radiusTokens = result.tokens.filter(
 			(t) => t.type === "borderRadius",
@@ -432,7 +378,6 @@ describe("CSS output correctness", () => {
 		const css = generateCss({
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			darkMode: true,
 		});
 
 		const blocks = css.split(/[{}]/);
@@ -454,7 +399,6 @@ describe("CSS output correctness", () => {
 	test("all CSS var references use valid var() syntax", () => {
 		const css = generateCss({
 			primary: "#3B82F6",
-			darkMode: true,
 		});
 
 		const varRefs = css.match(/var\([^)]+\)/g) ?? [];
@@ -467,7 +411,6 @@ describe("CSS output correctness", () => {
 		const config: BrandConfig = {
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			darkMode: true,
 		};
 
 		const css1 = generateCss(config);
@@ -480,7 +423,6 @@ describe("CSS output correctness", () => {
 			const css = generateCss({
 				primary: "#3B82F6",
 				grayName,
-				darkMode: true,
 			});
 			expect(css).toContain("--color-gray-1:");
 			expect(css).toContain("--color-gray-12:");
@@ -498,7 +440,6 @@ describe("performance", () => {
 			primary: "#3B82F6",
 			secondary: "#10B981",
 			grayName: "slate",
-			darkMode: true,
 			radius: 12,
 			typescale: {
 				base: 16,
@@ -525,7 +466,6 @@ describe("performance", () => {
 		const config: BrandConfig = {
 			primary: "#3B82F6",
 			secondary: "#10B981",
-			darkMode: true,
 		};
 
 		const start = performance.now();

@@ -19,13 +19,13 @@ import {
 import { TooltipPortal } from "./components/ui/Tooltip";
 import { useDebugMode } from "./hooks/useDebugMode";
 import { useFigmaMessage, usePostMessage } from "./hooks/useFigmaMessage";
+import { CustomizePage } from "./pages/CustomizePage";
 import { ExportPage } from "./pages/ExportPage";
 import { GeneratePage } from "./pages/GeneratePage";
 import { ImportPage } from "./pages/ImportPage";
-import { ManagePage } from "./pages/ManagePage";
+import { ManageTabsPage } from "./pages/ManageTabsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { StyleguidePage } from "./pages/StyleguidePage";
-import { StylesPage } from "./pages/StylesPage";
 import type { PluginSettings } from "./types/messages";
 import { applyTheme } from "./utils/theme";
 
@@ -67,14 +67,14 @@ function App() {
 		switch (activePage) {
 			case "manage":
 				return (
-					<PageErrorBoundary pageName="Variables">
-						<ManagePage onNavigate={(page) => setActivePage(page as PageId)} />
+					<PageErrorBoundary pageName="Manage">
+						<ManageTabsPage onNavigate={(page) => setActivePage(page as PageId)} />
 					</PageErrorBoundary>
 				);
-			case "styles":
+			case "customize":
 				return (
-					<PageErrorBoundary pageName="Styles">
-						<StylesPage />
+					<PageErrorBoundary pageName="Customize">
+						<CustomizePage />
 					</PageErrorBoundary>
 				);
 			case "generate":
@@ -110,7 +110,7 @@ function App() {
 			default:
 				return (
 					<PageErrorBoundary pageName="Manage">
-						<ManagePage onNavigate={(page) => setActivePage(page as PageId)} />
+						<ManageTabsPage onNavigate={(page) => setActivePage(page as PageId)} />
 					</PageErrorBoundary>
 				);
 		}

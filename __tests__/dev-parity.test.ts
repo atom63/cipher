@@ -424,7 +424,6 @@ describe("semantic token coverage vs dev semantics.css", () => {
 			primary: "#0090FF",
 			secondary: "#10B981",
 			grayName: "gray",
-			darkMode: true,
 		});
 		const genNames = new Set(
 			result.tokens
@@ -462,7 +461,6 @@ describe("semantic token coverage vs dev semantics.css", () => {
 		const result = generateDesignSystem({
 			primary: "#0090FF",
 			grayName: "gray",
-			darkMode: true,
 		});
 
 		// Map of dev name → generator name → check gray step
@@ -534,7 +532,6 @@ describe("abstraction layer parity with dev abstractions.css", () => {
 		const result = generateDesignSystem({
 			primary: "#0090FF",
 			grayName: "gray",
-			darkMode: true,
 		});
 
 		const genSurfaceSteps = new Set<number>();
@@ -991,7 +988,6 @@ describe("gap analysis", () => {
 			primary: "#0090FF",
 			secondary: "#10B981",
 			grayName: "gray",
-			darkMode: true,
 		});
 		const _genNames = new Set(
 			result.tokens

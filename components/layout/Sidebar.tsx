@@ -3,9 +3,9 @@ import {
 	ChevronRight,
 	Download,
 	LayoutGrid,
-	Paintbrush,
 	Palette,
 	Settings,
+	SlidersHorizontal,
 	Sparkles,
 	Upload,
 } from "lucide-react";
@@ -14,7 +14,7 @@ import styles from "./Sidebar.module.css";
 
 export type PageId =
 	| "manage"
-	| "styles"
+	| "customize"
 	| "generate"
 	| "import"
 	| "export"
@@ -39,15 +39,15 @@ interface SidebarProps {
 const menuItems: MenuItem[] = [
 	{
 		id: "manage",
-		label: "Variables",
+		label: "Manage",
 		icon: LayoutGrid,
 		enabled: true,
 		section: "features",
 	},
 	{
-		id: "styles",
-		label: "Styles",
-		icon: Paintbrush,
+		id: "customize",
+		label: "Customize",
+		icon: SlidersHorizontal,
 		enabled: true,
 		section: "features",
 	},

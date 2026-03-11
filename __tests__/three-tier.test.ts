@@ -53,7 +53,6 @@ describe("primitives", () => {
 	test("includes white alpha scale (color/white/N)", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: false,
 		});
 		const names = result.tokens.map((t) => t.figmaName);
 		expect(names).toContain("color/white/0");
@@ -64,7 +63,6 @@ describe("primitives", () => {
 	test("includes black alpha scale (color/black/N)", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: false,
 		});
 		const names = result.tokens.map((t) => t.figmaName);
 		expect(names).toContain("color/black/0");
@@ -75,7 +73,6 @@ describe("primitives", () => {
 	test("includes Radix gray as color/gray/light and color/gray/dark", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: false,
 		});
 		const names = result.tokens.map((t) => t.figmaName);
 		for (let i = 1; i <= 12; i++) {
@@ -87,7 +84,6 @@ describe("primitives", () => {
 	test("gray primitives are single-mode (no modeName)", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: true,
 		});
 		const grayTokens = result.tokens.filter(
 			(t) =>
@@ -102,7 +98,6 @@ describe("primitives", () => {
 	test("primitive color values are direct colors, not references", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: false,
 		});
 		const colorTokens = result.tokens.filter(
 			(t) => t.category === "primitives" && t.type === "color",
@@ -115,7 +110,6 @@ describe("primitives", () => {
 	test("includes font family tokens (font/family/sans, font/family/mono)", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: false,
 		});
 		const names = result.tokens.map((t) => t.figmaName);
 		expect(names).toContain("font/family/sans");
@@ -125,7 +119,6 @@ describe("primitives", () => {
 	test("includes font weight label tokens (font/weight/N)", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: false,
 		});
 		const names = result.tokens.map((t) => t.figmaName);
 		expect(names).toContain("font/weight/400");
@@ -135,7 +128,6 @@ describe("primitives", () => {
 	test("includes font weight variable tokens (font/weight/variable/N)", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: false,
 		});
 		const names = result.tokens.map((t) => t.figmaName);
 		expect(names).toContain("font/weight/variable/regular");
@@ -145,7 +137,6 @@ describe("primitives", () => {
 	test("custom font overrides use clean name strings", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 			fonts: { sans: "Geist" },
 		});
 		const sansToken = result.tokens.find(
@@ -157,7 +148,6 @@ describe("primitives", () => {
 	test("brand color scale is in primitives (for preview) but not as tokens", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: false,
 		});
 		// Brand scale is available in result.primitives for preview
 		expect(result.primitives.length).toBeGreaterThan(0);
@@ -179,7 +169,6 @@ describe("non-color tokens", () => {
 	test("generates spacing tokens as FLOAT-compatible", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 		const spacingTokens = result.tokens.filter((t) => t.type === "spacing");
 		expect(spacingTokens.length).toBeGreaterThan(0);
@@ -194,7 +183,6 @@ describe("non-color tokens", () => {
 	test("generates shadow tokens as STRING-compatible", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 		const shadowTokens = result.tokens.filter((t) => t.type === "boxShadow");
 		expect(shadowTokens.length).toBe(7);
@@ -206,7 +194,6 @@ describe("non-color tokens", () => {
 	test("generates duration tokens in primitives (motion/duration/N)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 		const durationTokens = result.tokens.filter(
 			(t) =>
@@ -222,7 +209,6 @@ describe("non-color tokens", () => {
 	test("generates duration aliases in abstractions (duration/N)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 		const durationAliases = result.tokens.filter(
 			(t) => t.category === "abstractions" && t.figmaName.startsWith("duration/"),
@@ -239,7 +225,6 @@ describe("non-color tokens", () => {
 	test("generates radius in primitives (rounded/N)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 		const radiusTokens = result.tokens.filter((t) => t.type === "borderRadius");
 		expect(radiusTokens.length).toBeGreaterThan(0);
@@ -255,7 +240,6 @@ describe("non-color tokens", () => {
 	test("radius uses custom anchor", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 			radius: 8,
 		});
 		const lgRadius = result.tokens.find(
@@ -267,7 +251,6 @@ describe("non-color tokens", () => {
 	test("generates typescale tokens in primitives with responsive variants", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 		const typeTokens = result.tokens.filter(
 			(t) =>
@@ -286,7 +269,6 @@ describe("non-color tokens", () => {
 	test("different ratios produce different heading sizes", () => {
 		const smallRatio = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 			typescale: {
 				base: 16,
 				ratio: "minor-third",
@@ -298,7 +280,6 @@ describe("non-color tokens", () => {
 		});
 		const largeRatio = generateDesignSystem({
 			primary: "#3B82F6",
-			darkMode: false,
 			typescale: {
 				base: 16,
 				ratio: "golden-ratio",
@@ -344,16 +325,16 @@ describe("abstractions", () => {
 		);
 	});
 
-	test("color/primary has a direct color value", () => {
+	test("generates full brand color ramp", () => {
 		const result = generateDesignSystem(defaultConfig);
-		const primary = result.tokens.find(
+		const brandTokens = result.tokens.filter(
 			(t) =>
 				t.category === "primitives" &&
-				t.figmaName === "color/accent/primary",
+				t.figmaName.startsWith("color/brand/"),
 		);
-		expect(primary).toBeDefined();
-		// It's a reference alias pointing to the brand 500 shade
-		expect(String(primary?.originalValue)).toBe("{primitives.color.brand.500}");
+		// 11 shades: 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950
+		expect(brandTokens.length).toBe(11);
+		expect(brandTokens.find((t) => t.figmaName === "color/brand/500")).toBeDefined();
 	});
 
 	test("includes status color primitives", () => {
@@ -389,25 +370,24 @@ describe("abstractions", () => {
 		expect(successToken).toBeDefined();
 	});
 
-	test("creates color/secondary when secondary provided", () => {
+	test("creates secondary ramp when secondary provided", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
 			secondary: "#10B981",
 		});
-		const primitives = result.tokens.filter(
-			(t) => t.category === "primitives",
+		const secondaryTokens = result.tokens.filter(
+			(t) => t.category === "primitives" && t.figmaName.startsWith("color/secondary/"),
 		);
-		const names = primitives.map((t) => t.figmaName);
-		expect(names).toContain("color/accent/secondary");
+		expect(secondaryTokens.length).toBe(11);
+		expect(secondaryTokens.find((t) => t.figmaName === "color/secondary/500")).toBeDefined();
 	});
 
-	test("no color/secondary without secondary color", () => {
+	test("no secondary ramp without secondary color", () => {
 		const result = generateDesignSystem(defaultConfig);
-		const primitives = result.tokens.filter(
-			(t) => t.category === "primitives",
+		const secondaryTokens = result.tokens.filter(
+			(t) => t.category === "primitives" && t.figmaName.startsWith("color/secondary/"),
 		);
-		const names = primitives.map((t) => t.figmaName);
-		expect(names).not.toContain("color/accent/secondary");
+		expect(secondaryTokens.length).toBe(0);
 	});
 
 	test("includes zLayer tokens in primitives", () => {
@@ -436,7 +416,6 @@ describe("abstractions", () => {
 	test("all abstractions are single-mode (no modeName)", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: true,
 		});
 		const abstractions = result.tokens.filter(
 			(t) => t.category === "abstractions",
@@ -461,17 +440,6 @@ describe("semantics", () => {
 		const darkTokens = semantics.filter((t) => (t as any).modeName === "Dark");
 		expect(lightTokens.length).toBe(darkTokens.length);
 		expect(lightTokens.length).toBeGreaterThan(0);
-	});
-
-	test("single mode when darkMode is false", () => {
-		const result = generateDesignSystem({
-			...defaultConfig,
-			darkMode: false,
-		});
-		const semantics = result.tokens.filter((t) => t.category === "semantics");
-		for (const token of semantics) {
-			expect((token as any).modeName).toBeUndefined();
-		}
 	});
 
 	test("includes shadcn/ prefixed UI tokens", () => {
@@ -526,7 +494,6 @@ describe("semantics", () => {
 	test("semantic color tokens reference abstractions or primitives", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
-			darkMode: false,
 		});
 		const semanticColors = result.tokens.filter(
 			(t) =>
@@ -634,7 +601,6 @@ describe("generateCss", () => {
 	test("produces valid CSS output", () => {
 		const css = generateCss({
 			...defaultConfig,
-			darkMode: false,
 		});
 		expect(css).toContain("@theme inline {");
 		expect(css).toContain(":root {");
@@ -655,23 +621,14 @@ describe("generateCss", () => {
 		expect(css).toContain("--color-destructive: var(--destructive);");
 	});
 
-	test("includes dark mode when enabled", () => {
+	test("always includes dark mode block", () => {
 		const css = generateCss(defaultConfig);
 		expect(css).toContain(".dark {");
-	});
-
-	test("no dark mode block when disabled", () => {
-		const css = generateCss({
-			...defaultConfig,
-			darkMode: false,
-		});
-		expect(css).not.toContain(".dark {");
 	});
 
 	test("includes spacing, radius, shadows, typography, fonts, durations", () => {
 		const css = generateCss({
 			primary: "#3B82F6",
-			darkMode: false,
 		});
 		expect(css).toContain("--spacing-4:");
 		expect(css).toContain("--radius-lg:");

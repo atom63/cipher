@@ -75,36 +75,24 @@ function extractBrandConfig(
 				v.name === name,
 		);
 
-	// Extract primary color from color/primary in primitives
-	const primaryVar = find("primitives", "color/accent/primary");
+	// Extract primary color from color/brand/500 in primitives
+	const primaryVar = find("primitives", "color/brand/500");
 	let primaryColor = "#3B82F6";
 	if (primaryVar) {
-		// The value is a reference like {primitives.color.brand.500}
-		// Try to find the resolved brand/500 primitive
-		const brandVar = variables.find(
-			(v) => v.collectionName.toLowerCase().startsWith("primitives") && v.name === "color/brand/500",
-		);
-		if (brandVar) {
-			const firstMode = Object.keys(brandVar.valuesByMode)[0];
-			if (firstMode) {
-				const hex = rgbStringToHex(brandVar.valuesByMode[firstMode]);
-				if (hex) primaryColor = hex;
-			}
+		const firstMode = Object.keys(primaryVar.valuesByMode)[0];
+		if (firstMode) {
+			const hex = rgbStringToHex(primaryVar.valuesByMode[firstMode]);
+			if (hex) primaryColor = hex;
 		}
 	}
 
 	// Extract secondary color
-	const secondaryVar = find("primitives", "color/accent/secondary");
+	const secondaryVar = find("primitives", "color/secondary/500");
 	let secondaryColor: string | null = null;
 	if (secondaryVar) {
-		const secPrimVar = variables.find(
-			(v) => v.collectionName.toLowerCase().startsWith("primitives") && v.name === "color/secondary/500",
-		);
-		if (secPrimVar) {
-			const firstMode = Object.keys(secPrimVar.valuesByMode)[0];
-			if (firstMode) {
-				secondaryColor = rgbStringToHex(secPrimVar.valuesByMode[firstMode]);
-			}
+		const firstMode = Object.keys(secondaryVar.valuesByMode)[0];
+		if (firstMode) {
+			secondaryColor = rgbStringToHex(secondaryVar.valuesByMode[firstMode]);
 		}
 	}
 

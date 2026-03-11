@@ -72,7 +72,6 @@ export function GeneratePage() {
 	const [secondaryColor, setSecondaryColor] = useState("#10B981");
 	const [hasSecondary, setHasSecondary] = useState(false);
 	const [grayName, setGrayName] = useState("slate");
-	const [darkMode, setDarkMode] = useState(true);
 	const [radiusAnchor, setRadiusAnchor] = useState(10);
 	const [typescale, setTypescale] = useState<TypescaleConfig>({
 		...DEFAULT_TYPESCALE,
@@ -83,7 +82,6 @@ export function GeneratePage() {
 		mono: "Geist Mono",
 	});
 	const [statusColors, setStatusColors] = useState<StatusColorOverrides>({});
-	const [collectionName, setCollectionName] = useState("generated");
 
 	// Result state
 	const [result, setResult] = useState<ImportResults | null>(null);
@@ -104,7 +102,6 @@ export function GeneratePage() {
 			primary: primaryColor,
 			secondary: hasSecondary ? secondaryColor : undefined,
 			grayName,
-			darkMode,
 			radius: radiusAnchor,
 			typescale,
 			fonts,
@@ -115,7 +112,6 @@ export function GeneratePage() {
 		secondaryColor,
 		hasSecondary,
 		grayName,
-		darkMode,
 		radiusAnchor,
 		typescale,
 		fonts,
@@ -156,12 +152,11 @@ export function GeneratePage() {
 			type: "create-variables",
 			data: {
 				tokens: generated.tokens,
-				collectionName,
 				importMode: "import",
 				stylesData: generated.styles,
 			},
 		});
-	}, [generated, collectionName, postMessage]);
+	}, [generated, postMessage]);
 
 	const handleCopyCss = useCallback(() => {
 		if (!brandConfig) return;
@@ -356,15 +351,6 @@ export function GeneratePage() {
 							<Frame>
 								<FrameHeader><h3 className={styles.sectionTitle}>Appearance</h3></FrameHeader>
 								<FramePanel className={styles.sectionContent}>
-									<CheckboxWithLabel
-										checked={darkMode}
-										id="dark-mode"
-										label="Generate Light + Dark modes"
-										onChange={setDarkMode}
-									/>
-
-									<Separator />
-
 									<div className={styles.fieldGroup}>
 										<label>Radius anchor (px)</label>
 										<div className={styles.radiusAnchorRow}>
@@ -584,27 +570,6 @@ export function GeneratePage() {
 								</FramePanel>
 							</Frame>
 
-							{/* ── Output ── */}
-							<Frame>
-								<FrameHeader><h3 className={styles.sectionTitle}>Output</h3></FrameHeader>
-								<FramePanel className={styles.sectionContent}>
-									<div className={styles.fieldGroup}>
-										<label>Collection name</label>
-										<Input
-											maxLength={64}
-											onBlur={() => {
-												if (!collectionName.trim())
-													setCollectionName("generated");
-											}}
-											onChange={(e) => setCollectionName(e.target.value)}
-											placeholder="generated"
-											spellCheck={false}
-											value={collectionName}
-										/>
-									</div>
-								</FramePanel>
-							</Frame>
-
 							{/* Preview button */}
 							<div className={styles.actions}>
 								<Button
@@ -623,7 +588,7 @@ export function GeneratePage() {
 				{view === "preview" && generated && (
 					<>
 						<SectionHeader
-							description={`${generated.stats.totalCount} tokens in "${collectionName}"`}
+							description={`${generated.stats.totalCount} tokens across 4 collections`}
 							title="Preview"
 							variant="primary"
 						/>
@@ -680,18 +645,16 @@ export function GeneratePage() {
 												/>
 											))}
 										</div>
-										{darkMode && (
-											<div className={styles.scaleSwatches}>
-												{generated.radixGray.dark.map((hex, i) => (
-													<div
-														className={styles.scaleSwatch}
-														key={i}
-														style={{ backgroundColor: hex }}
-														title={`${i + 1}: ${hex} (dark)`}
-													/>
-												))}
-											</div>
-										)}
+										<div className={styles.scaleSwatches}>
+											{generated.radixGray.dark.map((hex, i) => (
+												<div
+													className={styles.scaleSwatch}
+													key={i}
+													style={{ backgroundColor: hex }}
+													title={`${i + 1}: ${hex} (dark)`}
+												/>
+											))}
+										</div>
 									</div>
 								)}
 							</div>

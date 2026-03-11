@@ -540,6 +540,26 @@ body {
   border-top: 1px solid var(--border);
 }
 
+/* === Manage Tabs Wrapper === */
+.manage-tabs-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+
+  > [class*="tabsContainer"] {
+    flex-shrink: 0;
+    padding: var(--spacing-sm) var(--spacing-md) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  > [role="tabpanel"] {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
 /* === Manage Page === */
 .manage-page {
   display: flex;
