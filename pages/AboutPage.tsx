@@ -30,8 +30,8 @@ export function AboutPage() {
 				<AnimatedLogo colored height={48} variant="vertical" />
 				<span className={styles.version}>v1.0.0-beta</span>
 				<p className={styles.tagline}>
-					A highly opinionated token system for Figma. Import, export,
-					and sync design tokens with clarity and structure.
+					Opinionated token system: Built for faster design to code
+					workflows.
 				</p>
 			</div>
 
