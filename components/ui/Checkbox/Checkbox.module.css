@@ -37,7 +37,7 @@
   height: 18px;
   cursor: pointer;
   background: var(--background);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   transition:
     background-color var(--transition),
@@ -48,7 +48,6 @@
 
 /* Hover state */
 .checkboxInput:not(:disabled):hover + .checkboxBox {
-  background: color-mix(in oklch, var(--primary) 60%, transparent);
   border-color: var(--primary);
 }
 

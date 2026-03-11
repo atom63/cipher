@@ -1,4 +1,6 @@
-/* File Import Component Styles */
+/* ============================================
+   FILE IMPORT — Drop Zone
+   ============================================ */
 
 .fileImport {
   padding: 0;
@@ -8,18 +10,28 @@
   display: none;
 }
 
+/* --- Drop Zone --- */
+
 .dropZone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  align-items: center;
   padding: var(--spacing-3xl) var(--spacing-xl);
   text-align: center;
   cursor: pointer;
-  border: 2px dashed var(--border);
+  border: 1px dashed var(--border);
   border-radius: var(--radius-md);
-  transition: border-color var(--transition), background-color var(--transition);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+  animation: dropzone-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .dropZone:hover {
-  background: var(--accent);
-  border-color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 3%, transparent);
+  border-color: color-mix(in oklch, var(--primary) 40%, var(--border));
 }
 
 .dropZone:focus-visible {
@@ -29,24 +41,113 @@
 }
 
 .dropZone.dragging {
-  background: color-mix(in oklch, var(--primary) 10%, transparent);
+  background: color-mix(in oklch, var(--primary) 8%, transparent);
   border-color: var(--primary);
+  border-style: solid;
+  box-shadow:
+    0 0 0 3px color-mix(in oklch, var(--primary) 12%, transparent);
 }
 
-.dropZonePrimary {
+/* --- Icon Container --- */
+
+.uploadIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
   margin-bottom: var(--spacing-xs);
-  font-size: var(--text-lg);
-  font-weight: var(--font-medium);
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 8%, transparent);
+  border: 1px solid color-mix(in oklch, var(--primary) 15%, transparent);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--primary) 5%, transparent);
+  animation: dropzone-icon-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+/* --- Text --- */
+
+.dropZonePrimary {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--foreground);
+  text-wrap: balance;
+  animation: dropzone-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 }
 
 .dropZoneSecondary {
-  font-size: var(--text-base);
+  margin: 0;
+  font-size: var(--text-xs);
   color: var(--muted-foreground);
+  text-wrap: balance;
+  animation: dropzone-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 }
 
-.uploadIcon {
-  margin-bottom: var(--spacing-md);
-  color: var(--muted-foreground);
+/* --- Format Badges --- */
+
+.formatBadges {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-2xs);
+  animation: dropzone-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
 }
 
+.formatBadge {
+  padding: 1px var(--spacing-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--font-medium);
+  color: var(--muted-foreground);
+  letter-spacing: 0.02em;
+  background: color-mix(in oklch, var(--foreground) 4%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+}
 
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes dropzone-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dropzone-icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dropzone-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropZone,
+  .uploadIcon,
+  .dropZonePrimary,
+  .dropZoneSecondary,
+  .formatBadges {
+    animation: none;
+  }
+}

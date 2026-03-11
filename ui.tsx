@@ -19,12 +19,12 @@ import {
 import { TooltipPortal } from "./components/ui/Tooltip";
 import { useDebugMode } from "./hooks/useDebugMode";
 import { useFigmaMessage, usePostMessage } from "./hooks/useFigmaMessage";
+import { AboutPage } from "./pages/AboutPage";
 import { ExportPage } from "./pages/ExportPage";
 import { GeneratePage } from "./pages/GeneratePage";
 import { ImportPage } from "./pages/ImportPage";
 import { ManageTabsPage } from "./pages/ManageTabsPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { AboutPage } from "./pages/AboutPage";
 import { StyleguidePage } from "./pages/StyleguidePage";
 import type { PluginSettings } from "./types/messages";
 import { applyTheme } from "./utils/theme";
@@ -135,7 +135,9 @@ function App() {
 				/>
 
 				{/* Page Content */}
-				<div className="plugin-main">{renderPage()}</div>
+				<div className="plugin-main-clip">
+					<div className="plugin-main">{renderPage()}</div>
+				</div>
 			</div>
 		</div>
 	);

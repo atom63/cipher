@@ -20,7 +20,10 @@ export function AppHeader({
 }: AppHeaderProps) {
 	return (
 		<header className={styles.header}>
-			<AnimatedLogo colored height={16} />
+			<div className={styles.brand}>
+				<AnimatedLogo colored height={18} />
+				<span className={styles.beta}>BETA</span>
+			</div>
 			<div className={styles.actions}>
 				<Button
 					onClick={onToggleTheme}

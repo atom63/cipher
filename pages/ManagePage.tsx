@@ -531,11 +531,35 @@ export function ManagePage({
 			if (!subGroups.has(subKey)) subGroups.set(subKey, []);
 			subGroups.get(subKey)?.push(v);
 		}
-		// Sort collections
+		// Sort collections — logical design system order by default
+		const COLLECTION_ORDER: Record<string, number> = {
+			primitive: 0,
+			primitives: 0,
+			abstraction: 1,
+			abstractions: 1,
+			semantic: 2,
+			semantics: 2,
+			responsive: 3,
+		};
+		const collectionPriority = (name: string) => {
+			const lower = name.toLowerCase();
+			for (const [key, order] of Object.entries(COLLECTION_ORDER)) {
+				if (lower === key || lower.startsWith(`${key} `) || lower.endsWith(` ${key}`)) {
+					return order;
+				}
+			}
+			return 100;
+		};
 		const naturalCompare = (a: string, b: string) =>
 			a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
 		const sortedCollections = Array.from(collections.entries()).sort(
 			([a], [b]) => {
+				const pa = collectionPriority(a);
+				const pb = collectionPriority(b);
+				if (pa !== pb) {
+					const cmp = pa - pb;
+					return sortField === "collection" && sortDir === "desc" ? -cmp : cmp;
+				}
 				const cmp = naturalCompare(a, b);
 				return sortField === "collection"
 					? sortDir === "asc"

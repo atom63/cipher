@@ -24,14 +24,13 @@
 }
 
 /* Hover state */
-.card:hover {
-  background: color-mix(in oklch, var(--primary) 20%, transparent);
+.card:hover:not(.disabled) {
   border-color: var(--primary);
 }
 
 /* Checked state */
 .card.checked {
-  background: color-mix(in oklch, var(--primary) 10%, transparent);
+  background: color-mix(in oklch, var(--primary) 6%, transparent);
   border-color: var(--primary);
 }
 

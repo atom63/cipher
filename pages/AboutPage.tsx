@@ -5,8 +5,8 @@ export function AboutPage() {
 	return (
 		<div className={styles.about}>
 			<div className={styles.hero}>
-				<AnimatedLogo colored height={32} />
-				<span className={styles.version}>v1.0.0</span>
+				<AnimatedLogo colored height={48} variant="vertical" />
+				<span className={styles.version}>v1.0.0-beta</span>
 				<p className={styles.tagline}>
 					A design system token manager for Figma. Generate, customize,
 					and sync token systems without leaving your design workflow.
@@ -14,7 +14,6 @@ export function AboutPage() {
 			</div>
 
 			<div className={styles.section}>
-				<h3 className={styles.sectionTitle}>Details</h3>
 				<div className={styles.infoList}>
 					<div className={styles.infoRow}>
 						<span className={styles.infoLabel}>Author</span>
@@ -29,10 +28,6 @@ export function AboutPage() {
 						<span className={styles.infoValue}>MIT</span>
 					</div>
 				</div>
-			</div>
-
-			<div className={styles.footer}>
-				Made with precision by ATOM63
 			</div>
 		</div>
 	);
