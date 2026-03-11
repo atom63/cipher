@@ -1,0 +1,303 @@
+/* Responsive Typography — extracted from Figma responsive collection */
+/* Supports viewport-based (@media) and window-based ([data-window-size]) */
+
+:root {
+  --typography-5xl-font-size: calc(48px * var(--typography-scale, 1));
+  --typography-5xl-line-height: calc(60px * var(--typography-scale, 1));
+  --typography-4xl-font-size: calc(39px * var(--typography-scale, 1));
+  --typography-4xl-line-height: calc(49px * var(--typography-scale, 1));
+  --typography-3xl-font-size: calc(32px * var(--typography-scale, 1));
+  --typography-3xl-line-height: calc(40px * var(--typography-scale, 1));
+  --typography-2xl-font-size: calc(27px * var(--typography-scale, 1));
+  --typography-2xl-line-height: calc(34px * var(--typography-scale, 1));
+  --typography-xl-font-size: calc(22px * var(--typography-scale, 1));
+  --typography-xl-line-height: calc(27px * var(--typography-scale, 1));
+  --typography-lg-font-size: calc(19px * var(--typography-scale, 1));
+  --typography-lg-line-height: calc(24px * var(--typography-scale, 1));
+  --typography-base-font-size: calc(16px * var(--typography-scale, 1));
+  --typography-base-line-height: calc(24px * var(--typography-scale, 1));
+  --typography-sm-font-size: calc(13px * var(--typography-scale, 1));
+  --typography-sm-line-height: calc(20px * var(--typography-scale, 1));
+  --typography-xs-font-size: calc(11px * var(--typography-scale, 1));
+  --typography-xs-line-height: calc(17px * var(--typography-scale, 1));
+}
+
+/* Window-responsive: Extra small (< 640px / mobile) */
+[data-window-size="xs"] {
+  --typography-5xl-font-size: calc(48px * var(--typography-scale, 1));
+  --typography-5xl-line-height: calc(60px * var(--typography-scale, 1));
+  --typography-4xl-font-size: calc(39px * var(--typography-scale, 1));
+  --typography-4xl-line-height: calc(49px * var(--typography-scale, 1));
+  --typography-3xl-font-size: calc(32px * var(--typography-scale, 1));
+  --typography-3xl-line-height: calc(40px * var(--typography-scale, 1));
+  --typography-2xl-font-size: calc(27px * var(--typography-scale, 1));
+  --typography-2xl-line-height: calc(34px * var(--typography-scale, 1));
+  --typography-xl-font-size: calc(22px * var(--typography-scale, 1));
+  --typography-xl-line-height: calc(27px * var(--typography-scale, 1));
+  --typography-lg-font-size: calc(19px * var(--typography-scale, 1));
+  --typography-lg-line-height: calc(24px * var(--typography-scale, 1));
+  --typography-base-font-size: calc(16px * var(--typography-scale, 1));
+  --typography-base-line-height: calc(24px * var(--typography-scale, 1));
+  --typography-sm-font-size: calc(13px * var(--typography-scale, 1));
+  --typography-sm-line-height: calc(20px * var(--typography-scale, 1));
+  --typography-xs-font-size: calc(11px * var(--typography-scale, 1));
+  --typography-xs-line-height: calc(17px * var(--typography-scale, 1));
+}
+
+/* Small (640px+ / tablet portrait) */
+@media (min-width: 40rem) {
+  :root {
+    --typography-5xl-font-size: calc(54px * var(--typography-scale, 1));
+    --typography-5xl-line-height: calc(67px * var(--typography-scale, 1));
+    --typography-4xl-font-size: calc(44px * var(--typography-scale, 1));
+    --typography-4xl-line-height: calc(55px * var(--typography-scale, 1));
+    --typography-3xl-font-size: calc(36px * var(--typography-scale, 1));
+    --typography-3xl-line-height: calc(45px * var(--typography-scale, 1));
+    --typography-2xl-font-size: calc(29px * var(--typography-scale, 1));
+    --typography-2xl-line-height: calc(36px * var(--typography-scale, 1));
+    --typography-xl-font-size: calc(24px * var(--typography-scale, 1));
+    --typography-xl-line-height: calc(30px * var(--typography-scale, 1));
+    --typography-lg-font-size: calc(19px * var(--typography-scale, 1));
+    --typography-lg-line-height: calc(24px * var(--typography-scale, 1));
+    --typography-base-font-size: calc(16px * var(--typography-scale, 1));
+    --typography-base-line-height: calc(24px * var(--typography-scale, 1));
+    --typography-sm-font-size: calc(13px * var(--typography-scale, 1));
+    --typography-sm-line-height: calc(20px * var(--typography-scale, 1));
+    --typography-xs-font-size: calc(11px * var(--typography-scale, 1));
+    --typography-xs-line-height: calc(17px * var(--typography-scale, 1));
+  }
+}
+
+/* Window-responsive: Small (640px+ / tablet portrait) */
+[data-window-size="sm"] {
+  --typography-5xl-font-size: calc(54px * var(--typography-scale, 1));
+  --typography-5xl-line-height: calc(67px * var(--typography-scale, 1));
+  --typography-4xl-font-size: calc(44px * var(--typography-scale, 1));
+  --typography-4xl-line-height: calc(55px * var(--typography-scale, 1));
+  --typography-3xl-font-size: calc(36px * var(--typography-scale, 1));
+  --typography-3xl-line-height: calc(45px * var(--typography-scale, 1));
+  --typography-2xl-font-size: calc(29px * var(--typography-scale, 1));
+  --typography-2xl-line-height: calc(36px * var(--typography-scale, 1));
+  --typography-xl-font-size: calc(24px * var(--typography-scale, 1));
+  --typography-xl-line-height: calc(30px * var(--typography-scale, 1));
+  --typography-lg-font-size: calc(19px * var(--typography-scale, 1));
+  --typography-lg-line-height: calc(24px * var(--typography-scale, 1));
+  --typography-base-font-size: calc(16px * var(--typography-scale, 1));
+  --typography-base-line-height: calc(24px * var(--typography-scale, 1));
+  --typography-sm-font-size: calc(13px * var(--typography-scale, 1));
+  --typography-sm-line-height: calc(20px * var(--typography-scale, 1));
+  --typography-xs-font-size: calc(11px * var(--typography-scale, 1));
+  --typography-xs-line-height: calc(17px * var(--typography-scale, 1));
+}
+
+/* Medium (768px+ / tablet landscape) */
+@media (min-width: 48rem) {
+  :root {
+    --typography-5xl-font-size: calc(61px * var(--typography-scale, 1));
+    --typography-5xl-line-height: calc(76px * var(--typography-scale, 1));
+    --typography-4xl-font-size: calc(49px * var(--typography-scale, 1));
+    --typography-4xl-line-height: calc(61px * var(--typography-scale, 1));
+    --typography-3xl-font-size: calc(39px * var(--typography-scale, 1));
+    --typography-3xl-line-height: calc(49px * var(--typography-scale, 1));
+    --typography-2xl-font-size: calc(31px * var(--typography-scale, 1));
+    --typography-2xl-line-height: calc(39px * var(--typography-scale, 1));
+    --typography-xl-font-size: calc(25px * var(--typography-scale, 1));
+    --typography-xl-line-height: calc(31px * var(--typography-scale, 1));
+    --typography-lg-font-size: calc(20px * var(--typography-scale, 1));
+    --typography-lg-line-height: calc(25px * var(--typography-scale, 1));
+    --typography-base-font-size: calc(16px * var(--typography-scale, 1));
+    --typography-base-line-height: calc(24px * var(--typography-scale, 1));
+    --typography-sm-font-size: calc(13px * var(--typography-scale, 1));
+    --typography-sm-line-height: calc(20px * var(--typography-scale, 1));
+    --typography-xs-font-size: calc(11px * var(--typography-scale, 1));
+    --typography-xs-line-height: calc(17px * var(--typography-scale, 1));
+  }
+}
+
+/* Window-responsive: Medium (768px+ / tablet landscape) */
+[data-window-size="md"] {
+  --typography-5xl-font-size: calc(61px * var(--typography-scale, 1));
+  --typography-5xl-line-height: calc(76px * var(--typography-scale, 1));
+  --typography-4xl-font-size: calc(49px * var(--typography-scale, 1));
+  --typography-4xl-line-height: calc(61px * var(--typography-scale, 1));
+  --typography-3xl-font-size: calc(39px * var(--typography-scale, 1));
+  --typography-3xl-line-height: calc(49px * var(--typography-scale, 1));
+  --typography-2xl-font-size: calc(31px * var(--typography-scale, 1));
+  --typography-2xl-line-height: calc(39px * var(--typography-scale, 1));
+  --typography-xl-font-size: calc(25px * var(--typography-scale, 1));
+  --typography-xl-line-height: calc(31px * var(--typography-scale, 1));
+  --typography-lg-font-size: calc(20px * var(--typography-scale, 1));
+  --typography-lg-line-height: calc(25px * var(--typography-scale, 1));
+  --typography-base-font-size: calc(16px * var(--typography-scale, 1));
+  --typography-base-line-height: calc(24px * var(--typography-scale, 1));
+  --typography-sm-font-size: calc(13px * var(--typography-scale, 1));
+  --typography-sm-line-height: calc(20px * var(--typography-scale, 1));
+  --typography-xs-font-size: calc(11px * var(--typography-scale, 1));
+  --typography-xs-line-height: calc(17px * var(--typography-scale, 1));
+}
+
+/* Large (1024px+ / desktop) */
+@media (min-width: 64rem) {
+  :root {
+    --typography-5xl-font-size: calc(61px * var(--typography-scale, 1));
+    --typography-5xl-line-height: calc(76px * var(--typography-scale, 1));
+    --typography-4xl-font-size: calc(49px * var(--typography-scale, 1));
+    --typography-4xl-line-height: calc(61px * var(--typography-scale, 1));
+    --typography-3xl-font-size: calc(39px * var(--typography-scale, 1));
+    --typography-3xl-line-height: calc(49px * var(--typography-scale, 1));
+    --typography-2xl-font-size: calc(31px * var(--typography-scale, 1));
+    --typography-2xl-line-height: calc(39px * var(--typography-scale, 1));
+    --typography-xl-font-size: calc(25px * var(--typography-scale, 1));
+    --typography-xl-line-height: calc(31px * var(--typography-scale, 1));
+    --typography-lg-font-size: calc(20px * var(--typography-scale, 1));
+    --typography-lg-line-height: calc(25px * var(--typography-scale, 1));
+    --typography-base-font-size: calc(16px * var(--typography-scale, 1));
+    --typography-base-line-height: calc(24px * var(--typography-scale, 1));
+    --typography-sm-font-size: calc(13px * var(--typography-scale, 1));
+    --typography-sm-line-height: calc(20px * var(--typography-scale, 1));
+    --typography-xs-font-size: calc(11px * var(--typography-scale, 1));
+    --typography-xs-line-height: calc(17px * var(--typography-scale, 1));
+  }
+}
+
+/* Window-responsive: Large (1024px+ / desktop) */
+[data-window-size="lg"] {
+  --typography-5xl-font-size: calc(61px * var(--typography-scale, 1));
+  --typography-5xl-line-height: calc(76px * var(--typography-scale, 1));
+  --typography-4xl-font-size: calc(49px * var(--typography-scale, 1));
+  --typography-4xl-line-height: calc(61px * var(--typography-scale, 1));
+  --typography-3xl-font-size: calc(39px * var(--typography-scale, 1));
+  --typography-3xl-line-height: calc(49px * var(--typography-scale, 1));
+  --typography-2xl-font-size: calc(31px * var(--typography-scale, 1));
+  --typography-2xl-line-height: calc(39px * var(--typography-scale, 1));
+  --typography-xl-font-size: calc(25px * var(--typography-scale, 1));
+  --typography-xl-line-height: calc(31px * var(--typography-scale, 1));
+  --typography-lg-font-size: calc(20px * var(--typography-scale, 1));
+  --typography-lg-line-height: calc(25px * var(--typography-scale, 1));
+  --typography-base-font-size: calc(16px * var(--typography-scale, 1));
+  --typography-base-line-height: calc(24px * var(--typography-scale, 1));
+  --typography-sm-font-size: calc(13px * var(--typography-scale, 1));
+  --typography-sm-line-height: calc(20px * var(--typography-scale, 1));
+  --typography-xs-font-size: calc(11px * var(--typography-scale, 1));
+  --typography-xs-line-height: calc(17px * var(--typography-scale, 1));
+}
+
+/* Extra large (1280px+ / large desktop) */
+@media (min-width: 80rem) {
+  :root {
+    --typography-5xl-font-size: calc(61px * var(--typography-scale, 1));
+    --typography-5xl-line-height: calc(76px * var(--typography-scale, 1));
+    --typography-4xl-font-size: calc(49px * var(--typography-scale, 1));
+    --typography-4xl-line-height: calc(61px * var(--typography-scale, 1));
+    --typography-3xl-font-size: calc(39px * var(--typography-scale, 1));
+    --typography-3xl-line-height: calc(49px * var(--typography-scale, 1));
+    --typography-2xl-font-size: calc(31px * var(--typography-scale, 1));
+    --typography-2xl-line-height: calc(39px * var(--typography-scale, 1));
+    --typography-xl-font-size: calc(25px * var(--typography-scale, 1));
+    --typography-xl-line-height: calc(31px * var(--typography-scale, 1));
+    --typography-lg-font-size: calc(20px * var(--typography-scale, 1));
+    --typography-lg-line-height: calc(25px * var(--typography-scale, 1));
+    --typography-base-font-size: calc(16px * var(--typography-scale, 1));
+    --typography-base-line-height: calc(24px * var(--typography-scale, 1));
+    --typography-sm-font-size: calc(13px * var(--typography-scale, 1));
+    --typography-sm-line-height: calc(20px * var(--typography-scale, 1));
+    --typography-xs-font-size: calc(11px * var(--typography-scale, 1));
+    --typography-xs-line-height: calc(17px * var(--typography-scale, 1));
+  }
+}
+
+/* Window-responsive: Extra large (1280px+ / large desktop) */
+[data-window-size="xl"] {
+  --typography-5xl-font-size: calc(61px * var(--typography-scale, 1));
+  --typography-5xl-line-height: calc(76px * var(--typography-scale, 1));
+  --typography-4xl-font-size: calc(49px * var(--typography-scale, 1));
+  --typography-4xl-line-height: calc(61px * var(--typography-scale, 1));
+  --typography-3xl-font-size: calc(39px * var(--typography-scale, 1));
+  --typography-3xl-line-height: calc(49px * var(--typography-scale, 1));
+  --typography-2xl-font-size: calc(31px * var(--typography-scale, 1));
+  --typography-2xl-line-height: calc(39px * var(--typography-scale, 1));
+  --typography-xl-font-size: calc(25px * var(--typography-scale, 1));
+  --typography-xl-line-height: calc(31px * var(--typography-scale, 1));
+  --typography-lg-font-size: calc(20px * var(--typography-scale, 1));
+  --typography-lg-line-height: calc(25px * var(--typography-scale, 1));
+  --typography-base-font-size: calc(16px * var(--typography-scale, 1));
+  --typography-base-line-height: calc(24px * var(--typography-scale, 1));
+  --typography-sm-font-size: calc(13px * var(--typography-scale, 1));
+  --typography-sm-line-height: calc(20px * var(--typography-scale, 1));
+  --typography-xs-font-size: calc(11px * var(--typography-scale, 1));
+  --typography-xs-line-height: calc(17px * var(--typography-scale, 1));
+}
+
+/* Utility classes for typography */
+@layer utilities {
+  /* Font Size Utilities (Custom Scale) */
+  .size-5xl { font-size: var(--typography-5xl-font-size); }
+  .size-4xl { font-size: var(--typography-4xl-font-size); }
+  .size-3xl { font-size: var(--typography-3xl-font-size); }
+  .size-2xl { font-size: var(--typography-2xl-font-size); }
+  .size-xl { font-size: var(--typography-xl-font-size); }
+  .size-lg { font-size: var(--typography-lg-font-size); }
+  .size-base { font-size: var(--typography-base-font-size); }
+  .size-sm { font-size: var(--typography-sm-font-size); }
+  .size-xs { font-size: var(--typography-xs-font-size); }
+
+  /* Line Height Utilities (Custom Scale) */
+  .leading-5xl { line-height: var(--typography-5xl-line-height); }
+  .leading-4xl { line-height: var(--typography-4xl-line-height); }
+  .leading-3xl { line-height: var(--typography-3xl-line-height); }
+  .leading-2xl { line-height: var(--typography-2xl-line-height); }
+  .leading-xl { line-height: var(--typography-xl-line-height); }
+  .leading-lg { line-height: var(--typography-lg-line-height); }
+  .leading-base { line-height: var(--typography-base-line-height); }
+  .leading-sm { line-height: var(--typography-sm-line-height); }
+  .leading-xs { line-height: var(--typography-xs-line-height); }
+
+  /* Combined Typography Utilities (size + leading) */
+  .type-5xl {
+    font-size: var(--typography-5xl-font-size);
+    line-height: var(--typography-5xl-line-height);
+  }
+  .type-4xl {
+    font-size: var(--typography-4xl-font-size);
+    line-height: var(--typography-4xl-line-height);
+  }
+  .type-3xl {
+    font-size: var(--typography-3xl-font-size);
+    line-height: var(--typography-3xl-line-height);
+  }
+  .type-2xl {
+    font-size: var(--typography-2xl-font-size);
+    line-height: var(--typography-2xl-line-height);
+  }
+  .type-xl {
+    font-size: var(--typography-xl-font-size);
+    line-height: var(--typography-xl-line-height);
+  }
+  .type-lg {
+    font-size: var(--typography-lg-font-size);
+    line-height: var(--typography-lg-line-height);
+  }
+  .type-base {
+    font-size: var(--typography-base-font-size);
+    line-height: var(--typography-base-line-height);
+  }
+  .type-sm {
+    font-size: var(--typography-sm-font-size);
+    line-height: var(--typography-sm-line-height);
+  }
+  .type-xs {
+    font-size: var(--typography-xs-font-size);
+    line-height: var(--typography-xs-line-height);
+  }
+
+  /* Tailwind Standard Text Utilities (mapped to custom scale) */
+  .text-xs { font-size: var(--typography-xs-font-size); line-height: var(--typography-xs-line-height); }
+  .text-sm { font-size: var(--typography-sm-font-size); line-height: var(--typography-sm-line-height); }
+  .text-base { font-size: var(--typography-base-font-size); line-height: var(--typography-base-line-height); }
+  .text-lg { font-size: var(--typography-lg-font-size); line-height: var(--typography-lg-line-height); }
+  .text-xl { font-size: var(--typography-xl-font-size); line-height: var(--typography-xl-line-height); }
+  .text-2xl { font-size: var(--typography-2xl-font-size); line-height: var(--typography-2xl-line-height); }
+  .text-3xl { font-size: var(--typography-3xl-font-size); line-height: var(--typography-3xl-line-height); }
+  .text-4xl { font-size: var(--typography-4xl-font-size); line-height: var(--typography-4xl-line-height); }
+  .text-5xl { font-size: var(--typography-5xl-font-size); line-height: var(--typography-5xl-line-height); }
+}
