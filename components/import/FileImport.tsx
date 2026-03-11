@@ -2,7 +2,6 @@ import { FolderOpen } from "lucide-react";
 import type React from "react";
 import { useRef, useState } from "react";
 import { usePostMessage } from "../../hooks/useFigmaMessage";
-import { parseCSS } from "../../parsers/css-parser";
 import type { ParsedTokens } from "../../types/tokens";
 import { getErrorMessage } from "../../utils/error-handler";
 import { LoadingState, useToast } from "../ui";
@@ -40,38 +39,9 @@ export function FileImport({
 	};
 
 	const parseContent = (content: string, fileName?: string) => {
-		// Detect CSS files by extension or content pattern
-		const isCSS =
-			fileName?.endsWith(".css") ||
-			(!content.trimStart().startsWith("{") &&
-				content.includes("--") &&
-				content.includes("{"));
-
-		if (isCSS) {
-			const result = parseCSS(content);
-			if (result.errors.length > 0) {
-				showError(
-					`CSS parse errors: ${result.errors.map((e) => e.message).join(", ")}`,
-				);
-			}
-			if (result.tokens.length > 0) {
-				_onTokensParsed({
-					tokens: result.tokens,
-					stats: {
-						total: result.tokens.length,
-						byCategory: {},
-						conflicts: 0,
-						errors: result.errors.length,
-					},
-					errors: result.errors.map((e) => ({
-						message: e.message,
-						line: e.line,
-						severity: "error" as const,
-					})),
-				});
-			} else {
-				showError("No CSS custom properties found in the file");
-			}
+		// Only accept JSON files
+		if (fileName && !fileName.endsWith(".json")) {
+			showError("Only JSON files are supported for import.");
 			return;
 		}
 
@@ -80,7 +50,7 @@ export function FileImport({
 			const data = JSON.parse(content);
 			if (data.$schema === "figma-styles-export") {
 				showError(
-					"This is a Figma Styles file. Import supports variable token files (JSON or CSS).",
+					"This is a Figma Styles file. Import supports variable token files (JSON).",
 				);
 				return;
 			}
@@ -141,7 +111,7 @@ export function FileImport({
 				tabIndex={0}
 			>
 				<input
-					accept=".json,.css"
+					accept=".json"
 					className={styles.hiddenInput}
 					onChange={handleFileSelect}
 					ref={fileInputRef}
@@ -163,7 +133,6 @@ export function FileImport({
 						</p>
 						<div className={styles.formatBadges}>
 							<span className={styles.formatBadge}>.json</span>
-							<span className={styles.formatBadge}>.css</span>
 						</div>
 					</>
 				)}

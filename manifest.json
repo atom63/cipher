@@ -1,6 +1,6 @@
 {
 	"name": "Cipher",
-	"id": "your-plugin-id-here",
+	"id": "1613643367110247078",
 	"api": "1.0.0",
 	"main": "dist/code.js",
 	"ui": "dist/ui.html",
