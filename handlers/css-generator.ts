@@ -167,18 +167,36 @@ function inferPrefix(name: string, _resolvedType: string): string {
 		firstSegment === "zlayer"
 	)
 		return "z";
-	// Size (also matches deeper paths like font/typescale/*/size/*)
+	// Font → --font-* (must come before generic /size/ check to avoid
+	// font/typescale/base/size/md → --size-font-typescale-... )
+	if (firstSegment === "font") return "font";
+	// Size (matches deeper paths like component/size/*)
 	if (lower.includes("/size/")) return "size";
+	// Container → --container-*
+	if (firstSegment === "container") return "container";
+	// Motion / easing → --ease-*
+	if (firstSegment === "motion" && lower.includes("easing")) return "ease";
 	// Duration — any path containing "duration" (but not easing)
 	if (lower.includes("duration")) return "duration";
+	// Breakpoints → --breakpoint-*
+	if (firstSegment === "breakpoints" || firstSegment === "breakpoint")
+		return "breakpoint";
+	// Screen → --screen-*
+	if (firstSegment === "screen") return "screen";
+	// Shadow → --shadow-*
+	if (firstSegment === "shadow") return "shadow";
+	// Blur → --blur-*
+	if (firstSegment === "blur") return "blur";
 	// Gap → --gap-*
 	if (firstSegment === "gap") return "gap";
 	// Margin → --margin-*
 	if (firstSegment === "margin") return "margin";
 	// Gutter → --gutter-*
 	if (firstSegment === "gutter") return "gutter";
+	// Surface → --surface-*
+	if (firstSegment === "surface") return "surface";
 
-	// Default: --color-* for all types (matches external generate-tokens.js)
+	// Default: --color-* for color types
 	return "color";
 }
 
@@ -223,7 +241,7 @@ function toVarName(
 		if (cleanName.startsWith(prefixPattern)) {
 			cleanName = cleanName.substring(prefixPattern.length);
 		}
-		// Also strip legacy category names that map to different prefixes
+		// Also strip legacy/alternate category names that map to different prefixes
 		if (cleanName.startsWith("spacing-")) {
 			cleanName = cleanName.replace(/^spacing-/, "");
 		} else if (cleanName.startsWith("sizes-")) {
@@ -234,6 +252,12 @@ function toVarName(
 			cleanName = cleanName.replace(/^rounded-/, "");
 		} else if (cleanName.startsWith("zlayer-")) {
 			cleanName = cleanName.replace(/^zlayer-/, "layer-");
+		} else if (cleanName.startsWith("motion-easing-")) {
+			cleanName = cleanName.replace(/^motion-easing-/, "");
+		} else if (cleanName.startsWith("motion-duration-")) {
+			cleanName = cleanName.replace(/^motion-duration-/, "");
+		} else if (cleanName.startsWith("breakpoints-")) {
+			cleanName = cleanName.replace(/^breakpoints-/, "");
 		}
 	}
 
@@ -295,11 +319,20 @@ function valueToCSS(
 			}
 			return String(value);
 		case "FLOAT": {
-			// Duration variables should use ms, not px
-			// Only actual duration values (not easing cubic-bezier params)
 			const varLower = variable.name.toLowerCase();
+			const firstSeg = varLower.split("/")[0];
+			// Duration → ms
 			if (varLower.includes("duration")) {
 				return `${value}ms`;
+			}
+			// Unitless values: z-index, font weights, opacity, blur (raw number)
+			if (
+				firstSeg === "zlayer" ||
+				firstSeg === "z-index" ||
+				firstSeg === "zindex" ||
+				(firstSeg === "font" && varLower.includes("weight/variable"))
+			) {
+				return `${value}`;
 			}
 			return `${value}px`;
 		}
@@ -663,21 +696,17 @@ const TYPESCALE_BREAKPOINTS = [
 	},
 ];
 
-/** Tailwind text utility → typescale mapping */
+/** Tailwind text utility → typescale mapping (matches STEP_NAMES_UP/DOWN) */
 const TAILWIND_TEXT_MAP: [string, string][] = [
-	["text-xs", "caption-1"],
-	["text-sm", "callout"],
-	["text-base", "body"],
-	["text-lg", "headline"],
-	["text-xl", "title-3"],
-	["text-2xl", "title-3"],
-	["text-3xl", "title-2"],
-	["text-4xl", "title-1"],
-	["text-5xl", "large-title"],
-	["text-6xl", "large-title"],
-	["text-7xl", "large-title"],
-	["text-8xl", "large-title"],
-	["text-9xl", "large-title"],
+	["text-xs", "xs"],
+	["text-sm", "sm"],
+	["text-base", "base"],
+	["text-lg", "lg"],
+	["text-xl", "xl"],
+	["text-2xl", "2xl"],
+	["text-3xl", "3xl"],
+	["text-4xl", "4xl"],
+	["text-5xl", "5xl"],
 ];
 
 /**

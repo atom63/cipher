@@ -46,18 +46,17 @@ describe("inferPrefix", () => {
 		expect(inferPrefix("motion/duration/250", "FLOAT")).toBe("duration");
 	});
 
-	test("returns 'color' for motion/easing paths (not duration)", () => {
-		expect(inferPrefix("motion/ease", "FLOAT")).toBe("color");
-		expect(inferPrefix("motion/easing/linear", "FLOAT")).toBe("color");
+	test("returns 'ease' for motion/easing paths", () => {
+		expect(inferPrefix("motion/easing/linear", "FLOAT")).toBe("ease");
 	});
 
-	test("returns 'size' for font typescale size paths", () => {
-		expect(inferPrefix("font/typescale/body/size/md", "FLOAT")).toBe("size");
+	test("returns 'font' for font typescale size paths", () => {
+		expect(inferPrefix("font/typescale/body/size/md", "FLOAT")).toBe("font");
 	});
 
-	test("returns 'color' for font typescale line-height paths (default)", () => {
+	test("returns 'font' for font typescale line-height paths", () => {
 		expect(inferPrefix("font/typescale/body/line-height/md", "FLOAT")).toBe(
-			"color",
+			"font",
 		);
 	});
 
@@ -65,12 +64,18 @@ describe("inferPrefix", () => {
 		expect(inferPrefix("rounded/lg", "FLOAT")).toBe("rounded");
 	});
 
-	test("defaults to 'color' for unrecognized paths (matching generate-tokens.js)", () => {
+	test("returns correct prefix for known paths", () => {
+		expect(inferPrefix("shadow/lg", "FLOAT")).toBe("shadow");
+		expect(inferPrefix("breakpoints/sm", "FLOAT")).toBe("breakpoint");
+		expect(inferPrefix("container/3xs", "FLOAT")).toBe("container");
+		expect(inferPrefix("screen/iphone-16-pro", "FLOAT")).toBe("screen");
+		expect(inferPrefix("blur/md", "FLOAT")).toBe("blur");
+		expect(inferPrefix("font/family/sans", "STRING")).toBe("font");
+	});
+
+	test("defaults to 'color' for unrecognized paths", () => {
 		expect(inferPrefix("custom-value", "FLOAT")).toBe("color");
 		expect(inferPrefix("opacity/50", "FLOAT")).toBe("color");
-		expect(inferPrefix("font-family", "STRING")).toBe("color");
-		expect(inferPrefix("shadow/lg", "FLOAT")).toBe("color");
-		expect(inferPrefix("breakpoints/sm", "FLOAT")).toBe("color");
 		expect(inferPrefix("icon/lg", "FLOAT")).toBe("color");
 	});
 });
@@ -122,15 +127,13 @@ describe("toVarName", () => {
 		);
 	});
 
-	test("motion/duration keeps full path with --duration- prefix", () => {
-		expect(toVarName("motion/duration/250", "FLOAT")).toBe(
-			"--duration-motion-duration-250",
-		);
+	test("motion/duration keeps duration path with --duration- prefix", () => {
+		expect(toVarName("motion/duration/250", "FLOAT")).toBe("--duration-250");
 	});
 
-	test("motion/easing gets --color- prefix (not duration)", () => {
+	test("motion/easing gets --ease- prefix", () => {
 		expect(toVarName("motion/easing/linear", "FLOAT")).toBe(
-			"--color-motion-easing-linear",
+			"--ease-linear",
 		);
 	});
 
@@ -139,29 +142,29 @@ describe("toVarName", () => {
 		expect(toVarName("zlayer/modal", "FLOAT")).toBe("--z-layer-modal");
 	});
 
-	test("font typescale size paths get --size- prefix", () => {
+	test("font typescale size paths get --font- prefix", () => {
 		expect(toVarName("font/typescale/body/size/md", "FLOAT")).toBe(
-			"--size-font-typescale-body-size-md",
+			"--font-typescale-body-size-md",
 		);
 	});
 
-	test("font typescale line-height paths get --color- prefix", () => {
+	test("font typescale line-height paths get --font- prefix", () => {
 		expect(toVarName("font/typescale/body/line-height/md", "FLOAT")).toBe(
-			"--color-font-typescale-body-line-height-md",
+			"--font-typescale-body-line-height-md",
 		);
 	});
 
-	test("font paths get --color- prefix by default", () => {
+	test("font paths get --font- prefix", () => {
 		expect(toVarName("font/family/sans", "STRING")).toBe(
-			"--color-font-family-sans",
+			"--font-family-sans",
 		);
 	});
 
-	test("uses --color- prefix for unrecognized FLOAT paths", () => {
-		expect(toVarName("container/3xs", "FLOAT")).toBe("--color-container-3xs");
-		expect(toVarName("breakpoints/sm", "FLOAT")).toBe("--color-breakpoints-sm");
+	test("uses correct prefix for container, breakpoint, screen paths", () => {
+		expect(toVarName("container/3xs", "FLOAT")).toBe("--container-3xs");
+		expect(toVarName("breakpoints/sm", "FLOAT")).toBe("--breakpoint-sm");
 		expect(toVarName("screen/iphone-16-pro", "FLOAT")).toBe(
-			"--color-screen-iphone-16-pro",
+			"--screen-iphone-16-pro",
 		);
 	});
 });
@@ -309,34 +312,26 @@ describe("TYPESCALE_BREAKPOINTS", () => {
 });
 
 describe("TAILWIND_TEXT_MAP", () => {
-	test("maps standard Tailwind text utilities", () => {
+	test("maps standard Tailwind text utilities to typescale steps", () => {
 		const map = new Map(TAILWIND_TEXT_MAP);
-		expect(map.get("text-xs")).toBe("caption-1");
-		expect(map.get("text-sm")).toBe("callout");
-		expect(map.get("text-base")).toBe("body");
-		expect(map.get("text-lg")).toBe("headline");
+		expect(map.get("text-xs")).toBe("xs");
+		expect(map.get("text-sm")).toBe("sm");
+		expect(map.get("text-base")).toBe("base");
+		expect(map.get("text-lg")).toBe("lg");
+		expect(map.get("text-xl")).toBe("xl");
 	});
 
-	test("covers text-xs through text-9xl", () => {
+	test("covers text-xs through text-5xl", () => {
 		const names = TAILWIND_TEXT_MAP.map(([tw]) => tw);
 		expect(names).toContain("text-xs");
-		expect(names).toContain("text-9xl");
-		expect(names.length).toBe(13);
+		expect(names).toContain("text-5xl");
+		expect(names.length).toBe(9);
 	});
 
 	test("all mappings reference valid typescale names", () => {
 		const validScales = new Set([
-			"caption-1",
-			"caption-2",
-			"footnote",
-			"subhead",
-			"callout",
-			"body",
-			"headline",
-			"title-3",
-			"title-2",
-			"title-1",
-			"large-title",
+			"xs", "sm", "base", "lg", "xl",
+			"2xl", "3xl", "4xl", "5xl",
 		]);
 		for (const [, scale] of TAILWIND_TEXT_MAP) {
 			expect(

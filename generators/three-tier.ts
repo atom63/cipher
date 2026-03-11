@@ -17,6 +17,7 @@ import {
 	computeTypescale,
 	CONTAINER_SCALE,
 	DEFAULT_RADIUS,
+	BLUR_SCALE,
 	DURATION_RAW,
 	DURATION_SEMANTIC,
 	EASING_CURVES,
@@ -144,26 +145,14 @@ function generatePrimitives(config: BrandConfig): {
 	const tokens: DesignToken[] = [];
 	const grayName = config.grayName ?? "slate";
 
-	// --- Font families (CSS stacks for dev export) ---
-	const fontStacks = buildFontFamilies(config.fonts);
-	for (const [name, stack] of Object.entries(fontStacks)) {
-		tokens.push(
-			makeToken(`font/family/${name}`, stack, "primitives", {
-				type: "fontFamily",
-				originalValue: stack,
-				description: `Font family ${name} (CSS stack)`,
-			}),
-		);
-	}
-
-	// --- Font family names (clean single names for Figma binding) ---
+	// --- Font families (clean names for Figma variable binding) ---
 	const fontNames = resolveFontNames(config.fonts);
 	for (const [name, fontName] of Object.entries(fontNames)) {
 		tokens.push(
-			makeToken(`font/family/${name}/name`, fontName, "primitives", {
+			makeToken(`font/family/${name}`, fontName, "primitives", {
 				type: "string",
 				originalValue: fontName,
-				description: `Font name ${name} (Figma)`,
+				description: `Font family ${name}`,
 			}),
 		);
 	}
@@ -343,12 +332,203 @@ function generatePrimitives(config: BrandConfig): {
 		);
 	}
 
-	// --- Compute color scales for preview (not emitted as primitive tokens) ---
+	// --- Rounded (radius scale) ---
+	const radiusScale = computeRadiusScale(
+		config.radius ?? DEFAULT_RADIUS.anchor,
+	);
+	for (const [size, px] of Object.entries(radiusScale)) {
+		tokens.push(
+			makeToken(`rounded/${size}`, px, "primitives", {
+				type: "borderRadius",
+				originalValue: `${px}px`,
+				description: `Border radius ${size} (${px}px)`,
+			}),
+		);
+	}
+
+	// --- Z-layer scale ---
+	for (const [name, value] of Object.entries(ZLAYER_SCALE)) {
+		tokens.push(
+			makeToken(`zLayer/${name}`, value, "primitives", {
+				type: "number",
+				originalValue: `${value}`,
+				description: `Z-index layer ${name}`,
+			}),
+		);
+	}
+
+	// --- Blur scale (Tailwind-aligned) ---
+	for (const [name, px] of Object.entries(BLUR_SCALE)) {
+		tokens.push(
+			makeToken(`blur/${name}`, px, "primitives", {
+				type: "number",
+				originalValue: String(px),
+				description: `Blur ${name} (${px}px)`,
+			}),
+		);
+	}
+
+	// --- Font weight italic ---
+	tokens.push(
+		makeToken("font/weight/italic", "Italic", "primitives", {
+			type: "string",
+			originalValue: "Italic",
+			description: "Italic font style",
+		}),
+	);
+
+	// --- Compute color scales for preview ---
 	const brandScale = generateColorScale("brand", config.primary);
 	const scales: ColorScale[] = [brandScale];
 
 	if (config.secondary) {
 		scales.push(generateColorScale("secondary", config.secondary));
+	}
+
+	// --- Brand color full ramp (color/brand/50 – color/brand/950) ---
+	for (const step of SHADE_STEPS) {
+		tokens.push(
+			makeToken(
+				`color/brand/${step}`,
+				brandScale.shades[step],
+				"primitives",
+				{
+					description: `Brand ${step}`,
+					originalValue: brandScale.hexValues[step],
+				},
+			),
+		);
+	}
+
+	// --- Accent alias pointing to brand 500 ---
+	tokens.push(
+		makeToken(
+			"color/accent/primary",
+			`{primitives.color.brand.500}`,
+			"primitives",
+			{
+				description: "Primary brand color",
+				originalValue: `{primitives.color.brand.500}`,
+			},
+		),
+	);
+
+	// --- Secondary full ramp + accent alias (if provided) ---
+	if (config.secondary) {
+		const secondaryScale = generateColorScale("secondary", config.secondary);
+		for (const step of SHADE_STEPS) {
+			tokens.push(
+				makeToken(
+					`color/secondary/${step}`,
+					secondaryScale.shades[step],
+					"primitives",
+					{
+						description: `Secondary ${step}`,
+						originalValue: secondaryScale.hexValues[step],
+					},
+				),
+			);
+		}
+		tokens.push(
+			makeToken(
+				"color/accent/secondary",
+				`{primitives.color.secondary.500}`,
+				"primitives",
+				{
+					description: "Secondary brand color",
+					originalValue: `{primitives.color.secondary.500}`,
+				},
+			),
+		);
+	}
+
+	// --- Status colors with full ramps ---
+	const overrides = config.statusColors;
+	const statusColors = [
+		{ name: "danger", hex: overrides?.danger ?? "#EF4444" },
+		{ name: "success", hex: overrides?.success ?? "#10B981" },
+		{ name: "warning", hex: overrides?.warning ?? "#F59E0B" },
+		{ name: "info", hex: overrides?.info ?? "#3B82F6" },
+	];
+
+	for (const status of statusColors) {
+		const scale = generateColorScale(status.name, status.hex);
+		for (const step of SHADE_STEPS) {
+			tokens.push(
+				makeToken(
+					`color/status/${status.name}/${step}`,
+					scale.shades[step],
+					"primitives",
+					{
+						description: `${status.name} ${step}`,
+						originalValue: scale.hexValues[step],
+					},
+				),
+			);
+		}
+		// Convenience alias at 500
+		tokens.push(
+			makeToken(
+				`color/status/${status.name}`,
+				`{primitives.color.status.${status.name}.500}`,
+				"primitives",
+				{
+					description: `${status.name} status color`,
+					originalValue: `{primitives.color.status.${status.name}.500}`,
+				},
+			),
+		);
+	}
+
+	// --- Typescale with responsive variants (min, sm, md) ---
+	const typeSteps = computeTypescale(config.typescale);
+	const baseSize = config.typescale?.base ?? 16;
+	const SM_FACTOR = 0.85;
+	const MIN_FACTOR = 0.7;
+	const round = (v: number) => Math.round(v);
+
+	for (const step of typeSteps) {
+		const isAboveBase = step.size > baseSize;
+		const delta = step.size - baseSize;
+
+		const sizeMd = step.size;
+		const sizeSm = isAboveBase ? round(baseSize + delta * SM_FACTOR) : step.size;
+		const sizeMin = isAboveBase ? round(baseSize + delta * MIN_FACTOR) : step.size;
+
+		const lhRatio = step.lineHeight / step.size;
+		const lhMd = step.lineHeight;
+		const lhSm = round(sizeSm * lhRatio);
+		const lhMin = round(sizeMin * lhRatio);
+
+		const sizes = { md: sizeMd, sm: sizeSm, min: sizeMin };
+		const lineHeights = { md: lhMd, sm: lhSm, min: lhMin };
+
+		for (const variant of ["min", "sm", "md"] as const) {
+			tokens.push(
+				makeToken(
+					`font/typescale/${step.name}/size/${variant}`,
+					sizes[variant],
+					"primitives",
+					{
+						type: "number",
+						originalValue: `${sizes[variant]}px`,
+						description: `${step.name} font size (${variant})`,
+					},
+				),
+			);
+			tokens.push(
+				makeToken(
+					`font/typescale/${step.name}/line-height/${variant}`,
+					lineHeights[variant],
+					"primitives",
+					{
+						type: "number",
+						originalValue: `${lineHeights[variant]}px`,
+						description: `${step.name} line height (${variant})`,
+					},
+				),
+			);
+		}
 	}
 
 	return { tokens, scales, radixGray };
@@ -358,11 +538,7 @@ function generatePrimitives(config: BrandConfig): {
 // Abstractions — indirection layer, SINGLE MODE
 // =========================================================================
 
-function generateAbstractions(
-	config: BrandConfig,
-	radixGray: RadixGrayScale,
-	brandScale: ColorScale,
-): DesignToken[] {
+function generateAbstractions(config: BrandConfig): DesignToken[] {
 	const tokens: DesignToken[] = [];
 
 	// --- Surface (light/dark gray references) ---
@@ -393,84 +569,6 @@ function generateAbstractions(
 		);
 	}
 
-	// --- Accent: primary brand color (direct value, not reference) ---
-	tokens.push(
-		makeToken(
-			"accent/primary/500",
-			brandScale.shades[500],
-			"abstractions",
-			{
-				description: "Primary accent color",
-				originalValue: brandScale.hexValues[500],
-			},
-		),
-	);
-
-	// --- Accent: secondary (if provided) ---
-	if (config.secondary) {
-		const secondaryScale = generateColorScale("secondary", config.secondary);
-		tokens.push(
-			makeToken(
-				"accent/secondary/500",
-				secondaryScale.shades[500],
-				"abstractions",
-				{
-					description: "Secondary accent color",
-					originalValue: secondaryScale.hexValues[500],
-				},
-			),
-		);
-	}
-
-	// --- Accent: status colors (configurable) ---
-	const overrides = config.statusColors;
-	const statusColors = [
-		{ name: "danger", hex: overrides?.danger ?? "#EF4444" },
-		{ name: "success", hex: overrides?.success ?? "#10B981" },
-		{ name: "warning", hex: overrides?.warning ?? "#F59E0B" },
-		{ name: "info", hex: overrides?.info ?? "#3B82F6" },
-	];
-
-	for (const status of statusColors) {
-		const scale = generateColorScale(status.name, status.hex);
-		tokens.push(
-			makeToken(
-				`accent/status/${status.name}/500`,
-				scale.shades[500],
-				"abstractions",
-				{
-					description: `${status.name} status color`,
-					originalValue: scale.hexValues[500],
-				},
-			),
-		);
-	}
-
-	// --- Rounded (radius scale) ---
-	const radiusScale = computeRadiusScale(
-		config.radius ?? DEFAULT_RADIUS.anchor,
-	);
-	for (const [size, px] of Object.entries(radiusScale)) {
-		tokens.push(
-			makeToken(`rounded/${size}`, px, "abstractions", {
-				type: "borderRadius",
-				originalValue: `${px}px`,
-				description: `Border radius ${size} (${px}px)`,
-			}),
-		);
-	}
-
-	// --- Z-layer scale ---
-	for (const [name, value] of Object.entries(ZLAYER_SCALE)) {
-		tokens.push(
-			makeToken(`zLayer/${name}`, value, "abstractions", {
-				type: "number",
-				originalValue: `${value}`,
-				description: `Z-index layer ${name}`,
-			}),
-		);
-	}
-
 	// --- Duration semantic aliases ---
 	for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
 		const ref = `{primitives.motion.duration.${rawKey}}`;
@@ -482,44 +580,6 @@ function generateAbstractions(
 			}),
 		);
 	}
-
-	// --- Font family aliases (primary/secondary/tertiary → clean name primitives for Figma binding) ---
-	tokens.push(
-		makeToken(
-			"font/family/primary",
-			"{primitives.font.family.sans.name}",
-			"abstractions",
-			{
-				type: "string",
-				originalValue: "{primitives.font.family.sans.name}",
-				description: "Main UI font",
-			},
-		),
-	);
-	tokens.push(
-		makeToken(
-			"font/family/secondary",
-			"{primitives.font.family.serif.name}",
-			"abstractions",
-			{
-				type: "string",
-				originalValue: "{primitives.font.family.serif.name}",
-				description: "Display font",
-			},
-		),
-	);
-	tokens.push(
-		makeToken(
-			"font/family/tertiary",
-			"{primitives.font.family.mono.name}",
-			"abstractions",
-			{
-				type: "string",
-				originalValue: "{primitives.font.family.mono.name}",
-				description: "Code font",
-			},
-		),
-	);
 
 	// --- Font weight aliases ---
 	tokens.push(
@@ -546,67 +606,6 @@ function generateAbstractions(
 			},
 		),
 	);
-	tokens.push(
-		makeToken("font/weight/italic", "Italic", "abstractions", {
-			type: "string",
-			originalValue: "Italic",
-			description: "Italic font style",
-		}),
-	);
-
-	// --- Typescale with responsive variants (min, sm, md) ---
-	// Sizes above base scale down for smaller breakpoints.
-	// Sizes at/below base stay constant across breakpoints.
-	// Dampening: sm keeps 85% of the delta from base, min keeps 70%.
-	const typeSteps = computeTypescale(config.typescale);
-	const baseSize = config.typescale?.base ?? 16;
-	const SM_FACTOR = 0.85;
-	const MIN_FACTOR = 0.7;
-	const round = (v: number) => Math.round(v);
-
-	for (const step of typeSteps) {
-		const isAboveBase = step.size > baseSize;
-		const delta = step.size - baseSize;
-
-		const sizeMd = step.size;
-		const sizeSm = isAboveBase ? round(baseSize + delta * SM_FACTOR) : step.size;
-		const sizeMin = isAboveBase ? round(baseSize + delta * MIN_FACTOR) : step.size;
-
-		const lhRatio = step.lineHeight / step.size;
-		const lhMd = step.lineHeight;
-		const lhSm = round(sizeSm * lhRatio);
-		const lhMin = round(sizeMin * lhRatio);
-
-		const sizes = { md: sizeMd, sm: sizeSm, min: sizeMin };
-		const lineHeights = { md: lhMd, sm: lhSm, min: lhMin };
-
-		for (const variant of ["min", "sm", "md"] as const) {
-			tokens.push(
-				makeToken(
-					`font/typescale/${step.name}/size/${variant}`,
-					sizes[variant],
-					"abstractions",
-					{
-						type: "number",
-						originalValue: `${sizes[variant]}px`,
-						description: `${step.name} font size (${variant})`,
-					},
-				),
-			);
-			tokens.push(
-				makeToken(
-					`font/typescale/${step.name}/line-height/${variant}`,
-					lineHeights[variant],
-					"abstractions",
-					{
-						type: "number",
-						originalValue: `${lineHeights[variant]}px`,
-						description: `${step.name} line height (${variant})`,
-					},
-				),
-			);
-		}
-	}
 
 	return tokens;
 }
@@ -626,39 +625,13 @@ interface SemanticDef {
 function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 	const surfL = (step: number) => `{abstractions.surface.light.${step}}`;
 	const surfD = (step: number) => `{abstractions.surface.dark.${step}}`;
-	const primary = "{abstractions.accent.primary.500}";
-	const danger = "{abstractions.accent.status.danger.500}";
-	const success = "{abstractions.accent.status.success.500}";
-	const warning = "{abstractions.accent.status.warning.500}";
-	const info = "{abstractions.accent.status.info.500}";
+	const primary = "{primitives.color.accent.primary}";
+	const danger = "{primitives.color.status.danger}";
+	const success = "{primitives.color.status.success}";
+	const warning = "{primitives.color.status.warning}";
+	const info = "{primitives.color.status.info}";
 
 	const defs: SemanticDef[] = [
-		// --- Backplates (overlay tints) ---
-		{
-			name: "backplate/1",
-			light: "{primitives.color.black.5}",
-			dark: "{primitives.color.white.5}",
-			description: "Backplate level 1",
-		},
-		{
-			name: "backplate/2",
-			light: "{primitives.color.black.20}",
-			dark: "{primitives.color.white.20}",
-			description: "Backplate level 2",
-		},
-		{
-			name: "backplate/3",
-			light: "{primitives.color.black.10}",
-			dark: "{primitives.color.white.10}",
-			description: "Backplate level 3",
-		},
-		{
-			name: "backplate/4",
-			light: "{primitives.color.black.5}",
-			dark: "{primitives.color.white.5}",
-			description: "Backplate level 4",
-		},
-
 		// --- shadcn core tokens ---
 		{
 			name: "shadcn/background",
@@ -889,8 +862,8 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 		defs.push(
 			{
 				name: "shadcn/secondary-accent",
-				light: "{abstractions.accent.secondary.500}",
-				dark: "{abstractions.accent.secondary.500}",
+				light: "{primitives.color.accent.secondary}",
+				dark: "{primitives.color.accent.secondary}",
 				description: "Secondary accent color",
 			},
 		);
@@ -961,11 +934,11 @@ function generateResponsive(config: BrandConfig): DesignToken[] {
 			tokens.push(
 				makeToken(
 					`typography/${step.name}/font-size`,
-					`{abstractions.font.typescale.${step.name}.size.${variant}}`,
+					`{primitives.font.typescale.${step.name}.size.${variant}}`,
 					"responsive",
 					{
 						type: "number",
-						originalValue: `{abstractions.font.typescale.${step.name}.size.${variant}}`,
+						originalValue: `{primitives.font.typescale.${step.name}.size.${variant}}`,
 						description: `${step.name} font size (${mode})`,
 						modeName: mode,
 					},
@@ -976,11 +949,11 @@ function generateResponsive(config: BrandConfig): DesignToken[] {
 			tokens.push(
 				makeToken(
 					`typography/${step.name}/line-height`,
-					`{abstractions.font.typescale.${step.name}.line-height.${variant}}`,
+					`{primitives.font.typescale.${step.name}.line-height.${variant}}`,
 					"responsive",
 					{
 						type: "number",
-						originalValue: `{abstractions.font.typescale.${step.name}.line-height.${variant}}`,
+						originalValue: `{primitives.font.typescale.${step.name}.line-height.${variant}}`,
 						description: `${step.name} line height (${mode})`,
 						modeName: mode,
 					},
@@ -1044,6 +1017,21 @@ export function generateCss(config: BrandConfig): string {
 		}
 	}
 
+	// Status color ramps
+	const statusOverrides = config.statusColors;
+	const statusEntries = [
+		{ name: "danger", hex: statusOverrides?.danger ?? "#EF4444" },
+		{ name: "success", hex: statusOverrides?.success ?? "#10B981" },
+		{ name: "warning", hex: statusOverrides?.warning ?? "#F59E0B" },
+		{ name: "info", hex: statusOverrides?.info ?? "#3B82F6" },
+	];
+	for (const status of statusEntries) {
+		const scale = generateColorScale(status.name, status.hex);
+		for (const step of SHADE_STEPS) {
+			lines.push(`  --color-${status.name}-${step}: ${scale.hexValues[step]};`);
+		}
+	}
+
 	// Spacing
 	for (const [key, px] of Object.entries(SPACING_SCALE)) {
 		lines.push(`  --spacing-${key}: ${px}px;`);
@@ -1057,6 +1045,11 @@ export function generateCss(config: BrandConfig): string {
 	// Shadows
 	for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
 		lines.push(`  --shadow-${level}: ${shadowToCss(layers)};`);
+	}
+
+	// Blur
+	for (const [name, px] of Object.entries(BLUR_SCALE)) {
+		lines.push(`  --blur-${name}: ${px}px;`);
 	}
 
 	// Font families
@@ -1140,11 +1133,6 @@ function refToCssVar(ref: string): string {
 		return `var(--color-gray-${surfaceMatch[2]})`;
 	}
 
-	// Accent references → direct color
-	if (path.startsWith("abstractions.accent.")) {
-		return `var(--color-${path.replace(/^abstractions\.accent\./, "").replace(/\./g, "-")})`;
-	}
-
 	// Primitive color references
 	if (path.startsWith("primitives.color.")) {
 		return `var(--color-${path.replace(/^primitives\.color\./, "").replace(/\./g, "-")})`;
@@ -1175,7 +1163,6 @@ function hexToColorValue(hex: string): ColorValue {
 
 function generateStyles(config: BrandConfig): Record<string, any> {
 	const fontNames = resolveFontNames(config.fonts);
-	const sansFontFamily = fontNames.sans;
 	const typeSteps = computeTypescale(config.typescale);
 
 	const styles: Record<string, any> = {
@@ -1190,86 +1177,134 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 	for (const def of semanticDefs) {
 		if (def.name.startsWith("shadcn/")) {
 			const styleName = def.name.replace("shadcn/", "");
-			shadcnPaint[styleName] = {
-				id: `generated-paint-${styleName}`,
-				type: "color",
-				fills: [
-					{
-						type: "solid",
-						color: "rgba(0, 0, 0, 1)",
-						opacity: 1,
-						boundVariable: {
-							type: "variable",
-							variableName: def.name,
-							collectionName: "semantics",
-						},
-					},
-				],
+			const opacity = styleName === "accent" ? 0.8 : 1;
+			const binding = {
+				type: "variable",
+				variableName: def.name,
+				collectionName: "semantics",
 			};
+
+			if (opacity < 1) {
+				// Use a linear gradient with two identical stops to apply opacity
+				// while keeping the variable binding on each stop.
+				// Fill-level opacity controls the actual transparency.
+				shadcnPaint[styleName] = {
+					id: `generated-paint-${styleName}`,
+					type: "color",
+					fills: [
+						{
+							type: "linear",
+							opacity,
+							gradientStops: [
+								{
+									position: 0,
+									color: "rgba(0, 0, 0, 1)",
+									boundVariable: binding,
+								},
+								{
+									position: 1,
+									color: "rgba(0, 0, 0, 1)",
+									boundVariable: binding,
+								},
+							],
+							gradientTransform: [
+								[1, 0, 0],
+								[0, 1, 0],
+							],
+						},
+					],
+				};
+			} else {
+				shadcnPaint[styleName] = {
+					id: `generated-paint-${styleName}`,
+					type: "color",
+					fills: [
+						{
+							type: "solid",
+							color: "rgba(0, 0, 0, 1)",
+							opacity: 1,
+							boundVariable: binding,
+						},
+					],
+				};
+			}
 		}
 	}
 	styles.paint = { semantics: { shadcn: shadcnPaint } };
 
-	// --- Text styles: typography (regular + strong for each step) ---
-	// Bind to abstraction variables so styles update when tokens change
-	const typography: Record<string, any> = {};
-	for (const step of typeSteps) {
-		const sizeBinding = {
-			variableName: `typography/${step.name}/font-size`,
-			collectionName: "responsive",
-		};
-		const lineHeightBinding = {
-			variableName: `typography/${step.name}/line-height`,
-			collectionName: "responsive",
-		};
-		const fontFamilyBinding = {
-			variableName: "font/family/primary",
-			collectionName: "abstractions",
-		};
+	// --- Text styles: primary, secondary, tertiary (each font family) ---
+	// Each family gets regular + strong variants for every typescale step
+	const fontFamilies = [
+		{ key: "primary", fontName: fontNames.sans, familyVar: "font/family/sans", collection: "primitives" },
+		{ key: "secondary", fontName: fontNames.serif, familyVar: "font/family/serif", collection: "primitives" },
+		{ key: "tertiary", fontName: fontNames.mono, familyVar: "font/family/mono", collection: "primitives" },
+	];
 
-		// Regular variant
-		typography[step.name] = {
-			id: `generated-text-${step.name}`,
-			type: "text",
-			fontFamily: sansFontFamily,
-			fontStyle: "Regular",
-			fontSize: `${step.size}px`,
-			lineHeight: `${step.lineHeight}px`,
-			letterSpacing: "0%",
-			paragraphSpacing: "0px",
-			textCase: "ORIGINAL",
-			textDecoration: "NONE",
-			fontFamilyBoundVariable: fontFamilyBinding,
-			fontSizeBoundVariable: sizeBinding,
-			lineHeightBoundVariable: lineHeightBinding,
-			fontWeightBoundVariable: {
-				variableName: "font/weight/default",
-				collectionName: "abstractions",
-			},
-		};
+	const textStyles: Record<string, Record<string, any>> = {};
 
-		// Strong variant
-		typography[`${step.name}-strong`] = {
-			id: `generated-text-${step.name}-strong`,
-			type: "text",
-			fontFamily: sansFontFamily,
-			fontStyle: "Medium",
-			fontSize: `${step.size}px`,
-			lineHeight: `${step.lineHeight}px`,
-			letterSpacing: "0%",
-			paragraphSpacing: "0px",
-			textCase: "ORIGINAL",
-			textDecoration: "NONE",
-			fontFamilyBoundVariable: fontFamilyBinding,
-			fontSizeBoundVariable: sizeBinding,
-			lineHeightBoundVariable: lineHeightBinding,
-			fontWeightBoundVariable: {
-				variableName: "font/weight/strong",
-				collectionName: "abstractions",
-			},
-		};
+	for (const family of fontFamilies) {
+		const group: Record<string, any> = {};
+
+		for (const step of typeSteps) {
+			const sizeBinding = {
+				variableName: `typography/${step.name}/font-size`,
+				collectionName: "responsive",
+			};
+			const lineHeightBinding = {
+				variableName: `typography/${step.name}/line-height`,
+				collectionName: "responsive",
+			};
+			const fontFamilyBinding = {
+				variableName: family.familyVar,
+				collectionName: family.collection,
+			};
+
+			// Regular variant
+			group[step.name] = {
+				id: `generated-text-${family.key}-${step.name}`,
+				type: "text",
+				fontFamily: family.fontName,
+				fontStyle: "Regular",
+				fontSize: `${step.size}px`,
+				lineHeight: `${step.lineHeight}px`,
+				letterSpacing: "0%",
+				paragraphSpacing: "0px",
+				textCase: "ORIGINAL",
+				textDecoration: "NONE",
+				fontFamilyBoundVariable: fontFamilyBinding,
+				fontSizeBoundVariable: sizeBinding,
+				lineHeightBoundVariable: lineHeightBinding,
+				fontWeightBoundVariable: {
+					variableName: "font/weight/default",
+					collectionName: "abstractions",
+				},
+			};
+
+			// Strong variant
+			group[`${step.name}-strong`] = {
+				id: `generated-text-${family.key}-${step.name}-strong`,
+				type: "text",
+				fontFamily: family.fontName,
+				fontStyle: "Medium",
+				fontSize: `${step.size}px`,
+				lineHeight: `${step.lineHeight}px`,
+				letterSpacing: "0%",
+				paragraphSpacing: "0px",
+				textCase: "ORIGINAL",
+				textDecoration: "NONE",
+				fontFamilyBoundVariable: fontFamilyBinding,
+				fontSizeBoundVariable: sizeBinding,
+				lineHeightBoundVariable: lineHeightBinding,
+				fontWeightBoundVariable: {
+					variableName: "font/weight/strong",
+					collectionName: "abstractions",
+				},
+			};
+		}
+
+		textStyles[family.key] = group;
 	}
-	styles.text = { typography };
+	styles.text = textStyles;
 
 	// --- Effect styles: shadows + blurs ---
 	const shadows: Record<string, any> = {};
@@ -1289,18 +1324,26 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 		shadows[level] = { id: `generated-shadow-${level}`, type: "effect", effects };
 	}
 
-	const blurs: Record<string, any> = {
-		"1": { id: "generated-blur-1", type: "effect", effects: [{ type: "layer-blur", radius: "6px", visible: true }] },
-		"2": { id: "generated-blur-2", type: "effect", effects: [{ type: "layer-blur", radius: "12px", visible: true }] },
-		"3": { id: "generated-blur-3", type: "effect", effects: [{ type: "layer-blur", radius: "20px", visible: true }] },
-		"4": { id: "generated-blur-4", type: "effect", effects: [{ type: "layer-blur", radius: "40px", visible: true }] },
-	};
+	const blurs: Record<string, any> = {};
+	const backdropBlurs: Record<string, any> = {};
+	for (const [name, px] of Object.entries(BLUR_SCALE)) {
+		const radiusBoundVariable = {
+			variableName: `blur/${name}`,
+			collectionName: "primitives",
+		};
+		blurs[name] = {
+			id: `generated-blur-${name}`,
+			type: "effect",
+			effects: [{ type: "layer-blur", radius: `${px}px`, visible: true, radiusBoundVariable }],
+		};
+		backdropBlurs[name] = {
+			id: `generated-backdrop-blur-${name}`,
+			type: "effect",
+			effects: [{ type: "background-blur", radius: `${px}px`, visible: true, radiusBoundVariable }],
+		};
+	}
 
-	const backdropBlur: Record<string, any> = {
-		"1": { id: "generated-backdrop-blur-1", type: "effect", effects: [{ type: "background-blur", radius: "20px", visible: true }] },
-	};
-
-	styles.effect = { shadow: shadows, blur: blurs, "backdrop-blur": backdropBlur };
+	styles.effect = { shadow: shadows, blur: blurs, "backdrop-blur": backdropBlurs };
 
 	return styles;
 }
@@ -1326,9 +1369,7 @@ export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 		radixGray,
 	} = generatePrimitives(config);
 
-	const abstractionTokens = radixGray
-		? generateAbstractions(config, radixGray, scales[0])
-		: [];
+	const abstractionTokens = generateAbstractions(config);
 
 	const semanticTokens = generateSemantics(config);
 	const responsiveTokens = generateResponsive(config);

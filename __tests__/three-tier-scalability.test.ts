@@ -261,7 +261,7 @@ describe("token count stability", () => {
 			darkMode: false,
 		});
 
-		// Secondary adds 1 abstraction (accent/secondary/500) + 1 semantic token
+		// Secondary adds 1 primitive (color/secondary) + 1 semantic token
 		const diff = withSecondary.tokens.length - without.tokens.length;
 		expect(diff).toBeGreaterThan(0);
 	});
@@ -326,14 +326,21 @@ describe("token naming structure", () => {
 		const abstractions = result.tokens.filter(
 			(t) => t.category === "abstractions",
 		);
-		const names = abstractions.map((t) => t.figmaName);
+		const absNames = abstractions.map((t) => t.figmaName);
 
-		expect(names).toContain("accent/primary/500");
-		expect(names.some((n) => n.startsWith("surface/light/"))).toBe(true);
-		expect(names.some((n) => n.startsWith("surface/dark/"))).toBe(true);
-		expect(names.some((n) => n.startsWith("rounded/"))).toBe(true);
-		expect(names.some((n) => n.startsWith("zLayer/"))).toBe(true);
-		expect(names.some((n) => n.startsWith("duration/"))).toBe(true);
+		// Surface and duration aliases remain in abstractions
+		expect(absNames.some((n) => n.startsWith("surface/light/"))).toBe(true);
+		expect(absNames.some((n) => n.startsWith("surface/dark/"))).toBe(true);
+		expect(absNames.some((n) => n.startsWith("duration/"))).toBe(true);
+
+		// Raw values moved to primitives
+		const primitives = result.tokens.filter(
+			(t) => t.category === "primitives",
+		);
+		const primNames = primitives.map((t) => t.figmaName);
+		expect(primNames).toContain("color/accent/primary");
+		expect(primNames.some((n) => n.startsWith("rounded/"))).toBe(true);
+		expect(primNames.some((n) => n.startsWith("zLayer/"))).toBe(true);
 	});
 
 	test("semantics use shadcn/ prefix for UI tokens", () => {
@@ -352,8 +359,7 @@ describe("token naming structure", () => {
 		expect(names).toContain("shadcn/primary");
 		expect(names).toContain("shadcn/border");
 		expect(names).toContain("shadcn/ring");
-		expect(names.some((n) => n.startsWith("backplate/"))).toBe(true);
-	});
+});
 });
 
 // =========================================================================

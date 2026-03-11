@@ -142,17 +142,16 @@ describe("primitives", () => {
 		expect(names).toContain("font/weight/variable/bold");
 	});
 
-	test("custom font overrides prepend to system stacks", () => {
+	test("custom font overrides use clean name strings", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			darkMode: false,
-			fonts: { sans: "Inter" },
+			fonts: { sans: "Geist" },
 		});
 		const sansToken = result.tokens.find(
 			(t) => t.figmaName === "font/family/sans",
 		);
-		expect(sansToken?.value).toContain("'Inter'");
-		expect(sansToken?.value).toContain("ui-sans-serif");
+		expect(sansToken?.value).toBe("Geist");
 	});
 
 	test("brand color scale is in primitives (for preview) but not as tokens", () => {
@@ -237,7 +236,7 @@ describe("non-color tokens", () => {
 		}
 	});
 
-	test("generates radius in abstractions (rounded/N)", () => {
+	test("generates radius in primitives (rounded/N)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			darkMode: false,
@@ -248,9 +247,9 @@ describe("non-color tokens", () => {
 		expect(names).toContain("rounded/sm");
 		expect(names).toContain("rounded/lg");
 		expect(names).toContain("rounded/full");
-		// All radius tokens are in abstractions
+		// All radius tokens are in primitives
 		const categories = new Set(radiusTokens.map((t) => t.category));
-		expect(categories).toEqual(new Set(["abstractions"]));
+		expect(categories).toEqual(new Set(["primitives"]));
 	});
 
 	test("radius uses custom anchor", () => {
@@ -265,14 +264,14 @@ describe("non-color tokens", () => {
 		expect(lgRadius?.value).toBe(8);
 	});
 
-	test("generates typescale tokens in abstractions with responsive variants", () => {
+	test("generates typescale tokens in primitives with responsive variants", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			darkMode: false,
 		});
 		const typeTokens = result.tokens.filter(
 			(t) =>
-				t.category === "abstractions" &&
+				t.category === "primitives" &&
 				t.figmaName.startsWith("font/typescale/"),
 		);
 		expect(typeTokens.length).toBeGreaterThan(0);
@@ -345,27 +344,27 @@ describe("abstractions", () => {
 		);
 	});
 
-	test("accent/primary/500 has a direct color value", () => {
+	test("color/primary has a direct color value", () => {
 		const result = generateDesignSystem(defaultConfig);
-		const primary500 = result.tokens.find(
+		const primary = result.tokens.find(
 			(t) =>
-				t.category === "abstractions" &&
-				t.figmaName === "accent/primary/500",
+				t.category === "primitives" &&
+				t.figmaName === "color/accent/primary",
 		);
-		expect(primary500).toBeDefined();
-		// It's a direct color, not a reference
-		expect(String(primary500?.originalValue)).not.toMatch(/^\{/);
+		expect(primary).toBeDefined();
+		// It's a reference alias pointing to the brand 500 shade
+		expect(String(primary?.originalValue)).toBe("{primitives.color.brand.500}");
 	});
 
-	test("includes status color abstractions", () => {
+	test("includes status color primitives", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const names = result.tokens
-			.filter((t) => t.category === "abstractions")
+			.filter((t) => t.category === "primitives")
 			.map((t) => t.figmaName);
-		expect(names).toContain("accent/status/danger/500");
-		expect(names).toContain("accent/status/success/500");
-		expect(names).toContain("accent/status/warning/500");
-		expect(names).toContain("accent/status/info/500");
+		expect(names).toContain("color/status/danger");
+		expect(names).toContain("color/status/success");
+		expect(names).toContain("color/status/warning");
+		expect(names).toContain("color/status/info");
 	});
 
 	test("custom status colors override defaults", () => {
@@ -376,47 +375,45 @@ describe("abstractions", () => {
 		});
 		const dangerToken = result.tokens.find(
 			(t) =>
-				t.category === "abstractions" &&
-				t.figmaName === "accent/status/danger/500",
+				t.category === "primitives" &&
+				t.figmaName === "color/status/danger",
 		);
 		expect(dangerToken).toBeDefined();
-		// The original value should reflect the custom color's 500 shade
 		expect(dangerToken?.originalValue).toBeDefined();
 
-		// Success should still use its default
 		const successToken = result.tokens.find(
 			(t) =>
-				t.category === "abstractions" &&
-				t.figmaName === "accent/status/success/500",
+				t.category === "primitives" &&
+				t.figmaName === "color/status/success",
 		);
 		expect(successToken).toBeDefined();
 	});
 
-	test("creates accent/secondary/500 when secondary provided", () => {
+	test("creates color/secondary when secondary provided", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
 			secondary: "#10B981",
 		});
-		const abstractions = result.tokens.filter(
-			(t) => t.category === "abstractions",
+		const primitives = result.tokens.filter(
+			(t) => t.category === "primitives",
 		);
-		const names = abstractions.map((t) => t.figmaName);
-		expect(names).toContain("accent/secondary/500");
+		const names = primitives.map((t) => t.figmaName);
+		expect(names).toContain("color/accent/secondary");
 	});
 
-	test("no accent/secondary/500 without secondary color", () => {
+	test("no color/secondary without secondary color", () => {
 		const result = generateDesignSystem(defaultConfig);
-		const abstractions = result.tokens.filter(
-			(t) => t.category === "abstractions",
+		const primitives = result.tokens.filter(
+			(t) => t.category === "primitives",
 		);
-		const names = abstractions.map((t) => t.figmaName);
-		expect(names).not.toContain("accent/secondary/500");
+		const names = primitives.map((t) => t.figmaName);
+		expect(names).not.toContain("color/accent/secondary");
 	});
 
-	test("includes zLayer tokens", () => {
+	test("includes zLayer tokens in primitives", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const names = result.tokens
-			.filter((t) => t.category === "abstractions")
+			.filter((t) => t.category === "primitives")
 			.map((t) => t.figmaName);
 		expect(names).toContain("zLayer/default");
 		expect(names).toContain("zLayer/modal");
@@ -424,12 +421,16 @@ describe("abstractions", () => {
 
 	test("includes font weight aliases", () => {
 		const result = generateDesignSystem(defaultConfig);
-		const names = result.tokens
+		const absNames = result.tokens
 			.filter((t) => t.category === "abstractions")
 			.map((t) => t.figmaName);
-		expect(names).toContain("font/weight/default");
-		expect(names).toContain("font/weight/strong");
-		expect(names).toContain("font/weight/italic");
+		expect(absNames).toContain("font/weight/default");
+		expect(absNames).toContain("font/weight/strong");
+		// font/weight/italic is a raw value, so it's in primitives
+		const primNames = result.tokens
+			.filter((t) => t.category === "primitives")
+			.map((t) => t.figmaName);
+		expect(primNames).toContain("font/weight/italic");
 	});
 
 	test("all abstractions are single-mode (no modeName)", () => {
@@ -511,14 +512,6 @@ describe("semantics", () => {
 		expect(names).toContain("shadcn/sidebar-border");
 	});
 
-	test("includes backplate tokens", () => {
-		const result = generateDesignSystem(defaultConfig);
-		const semantics = result.tokens.filter((t) => t.category === "semantics");
-		const names = semantics.map((t) => t.figmaName);
-		expect(names).toContain("backplate/1");
-		expect(names).toContain("backplate/4");
-	});
-
 	test("shadcn/background references surface abstractions", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const bgTokens = result.tokens.filter(
@@ -584,7 +577,7 @@ describe("responsive", () => {
 		expect(modes).toContain("mobile (min)");
 	});
 
-	test("responsive font-size references abstraction typescale variants", () => {
+	test("responsive font-size references primitive typescale variants", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const fontSizeTokens = result.tokens.filter(
 			(t) =>
@@ -595,16 +588,16 @@ describe("responsive", () => {
 
 		const desktop = fontSizeTokens.find((t) => t.modeName === "desktop (md)");
 		expect(desktop?.originalValue).toBe(
-			"{abstractions.font.typescale.base.size.md}",
+			"{primitives.font.typescale.base.size.md}",
 		);
 
 		const mobile = fontSizeTokens.find((t) => t.modeName === "mobile (min)");
 		expect(mobile?.originalValue).toBe(
-			"{abstractions.font.typescale.base.size.min}",
+			"{primitives.font.typescale.base.size.min}",
 		);
 	});
 
-	test("responsive line-height references abstraction typescale variants", () => {
+	test("responsive line-height references primitive typescale variants", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const lhTokens = result.tokens.filter(
 			(t) =>
@@ -615,7 +608,7 @@ describe("responsive", () => {
 
 		const tablet = lhTokens.find((t) => t.modeName === "tablet (sm)");
 		expect(tablet?.originalValue).toBe(
-			"{abstractions.font.typescale.base.line-height.sm}",
+			"{primitives.font.typescale.base.line-height.sm}",
 		);
 	});
 
@@ -684,7 +677,7 @@ describe("generateCss", () => {
 		expect(css).toContain("--radius-lg:");
 		expect(css).toContain("--shadow-3:");
 		expect(css).toContain("--font-sans:");
-		expect(css).toContain("--duration-short:");
+		expect(css).toContain("--duration-normal:");
 		// Typography
 		expect(css).toContain("--typography-base-font-size:");
 		expect(css).toContain("--typography-base-line-height:");

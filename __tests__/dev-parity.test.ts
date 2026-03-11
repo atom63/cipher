@@ -221,7 +221,7 @@ describe("duration parity with dev abstractions.css", () => {
 		const devPrimVars = parseCssVars(devPrimitivesCss);
 
 		for (const [name, value] of devPrimVars) {
-			const match = name.match(/^--duration-motion-duration-(\w+)$/);
+			const match = name.match(/^--duration-(\w+)$/);
 			if (!match) continue;
 
 			const key = match[1];
@@ -600,9 +600,9 @@ describe("abstraction layer parity with dev abstractions.css", () => {
 			const aliasName = match[1];
 			if (!DURATION_SEMANTIC[aliasName]) continue;
 
-			// Dev value is a var reference like `var(--duration-motion-duration-250)`
+			// Dev value is a var reference like `var(--duration-250)`
 			// Extract the raw key
-			const refMatch = value.match(/duration-motion-duration-(\w+)/);
+			const refMatch = value.match(/duration-(\w+)\)/);
 			if (!refMatch) continue;
 
 			const devRawKey = refMatch[1];

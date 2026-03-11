@@ -141,6 +141,20 @@ export function shadowToCss(defOrLayers: ShadowLayer | ShadowLayer[]): string {
 }
 
 // =========================================================================
+// Blur — Tailwind-aligned blur scale
+// =========================================================================
+
+export const BLUR_SCALE: Record<string, number> = {
+	xs: 4,
+	sm: 8,
+	md: 12,
+	lg: 16,
+	xl: 24,
+	"2xl": 40,
+	"3xl": 64,
+};
+
+// =========================================================================
 // Typography — Mathematical modular type scale
 // =========================================================================
 
@@ -256,6 +270,7 @@ export function computeTypescale(config?: TypescaleConfig): TypeStep[] {
 export const DURATION_RAW: Record<string, number> = {
 	none: 0,
 	"83": 83,
+	"150": 150,
 	"167": 167,
 	"250": 250,
 	"333": 333,
@@ -267,14 +282,10 @@ export const DURATION_RAW: Record<string, number> = {
 
 export const DURATION_SEMANTIC: Record<string, string> = {
 	instant: "none",
-	micro: "83",
-	xmicro: "167",
-	short: "250",
-	xshort: "333",
-	medium: "500",
-	xmedium: "667",
-	long: "1000",
-	xlong: "1500",
+	fast: "150",
+	normal: "250",
+	slow: "500",
+	slower: "1000",
 };
 
 // =========================================================================
@@ -396,35 +407,35 @@ export const ZLAYER_SCALE: Record<string, number> = {
 
 export const SIZES_SCALE: Record<string, number> = {
 	"0": 0,
-	"1": 1,
-	"2": 2,
-	"3": 3,
-	"4": 4,
-	"5": 5,
-	"6": 6,
-	"7": 7,
-	"8": 8,
-	"9": 9,
-	"10": 10,
-	"11": 11,
-	"12": 12,
-	"14": 14,
-	"16": 16,
-	"20": 20,
-	"24": 24,
-	"28": 28,
-	"32": 32,
-	"36": 36,
-	"40": 40,
-	"44": 44,
-	"48": 48,
-	"52": 52,
-	"56": 56,
-	"60": 60,
-	"64": 64,
-	"72": 72,
-	"80": 80,
-	"96": 96,
+	"1": 4,
+	"2": 8,
+	"3": 12,
+	"4": 16,
+	"5": 20,
+	"6": 24,
+	"7": 28,
+	"8": 32,
+	"9": 36,
+	"10": 40,
+	"11": 44,
+	"12": 48,
+	"14": 56,
+	"16": 64,
+	"20": 80,
+	"24": 96,
+	"28": 112,
+	"32": 128,
+	"36": 144,
+	"40": 160,
+	"44": 176,
+	"48": 192,
+	"52": 208,
+	"56": 224,
+	"60": 240,
+	"64": 256,
+	"72": 288,
+	"80": 320,
+	"96": 384,
 };
 
 // =========================================================================
@@ -464,7 +475,7 @@ export const BREAKPOINTS: Record<string, string> = {
 // =========================================================================
 
 export const EASING_CURVES: Record<string, string> = {
-	linear: "cubic-bezier(0, 0, 0, 0)",
+	linear: "cubic-bezier(0, 0, 1, 1)",
 	fast: "cubic-bezier(0, 0, 0, 1)",
 	pointToPoint: "cubic-bezier(0.55, 0.55, 0, 1)",
 	spring: "cubic-bezier(0.13, 1.62, 0, 0.92)",

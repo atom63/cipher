@@ -132,15 +132,39 @@ describe("generateStyles — paint", () => {
 		}
 	});
 
-	test("paint fills have boundVariable with variableName and collectionName", () => {
+	test("solid paint fills have boundVariable with variableName and collectionName", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		const leaves = collectStyleLeaves(styles.paint);
 		for (const leaf of leaves) {
 			const fill = leaf.data.fills[0];
-			expect(fill.type).toBe("solid");
-			expect(fill.boundVariable).toBeDefined();
-			expect(fill.boundVariable.variableName).toBeDefined();
-			expect(fill.boundVariable.collectionName).toBe("semantics");
+			if (fill.type === "solid") {
+				expect(fill.boundVariable).toBeDefined();
+				expect(fill.boundVariable.variableName).toBeDefined();
+				expect(fill.boundVariable.collectionName).toBe("semantics");
+			} else if (fill.type === "linear") {
+				// Gradient fills bind variables on each stop
+				expect(fill.gradientStops.length).toBe(2);
+				for (const stop of fill.gradientStops) {
+					expect(stop.boundVariable).toBeDefined();
+					expect(stop.boundVariable.variableName).toBeDefined();
+					expect(stop.boundVariable.collectionName).toBe("semantics");
+				}
+			}
+		}
+	});
+
+	test("accent paint style uses gradient fill with 80% fill-level opacity", () => {
+		const { styles } = generateDesignSystem(defaultConfig);
+		const accentLeaf = collectStyleLeaves(styles.paint).find(
+			(l) => l.path === "semantics/shadcn/accent",
+		);
+		expect(accentLeaf).toBeDefined();
+		const fill = accentLeaf!.data.fills[0];
+		expect(fill.type).toBe("linear");
+		expect(fill.opacity).toBe(0.8);
+		expect(fill.gradientStops).toHaveLength(2);
+		for (const stop of fill.gradientStops) {
+			expect(stop.boundVariable.variableName).toBe("shadcn/accent");
 		}
 	});
 
@@ -170,9 +194,11 @@ describe("generateStyles — paint", () => {
 // =========================================================================
 
 describe("generateStyles — text", () => {
-	test("text styles are nested under typography", () => {
+	test("text styles are nested under primary, secondary, tertiary", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
-		expect(styles.text).toHaveProperty("typography");
+		expect(styles.text).toHaveProperty("primary");
+		expect(styles.text).toHaveProperty("secondary");
+		expect(styles.text).toHaveProperty("tertiary");
 	});
 
 	test("text leaves have type 'text' and required font properties", () => {
@@ -187,16 +213,18 @@ describe("generateStyles — text", () => {
 		}
 	});
 
-	test("generates regular and strong variants for each typescale step", () => {
+	test("generates regular and strong variants for each typescale step per font family", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		const leaves = collectStyleLeaves(styles.text);
 		const names = leaves.map((l) => l.path);
 
-		// Default typescale: stepsUp=6 (lg…5xl) + base + stepsDown=2 (sm,xs) = 9 steps × 2 variants = 18
+		// 9 steps × 2 variants × 3 families = 54
 		const expectedSteps = ["5xl", "4xl", "3xl", "2xl", "xl", "lg", "base", "sm", "xs"];
-		for (const step of expectedSteps) {
-			expect(names).toContain(`typography/${step}`);
-			expect(names).toContain(`typography/${step}-strong`);
+		for (const family of ["primary", "secondary", "tertiary"]) {
+			for (const step of expectedSteps) {
+				expect(names).toContain(`${family}/${step}`);
+				expect(names).toContain(`${family}/${step}-strong`);
+			}
 		}
 	});
 
@@ -236,13 +264,22 @@ describe("generateStyles — text", () => {
 		}
 	});
 
-	test("text styles bind fontFamily to primary font abstraction", () => {
+	test("each font family binds to its corresponding primitive variable", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
-		const leaves = collectStyleLeaves(styles.text);
-		for (const leaf of leaves) {
-			expect(leaf.data.fontFamilyBoundVariable).toBeDefined();
-			expect(leaf.data.fontFamilyBoundVariable.variableName).toBe("font/family/primary");
-			expect(leaf.data.fontFamilyBoundVariable.collectionName).toBe("abstractions");
+		const familyMap: Record<string, string> = {
+			primary: "font/family/sans",
+			secondary: "font/family/serif",
+			tertiary: "font/family/mono",
+		};
+
+		for (const [familyKey, varName] of Object.entries(familyMap)) {
+			const leaves = collectStyleLeaves(styles.text[familyKey]);
+			expect(leaves.length).toBeGreaterThan(0);
+			for (const leaf of leaves) {
+				expect(leaf.data.fontFamilyBoundVariable).toBeDefined();
+				expect(leaf.data.fontFamilyBoundVariable.variableName).toBe(varName);
+				expect(leaf.data.fontFamilyBoundVariable.collectionName).toBe("primitives");
+			}
 		}
 	});
 
@@ -259,13 +296,13 @@ describe("generateStyles — text", () => {
 		}
 	});
 
-	test("respects custom font family", () => {
+	test("respects custom font family for primary", () => {
 		const config: BrandConfig = {
 			primary: "#3B82F6",
 			fonts: { sans: "Geist" },
 		};
 		const { styles } = generateDesignSystem(config);
-		const leaves = collectStyleLeaves(styles.text);
+		const leaves = collectStyleLeaves(styles.text.primary);
 		for (const leaf of leaves) {
 			expect(leaf.data.fontFamily).toBe("Geist");
 		}
@@ -310,9 +347,9 @@ describe("generateStyles — effect", () => {
 		}
 	});
 
-	test("blur styles have layer-blur effects", () => {
+	test("blur styles have layer-blur effects for Tailwind scale", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
-		for (const key of ["1", "2", "3", "4"]) {
+		for (const key of ["xs", "sm", "md", "lg", "xl", "2xl", "3xl"]) {
 			const blur = styles.effect.blur[key];
 			expect(blur.type).toBe("effect");
 			expect(blur.id).toBeDefined();
@@ -321,12 +358,14 @@ describe("generateStyles — effect", () => {
 		}
 	});
 
-	test("backdrop-blur has background-blur effect", () => {
+	test("backdrop-blur styles match blur scale with background-blur type", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
-		const bb = styles.effect["backdrop-blur"]["1"];
-		expect(bb.type).toBe("effect");
-		expect(bb.id).toBeDefined();
-		expect(bb.effects[0].type).toBe("background-blur");
+		for (const key of ["xs", "sm", "md", "lg", "xl", "2xl", "3xl"]) {
+			const bb = styles.effect["backdrop-blur"][key];
+			expect(bb.type).toBe("effect");
+			expect(bb.id).toBeDefined();
+			expect(bb.effects[0].type).toBe("background-blur");
+		}
 	});
 });
 
@@ -342,11 +381,11 @@ describe("generateStyles — processStyleGroup simulation", () => {
 			const leaves = collectStyleLeaves(styles[category]);
 			totalLeaves += leaves.length;
 		}
-		// Should have: paint (shadcn semantics) + text (typescale×2) + effect (7 shadow + 4 blur + 1 backdrop)
+		// Should have: paint (shadcn semantics) + text (typescale×2×3 families) + effect (7 shadow + 7 blur + 7 backdrop)
 		// Paint: at least 10 shadcn colors
-		// Text: 9 steps × 2 = 18 (with default 6 up + 2 down)
-		// Effect: 7 + 4 + 1 = 12
-		expect(totalLeaves).toBeGreaterThanOrEqual(40);
+		// Text: 9 steps × 2 variants × 3 families = 54
+		// Effect: 7 + 7 + 7 = 21
+		expect(totalLeaves).toBeGreaterThanOrEqual(85);
 	});
 
 	test("no nested object without id+type is mistakenly treated as a leaf", () => {
