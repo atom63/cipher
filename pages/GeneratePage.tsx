@@ -46,7 +46,6 @@ interface ExtractedConfig {
 	primaryColor: string;
 	secondaryColor: string | null;
 	grayName: string;
-	darkMode: boolean;
 	radiusAnchor: number;
 	fonts: FontOverrides;
 	statusColors: StatusColorOverrides;
@@ -104,13 +103,6 @@ function extractBrandConfig(
 		}
 	}
 
-	const semanticVar = variables.find(
-		(v) => v.collectionName.toLowerCase() === "semantics",
-	);
-	const darkMode = semanticVar
-		? Object.keys(semanticVar.valuesByMode).length >= 2
-		: true;
-
 	let radiusAnchor = 10;
 	const radiusVar = find("primitives", "rounded/md");
 	if (radiusVar) {
@@ -158,7 +150,6 @@ function extractBrandConfig(
 		primaryColor,
 		secondaryColor,
 		grayName,
-		darkMode,
 		radiusAnchor,
 		fonts,
 		statusColors,
@@ -208,7 +199,6 @@ export function GeneratePage() {
 	const [secondaryColor, setSecondaryColor] = useState("#10B981");
 	const [hasSecondary, setHasSecondary] = useState(false);
 	const [grayName, setGrayName] = useState("slate");
-	const [darkMode, setDarkMode] = useState(true);
 	const [radiusAnchor, setRadiusAnchor] = useState(10);
 	const [typescale, setTypescale] = useState<TypescaleConfig>({
 		...DEFAULT_TYPESCALE,
@@ -259,7 +249,6 @@ export function GeneratePage() {
 							setHasSecondary(true);
 						}
 						setGrayName(extracted.grayName);
-						setDarkMode(extracted.darkMode);
 						setRadiusAnchor(extracted.radiusAnchor);
 						if (extracted.fonts.sans || extracted.fonts.serif || extracted.fonts.mono) {
 							setFonts({
@@ -308,7 +297,7 @@ export function GeneratePage() {
 			primary: primaryColor,
 			secondary: hasSecondary ? secondaryColor : undefined,
 			grayName,
-			darkMode,
+			darkMode: true,
 			radius: radiusAnchor,
 			typescale,
 			fonts,
@@ -319,7 +308,6 @@ export function GeneratePage() {
 		secondaryColor,
 		hasSecondary,
 		grayName,
-		darkMode,
 		radiusAnchor,
 		typescale,
 		fonts,
@@ -587,19 +575,10 @@ export function GeneratePage() {
 							</FramePanel>
 						</Frame>
 
-						{/* ── Appearance ── */}
+						{/* ── Radius ── */}
 						<Frame>
-							<FrameHeader><h3 className={styles.sectionTitle}>Appearance</h3></FrameHeader>
+							<FrameHeader><h3 className={styles.sectionTitle}>Radius</h3></FrameHeader>
 							<FramePanel className={styles.sectionContent}>
-								<CheckboxWithLabel
-									checked={darkMode}
-									id="dark-mode"
-									label="Generate Light + Dark modes"
-									onChange={setDarkMode}
-								/>
-
-								<Separator />
-
 								<div className={styles.fieldGroup}>
 									<label>Radius anchor (px)</label>
 									<div className={styles.radiusAnchorRow}>
@@ -886,18 +865,16 @@ export function GeneratePage() {
 											/>
 										))}
 									</div>
-									{darkMode && (
-										<div className={styles.scaleSwatches}>
-											{generated.radixGray.dark.map((hex, i) => (
-												<div
-													className={styles.scaleSwatch}
-													key={i}
-													style={{ backgroundColor: hex }}
-													title={`${i + 1}: ${hex} (dark)`}
-												/>
-											))}
-										</div>
-									)}
+									<div className={styles.scaleSwatches}>
+										{generated.radixGray.dark.map((hex, i) => (
+											<div
+												className={styles.scaleSwatch}
+												key={i}
+												style={{ backgroundColor: hex }}
+												title={`${i + 1}: ${hex} (dark)`}
+											/>
+										))}
+									</div>
 								</div>
 							)}
 						</div>
