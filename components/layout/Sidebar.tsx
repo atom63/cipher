@@ -6,7 +6,6 @@ import {
 	LayoutGrid,
 	Palette,
 	Settings,
-	SlidersHorizontal,
 	Sparkles,
 	Upload,
 } from "lucide-react";
@@ -15,7 +14,6 @@ import styles from "./Sidebar.module.css";
 
 export type PageId =
 	| "manage"
-	| "customize"
 	| "generate"
 	| "import"
 	| "export"
@@ -41,15 +39,8 @@ interface SidebarProps {
 const menuItems: MenuItem[] = [
 	{
 		id: "generate",
-		label: "Generate",
-		icon: Sparkles,
-		enabled: true,
-		section: "features",
-	},
-	{
-		id: "customize",
 		label: "Customize",
-		icon: SlidersHorizontal,
+		icon: Sparkles,
 		enabled: true,
 		section: "features",
 	},

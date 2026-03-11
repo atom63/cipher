@@ -93,6 +93,32 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			break;
 		}
 
+		case "get-available-fonts": {
+			try {
+				const fonts = await figma.listAvailableFontsAsync();
+				// Deduplicate by family name
+				const seen = new Set<string>();
+				const families: string[] = [];
+				for (const f of fonts) {
+					if (!seen.has(f.fontName.family)) {
+						seen.add(f.fontName.family);
+						families.push(f.fontName.family);
+					}
+				}
+				families.sort((a, b) => a.localeCompare(b));
+				figma.ui.postMessage({
+					type: "available-fonts",
+					data: { fonts: families },
+				});
+			} catch (e) {
+				figma.ui.postMessage({
+					type: "available-fonts",
+					data: { fonts: [] },
+				});
+			}
+			break;
+		}
+
 		case "get-styles": {
 			const paintStyles = figma.getLocalPaintStyles();
 			const textStyles = figma.getLocalTextStyles();

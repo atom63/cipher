@@ -265,6 +265,63 @@ function toVarName(
 }
 
 // ============================================================================
+// FONT STACK ENRICHMENT
+// ============================================================================
+
+/** Generic fallback stacks by category */
+const FONT_FALLBACKS: Record<string, string> = {
+	sans: "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+	serif: "ui-serif, Georgia, Cambria, \"Times New Roman\", Times, serif",
+	mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+};
+
+/**
+ * Detect the font category from a font name.
+ * Uses the variable path (e.g., font/family/sans) if available,
+ * otherwise infers from common font name patterns.
+ */
+function detectFontCategory(variableName: string, fontName: string): keyof typeof FONT_FALLBACKS | null {
+	const lower = variableName.toLowerCase();
+	// Check variable path first (most reliable)
+	if (lower.includes("/sans") || lower.includes("/primary")) return "sans";
+	if (lower.includes("/serif") || lower.includes("/secondary")) return "serif";
+	if (lower.includes("/mono") || lower.includes("/tertiary")) return "mono";
+
+	// Infer from font name
+	const nameLower = fontName.toLowerCase();
+	const monoPatterns = ["mono", "code", "consolas", "menlo", "courier", "fira code", "jetbrains", "source code", "ibm plex mono"];
+	const serifPatterns = ["serif", "georgia", "garamond", "palatino", "times", "playfair", "merriweather", "lora", "pt serif", "noto serif", "source serif"];
+
+	if (monoPatterns.some(p => nameLower.includes(p))) return "mono";
+	if (serifPatterns.some(p => nameLower.includes(p))) return "serif";
+
+	// Default to sans for everything else
+	return "sans";
+}
+
+/**
+ * Enrich a bare font name with proper CSS font stack fallbacks.
+ * "Inter" → '"Inter", ui-sans-serif, system-ui, sans-serif, ...'
+ */
+function toFontStack(fontName: string, variableName: string): string {
+	const category = detectFontCategory(variableName, fontName);
+	if (!category) return `"${fontName}"`;
+
+	const fallbacks = FONT_FALLBACKS[category];
+	// Quote the font name if it contains spaces, otherwise still quote for consistency
+	const quoted = `"${fontName}"`;
+	return `${quoted}, ${fallbacks}`;
+}
+
+/**
+ * Check if a variable represents a font family token.
+ */
+function isFontFamilyVariable(variableName: string): boolean {
+	const lower = variableName.toLowerCase();
+	return lower.startsWith("font/family/") || lower.startsWith("font-family/");
+}
+
+// ============================================================================
 // VALUE CONVERSION
 // ============================================================================
 
@@ -337,6 +394,9 @@ function valueToCSS(
 			return `${value}px`;
 		}
 		case "STRING":
+			if (isFontFamilyVariable(variable.name)) {
+				return toFontStack(String(value), variable.name);
+			}
 			return String(value);
 		case "BOOLEAN":
 			return String(value);

@@ -63,6 +63,11 @@ export interface GetCollectionsMessage {
 	type: "get-collections";
 }
 
+/** Request list of available fonts from Figma */
+export interface GetAvailableFontsMessage {
+	type: "get-available-fonts";
+}
+
 /** Request list of Figma styles grouped by category */
 export interface GetStylesMessage {
 	type: "get-styles";
@@ -633,6 +638,7 @@ export interface SaveSettingsMessage {
 export type UIToMainMessage =
 	| ParseTokensMessage
 	| GetCollectionsMessage
+	| GetAvailableFontsMessage
 	| GetStylesMessage
 	| GetVariablesMessage
 	| CreateVariablesMessage
@@ -672,6 +678,14 @@ export type UIToMainMessage =
 export interface TokensParsedMessage {
 	data: ParsedTokens;
 	type: "tokens-parsed";
+}
+
+/** List of available fonts from Figma */
+export interface AvailableFontsMessage {
+	data: {
+		fonts: string[];
+	};
+	type: "available-fonts";
 }
 
 /** List of available collections */
@@ -791,6 +805,7 @@ export interface SettingsLoadedMessage {
 /** Union of all Main thread → UI messages */
 export type MainToUIMessage =
 	| TokensParsedMessage
+	| AvailableFontsMessage
 	| CollectionsListMessage
 	| StylesListMessage
 	| VariablesListMessage

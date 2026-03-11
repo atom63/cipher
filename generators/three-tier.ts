@@ -582,6 +582,44 @@ function generateAbstractions(config: BrandConfig): DesignToken[] {
 		),
 	);
 
+	// --- Font family aliases ---
+	tokens.push(
+		makeToken(
+			"font/family/primary",
+			"{primitives.font.family.sans}",
+			"abstractions",
+			{
+				type: "string",
+				originalValue: "{primitives.font.family.sans}",
+				description: "Primary font family",
+			},
+		),
+	);
+	tokens.push(
+		makeToken(
+			"font/family/secondary",
+			"{primitives.font.family.serif}",
+			"abstractions",
+			{
+				type: "string",
+				originalValue: "{primitives.font.family.serif}",
+				description: "Secondary font family",
+			},
+		),
+	);
+	tokens.push(
+		makeToken(
+			"font/family/tertiary",
+			"{primitives.font.family.mono}",
+			"abstractions",
+			{
+				type: "string",
+				originalValue: "{primitives.font.family.mono}",
+				description: "Tertiary font family",
+			},
+		),
+	);
+
 	return tokens;
 }
 
@@ -1193,9 +1231,9 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 	// --- Text styles: primary, secondary, tertiary (each font family) ---
 	// Each family gets regular + strong variants for every typescale step
 	const fontFamilies = [
-		{ key: "primary", fontName: fontNames.sans, familyVar: "font/family/sans", collection: "primitives" },
-		{ key: "secondary", fontName: fontNames.serif, familyVar: "font/family/serif", collection: "primitives" },
-		{ key: "tertiary", fontName: fontNames.mono, familyVar: "font/family/mono", collection: "primitives" },
+		{ key: "primary", fontName: fontNames.sans, familyVar: "font/family/primary", collection: "abstractions" },
+		{ key: "secondary", fontName: fontNames.serif, familyVar: "font/family/secondary", collection: "abstractions" },
+		{ key: "tertiary", fontName: fontNames.mono, familyVar: "font/family/tertiary", collection: "abstractions" },
 	];
 
 	const textStyles: Record<string, Record<string, any>> = {};

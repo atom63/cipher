@@ -28,6 +28,8 @@ export function ProgressView({ message }: ProgressViewProps) {
 }
 
 interface SuccessViewProps {
+	actionLabel?: string;
+	actionLabelPast?: string;
 	changes?: Array<{
 		name: string;
 		type: string;
@@ -46,6 +48,8 @@ interface SuccessViewProps {
 }
 
 export function SuccessView({
+	actionLabel,
+	actionLabelPast,
 	success,
 	failed,
 	errors,
@@ -59,8 +63,8 @@ export function SuccessView({
 	const hasErrors = errors.length > 0;
 	const allFailed = success === 0 && failed > 0;
 	const isOverrideMode = importMode === "override";
-	const actionVerb = isOverrideMode ? "Override" : "Import";
-	const actionVerbPast = isOverrideMode ? "overridden" : "imported";
+	const actionVerb = actionLabel ?? (isOverrideMode ? "Override" : "Import");
+	const actionVerbPast = actionLabelPast ?? (isOverrideMode ? "overridden" : "imported");
 
 	// Categorize changes for display
 	const changedTokens = changes.filter((c) => c.action === "updated");

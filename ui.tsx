@@ -19,7 +19,6 @@ import {
 import { TooltipPortal } from "./components/ui/Tooltip";
 import { useDebugMode } from "./hooks/useDebugMode";
 import { useFigmaMessage, usePostMessage } from "./hooks/useFigmaMessage";
-import { CustomizePage } from "./pages/CustomizePage";
 import { ExportPage } from "./pages/ExportPage";
 import { GeneratePage } from "./pages/GeneratePage";
 import { ImportPage } from "./pages/ImportPage";
@@ -70,12 +69,6 @@ function App() {
 				return (
 					<PageErrorBoundary pageName="Manage">
 						<ManageTabsPage onNavigate={(page) => setActivePage(page as PageId)} />
-					</PageErrorBoundary>
-				);
-			case "customize":
-				return (
-					<PageErrorBoundary pageName="Customize">
-						<CustomizePage />
 					</PageErrorBoundary>
 				);
 			case "generate":

@@ -196,6 +196,123 @@
 	color: var(--muted-foreground);
 }
 
+/* Font select dropdown */
+.fontSelect {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+}
+
+.fontSelectTrigger {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	height: var(--size-8);
+	padding: 0 var(--spacing-sm) 0 var(--spacing-md);
+	background: var(--background);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	font-size: var(--text-sm);
+	color: var(--foreground);
+	cursor: pointer;
+	transition: border-color 150ms;
+}
+
+.fontSelectTrigger:hover {
+	border-color: var(--border-hover, var(--muted-foreground));
+}
+
+.fontSelectTrigger:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: -1px;
+}
+
+.fontSelectValue {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.fontSelectChevron {
+	flex-shrink: 0;
+	color: var(--muted-foreground);
+}
+
+.fontSelectDropdown {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	right: 0;
+	z-index: 50;
+	background: var(--popover, var(--background));
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+	overflow: hidden;
+}
+
+.fontSelectSearch {
+	padding: var(--spacing-xs);
+	border-bottom: 1px solid var(--border);
+}
+
+.fontSelectInput {
+	width: 100%;
+	height: var(--size-7);
+	padding: 0 var(--spacing-sm);
+	background: transparent;
+	border: none;
+	font-size: var(--text-sm);
+	color: var(--foreground);
+	outline: none;
+}
+
+.fontSelectInput::placeholder {
+	color: var(--muted-foreground);
+}
+
+.fontSelectList {
+	max-height: 200px;
+	overflow-y: auto;
+	padding: var(--spacing-xs);
+}
+
+.fontSelectItem {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: var(--spacing-xs) var(--spacing-sm);
+	background: none;
+	border: none;
+	border-radius: var(--radius-sm);
+	font-size: var(--text-sm);
+	color: var(--foreground);
+	cursor: pointer;
+	text-align: left;
+}
+
+.fontSelectItem:hover {
+	background: var(--accent, var(--muted));
+}
+
+.fontSelectItem[data-selected="true"] {
+	color: var(--primary);
+}
+
+.fontSelectItem svg {
+	flex-shrink: 0;
+	color: var(--primary);
+}
+
+.fontSelectEmpty {
+	padding: var(--spacing-md);
+	text-align: center;
+	font-size: var(--text-sm);
+	color: var(--muted-foreground);
+}
+
 /* Preview step */
 .previewSection {
 	display: flex;
