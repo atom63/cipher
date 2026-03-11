@@ -87,7 +87,9 @@ export function TooltipPortal() {
 		color: "var(--background)",
 		background: "var(--foreground)",
 		borderRadius: "var(--radius-sm)",
+		boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
 		pointerEvents: "none",
+		animation: "tooltip-in 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
 		...(tip.pos === "bottom"
 			? { left: tip.x, top: tip.y, transform: "translateX(-50%)" }
 			: tip.pos === "right"

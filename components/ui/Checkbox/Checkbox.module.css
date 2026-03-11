@@ -43,7 +43,7 @@
     background-color var(--transition),
     border-color var(--transition),
     box-shadow var(--transition),
-    transform 0.1s ease;
+    transform var(--transition);
 }
 
 /* Hover state */
@@ -142,7 +142,7 @@
 }
 
 .checkboxWrapper.sm .checkboxBox {
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .checkboxWrapper.lg .checkboxBox,
@@ -152,7 +152,7 @@
 }
 
 .checkboxWrapper.lg .checkboxBox {
-  border-radius: 5px;
+  border-radius: var(--radius);
 }
 
 /* ============================================

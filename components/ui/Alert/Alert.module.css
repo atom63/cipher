@@ -1,29 +1,42 @@
-/* Alert Component */
+/* ============================================
+   ALERT COMPONENT
+   ============================================ */
+
 .alert {
   display: flex;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--text-sm);
   line-height: 1.5;
   border: 1px solid;
   border-radius: var(--radius-md);
-  transition: all var(--transition);
+  animation: alert-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    background-color var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
-/* Alert Icon */
+/* --- Icon --- */
+
 .alertIcon {
   display: flex;
   flex-shrink: 0;
-  align-items: flex-start;
-  padding-top: 2px;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: var(--radius-sm);
 }
 
-/* Alert Content */
+/* --- Content --- */
+
 .alertContent {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-2xs);
 }
 
 .alertTitle {
@@ -35,13 +48,19 @@
 .alertDescription {
   font-size: var(--text-sm);
   line-height: 1.5;
+  color: inherit;
+  opacity: 0.85;
 }
 
-/* Variants - Compatible with OKLCH colors */
+/* ============================================
+   VARIANTS
+   ============================================ */
+
 .info {
   color: var(--foreground);
-  background-color: color-mix(in oklch, var(--info), transparent 90%);
-  border-color: color-mix(in oklch, var(--info), transparent 70%);
+  background: color-mix(in oklch, var(--info) 6%, transparent);
+  border-color: color-mix(in oklch, var(--info) 20%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--info) 4%, transparent);
 }
 
 .info .alertIcon {
@@ -50,8 +69,9 @@
 
 .success {
   color: var(--foreground);
-  background-color: color-mix(in oklch, var(--success), transparent 90%);
-  border-color: color-mix(in oklch, var(--success), transparent 70%);
+  background: color-mix(in oklch, var(--success) 6%, transparent);
+  border-color: color-mix(in oklch, var(--success) 20%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--success) 4%, transparent);
 }
 
 .success .alertIcon {
@@ -60,8 +80,9 @@
 
 .warning {
   color: var(--foreground);
-  background-color: color-mix(in oklch, var(--warning), transparent 90%);
-  border-color: color-mix(in oklch, var(--warning), transparent 70%);
+  background: color-mix(in oklch, var(--warning) 6%, transparent);
+  border-color: color-mix(in oklch, var(--warning) 20%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--warning) 4%, transparent);
 }
 
 .warning .alertIcon {
@@ -70,11 +91,32 @@
 
 .error {
   color: var(--foreground);
-  background-color: color-mix(in oklch, var(--destructive), transparent 90%);
-  border-color: color-mix(in oklch, var(--destructive), transparent 70%);
+  background: color-mix(in oklch, var(--destructive) 6%, transparent);
+  border-color: color-mix(in oklch, var(--destructive) 20%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--destructive) 4%, transparent);
 }
 
 .error .alertIcon {
   color: var(--destructive);
 }
 
+/* ============================================
+   ANIMATION
+   ============================================ */
+
+@keyframes alert-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alert {
+    animation: none;
+  }
+}

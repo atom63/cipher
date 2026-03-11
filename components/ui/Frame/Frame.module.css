@@ -1,26 +1,33 @@
+/* ============================================
+   FRAME COMPONENT
+   ============================================ */
+
 .frame {
-	display: flex;
-	flex-direction: column;
-	padding: var(--spacing-2xs);
-	background: color-mix(in oklch, var(--muted) 72%, transparent);
-	border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-2xs);
+  background: color-mix(in oklch, var(--muted) 72%, transparent);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition);
 }
 
 .panel {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-lg);
-	padding: var(--spacing-md);
-	background: var(--background);
-	border: 0px solid var(--border);
-	border-radius: calc(var(--radius-md) - var(--spacing-2xs));
-	box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--background);
+  border: 0px solid var(--border);
+  border-radius: calc(var(--radius-md) - var(--spacing-2xs));
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
 }
 
 .header,
 .footer {
-	display: flex;
-	gap: var(--spacing-sm);
-	align-items: center;
-	padding: var(--spacing-xs) var(--spacing-sm);
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
 }

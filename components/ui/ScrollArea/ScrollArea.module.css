@@ -33,7 +33,7 @@
 .root {
 	scrollbar-color: transparent transparent;
 	scrollbar-width: thin;
-	transition: scrollbar-color 0.2s ease;
+	transition: scrollbar-color var(--transition);
 }
 
 .root:hover,
@@ -55,7 +55,7 @@
 .root::-webkit-scrollbar-thumb {
 	background: transparent;
 	border-radius: 3px;
-	transition: background 0.2s ease;
+	transition: background var(--transition);
 }
 
 .root:hover::-webkit-scrollbar-thumb,

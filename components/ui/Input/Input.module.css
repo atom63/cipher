@@ -1,5 +1,5 @@
 /* ============================================
-   INPUT COMPONENT - Enhanced Design
+   INPUT COMPONENT
    ============================================ */
 
 /* Wrapper */
@@ -76,11 +76,13 @@
 /* Hover state */
 .inputWrapper:hover:not([data-disabled="true"]) {
   border-color: var(--muted-foreground);
+  background: color-mix(in oklch, var(--foreground) 1.5%, var(--background));
 }
 
 /* Focus state */
 .inputWrapper:focus-within {
   border-color: var(--primary);
+  background: var(--background);
   box-shadow:
     0 0 0 2px var(--background),
     0 0 0 4px var(--ring);
@@ -136,7 +138,7 @@
 
 .input::placeholder {
   color: var(--muted-foreground);
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .input:disabled {
@@ -165,6 +167,11 @@
   align-items: center;
   justify-content: center;
   color: var(--muted-foreground);
+  transition: color var(--transition);
+}
+
+.inputWrapper:focus-within .leftIcon {
+  color: var(--foreground);
 }
 
 .leftIcon {

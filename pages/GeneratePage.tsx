@@ -1,12 +1,12 @@
-import { ArrowLeft, Check, ChevronDown, ClipboardCopy, RefreshCw, Sparkles, Wand2 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, ClipboardCopy, RefreshCw, Wand2 } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
 import {
 	Frame,
 	FrameHeader,
 	FramePanel,
 	LoadingState,
-	ScrollArea,
 	SectionHeader,
 	Separator,
 	useToast,
@@ -20,9 +20,9 @@ import { RADIX_GRAYS } from "../generators/radix-grays";
 import {
 	type BrandConfig,
 	type GeneratedSystem,
-	type StatusColorOverrides,
 	generateCss,
 	generateDesignSystem,
+	type StatusColorOverrides,
 } from "../generators/three-tier";
 import {
 	computeTypescale,
@@ -33,21 +33,21 @@ import {
 } from "../generators/token-presets";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
 import type { CollectionInfo, VariableInfo } from "../types/messages";
-import type { DesignToken, ImportResults } from "../types/tokens";
+import type { ImportResults } from "../types/tokens";
 import styles from "./GeneratePage.module.css";
 
-type ViewState = "loading" | "config" | "preview" | "progress" | "success";
+type ViewState = "loading" | "config" | "progress" | "success";
 
 // ---------------------------------------------------------------------------
 // Extract BrandConfig from existing Figma variables
 // ---------------------------------------------------------------------------
 
 interface ExtractedConfig {
-	primaryColor: string;
-	secondaryColor: string | null;
-	grayName: string;
-	radiusAnchor: number;
 	fonts: FontOverrides;
+	grayName: string;
+	primaryColor: string;
+	radiusAnchor: number;
+	secondaryColor: string | null;
 	statusColors: StatusColorOverrides;
 }
 
@@ -157,34 +157,6 @@ function extractBrandConfig(
 }
 
 // ---------------------------------------------------------------------------
-// Token type grouping
-// ---------------------------------------------------------------------------
-
-function getTokenTypeGroup(type: string): string {
-	switch (type) {
-		case "color":
-			return "Colors";
-		case "spacing":
-			return "Spacing";
-		case "borderRadius":
-			return "Radius";
-		case "boxShadow":
-			return "Shadows";
-		case "fontSize":
-		case "lineHeight":
-			return "Typography";
-		case "fontFamily":
-		case "fontWeight":
-			return "Fonts";
-		case "duration":
-			return "Durations";
-		default:
-			if (type === "number") return "Typography";
-			return "Other";
-	}
-}
-
-// ---------------------------------------------------------------------------
 // GeneratePage — unified create + update
 // ---------------------------------------------------------------------------
 
@@ -273,7 +245,7 @@ export function GeneratePage() {
 				}
 				if (msg.type === "error") {
 					const errData = msg.data as { message?: string } | undefined;
-					showError(errData?.message || "Operation failed");
+					showError(errData?.message || "Failed to generate — check your settings and try again");
 					setView("config");
 				}
 			},
@@ -399,14 +371,14 @@ export function GeneratePage() {
 							isUpdate ? (
 								<Button onClick={handleRefresh} size="sm" variant="ghost">
 									<RefreshCw size={14} />
-									Reload
+									Sync from Figma
 								</Button>
 							) : undefined
 						}
 						description={
 							isUpdate
-								? "Modify your design system and update in Figma"
-								: "Create a complete token system from your brand colors"
+								? "Modify your design system and update variables in Figma"
+								: "Create a complete design system from your brand colors"
 						}
 						title="Design System"
 						variant="primary"
@@ -457,7 +429,7 @@ export function GeneratePage() {
 									<CheckboxWithLabel
 										checked={hasSecondary}
 										id="has-secondary"
-										label="Accent secondary color"
+										label="Include secondary color"
 										onChange={setHasSecondary}
 									/>
 									{hasSecondary && (
@@ -541,9 +513,8 @@ export function GeneratePage() {
 						</Frame>
 
 						{/* ── Status Colors ── */}
-						<Frame>
-							<FrameHeader><h3 className={styles.sectionTitle}>Status Colors</h3></FrameHeader>
-							<FramePanel className={styles.sectionContent}>
+						<details className={styles.detailsSection}>
+							<summary className={styles.detailsSummary}>Status Colors</summary>
 								<div className={styles.statusColorGrid}>
 									{(
 										[
@@ -583,8 +554,7 @@ export function GeneratePage() {
 										</div>
 									))}
 								</div>
-							</FramePanel>
-						</Frame>
+						</details>
 
 						{/* ── Radius ── */}
 						<Frame>
@@ -606,7 +576,7 @@ export function GeneratePage() {
 											value={radiusAnchor}
 										/>
 										<span className={styles.hint}>
-											Base "lg" — other sizes derived via offsets
+											Base size — smaller and larger steps are generated automatically
 										</span>
 									</div>
 									{generated?.radiusScale && (
@@ -640,51 +610,6 @@ export function GeneratePage() {
 													setTypescale({ ...typescale, base: v })
 												}
 												value={typescale.base}
-											/>
-										</div>
-										<div className={styles.optionGroup}>
-											<label>Body line height (%)</label>
-											<NumberField
-												max={200}
-												min={100}
-												onBlur={() =>
-													setTypescale({
-														...typescale,
-														lineHeightBody: Math.min(
-															200,
-															Math.max(100, typescale.lineHeightBody || 150),
-														),
-													})
-												}
-												onChange={(v) =>
-													setTypescale({ ...typescale, lineHeightBody: v })
-												}
-												step={5}
-												value={typescale.lineHeightBody}
-											/>
-										</div>
-										<div className={styles.optionGroup}>
-											<label>Heading line height (%)</label>
-											<NumberField
-												max={175}
-												min={100}
-												onBlur={() =>
-													setTypescale({
-														...typescale,
-														lineHeightHeading: Math.min(
-															175,
-															Math.max(
-																100,
-																typescale.lineHeightHeading || 125,
-															),
-														),
-													})
-												}
-												onChange={(v) =>
-													setTypescale({ ...typescale, lineHeightHeading: v })
-												}
-												step={5}
-												value={typescale.lineHeightHeading}
 											/>
 										</div>
 									</div>
@@ -795,119 +720,28 @@ export function GeneratePage() {
 						</Frame>
 
 					</div>
-				</div>
-				<div className={styles.actions}>
-					<Button
-						disabled={!generated}
-						onClick={() => setView("preview")}
-						variant="primary"
-					>
-						<Sparkles size={14} />
-						Preview
-					</Button>
-				</div>
-			</div>
-		);
-	}
 
-	// ---- Preview ----
-	if (view === "preview" && generated) {
-		return (
-			<div className={styles.page}>
-				<div className={styles.pageBody}>
-					<SectionHeader
-						description={
-							isUpdate
-								? `${generated.stats.totalCount} tokens will be updated`
-								: `${generated.stats.totalCount} tokens across 4 collections`
-						}
-						title="Preview"
-						variant="primary"
-					/>
-
-					<div className={styles.previewSection}>
-						{/* Stats bar */}
+					{/* Live summary */}
+					{generated && (
 						<div className={styles.statsBar}>
 							<div className={styles.statItem}>
-								<strong>{generated.stats.primitiveCount}</strong> primitives
+								<strong>{generated.stats.totalCount}</strong> variables
 							</div>
 							<div className={styles.statItem}>
-								<strong>{generated.stats.abstractionCount}</strong>{" "}
-								abstractions
+								<strong>{generated.stats.primitiveCount}</strong> primitives
 							</div>
 							<div className={styles.statItem}>
 								<strong>{generated.stats.semanticCount}</strong> semantics
 							</div>
 						</div>
-
-						{/* Color scale previews */}
-						<div className={styles.scalePreview}>
-							{generated.primitives.map((scale) => (
-								<div className={styles.scaleRow} key={scale.name}>
-									<span className={styles.scaleLabel}>{scale.name}</span>
-									<div className={styles.scaleSwatches}>
-										{SHADE_STEPS.map((step) => (
-											<div
-												className={styles.scaleSwatch}
-												key={step}
-												style={{
-													backgroundColor: scale.hexValues[step],
-												}}
-												title={`${step}: ${scale.hexValues[step]}`}
-											/>
-										))}
-									</div>
-								</div>
-							))}
-
-							{/* Radix gray scale (1-12) */}
-							{generated.radixGray && (
-								<div className={styles.scaleRow}>
-									<span className={styles.scaleLabel}>
-										{generated.radixGray.name} (surface)
-									</span>
-									<div className={styles.scaleSwatches}>
-										{generated.radixGray.light.map((hex, i) => (
-											<div
-												className={styles.scaleSwatch}
-												key={i}
-												style={{ backgroundColor: hex }}
-												title={`${i + 1}: ${hex}`}
-											/>
-										))}
-									</div>
-									<div className={styles.scaleSwatches}>
-										{generated.radixGray.dark.map((hex, i) => (
-											<div
-												className={styles.scaleSwatch}
-												key={i}
-												style={{ backgroundColor: hex }}
-												title={`${i + 1}: ${hex} (dark)`}
-											/>
-										))}
-									</div>
-								</div>
-							)}
-						</div>
-
-						{/* Radius preview */}
-						<RadiusPreview scale={generated.radiusScale} />
-
-						{/* Token list */}
-						<TokenPreviewList generated={generated} />
-
-					</div>
+					)}
 				</div>
 				<div className={styles.actions}>
-					<Button onClick={() => setView("config")} variant="ghost">
-						<ArrowLeft size={14} />
-						Back
-					</Button>
-					<Button onClick={handleCopyCss} variant="ghost">
+					<Button disabled={!generated} onClick={handleCopyCss} variant="ghost">
 						<ClipboardCopy size={14} />
 						Copy CSS
 					</Button>
-					<Button onClick={handleSubmit} variant="primary">
+					<Button disabled={!generated} onClick={handleSubmit} variant="primary">
 						<Wand2 size={14} />
 						{isUpdate ? "Update in Figma" : "Create in Figma"}
 					</Button>
@@ -1001,102 +835,6 @@ function TypescalePreview({ config }: { config: TypescaleConfig }) {
 	);
 }
 
-// --- Token preview list component ---
-
-const TOKEN_TYPE_ORDER = [
-	"Colors",
-	"Spacing",
-	"Radius",
-	"Shadows",
-	"Typography",
-	"Fonts",
-	"Durations",
-	"Other",
-] as const;
-
-function TokenPreviewList({ generated }: { generated: GeneratedSystem }) {
-	const [expanded, setExpanded] = useState(false);
-	const limit = expanded ? generated.tokens.length : 20;
-
-	const groupedCategories = useMemo(() => {
-		const categories = ["primitives", "abstractions", "semantics"] as const;
-		return categories
-			.map((cat) => {
-				const catTokens = generated.tokens.filter((t) => t.category === cat);
-				if (catTokens.length === 0) return null;
-
-				const seen = new Set<string>();
-				const unique = catTokens.filter((t) => {
-					if (seen.has(t.figmaName)) return false;
-					seen.add(t.figmaName);
-					return true;
-				});
-
-				const grouped = new Map<string, typeof unique>();
-				for (const token of unique) {
-					const group = getTokenTypeGroup(token.type);
-					const arr = grouped.get(group) ?? [];
-					if (!grouped.has(group)) grouped.set(group, arr);
-					arr.push(token);
-				}
-
-				const sortedGroups = TOKEN_TYPE_ORDER.filter((g) => grouped.has(g)).map(
-					(g) => ({ group: g, tokens: grouped.get(g) ?? [] }),
-				);
-
-				return { cat, unique, sortedGroups };
-			})
-			.filter(Boolean) as {
-			cat: string;
-			unique: DesignToken[];
-			sortedGroups: { group: string; tokens: DesignToken[] }[];
-		}[];
-	}, [generated.tokens]);
-
-	const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
-
-	return (
-		<ScrollArea className={styles.tokenPreviewList}>
-			{groupedCategories.map(({ cat, unique, sortedGroups }) => (
-				<div key={cat}>
-					<div className={styles.tokenCategoryHeader}>
-						{cat} ({unique.length})
-					</div>
-					{sortedGroups.map(({ group, tokens: groupTokens }) => {
-						const displayed = groupTokens.slice(0, limit);
-						return (
-							<div key={group}>
-								{sortedGroups.length > 1 && (
-									<div className={styles.tokenSubgroupHeader}>
-										{group} ({groupTokens.length})
-									</div>
-								)}
-								{displayed.map((token) => (
-									<div className={styles.tokenRow} key={token.id}>
-										<TokenIndicator token={token} />
-										<span className={styles.tokenName}>{token.figmaName}</span>
-										<span className={styles.tokenValue}>
-											{token.originalValue}
-										</span>
-									</div>
-								))}
-							</div>
-						);
-					})}
-				</div>
-			))}
-
-			{generated.tokens.length > 40 && (
-				<Button onClick={toggleExpanded} size="sm" variant="ghost">
-					{expanded
-						? "Show less"
-						: `Show all ${generated.tokens.length} tokens`}
-				</Button>
-			)}
-		</ScrollArea>
-	);
-}
-
 // --- Searchable font picker ---
 
 function FontSelect({
@@ -1178,7 +916,7 @@ function FontSelect({
 					</div>
 					<div className={styles.fontSelectList} ref={listRef}>
 						{filtered.length === 0 && (
-							<div className={styles.fontSelectEmpty}>No fonts found</div>
+							<div className={styles.fontSelectEmpty}>No matching fonts — try a different search</div>
 						)}
 						{filtered.map((font) => (
 							<button
@@ -1199,31 +937,3 @@ function FontSelect({
 	);
 }
 
-// --- Token indicator dot ---
-
-const NON_COLOR_DOT_STYLE = {
-	backgroundColor: "transparent",
-	border: "1px dashed var(--border)",
-} as const;
-
-const TokenIndicator = React.memo(function TokenIndicator({
-	token,
-}: {
-	token: Pick<DesignToken, "type" | "value">;
-}) {
-	if (
-		token.type === "color" &&
-		typeof token.value === "object" &&
-		"r" in token.value
-	) {
-		return (
-			<div
-				className={styles.tokenColorDot}
-				style={{
-					backgroundColor: `rgb(${Math.round(token.value.r * 255)}, ${Math.round(token.value.g * 255)}, ${Math.round(token.value.b * 255)})`,
-				}}
-			/>
-		);
-	}
-	return <div className={styles.tokenColorDot} style={NON_COLOR_DOT_STYLE} />;
-});
