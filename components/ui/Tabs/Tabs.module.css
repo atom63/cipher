@@ -20,13 +20,10 @@
   align-items: center;
   width: fit-content;
   padding: 3px;
-  color: color-mix(in oklch, var(--muted-foreground) 64%, transparent);
-  background: color-mix(in oklch, var(--foreground) 5%, var(--muted));
-  border: 1px solid color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: color-mix(in oklch, var(--muted-foreground) 72%, transparent);
+  background: color-mix(in oklch, var(--foreground) 3%, var(--muted));
   border-radius: var(--radius-md);
-  box-shadow:
-    inset 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent),
-    inset 0 0 0 0.5px color-mix(in srgb, var(--foreground) 3%, transparent);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent);
 }
 
 /* Small size list */
@@ -46,11 +43,8 @@
   z-index: -1;
   pointer-events: none;
   background: var(--background);
-  border: 1px solid color-mix(in srgb, var(--foreground) 6%, transparent);
-  border-radius: calc(var(--radius-sm) + 0.5px);
-  box-shadow:
-    0 1px 3px color-mix(in srgb, var(--foreground) 8%, transparent),
-    0 0.5px 0 color-mix(in srgb, white 60%, transparent) inset;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
   transition:
     left var(--transition),
     width var(--transition);
@@ -103,7 +97,6 @@
 
 .tab.active {
   color: var(--foreground);
-  font-weight: var(--font-semibold);
 }
 
 /* ============================================
@@ -164,7 +157,7 @@
 @keyframes tabFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(-2px);
   }
   to {
     opacity: 1;

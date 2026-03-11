@@ -612,6 +612,46 @@ export function GeneratePage() {
 												value={typescale.base}
 											/>
 										</div>
+										<div className={styles.optionGroup}>
+											<label>Body LH (%)</label>
+											<NumberField
+												max={200}
+												min={100}
+												onBlur={() =>
+													setTypescale({
+														...typescale,
+														lineHeightBody: Math.min(
+															200,
+															Math.max(100, typescale.lineHeightBody || 150),
+														),
+													})
+												}
+												onChange={(v) =>
+													setTypescale({ ...typescale, lineHeightBody: v })
+												}
+												value={typescale.lineHeightBody}
+											/>
+										</div>
+										<div className={styles.optionGroup}>
+											<label>Heading LH (%)</label>
+											<NumberField
+												max={200}
+												min={100}
+												onBlur={() =>
+													setTypescale({
+														...typescale,
+														lineHeightHeading: Math.min(
+															200,
+															Math.max(100, typescale.lineHeightHeading || 125),
+														),
+													})
+												}
+												onChange={(v) =>
+													setTypescale({ ...typescale, lineHeightHeading: v })
+												}
+												value={typescale.lineHeightHeading}
+											/>
+										</div>
 									</div>
 
 									<div className={styles.optionGroup}>
@@ -677,7 +717,6 @@ export function GeneratePage() {
 												value={typescale.stepsDown}
 											/>
 										</div>
-										<div className={styles.optionGroup} />
 									</div>
 								</div>
 
@@ -721,20 +760,6 @@ export function GeneratePage() {
 
 					</div>
 
-					{/* Live summary */}
-					{generated && (
-						<div className={styles.statsBar}>
-							<div className={styles.statItem}>
-								<strong>{generated.stats.totalCount}</strong> variables
-							</div>
-							<div className={styles.statItem}>
-								<strong>{generated.stats.primitiveCount}</strong> primitives
-							</div>
-							<div className={styles.statItem}>
-								<strong>{generated.stats.semanticCount}</strong> semantics
-							</div>
-						</div>
-					)}
 				</div>
 				<div className={styles.actions}>
 					<Button disabled={!generated} onClick={handleCopyCss} variant="ghost">
