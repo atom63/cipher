@@ -6,6 +6,8 @@ import type { ColorValue, DesignToken } from "../types/tokens";
 import {
 	type ColorScale,
 	generateColorScale,
+	generateNeutralScale,
+	type NeutralScale,
 	rgbToHex,
 	SHADE_STEPS,
 } from "./color-scale";
@@ -38,7 +40,15 @@ import {
 export interface BrandConfig {
 	/** Custom font name overrides (prepended to system fallback stacks) */
 	fonts?: FontOverrides;
-	/** Neutral gray palette name — matches a Radix gray preset (default: "slate") */
+	/** Surface color tone for dark mode — Radix preset name or hex color (default: same as grayLight) */
+	grayDark?: string;
+	/** Custom hex for dark surface generation (overrides grayDark preset) */
+	grayDarkHex?: string;
+	/** Surface color tone for light mode — Radix preset name or hex color (default: "slate") */
+	grayLight?: string;
+	/** Custom hex for light surface generation (overrides grayLight preset) */
+	grayLightHex?: string;
+	/** @deprecated Use grayLight instead. Kept for backwards compatibility */
 	grayName?: string;
 	/** Primary brand color (hex) */
 	primary: string;
@@ -60,12 +70,16 @@ export interface StatusColorOverrides {
 }
 
 export interface GeneratedSystem {
+	/** Generated neutral scales (custom hex or null if using Radix preset) */
+	neutralScaleDark: NeutralScale | null;
+	neutralScaleLight: NeutralScale | null;
 	/** Color scale data for preview UI (brand, secondary, etc.) */
 	primitives: ColorScale[];
 	/** Computed radius scale (t-shirt sizes -> px) */
 	radiusScale: Record<string, number>;
-	/** The selected Radix gray palette (null if name didn't match) */
-	radixGray: RadixGrayScale | null;
+	/** The selected Radix gray palettes for light and dark modes (null if custom hex) */
+	radixGrayDark: RadixGrayScale | null;
+	radixGrayLight: RadixGrayScale | null;
 	stats: {
 		primitiveCount: number;
 		abstractionCount: number;
@@ -136,10 +150,14 @@ function makeToken(
 function generatePrimitives(config: BrandConfig): {
 	tokens: DesignToken[];
 	scales: ColorScale[];
-	radixGray: RadixGrayScale | null;
+	radixGrayLight: RadixGrayScale | null;
+	radixGrayDark: RadixGrayScale | null;
+	neutralScaleLight: NeutralScale | null;
+	neutralScaleDark: NeutralScale | null;
 } {
 	const tokens: DesignToken[] = [];
-	const grayName = config.grayName ?? "slate";
+	const grayLightName = config.grayLight ?? config.grayName ?? "slate";
+	const grayDarkName = config.grayDark ?? grayLightName;
 
 	// --- Font families (clean names for Figma variable binding) ---
 	const fontNames = resolveFontNames(config.fonts);
@@ -186,30 +204,39 @@ function generatePrimitives(config: BrandConfig): {
 		);
 	}
 
-	// --- Radix gray (color/gray/light/1-12 + color/gray/dark/1-12) ---
-	const radixGray = getRadixGray(grayName) ?? RADIX_GRAYS[0];
+	// --- Surface colors (color/gray/light/1-12 + color/gray/dark/1-12) ---
+	// Each mode can use a Radix preset OR a custom hex to generate a tinted neutral scale
+	const radixGrayLight = config.grayLightHex ? null : (getRadixGray(grayLightName) ?? RADIX_GRAYS[0]);
+	const radixGrayDark = config.grayDarkHex ? null : (getRadixGray(grayDarkName) ?? (radixGrayLight ?? RADIX_GRAYS[0]));
+	const neutralScaleLight = config.grayLightHex ? generateNeutralScale(config.grayLightHex) : null;
+	const neutralScaleDark = config.grayDarkHex ? generateNeutralScale(config.grayDarkHex) : null;
+
+	const lightColors = neutralScaleLight?.light ?? radixGrayLight?.light ?? RADIX_GRAYS[0].light;
+	const darkColors = neutralScaleDark?.dark ?? radixGrayDark?.dark ?? RADIX_GRAYS[0].dark;
+	const lightLabel = config.grayLightHex ? `Custom (${config.grayLightHex})` : (radixGrayLight?.label ?? "Gray");
+	const darkLabel = config.grayDarkHex ? `Custom (${config.grayDarkHex})` : (radixGrayDark?.label ?? "Gray");
 
 	for (let i = 0; i < 12; i++) {
 		const step = i + 1;
 		tokens.push(
 			makeToken(
 				`color/gray/light/${step}`,
-				hexToColorValue(radixGray.light[i]),
+				hexToColorValue(lightColors[i]),
 				"primitives",
 				{
-					description: `${radixGray.label} step ${step} (light)`,
-					originalValue: radixGray.light[i],
+					description: `${lightLabel} step ${step} (light)`,
+					originalValue: lightColors[i],
 				},
 			),
 		);
 		tokens.push(
 			makeToken(
 				`color/gray/dark/${step}`,
-				hexToColorValue(radixGray.dark[i]),
+				hexToColorValue(darkColors[i]),
 				"primitives",
 				{
-					description: `${radixGray.label} step ${step} (dark)`,
-					originalValue: radixGray.dark[i],
+					description: `${darkLabel} step ${step} (dark)`,
+					originalValue: darkColors[i],
 				},
 			),
 		);
@@ -468,7 +495,7 @@ function generatePrimitives(config: BrandConfig): {
 		}
 	}
 
-	return { tokens, scales, radixGray };
+	return { tokens, scales, radixGrayLight, radixGrayDark, neutralScaleLight, neutralScaleDark };
 }
 
 // =========================================================================
@@ -924,7 +951,8 @@ function generateResponsive(config: BrandConfig): DesignToken[] {
 
 export function generateCss(config: BrandConfig): string {
 	const system = generateDesignSystem(config);
-	const radixGray = system.radixGray ?? RADIX_GRAYS[0];
+	const lightGrayColors = system.neutralScaleLight?.light ?? system.radixGrayLight?.light ?? RADIX_GRAYS[0].light;
+	const darkGrayColors = system.neutralScaleDark?.dark ?? system.radixGrayDark?.dark ?? RADIX_GRAYS[0].dark;
 	const radiusScale = computeRadiusScale(
 		config.radius ?? DEFAULT_RADIUS.anchor,
 	);
@@ -1011,7 +1039,7 @@ export function generateCss(config: BrandConfig): string {
 
 	// Light mode gray
 	for (let i = 0; i < 12; i++) {
-		lines.push(`  --color-gray-${i + 1}: ${radixGray.light[i]};`);
+		lines.push(`  --color-gray-${i + 1}: ${lightGrayColors[i]};`);
 	}
 
 	// Semantic color references (light mode)
@@ -1025,7 +1053,7 @@ export function generateCss(config: BrandConfig): string {
 	lines.push(".dark {");
 
 	for (let i = 0; i < 12; i++) {
-		lines.push(`  --color-gray-${i + 1}: ${radixGray.dark[i]};`);
+		lines.push(`  --color-gray-${i + 1}: ${darkGrayColors[i]};`);
 	}
 
 	for (const def of defs) {
@@ -1256,7 +1284,10 @@ export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 	const {
 		tokens: primitiveTokens,
 		scales,
-		radixGray,
+		radixGrayLight,
+		radixGrayDark,
+		neutralScaleLight,
+		neutralScaleDark,
 	} = generatePrimitives(config);
 
 	const abstractionTokens = generateAbstractions(config);
@@ -1269,7 +1300,10 @@ export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 	return {
 		tokens,
 		primitives: scales,
-		radixGray: radixGray ?? null,
+		radixGrayLight: radixGrayLight ?? null,
+		radixGrayDark: radixGrayDark ?? null,
+		neutralScaleLight: neutralScaleLight ?? null,
+		neutralScaleDark: neutralScaleDark ?? null,
 		radiusScale: computeRadiusScale(config.radius ?? DEFAULT_RADIUS.anchor),
 		styles: generateStyles(config),
 		stats: {

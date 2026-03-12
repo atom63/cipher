@@ -135,15 +135,9 @@
 	box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 12%, transparent);
 }
 
-.grayScalePreview {
-	display: flex;
-	flex: 1;
-	flex-direction: column;
-	gap: 2px;
-	min-width: 0;
-}
-
 .grayPreview {
+	flex: 1;
+	min-width: 0;
 	display: flex;
 	gap: 1px;
 }

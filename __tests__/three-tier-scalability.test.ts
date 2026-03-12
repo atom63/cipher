@@ -322,7 +322,7 @@ describe("edge cases", () => {
 			primary: "#3B82F6",
 			grayName: "nonexistent",
 		});
-		expect(result.radixGray).not.toBeNull();
+		expect(result.radixGrayLight).not.toBeNull();
 		expect(result.tokens.length).toBeGreaterThan(0);
 	});
 

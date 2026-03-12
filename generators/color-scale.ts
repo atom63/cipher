@@ -196,3 +196,40 @@ export function generateColorScale(name: string, baseHex: string): ColorScale {
 
 	return { name, shades, hexValues };
 }
+
+// ---------------------------------------------------------------------------
+// Neutral / surface scale generator (Radix-style 12-step)
+// ---------------------------------------------------------------------------
+
+export interface NeutralScale {
+	dark: string[]; // 12 hex values
+	light: string[]; // 12 hex values
+}
+
+// Target lightness for each of the 12 Radix steps (derived from Radix slate)
+const NEUTRAL_L_LIGHT = [0.991, 0.983, 0.956, 0.932, 0.910, 0.887, 0.853, 0.794, 0.645, 0.611, 0.503, 0.241];
+const NEUTRAL_L_DARK = [0.179, 0.213, 0.252, 0.283, 0.312, 0.347, 0.399, 0.489, 0.537, 0.583, 0.769, 0.949];
+
+// Chroma per step — very low for neutrals, peaks at mid-range
+const NEUTRAL_C_LIGHT = [0.002, 0.003, 0.004, 0.006, 0.007, 0.010, 0.011, 0.016, 0.017, 0.016, 0.014, 0.010];
+const NEUTRAL_C_DARK = [0.004, 0.004, 0.006, 0.007, 0.008, 0.010, 0.012, 0.016, 0.015, 0.015, 0.010, 0.003];
+
+/**
+ * Generate a Radix-style 12-step neutral scale from a tint color.
+ * Extracts the hue from the input and applies it at very low chroma.
+ */
+export function generateNeutralScale(tintHex: string): NeutralScale {
+	const rgb = hexToRgb(tintHex);
+	const oklch = rgbToOklch(rgb.r, rgb.g, rgb.b);
+	const hue = oklch.h;
+
+	const light: string[] = [];
+	const dark: string[] = [];
+
+	for (let i = 0; i < 12; i++) {
+		light.push(rgbToHex(oklchToRgb({ l: NEUTRAL_L_LIGHT[i], c: NEUTRAL_C_LIGHT[i], h: hue })));
+		dark.push(rgbToHex(oklchToRgb({ l: NEUTRAL_L_DARK[i], c: NEUTRAL_C_DARK[i], h: hue })));
+	}
+
+	return { light, dark };
+}

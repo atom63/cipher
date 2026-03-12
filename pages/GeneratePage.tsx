@@ -45,7 +45,8 @@ type ViewState = "loading" | "config" | "progress" | "success";
 
 interface ExtractedConfig {
 	fonts: FontOverrides;
-	grayName: string;
+	grayDark: string;
+	grayLight: string;
 	primaryColor: string;
 	radiusAnchor: number;
 	secondaryColor: string | null;
@@ -118,16 +119,25 @@ function extractBrandConfig(
 		}
 	}
 
-	let grayName = "slate";
-	for (const gray of RADIX_GRAYS) {
-		const grayVar = variables.find(
-			(v) =>
-				v.collectionName.toLowerCase().startsWith("primitives") &&
-				v.name === `color/${gray.name}/1`,
-		);
-		if (grayVar) {
-			grayName = gray.name;
-			break;
+	// Detect light/dark surface tones from variable descriptions
+	let grayLight = "slate";
+	let grayDark = "slate";
+	const grayLightVar = find("primitives", "color/gray/light/1");
+	const grayDarkVar = find("primitives", "color/gray/dark/1");
+	if (grayLightVar?.description) {
+		for (const gray of RADIX_GRAYS) {
+			if (grayLightVar.description.toLowerCase().startsWith(gray.label.toLowerCase())) {
+				grayLight = gray.name;
+				break;
+			}
+		}
+	}
+	if (grayDarkVar?.description) {
+		for (const gray of RADIX_GRAYS) {
+			if (grayDarkVar.description.toLowerCase().startsWith(gray.label.toLowerCase())) {
+				grayDark = gray.name;
+				break;
+			}
 		}
 	}
 
@@ -260,7 +270,8 @@ function extractBrandConfig(
 	return {
 		primaryColor,
 		secondaryColor,
-		grayName,
+		grayLight,
+		grayDark,
 		radiusAnchor,
 		fonts,
 		statusColors,
@@ -282,7 +293,10 @@ export function GeneratePage() {
 	const [primaryColor, setPrimaryColor] = useState("#3B82F6");
 	const [secondaryColor, setSecondaryColor] = useState("#10B981");
 	const [hasSecondary, setHasSecondary] = useState(false);
-	const [grayName, setGrayName] = useState("slate");
+	const [grayLight, setGrayLight] = useState("slate");
+	const [grayDark, setGrayDark] = useState("slate");
+	const [grayLightHex, setGrayLightHex] = useState("");
+	const [grayDarkHex, setGrayDarkHex] = useState("");
 	const [radiusAnchor, setRadiusAnchor] = useState(10);
 	const [typescale, setTypescale] = useState<TypescaleConfig>({
 		...DEFAULT_TYPESCALE,
@@ -334,7 +348,8 @@ export function GeneratePage() {
 						} else {
 							setHasSecondary(false);
 						}
-						setGrayName(extracted.grayName);
+						setGrayLight(extracted.grayLight);
+						setGrayDark(extracted.grayDark);
 						setRadiusAnchor(extracted.radiusAnchor);
 						if (extracted.fonts.sans || extracted.fonts.serif || extracted.fonts.mono) {
 							setFonts({
@@ -382,10 +397,15 @@ export function GeneratePage() {
 		const hasStatusOverrides =
 			statusColors.danger || statusColors.success || statusColors.warning || statusColors.info;
 
+		const validHex = (h: string) => /^#[0-9a-fA-F]{6}$/.test(h);
+
 		return {
 			primary: primaryColor,
 			secondary: hasSecondary ? secondaryColor : undefined,
-			grayName,
+			grayLight,
+			grayDark,
+			grayLightHex: validHex(grayLightHex) ? grayLightHex : undefined,
+			grayDarkHex: validHex(grayDarkHex) ? grayDarkHex : undefined,
 			darkMode: true,
 			radius: radiusAnchor,
 			typescale,
@@ -396,7 +416,10 @@ export function GeneratePage() {
 		primaryColor,
 		secondaryColor,
 		hasSecondary,
-		grayName,
+		grayLight,
+		grayDark,
+		grayLightHex,
+		grayDarkHex,
 		radiusAnchor,
 		typescale,
 		fonts,
@@ -587,47 +610,32 @@ export function GeneratePage() {
 									)}
 								</div>
 
-								<Separator />
+							</FramePanel>
+						</Frame>
 
-								<div className={styles.fieldGroup}>
-									<label>Neutral palette</label>
-									<div className={styles.graySelector}>
-										{RADIX_GRAYS.map((g) => (
-											<button
-												aria-label={`${g.label} neutral palette`}
-												aria-pressed={grayName === g.name}
-												className={styles.grayOption}
-												data-selected={grayName === g.name}
-												key={g.name}
-												onClick={() => setGrayName(g.name)}
-												title={g.label}
-												type="button"
-											>
-												<div className={styles.grayScalePreview}>
-													<div className={styles.grayPreview}>
-														{g.light.map((hex, i) => (
-															<div
-																className={styles.grayStep}
-																key={i}
-																style={{ backgroundColor: hex }}
-															/>
-														))}
-													</div>
-													<div className={styles.grayPreview}>
-														{g.dark.map((hex, i) => (
-															<div
-																className={styles.grayStep}
-																key={i}
-																style={{ backgroundColor: hex }}
-															/>
-														))}
-													</div>
-												</div>
-												<span className={styles.grayName}>{g.name}</span>
-											</button>
-										))}
-									</div>
-								</div>
+						{/* ── Surface Colors ── */}
+						<Frame>
+							<FrameHeader><h3 className={styles.sectionTitle}>Surface Colors</h3></FrameHeader>
+							<FramePanel className={styles.sectionContent}>
+								<SurfaceToneSelector
+									customHex={grayLightHex}
+									generated={generated}
+									label="Light mode"
+									mode="light"
+									onChangeHex={setGrayLightHex}
+									onChangePreset={setGrayLight}
+									preset={grayLight}
+								/>
+								<Separator />
+								<SurfaceToneSelector
+									customHex={grayDarkHex}
+									generated={generated}
+									label="Dark mode"
+									mode="dark"
+									onChangeHex={setGrayDarkHex}
+									onChangePreset={setGrayDark}
+									preset={grayDark}
+								/>
 							</FramePanel>
 						</Frame>
 
@@ -989,6 +997,117 @@ function TypescalePreview({ config }: { config: TypescaleConfig }) {
 					</span>
 				</div>
 			))}
+		</div>
+	);
+}
+
+// --- Surface tone selector (light or dark) ---
+
+function SurfaceToneSelector({
+	label,
+	mode,
+	preset,
+	customHex,
+	generated,
+	onChangePreset,
+	onChangeHex,
+}: {
+	label: string;
+	mode: "light" | "dark";
+	preset: string;
+	customHex: string;
+	generated: GeneratedSystem | null;
+	onChangePreset: (name: string) => void;
+	onChangeHex: (hex: string) => void;
+}) {
+	const isCustom = /^#[0-9a-fA-F]{6}$/.test(customHex);
+
+	// Preview colors: custom generated scale or Radix preset
+	const previewColors = isCustom && generated
+		? (mode === "light"
+			? generated.neutralScaleLight?.light
+			: generated.neutralScaleDark?.dark)
+		: undefined;
+
+	return (
+		<div className={styles.fieldGroup}>
+			<label>{label}</label>
+			<div className={styles.colorInputRow}>
+				<input
+					aria-label={`${label} custom surface color`}
+					className={styles.colorSwatch}
+					onChange={(e) => onChangeHex(e.target.value)}
+					type="color"
+					value={isCustom ? customHex : "#888888"}
+				/>
+				<Input
+					autoComplete="off"
+					className={styles.colorHexInput}
+					maxLength={7}
+					onChange={(e) => {
+						let v = e.target.value;
+						if (!v.startsWith("#")) v = `#${v}`;
+						if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
+							onChangeHex(v.toUpperCase());
+					}}
+					placeholder="Custom hex or pick preset"
+					spellCheck={false}
+					value={customHex}
+				/>
+				{isCustom && (
+					<Button
+						onClick={() => onChangeHex("")}
+						size="sm"
+						variant="ghost"
+					>
+						Clear
+					</Button>
+				)}
+			</div>
+			{isCustom && (
+				<span className={styles.hint}>
+					Your color's hue will be used to tint a neutral surface ramp
+				</span>
+			)}
+			{previewColors && (
+				<div className={styles.grayPreview}>
+					{previewColors.map((hex, i) => (
+						<div
+							className={styles.grayStep}
+							key={i}
+							style={{ backgroundColor: hex }}
+							title={`Step ${i + 1}: ${hex}`}
+						/>
+					))}
+				</div>
+			)}
+			{!isCustom && (
+				<div className={styles.graySelector}>
+					{RADIX_GRAYS.map((g) => (
+						<button
+							aria-label={`${g.label} surface tone`}
+							aria-pressed={preset === g.name}
+							className={styles.grayOption}
+							data-selected={preset === g.name}
+							key={g.name}
+							onClick={() => onChangePreset(g.name)}
+							title={g.label}
+							type="button"
+						>
+							<div className={styles.grayPreview}>
+								{(mode === "light" ? g.light : g.dark).map((hex, i) => (
+									<div
+										className={styles.grayStep}
+										key={i}
+										style={{ backgroundColor: hex }}
+									/>
+								))}
+							</div>
+							<span className={styles.grayName}>{g.name}</span>
+						</button>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }
