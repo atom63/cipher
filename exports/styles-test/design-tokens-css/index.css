@@ -1,6 +1,6 @@
-@import "./abstractions.css";
 @import "./primitives.css";
+@import "./abstractions.css";
 @import "./semantics.css";
-@import "./shadow-tokens.css";
+@import "./effects.css";
 @import "./typescales.css";
 @import "./radius.css";

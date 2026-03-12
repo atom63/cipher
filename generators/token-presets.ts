@@ -442,32 +442,32 @@ export const SIZES_SCALE: Record<string, number> = {
 // Containers — Named max-width scale
 // =========================================================================
 
-export const CONTAINER_SCALE: Record<string, string> = {
-	"3xs": "256px",
-	"2xs": "288px",
-	xs: "320px",
-	sm: "384px",
-	md: "448px",
-	lg: "512px",
-	xl: "576px",
-	"2xl": "672px",
-	"3xl": "768px",
-	"4xl": "896px",
-	"5xl": "1024px",
-	"6xl": "1152px",
-	"7xl": "1280px",
+export const CONTAINER_SCALE: Record<string, number> = {
+	"3xs": 256,
+	"2xs": 288,
+	xs: 320,
+	sm: 384,
+	md: 448,
+	lg: 512,
+	xl: 576,
+	"2xl": 672,
+	"3xl": 768,
+	"4xl": 896,
+	"5xl": 1024,
+	"6xl": 1152,
+	"7xl": 1280,
 };
 
 // =========================================================================
 // Breakpoints — Responsive breakpoints
 // =========================================================================
 
-export const BREAKPOINTS: Record<string, string> = {
-	sm: "640px",
-	md: "768px",
-	lg: "1024px",
-	xl: "1280px",
-	"2xl": "1536px",
+export const BREAKPOINTS: Record<string, number> = {
+	sm: 640,
+	md: 768,
+	lg: 1024,
+	xl: 1280,
+	"2xl": 1536,
 };
 
 // =========================================================================
@@ -487,11 +487,11 @@ export const EASING_CURVES: Record<string, string> = {
 // Screen — Device screen widths
 // =========================================================================
 
-export const SCREEN_SIZES: Record<string, string> = {
-	"iphone-16-pro": "402px",
-	"ipad-pro-11": "834px",
-	"macbook-air": "1280px",
-	"macbook-pro-16": "1728px",
+export const SCREEN_SIZES: Record<string, number> = {
+	"iphone-16-pro": 402,
+	"ipad-pro-11": 834,
+	"macbook-air": 1280,
+	"macbook-pro-16": 1728,
 };
 
 // =========================================================================

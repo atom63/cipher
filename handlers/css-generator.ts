@@ -380,7 +380,7 @@ function valueToCSS(
 			if (varLower.includes("duration")) {
 				return `${value}ms`;
 			}
-			// Unitless values: z-index, font weights, opacity, blur (raw number)
+			// Unitless values: z-index, font weights
 			if (
 				firstSeg === "zlayer" ||
 				firstSeg === "z-index" ||
@@ -388,6 +388,11 @@ function valueToCSS(
 				(firstSeg === "font" && varLower.includes("weight/variable"))
 			) {
 				return `${value}`;
+			}
+			// Breakpoints stay in px for :root declarations.
+			// The @theme inline block handles rem conversion for Tailwind v4.
+			if (firstSeg === "breakpoints" || firstSeg === "breakpoint") {
+				return `${value}px`;
 			}
 			return `${value}px`;
 		}
@@ -410,26 +415,50 @@ function valueToCSS(
 function generateCollectionCSS(
 	collection: VariableCollection,
 	colorFormat: ColorFormat,
-	options: { includeThemeInline: boolean; includeColorMix: boolean },
+	options: {
+		includeThemeInline: boolean;
+		includeColorMix: boolean;
+		excludePrefixes?: string[];
+		rootExcludePrefixes?: string[];
+	},
 	opacityMap: Map<string, number>,
 ): CSSFile {
-	const variables = collection.variableIds
+	const allVariables = collection.variableIds
 		.map((id) => figma.variables.getVariableById(id))
 		.filter((v): v is Variable => v !== null);
+
+	// Filter out excluded prefixes (e.g. shadow variables when shadow-tokens.css exists)
+	const excludePrefixes = options.excludePrefixes;
+	const rootExcludePrefixes = options.rootExcludePrefixes;
+	const colName = collection.name;
+	const variables = excludePrefixes
+		? allVariables.filter((v) => {
+				const varName = toVarName(v.name, v.resolvedType, colName);
+				return !excludePrefixes.some((p) => varName.startsWith(p));
+			})
+		: allVariables;
+
+	// Variables for :root — additionally exclude tokens that only belong in @theme inline
+	const allExclude = [...(excludePrefixes ?? []), ...(rootExcludePrefixes ?? [])];
+	const rootVariables = allExclude.length > 0
+		? allVariables.filter((v) => {
+				const varName = toVarName(v.name, v.resolvedType, colName);
+				return !allExclude.some((p) => varName.startsWith(p));
+			})
+		: variables;
 
 	const hasModes = collection.modes.length > 1;
 	const lines: string[] = [];
 
-	lines.push(`/* ${collection.name} — ${variables.length} variables */`);
+	lines.push(
+		`/* ${collection.name} — ${rootVariables.length} variables */`,
+	);
 	lines.push("");
 
-	const colName = collection.name;
-	const isPrimitives = colName.toLowerCase() === "primitives";
-
-	// @theme inline always comes before :root (matching generate-tokens.js)
-	// Skip for primitives — no borderRadius tokens there, so nothing to register
-	if (options.includeThemeInline && !isPrimitives) {
-		lines.push(generateThemeInline(variables, collection));
+	// @theme inline registers CSS variables with Tailwind v4
+	// Uses `variables` (not `rootVariables`) so breakpoints still appear here
+	if (options.includeThemeInline) {
+		lines.push(generateThemeInline(variables, collection, excludePrefixes));
 	}
 
 	if (hasModes) {
@@ -438,7 +467,7 @@ function generateCollectionCSS(
 
 			if (i === 0) {
 				lines.push(":root {");
-				for (const variable of variables) {
+				for (const variable of rootVariables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
 					const varName = toVarName(
@@ -463,7 +492,7 @@ function generateCollectionCSS(
 				if (!mediaQuery) continue;
 				lines.push(`${mediaQuery} {`);
 				lines.push("  :root {");
-				for (const variable of variables) {
+				for (const variable of rootVariables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
 					const varName = toVarName(
@@ -487,7 +516,7 @@ function generateCollectionCSS(
 			} else {
 				const selector = modeToSelector(mode.name);
 				lines.push(`${selector} {`);
-				for (const variable of variables) {
+				for (const variable of rootVariables) {
 					const value = variable.valuesByMode[mode.modeId];
 					if (value === undefined) continue;
 					const varName = toVarName(
@@ -512,7 +541,7 @@ function generateCollectionCSS(
 	} else {
 		const mode = collection.modes[0];
 		lines.push(":root {");
-		for (const variable of variables) {
+		for (const variable of rootVariables) {
 			const value = variable.valuesByMode[mode.modeId];
 			if (value === undefined) continue;
 			const varName = toVarName(variable.name, variable.resolvedType, colName);
@@ -533,7 +562,7 @@ function generateCollectionCSS(
 	return {
 		name: `${collection.name.toLowerCase().replace(/\s+/g, "-")}.css`,
 		content: lines.join("\n"),
-		variableCount: variables.length,
+		variableCount: rootVariables.length,
 	};
 }
 
@@ -577,33 +606,129 @@ function modeToSelector(modeName: string): string {
 // TAILWIND @theme inline
 // ============================================================================
 
+/**
+ * Tailwind v4 theme namespaces — only variables with these prefixes get
+ * registered in @theme inline for primitives. Other collections register
+ * all variables (abstractions) or map to --color-* (semantics).
+ */
+const TAILWIND_THEME_PREFIXES = [
+	"--spacing-",
+	"--color-",
+	"--shadow-",
+	"--blur-",
+	"--breakpoint-",
+	"--container-",
+	"--ease-",
+	"--duration-",
+];
+
+/**
+ * Map a font-family variable path to the Tailwind utility name.
+ * font/family/sans or font/family/primary → "sans"
+ */
+function inferTailwindFontKey(
+	variableName: string,
+): "sans" | "serif" | "mono" | null {
+	const lower = variableName.toLowerCase();
+	if (lower.includes("/sans") || lower.includes("/primary")) return "sans";
+	if (lower.includes("/serif") || lower.includes("/secondary")) return "serif";
+	if (lower.includes("/mono") || lower.includes("/tertiary")) return "mono";
+	return null;
+}
+
+/**
+ * Resolve a FLOAT variable to its raw numeric value, walking through
+ * alias chains and trying all modes. Returns null if unresolvable.
+ */
+function resolveToNumber(variable: Variable): number | null {
+	for (const mId of Object.keys(variable.valuesByMode)) {
+		let v: VariableValue | undefined = variable.valuesByMode[mId];
+		let depth = 0;
+		while (isVariableAlias(v) && depth < 10) {
+			const refVar = figma.variables.getVariableById(
+				(v as VariableAlias).id,
+			);
+			if (!refVar) break;
+			const refCol = figma.variables.getVariableCollectionById(
+				refVar.variableCollectionId,
+			);
+			if (!refCol?.modes[0]) break;
+			v = refVar.valuesByMode[refCol.modes[0].modeId];
+			depth++;
+		}
+		if (typeof v === "number") return v;
+	}
+	return null;
+}
+
 function generateThemeInline(
 	variables: Variable[],
 	collection: VariableCollection,
+	excludePrefixes?: string[],
 ): string {
 	if (variables.length === 0) return "";
 
 	const colName = collection.name;
 	const isSemantics = colName.toLowerCase() === "semantics";
+	const isPrimitives = colName.toLowerCase() === "primitives";
 	const lines: string[] = [];
 	lines.push("/* Tailwind CSS v4 @theme inline */");
 	lines.push("@theme inline {");
 
-	// Build entries for ALL variable types
 	const entries: string[] = [];
+	const fontEntries: string[] = [];
 
 	for (const variable of variables) {
 		const varName = toVarName(variable.name, variable.resolvedType, colName);
 
+		// Skip excluded prefixes (e.g. --shadow- when shadow-tokens.css handles them)
+		if (excludePrefixes?.some((p) => varName.startsWith(p))) continue;
+
 		if (isSemantics) {
 			// Semantics: --color-{name}: var(--{name})
-			const unprefixed = varName; // e.g., "--background"
+			const unprefixed = varName;
 			entries.push(
 				`  --color-${unprefixed.replace("--", "")}: var(${unprefixed});`,
 			);
-		} else {
-			// Other collections: self-reference for Tailwind registration
+		} else if (isPrimitives) {
+			// Primitives: only register vars that match Tailwind theme namespaces
+			if (!TAILWIND_THEME_PREFIXES.some((p) => varName.startsWith(p))) continue;
+
+			// Breakpoints need literal values — Tailwind compiles them into
+			// @media conditions which can't use var() (CSS spec limitation).
+			// var() is resolved at runtime but @media is evaluated at parse time.
+			// Resolve through alias chains to find the raw number, convert to rem.
+			if (varName.startsWith("--breakpoint-")) {
+				const numValue = resolveToNumber(variable);
+				if (numValue !== null) {
+					entries.push(`  ${varName}: ${numValue / 16}rem;`);
+					continue;
+				}
+				// Fallback: try reading the raw value from the first mode directly
+				const firstModeId = collection.modes[0]?.modeId;
+				if (firstModeId !== undefined) {
+					const raw = variable.valuesByMode[firstModeId];
+					if (typeof raw === "number") {
+						entries.push(`  ${varName}: ${raw / 16}rem;`);
+						continue;
+					}
+				}
+				// Skip entirely — a var() self-reference breaks @media queries
+				continue;
+			}
+
 			entries.push(`  ${varName}: var(${varName});`);
+		} else {
+			// Other collections (abstractions, etc.): register all
+			entries.push(`  ${varName}: var(${varName});`);
+		}
+
+		// Detect font family variables and add --font-sans/serif/mono mappings
+		if (isFontFamilyVariable(variable.name)) {
+			const twKey = inferTailwindFontKey(variable.name);
+			if (twKey) {
+				fontEntries.push(`  --font-${twKey}: var(${varName});`);
+			}
 		}
 	}
 
@@ -618,6 +743,14 @@ function generateThemeInline(
 		lines.push(entry);
 	}
 
+	// Font family utilities (--font-sans, --font-serif, --font-mono)
+	if (fontEntries.length > 0) {
+		lines.push("");
+		for (const entry of fontEntries) {
+			lines.push(entry);
+		}
+	}
+
 	lines.push("}");
 	lines.push("");
 
@@ -625,88 +758,129 @@ function generateThemeInline(
 }
 
 // ============================================================================
-// SHADOW TOKENS FROM EFFECT STYLES
+// EFFECTS: SHADOWS + BLURS
 // ============================================================================
 
 /**
- * Generate shadow-tokens.css from local effect styles.
- * Extracts drop-shadow effects, cleans Figma float precision artifacts,
- * and emits CSS custom properties + utility classes.
+ * Generate effects.css from Figma effect styles (shadows) and blur variables.
+ * In Figma these all live under "Effects" — keeping them in one file mirrors
+ * that mental model and avoids scattering related tokens across files.
  */
-function generateShadowCSS(): CSSFile | null {
+function generateEffectsCSS(
+	colorFormat: ColorFormat,
+	opacityMap: Map<string, number>,
+): CSSFile | null {
 	try {
+		const shadowLines: string[] = [];
+		const shadowThemeLines: string[] = [];
+		let shadowCount = 0;
+
+		// --- Shadows from effect styles ---
 		const effectStyles = figma.getLocalEffectStyles();
-		// Find shadow styles (nested under "shadow/" path or named with numeric levels)
 		const shadowStyles = effectStyles.filter(
 			(s) =>
 				s.name.toLowerCase().startsWith("shadow/") ||
 				s.name.toLowerCase().startsWith("shadow "),
 		);
 
-		if (shadowStyles.length === 0) return null;
+		if (shadowStyles.length > 0) {
+			// Sort by the numeric level in the name (shadow/0, shadow/1, etc.)
+			shadowStyles.sort((a, b) => {
+				const aNum = Number.parseInt(a.name.split(/[/\s]/).pop() || "0", 10);
+				const bNum = Number.parseInt(b.name.split(/[/\s]/).pop() || "0", 10);
+				return aNum - bNum;
+			});
 
-		// Sort by the numeric level in the name (shadow/0, shadow/1, etc.)
-		shadowStyles.sort((a, b) => {
-			const aNum = Number.parseInt(a.name.split(/[/\s]/).pop() || "0", 10);
-			const bNum = Number.parseInt(b.name.split(/[/\s]/).pop() || "0", 10);
-			return aNum - bNum;
-		});
+			for (const style of shadowStyles) {
+				const level = style.name.split(/[/\s]/).pop() || "0";
+				const dropShadows = style.effects
+					.filter((e) => e.type === "DROP_SHADOW" && e.visible !== false)
+					.map((effect) => {
+						const e = effect as DropShadowEffect;
+						const x = `${Math.round(e.offset.x)}px`;
+						const y = `${Math.round(e.offset.y)}px`;
+						const blur = `${Math.round(e.radius)}px`;
+						const spreadVal = (e as any).spread ?? 0;
+						const spread = `${Math.round(spreadVal)}px`;
+						const r = Math.round((e.color?.r ?? 0) * 255);
+						const g = Math.round((e.color?.g ?? 0) * 255);
+						const b = Math.round((e.color?.b ?? 0) * 255);
+						const a = Number.parseFloat((e.color?.a ?? 1).toPrecision(4));
+						return `${x} ${y} ${blur} ${spread} rgba(${r}, ${g}, ${b}, ${a})`;
+					})
+					.join(", ");
 
-		const lines: string[] = [];
-		lines.push("/* Shadow tokens — extracted from Figma effect styles */");
-		lines.push("");
-		lines.push(":root {");
-
-		const levelNames: string[] = [];
-
-		for (const style of shadowStyles) {
-			const level = style.name.split(/[/\s]/).pop() || "0";
-			const dropShadows = style.effects
-				.filter((e) => e.type === "DROP_SHADOW" && e.visible !== false)
-				.map((effect) => {
-					const e = effect as DropShadowEffect;
-					const x = `${Math.round(e.offset.x)}px`;
-					const y = `${Math.round(e.offset.y)}px`;
-					const blur = `${Math.round(e.radius)}px`;
-					// Figma uses 'spread' property on DropShadowEffect
-					const spreadVal = (e as any).spread ?? 0;
-					const spread = `${Math.round(spreadVal)}px`;
-					const r = Math.round((e.color?.r ?? 0) * 255);
-					const g = Math.round((e.color?.g ?? 0) * 255);
-					const b = Math.round((e.color?.b ?? 0) * 255);
-					// Clean Figma's float precision artifacts
-					const a = Number.parseFloat((e.color?.a ?? 1).toPrecision(4));
-					return `${x} ${y} ${blur} ${spread} rgba(${r}, ${g}, ${b}, ${a})`;
-				})
-				.join(", ");
-
-			if (dropShadows) {
-				const desc = style.description ? ` /* ${style.description} */` : "";
-				lines.push(`  --shadow-${level}: ${dropShadows};${desc}`);
-				levelNames.push(level);
+				if (dropShadows) {
+					const desc = style.description ? ` /* ${style.description} */` : "";
+					shadowLines.push(`  --shadow-${level}: ${dropShadows};${desc}`);
+					shadowThemeLines.push(`  --shadow-${level}: var(--shadow-${level});`);
+					shadowCount++;
+				}
 			}
 		}
 
+		// --- Blur variables from primitives ---
+		const blurLines: string[] = [];
+		const blurThemeLines: string[] = [];
+		let blurCount = 0;
+
+		const collections = figma.variables.getLocalVariableCollections();
+		const primitives = collections.find(
+			(c) => c.name.toLowerCase() === "primitives",
+		);
+
+		if (primitives) {
+			const blurVars = primitives.variableIds
+				.map((id) => figma.variables.getVariableById(id))
+				.filter((v): v is Variable => v !== null)
+				.filter((v) => v.name.toLowerCase().startsWith("blur/"));
+
+			if (blurVars.length > 0) {
+				const modeId = primitives.modes[0].modeId;
+				for (const variable of blurVars) {
+					const varName = toVarName(variable.name, variable.resolvedType, primitives.name);
+					const cssValue = valueToCSS(
+						variable.valuesByMode[modeId],
+						variable,
+						colorFormat,
+						false,
+						opacityMap,
+						primitives.name,
+					);
+					blurLines.push(`  ${varName}: ${cssValue};`);
+					blurThemeLines.push(`  ${varName}: var(${varName});`);
+					blurCount++;
+				}
+			}
+		}
+
+		const totalCount = shadowCount + blurCount;
+		if (totalCount === 0) return null;
+
+		// Assemble the file
+		const lines: string[] = [];
+		lines.push(`/* Effects — ${totalCount} tokens (shadows, blurs) */`);
+		lines.push("");
+		lines.push(":root {");
+		for (const line of shadowLines) lines.push(line);
+		if (shadowLines.length > 0 && blurLines.length > 0) lines.push("");
+		for (const line of blurLines) lines.push(line);
 		lines.push("}");
 		lines.push("");
 
-		// Utility classes
-		if (levelNames.length > 0) {
-			lines.push("/* Utility classes for shadows */");
-			lines.push("@layer utilities {");
-			for (const level of levelNames) {
-				lines.push(
-					`  .shadow-${level} { box-shadow: var(--shadow-${level}); }`,
-				);
-			}
+		// @theme inline for Tailwind v4
+		const allThemeLines = [...shadowThemeLines, ...blurThemeLines];
+		if (allThemeLines.length > 0) {
+			lines.push("@theme inline {");
+			for (const line of allThemeLines) lines.push(line);
 			lines.push("}");
 			lines.push("");
 		}
 
 		return {
-			name: "shadow-tokens.css",
+			name: "effects.css",
 			content: lines.join("\n"),
-			variableCount: levelNames.length,
+			variableCount: totalCount,
 		};
 	} catch (_e) {
 		return null;
@@ -754,24 +928,19 @@ const TYPESCALE_BREAKPOINTS = [
 	},
 ];
 
-/** Tailwind text utility → typescale mapping (matches STEP_NAMES_UP/DOWN) */
-const TAILWIND_TEXT_MAP: [string, string][] = [
-	["text-xs", "xs"],
-	["text-sm", "sm"],
-	["text-base", "base"],
-	["text-lg", "lg"],
-	["text-xl", "xl"],
-	["text-2xl", "2xl"],
-	["text-3xl", "3xl"],
-	["text-4xl", "4xl"],
-	["text-5xl", "5xl"],
+/** Canonical scale order for deterministic output */
+const TYPESCALE_ORDER = [
+	"xs", "sm", "base", "lg", "xl",
+	"2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl",
 ];
 
 /**
  * Generate typescales.css from the responsive collection's typography variables.
  * Resolves variable references to get actual px values, wraps in calc() with
- * --typography-scale multiplier, generates @media + [data-window-size] selectors
- * and utility classes.
+ * --typography-scale multiplier, and generates:
+ *   1. @theme inline mapping --text-* → --typography-* for Tailwind v4
+ *   2. Responsive :root + @media blocks (deltas only)
+ *   3. [data-window-size] selectors for Figma plugin context
  */
 function generateTypescalesCSS(): CSSFile | null {
 	try {
@@ -785,33 +954,34 @@ function generateTypescalesCSS(): CSSFile | null {
 			.map((id) => figma.variables.getVariableById(id))
 			.filter((v): v is Variable => v !== null);
 
-		// Find typography variables — match pattern "typography/{scale}/{font-size|line-height}"
 		const typoVars = variables.filter((v) =>
 			v.name.toLowerCase().startsWith("typography/"),
 		);
 		if (typoVars.length === 0) return null;
 
-		// Group by scale: { "large-title": { "font-size": Variable, "line-height": Variable }, ... }
+		// Group by scale: { "base": { "font-size": Variable, "line-height": Variable }, ... }
 		const scales: Record<string, Record<string, Variable>> = {};
 		for (const v of typoVars) {
 			const parts = v.name.split("/");
 			if (parts.length < 3) continue;
 			const scale = parts[1];
-			const prop = parts.slice(2).join("-"); // "font-size" or "line-height"
+			const prop = parts.slice(2).join("-");
 			if (!scales[scale]) scales[scale] = {};
 			scales[scale][prop] = v;
 		}
 
-		const scaleNames = Object.keys(scales);
+		const scaleNames = Object.keys(scales).sort((a, b) => {
+			const ai = TYPESCALE_ORDER.indexOf(a);
+			const bi = TYPESCALE_ORDER.indexOf(b);
+			return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+		});
 		if (scaleNames.length === 0) return null;
 
-		// Build mode name → modeId map for the responsive collection
 		const modeIdMap: Record<string, string> = {};
 		for (const m of responsive.modes) {
 			modeIdMap[m.name] = m.modeId;
 		}
 
-		// Helper: resolve a variable value to px string, following aliases
 		const resolveToPixels = (
 			variable: Variable,
 			modeId: string,
@@ -819,13 +989,11 @@ function generateTypescalesCSS(): CSSFile | null {
 			let value = variable.valuesByMode[modeId];
 			if (value === undefined) return null;
 
-			// Follow aliases to get the resolved FLOAT value
 			let depth = 0;
 			while (isVariableAlias(value) && depth < 10) {
 				const aliasId = (value as VariableAlias).id;
 				const refVar = figma.variables.getVariableById(aliasId);
 				if (!refVar) return null;
-				// For the referenced variable, use its first mode's value
 				const refCollection = figma.variables.getVariableCollectionById(
 					refVar.variableCollectionId,
 				);
@@ -839,6 +1007,57 @@ function generateTypescalesCSS(): CSSFile | null {
 			return null;
 		};
 
+		// Resolve all typography values for a given mode
+		const resolveMode = (modeName: string): Map<string, string> => {
+			const modeId = modeIdMap[modeName];
+			if (!modeId) return new Map();
+			const values = new Map<string, string>();
+			for (const scale of scaleNames) {
+				for (const prop of ["font-size", "line-height"]) {
+					const variable = scales[scale][prop];
+					if (!variable) continue;
+					const px = resolveToPixels(variable, modeId);
+					if (!px) continue;
+					values.set(
+						`--typography-${scale}-${prop}`,
+						`calc(${px} * var(--typography-scale, 1))`,
+					);
+				}
+			}
+			return values;
+		};
+
+		const emitMap = (indent: string, values: Map<string, string>) => {
+			for (const [key, val] of values) {
+				lines.push(`${indent}${key}: ${val};`);
+			}
+		};
+
+		const getDelta = (
+			current: Map<string, string>,
+			previous: Map<string, string>,
+		): Map<string, string> => {
+			const delta = new Map<string, string>();
+			for (const [key, val] of current) {
+				if (previous.get(key) !== val) {
+					delta.set(key, val);
+				}
+			}
+			return delta;
+		};
+
+		const serializeMap = (m: Map<string, string>): string =>
+			[...m.entries()]
+				.map(([k, v]) => `${k}:${v}`)
+				.sort()
+				.join("|");
+
+		// Resolve values for every breakpoint
+		const resolved = TYPESCALE_BREAKPOINTS.map((bp) => ({
+			...bp,
+			values: resolveMode(bp.mode),
+		}));
+
 		const lines: string[] = [];
 		lines.push(
 			"/* Responsive Typography — extracted from Figma responsive collection */",
@@ -848,97 +1067,81 @@ function generateTypescalesCSS(): CSSFile | null {
 		);
 		lines.push("");
 
-		// Helper: emit a set of typography variables for a mode
-		const emitVars = (indent: string, modeName: string) => {
-			const modeId = modeIdMap[modeName];
-			if (!modeId) return;
-			for (const scale of scaleNames) {
-				for (const prop of ["font-size", "line-height"]) {
-					const variable = scales[scale][prop];
-					if (!variable) continue;
-					const px = resolveToPixels(variable, modeId);
-					if (!px) continue;
-					lines.push(
-						`${indent}--typography-${scale}-${prop}: calc(${px} * var(--typography-scale, 1));`,
-					);
-				}
+		// @theme inline — register --text-* with Tailwind v4 so text-base, text-lg, etc. work
+		lines.push("@theme inline {");
+		for (const scale of scaleNames) {
+			if (scales[scale]["font-size"]) {
+				lines.push(
+					`  --text-${scale}: var(--typography-${scale}-font-size);`,
+				);
 			}
-		};
+			if (scales[scale]["line-height"]) {
+				lines.push(
+					`  --text-${scale}--line-height: var(--typography-${scale}-line-height);`,
+				);
+			}
+		}
+		lines.push("}");
+		lines.push("");
 
 		// :root — base mobile values
 		lines.push(":root {");
-		emitVars("  ", TYPESCALE_BREAKPOINTS[0].mode);
+		emitMap("  ", resolved[0].values);
 		lines.push("}");
 		lines.push("");
 
-		// [data-window-size="xs"] — explicit mobile
-		lines.push(
-			`/* Window-responsive: ${TYPESCALE_BREAKPOINTS[0].description} */`,
-		);
-		lines.push(`[data-window-size="xs"] {`);
-		emitVars("  ", TYPESCALE_BREAKPOINTS[0].mode);
-		lines.push("}");
-		lines.push("");
+		// @media queries — emit only values that changed from previous breakpoint
+		let previousMedia = resolved[0].values;
+		for (const bp of resolved.slice(1)) {
+			if (!bp.minWidth) continue;
+			const delta = getDelta(bp.values, previousMedia);
+			if (delta.size === 0) continue;
 
-		// Remaining breakpoints (sm, md, lg, xl)
-		for (const bp of TYPESCALE_BREAKPOINTS.slice(1)) {
-			if (bp.minWidth) {
-				lines.push(`/* ${bp.description} */`);
-				lines.push(`@media (min-width: ${bp.minWidth}) {`);
-				lines.push("  :root {");
-				emitVars("    ", bp.mode);
-				lines.push("  }");
-				lines.push("}");
-				lines.push("");
+			lines.push(`/* ${bp.description} */`);
+			lines.push(`@media (min-width: ${bp.minWidth}) {`);
+			lines.push("  :root {");
+			emitMap("    ", delta);
+			lines.push("  }");
+			lines.push("}");
+			lines.push("");
+
+			previousMedia = bp.values;
+		}
+
+		// [data-window-size] — full override selectors for Figma plugin context.
+		// Group breakpoints that resolve to identical values into combined selectors.
+		const windowGroups: {
+			selectors: string[];
+			values: Map<string, string>;
+			descriptions: string[];
+		}[] = [];
+
+		for (const bp of resolved) {
+			const serialized = serializeMap(bp.values);
+			const existing = windowGroups.find(
+				(g) => serializeMap(g.values) === serialized,
+			);
+			if (existing) {
+				existing.selectors.push(`[data-window-size="${bp.name}"]`);
+				existing.descriptions.push(bp.description);
+			} else {
+				windowGroups.push({
+					selectors: [`[data-window-size="${bp.name}"]`],
+					values: bp.values,
+					descriptions: [bp.description],
+				});
 			}
+		}
 
-			lines.push(`/* Window-responsive: ${bp.description} */`);
-			lines.push(`[data-window-size="${bp.name}"] {`);
-			emitVars("  ", bp.mode);
+		for (const group of windowGroups) {
+			lines.push(
+				`/* Window-responsive: ${group.descriptions.join(" / ")} */`,
+			);
+			lines.push(`${group.selectors.join(",\n")} {`);
+			emitMap("  ", group.values);
 			lines.push("}");
 			lines.push("");
 		}
-
-		// Utility classes
-		lines.push("/* Utility classes for typography */");
-		lines.push("@layer utilities {");
-
-		lines.push("  /* Font Size Utilities (Custom Scale) */");
-		for (const scale of scaleNames) {
-			lines.push(
-				`  .size-${scale} { font-size: var(--typography-${scale}-font-size); }`,
-			);
-		}
-
-		lines.push("");
-		lines.push("  /* Line Height Utilities (Custom Scale) */");
-		for (const scale of scaleNames) {
-			lines.push(
-				`  .leading-${scale} { line-height: var(--typography-${scale}-line-height); }`,
-			);
-		}
-
-		lines.push("");
-		lines.push("  /* Combined Typography Utilities (size + leading) */");
-		for (const scale of scaleNames) {
-			lines.push(`  .type-${scale} {`);
-			lines.push(`    font-size: var(--typography-${scale}-font-size);`);
-			lines.push(`    line-height: var(--typography-${scale}-line-height);`);
-			lines.push("  }");
-		}
-
-		lines.push("");
-		lines.push(
-			"  /* Tailwind Standard Text Utilities (mapped to custom scale) */",
-		);
-		for (const [tw, scale] of TAILWIND_TEXT_MAP) {
-			lines.push(
-				`  .${tw} { font-size: var(--typography-${scale}-font-size); line-height: var(--typography-${scale}-line-height); }`,
-			);
-		}
-
-		lines.push("}");
-		lines.push("");
 
 		return {
 			name: "typescales.css",
@@ -1085,10 +1288,12 @@ export {
 	isResponsiveMode,
 	modeToMediaQuery,
 	TYPESCALE_BREAKPOINTS,
-	TAILWIND_TEXT_MAP,
+	TYPESCALE_ORDER,
+	TAILWIND_THEME_PREFIXES,
 	detectFontCategory,
 	toFontStack,
 	isFontFamilyVariable,
+	inferTailwindFontKey,
 };
 
 export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
@@ -1109,14 +1314,40 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 		? buildStyleOpacityMap()
 		: new Map<string, number>();
 
-	// Sort collections: single-mode first (primitives), multi-mode after (semantics)
+	// Sort: dependency order (primitives → abstractions → semantics), then by mode count
+	const COLLECTION_ORDER: Record<string, number> = {
+		primitives: 0,
+		abstractions: 1,
+		semantics: 2,
+	};
 	const sorted = [...selected].sort((a, b) => {
+		const aOrder = COLLECTION_ORDER[a.name.toLowerCase()] ?? 99;
+		const bOrder = COLLECTION_ORDER[b.name.toLowerCase()] ?? 99;
+		if (aOrder !== bOrder) return aOrder - bOrder;
 		if (a.modes.length === b.modes.length) return a.name.localeCompare(b.name);
 		return a.modes.length - b.modes.length;
 	});
 
 	const files: CSSFile[] = [];
 	let totalVariables = 0;
+
+	// Generate specialized files first so we know which prefixes to exclude
+	// from primitives (avoids duplication)
+	const effectsFile = generateEffectsCSS(options.colorFormat, opacityMap);
+	const radiusFile = generateRadiusCSS();
+
+	// Excluded from primitives entirely (both @theme inline and :root):
+	const primitivesExclude: string[] = ["--font-weight-"];
+	if (effectsFile) {
+		primitivesExclude.push("--shadow-");
+		primitivesExclude.push("--blur-");
+	}
+	if (radiusFile) primitivesExclude.push("--rounded-");
+
+	// Excluded from :root only (still appear in @theme inline with literal values):
+	// Breakpoints only need @theme inline — Tailwind compiles them into @media
+	// conditions which require literal values, not var() references.
+	const primitivesRootExclude: string[] = ["--breakpoint-"];
 
 	for (const collection of sorted) {
 		const colLower = collection.name.toLowerCase();
@@ -1131,12 +1362,15 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 		if (colLower === "tailwind-colors" || colLower === "tailwind colors")
 			continue;
 
+		const isPrimitives = colLower === "primitives";
 		const file = generateCollectionCSS(
 			collection,
 			options.colorFormat,
 			{
 				includeThemeInline: options.includeThemeInline,
 				includeColorMix: options.includeColorMix,
+				excludePrefixes: isPrimitives && primitivesExclude.length > 0 ? primitivesExclude : undefined,
+				rootExcludePrefixes: isPrimitives ? primitivesRootExclude : undefined,
 			},
 			opacityMap,
 		);
@@ -1144,11 +1378,10 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 		totalVariables += file.variableCount;
 	}
 
-	// Generate specialized CSS files from styles and cross-collection data
-	const shadowFile = generateShadowCSS();
-	if (shadowFile) {
-		files.push(shadowFile);
-		totalVariables += shadowFile.variableCount;
+	// Append effects (shadows + blurs) after collection files
+	if (effectsFile) {
+		files.push(effectsFile);
+		totalVariables += effectsFile.variableCount;
 	}
 
 	const typescaleFile = generateTypescalesCSS();
@@ -1157,7 +1390,6 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 		totalVariables += typescaleFile.variableCount;
 	}
 
-	const radiusFile = generateRadiusCSS();
 	if (radiusFile) {
 		files.push(radiusFile);
 		totalVariables += radiusFile.variableCount;

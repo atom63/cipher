@@ -1,4 +1,4 @@
-/* semantics — 37 variables */
+/* semantics — 36 variables */
 
 /* Tailwind CSS v4 @theme inline */
 @theme inline {
@@ -27,7 +27,6 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-ring: var(--ring);
   --color-secondary: var(--secondary);
-  --color-secondary-accent: var(--secondary-accent);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-sidebar: var(--sidebar);
   --color-sidebar-accent: var(--sidebar-accent);
@@ -56,10 +55,10 @@
   --muted-foreground: var(--surface-light-11);
   --accent: color-mix(in srgb, var(--surface-light-4), transparent 20%);
   --accent-foreground: var(--surface-light-12);
-  --destructive: var(--color-status-danger);
-  --success: var(--color-status-success);
-  --warning: var(--color-status-warning);
-  --info: var(--color-status-info);
+  --destructive: var(--color-danger-500);
+  --success: var(--color-success-500);
+  --warning: var(--color-warning-500);
+  --info: var(--color-info-500);
   --border: var(--surface-light-4);
   --input: var(--surface-light-5);
   --ring: var(--surface-light-6);
@@ -78,7 +77,6 @@
   --sidebar-ring: var(--ring);
   --light: var(--surface-light-1);
   --dark: var(--color-gray-dark-1);
-  --secondary-accent: var(--color-secondary-500);
 }
 
 .dark {
@@ -96,10 +94,10 @@
   --muted-foreground: var(--surface-dark-11);
   --accent: color-mix(in srgb, var(--surface-dark-6), transparent 20%);
   --accent-foreground: var(--surface-dark-12);
-  --destructive: var(--color-status-danger);
-  --success: var(--color-status-success);
-  --warning: var(--color-status-warning);
-  --info: var(--color-status-info);
+  --destructive: var(--color-danger-500);
+  --success: var(--color-success-500);
+  --warning: var(--color-warning-500);
+  --info: var(--color-info-500);
   --border: var(--surface-dark-6);
   --input: var(--surface-dark-7);
   --ring: var(--surface-dark-8);
@@ -118,5 +116,4 @@
   --sidebar-ring: var(--ring);
   --light: var(--surface-light-1);
   --dark: var(--color-gray-dark-1);
-  --secondary-accent: var(--color-secondary-500);
 }

@@ -116,22 +116,13 @@ describe("primitives", () => {
 		expect(names).toContain("font/family/mono");
 	});
 
-	test("includes font weight label tokens (font/weight/N)", () => {
+	test("does not include font weight tokens (handled by Tailwind natively)", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
 		});
 		const names = result.tokens.map((t) => t.figmaName);
-		expect(names).toContain("font/weight/400");
-		expect(names).toContain("font/weight/700");
-	});
-
-	test("includes font weight variable tokens (font/weight/variable/N)", () => {
-		const result = generateDesignSystem({
-			...defaultConfig,
-		});
-		const names = result.tokens.map((t) => t.figmaName);
-		expect(names).toContain("font/weight/variable/regular");
-		expect(names).toContain("font/weight/variable/bold");
+		expect(names).not.toContain("font/weight/400");
+		expect(names).not.toContain("font/weight/variable/regular");
 	});
 
 	test("custom font overrides use clean name strings", () => {
@@ -427,18 +418,13 @@ describe("abstractions", () => {
 		expect(tertiary?.originalValue).toBe("{primitives.font.family.mono}");
 	});
 
-	test("includes font weight aliases", () => {
+	test("does not include font weight aliases (handled by Tailwind natively)", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const absNames = result.tokens
 			.filter((t) => t.category === "abstractions")
 			.map((t) => t.figmaName);
-		expect(absNames).toContain("font/weight/default");
-		expect(absNames).toContain("font/weight/strong");
-		// font/weight/italic is a raw value, so it's in primitives
-		const primNames = result.tokens
-			.filter((t) => t.category === "primitives")
-			.map((t) => t.figmaName);
-		expect(primNames).toContain("font/weight/italic");
+		expect(absNames).not.toContain("font/weight/default");
+		expect(absNames).not.toContain("font/weight/strong");
 	});
 
 	test("all abstractions are single-mode (no modeName)", () => {

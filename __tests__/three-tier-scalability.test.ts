@@ -267,7 +267,6 @@ describe("token naming structure", () => {
 		expect(prefixes.has("color/black")).toBe(true);
 		expect(prefixes.has("color/gray")).toBe(true);
 		expect(prefixes.has("font/family")).toBe(true);
-		expect(prefixes.has("font/weight")).toBe(true);
 	});
 
 	test("abstractions use correct path prefixes", () => {

@@ -2,13 +2,15 @@ import { describe, expect, test } from "vitest";
 import {
 	detectFontCategory,
 	inferPrefix,
+	inferTailwindFontKey,
 	isFontFamilyVariable,
 	isResponsiveMode,
 	modeToMediaQuery,
 	modeToSelector,
 	normalizeName,
-	TAILWIND_TEXT_MAP,
+	TAILWIND_THEME_PREFIXES,
 	TYPESCALE_BREAKPOINTS,
+	TYPESCALE_ORDER,
 	toFontStack,
 	toVarName,
 } from "../handlers/css-generator";
@@ -270,7 +272,7 @@ describe("modeToMediaQuery", () => {
 });
 
 // =========================================================================
-// Constants — TYPESCALE_BREAKPOINTS and TAILWIND_TEXT_MAP
+// Constants — TYPESCALE_BREAKPOINTS and TYPESCALE_ORDER
 // =========================================================================
 
 describe("TYPESCALE_BREAKPOINTS", () => {
@@ -311,34 +313,67 @@ describe("TYPESCALE_BREAKPOINTS", () => {
 	});
 });
 
-describe("TAILWIND_TEXT_MAP", () => {
-	test("maps standard Tailwind text utilities to typescale steps", () => {
-		const map = new Map(TAILWIND_TEXT_MAP);
-		expect(map.get("text-xs")).toBe("xs");
-		expect(map.get("text-sm")).toBe("sm");
-		expect(map.get("text-base")).toBe("base");
-		expect(map.get("text-lg")).toBe("lg");
-		expect(map.get("text-xl")).toBe("xl");
-	});
-
-	test("covers text-xs through text-5xl", () => {
-		const names = TAILWIND_TEXT_MAP.map(([tw]) => tw);
-		expect(names).toContain("text-xs");
-		expect(names).toContain("text-5xl");
-		expect(names.length).toBe(9);
-	});
-
-	test("all mappings reference valid typescale names", () => {
-		const validScales = new Set([
+describe("TYPESCALE_ORDER", () => {
+	test("covers xs through 9xl in ascending order", () => {
+		expect(TYPESCALE_ORDER).toEqual([
 			"xs", "sm", "base", "lg", "xl",
-			"2xl", "3xl", "4xl", "5xl",
+			"2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl",
 		]);
-		for (const [, scale] of TAILWIND_TEXT_MAP) {
-			expect(
-				validScales.has(scale),
-				`"${scale}" is not a valid typescale name`,
-			).toBe(true);
-		}
+	});
+
+	test("has 13 entries matching Tailwind text-* utilities", () => {
+		expect(TYPESCALE_ORDER).toHaveLength(13);
+	});
+});
+
+// =========================================================================
+// TAILWIND_THEME_PREFIXES — Tailwind v4 theme namespaces
+// =========================================================================
+
+describe("TAILWIND_THEME_PREFIXES", () => {
+	test("includes all Tailwind v4 theme namespaces", () => {
+		expect(TAILWIND_THEME_PREFIXES).toContain("--spacing-");
+		expect(TAILWIND_THEME_PREFIXES).toContain("--color-");
+		expect(TAILWIND_THEME_PREFIXES).toContain("--shadow-");
+		expect(TAILWIND_THEME_PREFIXES).toContain("--blur-");
+		expect(TAILWIND_THEME_PREFIXES).toContain("--breakpoint-");
+		expect(TAILWIND_THEME_PREFIXES).toContain("--container-");
+		expect(TAILWIND_THEME_PREFIXES).toContain("--ease-");
+		expect(TAILWIND_THEME_PREFIXES).toContain("--duration-");
+	});
+
+	test("does not include non-Tailwind namespaces", () => {
+		expect(TAILWIND_THEME_PREFIXES).not.toContain("--font-weight-");
+		expect(TAILWIND_THEME_PREFIXES).not.toContain("--size-");
+		expect(TAILWIND_THEME_PREFIXES).not.toContain("--z-");
+		expect(TAILWIND_THEME_PREFIXES).not.toContain("--rounded-");
+		expect(TAILWIND_THEME_PREFIXES).not.toContain("--screen-");
+	});
+});
+
+// =========================================================================
+// inferTailwindFontKey — maps font variable paths to Tailwind utility names
+// =========================================================================
+
+describe("inferTailwindFontKey", () => {
+	test("maps sans and primary to sans", () => {
+		expect(inferTailwindFontKey("font/family/sans")).toBe("sans");
+		expect(inferTailwindFontKey("font/family/primary")).toBe("sans");
+	});
+
+	test("maps serif and secondary to serif", () => {
+		expect(inferTailwindFontKey("font/family/serif")).toBe("serif");
+		expect(inferTailwindFontKey("font/family/secondary")).toBe("serif");
+	});
+
+	test("maps mono and tertiary to mono", () => {
+		expect(inferTailwindFontKey("font/family/mono")).toBe("mono");
+		expect(inferTailwindFontKey("font/family/tertiary")).toBe("mono");
+	});
+
+	test("returns null for unrecognized font paths", () => {
+		expect(inferTailwindFontKey("font/family/custom")).toBeNull();
+		expect(inferTailwindFontKey("font/weight/bold")).toBeNull();
 	});
 });
 

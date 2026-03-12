@@ -21,8 +21,6 @@ import {
 	DURATION_RAW,
 	DURATION_SEMANTIC,
 	EASING_CURVES,
-	FONT_WEIGHT_LABELS,
-	FONT_WEIGHT_VARIABLE,
 	type FontOverrides,
 	generateTypographyCss,
 	resolveFontNames,
@@ -155,28 +153,6 @@ function generatePrimitives(config: BrandConfig): {
 		);
 	}
 
-	// --- Font weight labels (string values: font/weight/100 = "thin") ---
-	for (const [key, label] of Object.entries(FONT_WEIGHT_LABELS)) {
-		tokens.push(
-			makeToken(`font/weight/${key}`, label, "primitives", {
-				type: "string",
-				originalValue: label,
-				description: `Font weight ${key}`,
-			}),
-		);
-	}
-
-	// --- Font weight variable (numeric values: font/weight/variable/thin = 100) ---
-	for (const [name, value] of Object.entries(FONT_WEIGHT_VARIABLE)) {
-		tokens.push(
-			makeToken(`font/weight/variable/${name}`, value, "primitives", {
-				type: "number",
-				originalValue: `${value}px`,
-				description: `Font weight variable ${name}`,
-			}),
-		);
-	}
-
 	// --- White alpha scale (color/white/0 - color/white/100) ---
 	const alphaSteps = [0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as const;
 	for (const step of alphaSteps) {
@@ -267,8 +243,8 @@ function generatePrimitives(config: BrandConfig): {
 	for (const [key, value] of Object.entries(CONTAINER_SCALE)) {
 		tokens.push(
 			makeToken(`container/${key}`, value, "primitives", {
-				type: "string",
-				originalValue: value,
+				type: "number",
+				originalValue: `${value}px`,
 				description: `Container max-width ${key}`,
 			}),
 		);
@@ -300,8 +276,8 @@ function generatePrimitives(config: BrandConfig): {
 	for (const [key, value] of Object.entries(BREAKPOINTS)) {
 		tokens.push(
 			makeToken(`breakpoints/${key}`, value, "primitives", {
-				type: "string",
-				originalValue: value,
+				type: "number",
+				originalValue: `${value}px`,
 				description: `Breakpoint ${key}`,
 			}),
 		);
@@ -311,8 +287,8 @@ function generatePrimitives(config: BrandConfig): {
 	for (const [key, value] of Object.entries(SCREEN_SIZES)) {
 		tokens.push(
 			makeToken(`screen/${key}`, value, "primitives", {
-				type: "string",
-				originalValue: value,
+				type: "number",
+				originalValue: `${value}px`,
 				description: `Screen width ${key}`,
 			}),
 		);
@@ -366,14 +342,6 @@ function generatePrimitives(config: BrandConfig): {
 		);
 	}
 
-	// --- Font weight italic ---
-	tokens.push(
-		makeToken("font/weight/italic", "Italic", "primitives", {
-			type: "string",
-			originalValue: "Italic",
-			description: "Italic font style",
-		}),
-	);
 
 	// --- Compute color scales for preview ---
 	const brandScale = generateColorScale("brand", config.primary);
@@ -543,32 +511,6 @@ function generateAbstractions(_config: BrandConfig): DesignToken[] {
 			}),
 		);
 	}
-
-	// --- Font weight aliases ---
-	tokens.push(
-		makeToken(
-			"font/weight/default",
-			"{primitives.font.weight.variable.regular}",
-			"abstractions",
-			{
-				type: "number",
-				originalValue: "{primitives.font.weight.variable.regular}",
-				description: "Default font weight",
-			},
-		),
-	);
-	tokens.push(
-		makeToken(
-			"font/weight/strong",
-			"{primitives.font.weight.variable.medium}",
-			"abstractions",
-			{
-				type: "number",
-				originalValue: "{primitives.font.weight.variable.medium}",
-				description: "Strong/emphasized font weight",
-			},
-		),
-	);
 
 	// --- Font family aliases ---
 	tokens.push(
@@ -1229,7 +1171,6 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 				collectionName: family.collection,
 			};
 
-			// Regular variant
 			group[step.name] = {
 				id: `generated-text-${family.key}-${step.name}`,
 				type: "text",
@@ -1244,31 +1185,6 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 				fontFamilyBoundVariable: fontFamilyBinding,
 				fontSizeBoundVariable: sizeBinding,
 				lineHeightBoundVariable: lineHeightBinding,
-				fontWeightBoundVariable: {
-					variableName: "font/weight/default",
-					collectionName: "abstractions",
-				},
-			};
-
-			// Strong variant
-			group[`${step.name}-strong`] = {
-				id: `generated-text-${family.key}-${step.name}-strong`,
-				type: "text",
-				fontFamily: family.fontName,
-				fontStyle: "Medium",
-				fontSize: `${step.size}px`,
-				lineHeight: `${step.lineHeight}px`,
-				letterSpacing: "0%",
-				paragraphSpacing: "0px",
-				textCase: "ORIGINAL",
-				textDecoration: "NONE",
-				fontFamilyBoundVariable: fontFamilyBinding,
-				fontSizeBoundVariable: sizeBinding,
-				lineHeightBoundVariable: lineHeightBinding,
-				fontWeightBoundVariable: {
-					variableName: "font/weight/strong",
-					collectionName: "abstractions",
-				},
 			};
 		}
 

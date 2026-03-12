@@ -212,30 +212,27 @@ describe("generateStyles — text", () => {
 		}
 	});
 
-	test("generates regular and strong variants for each typescale step per font family", () => {
+	test("generates one variant per typescale step per font family", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		const leaves = collectStyleLeaves(styles.text);
 		const names = leaves.map((l) => l.path);
 
-		// 9 steps × 2 variants × 3 families = 54
+		// 9 steps × 1 variant × 3 families = 27
 		const expectedSteps = ["5xl", "4xl", "3xl", "2xl", "xl", "lg", "base", "sm", "xs"];
 		for (const family of ["primary", "secondary", "tertiary"]) {
 			for (const step of expectedSteps) {
 				expect(names).toContain(`${family}/${step}`);
-				expect(names).toContain(`${family}/${step}-strong`);
 			}
 		}
+		// No strong variants
+		expect(names.some((n) => n.endsWith("-strong"))).toBe(false);
 	});
 
-	test("regular variants use 'Regular' fontStyle, strong use 'Medium'", () => {
+	test("all text styles use Regular fontStyle", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		const leaves = collectStyleLeaves(styles.text);
 		for (const leaf of leaves) {
-			if (leaf.path.endsWith("-strong")) {
-				expect(leaf.data.fontStyle).toBe("Medium");
-			} else {
-				expect(leaf.data.fontStyle).toBe("Regular");
-			}
+			expect(leaf.data.fontStyle).toBe("Regular");
 		}
 	});
 
@@ -282,16 +279,11 @@ describe("generateStyles — text", () => {
 		}
 	});
 
-	test("text styles bind fontWeight — regular to default, strong to strong", () => {
+	test("text styles do not bind fontWeight (handled by Tailwind natively)", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		const leaves = collectStyleLeaves(styles.text);
 		for (const leaf of leaves) {
-			expect(leaf.data.fontWeightBoundVariable).toBeDefined();
-			if (leaf.path.endsWith("-strong")) {
-				expect(leaf.data.fontWeightBoundVariable.variableName).toBe("font/weight/strong");
-			} else {
-				expect(leaf.data.fontWeightBoundVariable.variableName).toBe("font/weight/default");
-			}
+			expect(leaf.data.fontWeightBoundVariable).toBeUndefined();
 		}
 	});
 
@@ -380,11 +372,11 @@ describe("generateStyles — processStyleGroup simulation", () => {
 			const leaves = collectStyleLeaves(styles[category]);
 			totalLeaves += leaves.length;
 		}
-		// Should have: paint (shadcn semantics) + text (typescale×2×3 families) + effect (7 shadow + 7 blur + 7 backdrop)
+		// Should have: paint (shadcn semantics) + text (typescale×3 families) + effect (7 shadow + 7 blur + 7 backdrop)
 		// Paint: at least 10 shadcn colors
-		// Text: 9 steps × 2 variants × 3 families = 54
+		// Text: 9 steps × 1 variant × 3 families = 27
 		// Effect: 7 + 7 + 7 = 21
-		expect(totalLeaves).toBeGreaterThanOrEqual(85);
+		expect(totalLeaves).toBeGreaterThanOrEqual(58);
 	});
 
 	test("no nested object without id+type is mistakenly treated as a leaf", () => {

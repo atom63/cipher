@@ -1,4 +1,4 @@
-/* abstractions — 34 variables */
+/* abstractions — 32 variables */
 
 /* Tailwind CSS v4 @theme inline */
 @theme inline {
@@ -10,8 +10,6 @@
   --font-family-primary: var(--font-family-primary);
   --font-family-secondary: var(--font-family-secondary);
   --font-family-tertiary: var(--font-family-tertiary);
-  --font-weight-default: var(--font-weight-default);
-  --font-weight-strong: var(--font-weight-strong);
   --surface-dark-1: var(--surface-dark-1);
   --surface-dark-10: var(--surface-dark-10);
   --surface-dark-11: var(--surface-dark-11);
@@ -36,6 +34,10 @@
   --surface-light-7: var(--surface-light-7);
   --surface-light-8: var(--surface-light-8);
   --surface-light-9: var(--surface-light-9);
+
+  --font-sans: var(--font-family-primary);
+  --font-serif: var(--font-family-secondary);
+  --font-mono: var(--font-family-tertiary);
 }
 
 :root {
@@ -68,8 +70,6 @@
   --duration-normal: var(--duration-250);
   --duration-slow: var(--duration-500);
   --duration-slower: var(--duration-1000);
-  --font-weight-default: var(--font-weight-variable-regular);
-  --font-weight-strong: var(--font-weight-variable-medium);
   --font-family-primary: var(--font-family-sans);
   --font-family-secondary: var(--font-family-serif);
   --font-family-tertiary: var(--font-family-mono);
