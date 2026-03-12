@@ -289,7 +289,7 @@ describe("token naming structure", () => {
 			(t) => t.category === "primitives",
 		);
 		const primNames = primitives.map((t) => t.figmaName);
-		expect(primNames).toContain("color/brand/500");
+		expect(primNames).toContain("color/brand-primary/500");
 		expect(primNames.some((n) => n.startsWith("rounded/"))).toBe(true);
 		expect(primNames.some((n) => n.startsWith("zLayer/"))).toBe(true);
 	});

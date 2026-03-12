@@ -142,7 +142,7 @@ describe("primitives", () => {
 		});
 		// Brand scale is available in result.primitives for preview
 		expect(result.primitives.length).toBeGreaterThan(0);
-		expect(result.primitives[0].name).toBe("brand");
+		expect(result.primitives[0].name).toBe("brand-primary");
 		// But not emitted as primitive tokens
 		const brandTokens = result.tokens.filter(
 			(t) =>
@@ -321,11 +321,11 @@ describe("abstractions", () => {
 		const brandTokens = result.tokens.filter(
 			(t) =>
 				t.category === "primitives" &&
-				t.figmaName.startsWith("color/brand/"),
+				t.figmaName.startsWith("color/brand-primary/"),
 		);
 		// 11 shades: 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950
 		expect(brandTokens.length).toBe(11);
-		expect(brandTokens.find((t) => t.figmaName === "color/brand/500")).toBeDefined();
+		expect(brandTokens.find((t) => t.figmaName === "color/brand-primary/500")).toBeDefined();
 	});
 
 	test("includes status color primitives", () => {
@@ -367,16 +367,16 @@ describe("abstractions", () => {
 			secondary: "#10B981",
 		});
 		const secondaryTokens = result.tokens.filter(
-			(t) => t.category === "primitives" && t.figmaName.startsWith("color/secondary/"),
+			(t) => t.category === "primitives" && t.figmaName.startsWith("color/brand-secondary/"),
 		);
 		expect(secondaryTokens.length).toBe(11);
-		expect(secondaryTokens.find((t) => t.figmaName === "color/secondary/500")).toBeDefined();
+		expect(secondaryTokens.find((t) => t.figmaName === "color/brand-secondary/500")).toBeDefined();
 	});
 
 	test("no secondary ramp without secondary color", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const secondaryTokens = result.tokens.filter(
-			(t) => t.category === "primitives" && t.figmaName.startsWith("color/secondary/"),
+			(t) => t.category === "primitives" && t.figmaName.startsWith("color/brand-secondary/"),
 		);
 		expect(secondaryTokens.length).toBe(0);
 	});
@@ -618,7 +618,7 @@ describe("generateCss", () => {
 		});
 		expect(css).toContain("@theme inline {");
 		expect(css).toContain(":root {");
-		expect(css).toContain("--color-brand-500:");
+		expect(css).toContain("--color-brand-primary-500:");
 		// Gray uses --color-gray-N pattern
 		expect(css).toContain("--color-gray-1:");
 		expect(css).toContain("--color-gray-12:");

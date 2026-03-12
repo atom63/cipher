@@ -15,21 +15,38 @@ export const SHADE_STEPS = [
 ] as const;
 export type ShadeStep = (typeof SHADE_STEPS)[number];
 
-// Target lightness values for each shade step (in OKLCH L)
-// Calibrated to match Tailwind/Radix brightness — avoids over-darkening
-const SHADE_LIGHTNESS: Record<ShadeStep, number> = {
+// Relative lightness positions for each shade step (0 = darkest, 1 = lightest)
+// 500 is the anchor (the input color). Steps above interpolate toward white,
+// steps below interpolate toward black — scaled to the input color's lightness.
+const SHADE_POSITION: Record<ShadeStep, number> = {
 	50: 0.97,
-	100: 0.94,
-	200: 0.88,
-	300: 0.80,
-	400: 0.70,
-	500: 0.60,
-	600: 0.52,
-	700: 0.44,
-	800: 0.36,
-	900: 0.28,
-	950: 0.20,
+	100: 0.92,
+	200: 0.82,
+	300: 0.68,
+	400: 0.50,
+	500: 0.0, // anchor — uses input color's actual lightness
+	600: -0.18,
+	700: -0.38,
+	800: -0.55,
+	900: -0.72,
+	950: -0.85,
 };
+
+/** Compute lightness for each shade, anchored to the input color's L */
+function computeShadeLightness(baseL: number): Record<ShadeStep, number> {
+	const result = {} as Record<ShadeStep, number>;
+	for (const step of SHADE_STEPS) {
+		const pos = SHADE_POSITION[step];
+		if (pos > 0) {
+			// Lighter shades: interpolate from baseL toward 1.0
+			result[step] = baseL + pos * (1.0 - baseL);
+		} else {
+			// Darker shades (and 500): interpolate from baseL toward 0.0
+			result[step] = baseL + pos * baseL;
+		}
+	}
+	return result;
+}
 
 // Chroma multipliers — lighter and darker shades have reduced saturation
 const SHADE_CHROMA_MULT: Record<ShadeStep, number> = {
@@ -151,12 +168,20 @@ export interface ColorScale {
 export function generateColorScale(name: string, baseHex: string): ColorScale {
 	const baseRgb = hexToRgb(baseHex);
 	const baseOklch = rgbToOklch(baseRgb.r, baseRgb.g, baseRgb.b);
+	const shadeLightness = computeShadeLightness(baseOklch.l);
 
 	const shades = {} as Record<ShadeStep, ColorValue>;
 	const hexValues = {} as Record<ShadeStep, string>;
 
 	for (const step of SHADE_STEPS) {
-		const targetL = SHADE_LIGHTNESS[step];
+		if (step === 500) {
+			// 500 = exact input color, no remapping
+			shades[step] = baseRgb;
+			hexValues[step] = rgbToHex(baseRgb);
+			continue;
+		}
+
+		const targetL = shadeLightness[step];
 		const chromaMult = SHADE_CHROMA_MULT[step];
 
 		const shade = oklchToRgb({

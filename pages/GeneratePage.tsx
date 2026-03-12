@@ -71,6 +71,13 @@ function parseColorValue(value: string): string | null {
 	return null;
 }
 
+/** Extract original base hex from variable description (e.g. "[base:#3B82F6]") */
+function extractBaseHex(variable: VariableInfo | undefined): string | null {
+	if (!variable?.description) return null;
+	const match = variable.description.match(/\[base:(#[0-9a-fA-F]{6})\]/);
+	return match ? match[1].toUpperCase() : null;
+}
+
 function extractBrandConfig(
 	variables: VariableInfo[],
 	_collections: CollectionInfo[],
@@ -86,7 +93,11 @@ function extractBrandConfig(
 	const primaryVar =
 		find("primitives", "color/brand-primary/500") ?? find("primitives", "color/brand/500");
 	let primaryColor = "#3B82F6";
-	if (primaryVar) {
+	// Prefer original base hex from description to avoid OKLCH round-trip drift
+	const primaryBase = extractBaseHex(primaryVar);
+	if (primaryBase) {
+		primaryColor = primaryBase;
+	} else if (primaryVar) {
 		const firstMode = Object.keys(primaryVar.valuesByMode)[0];
 		if (firstMode) {
 			const hex = parseColorValue(primaryVar.valuesByMode[firstMode]);
@@ -97,7 +108,10 @@ function extractBrandConfig(
 	const secondaryVar =
 		find("primitives", "color/brand-secondary/500") ?? find("primitives", "color/secondary/500");
 	let secondaryColor: string | null = null;
-	if (secondaryVar) {
+	const secondaryBase = extractBaseHex(secondaryVar);
+	if (secondaryBase) {
+		secondaryColor = secondaryBase;
+	} else if (secondaryVar) {
 		const firstMode = Object.keys(secondaryVar.valuesByMode)[0];
 		if (firstMode) {
 			secondaryColor = parseColorValue(secondaryVar.valuesByMode[firstMode]);
@@ -118,7 +132,7 @@ function extractBrandConfig(
 	}
 
 	let radiusAnchor = 10;
-	const radiusVar = find("primitives", "rounded/md");
+	const radiusVar = find("primitives", "rounded/lg");
 	if (radiusVar) {
 		const firstMode = Object.keys(radiusVar.valuesByMode)[0];
 		if (firstMode) {
@@ -152,10 +166,15 @@ function extractBrandConfig(
 				v.name === `color/${key}/500`,
 		);
 		if (statusVar) {
-			const firstMode = Object.keys(statusVar.valuesByMode)[0];
-			if (firstMode) {
-				const hex = parseColorValue(statusVar.valuesByMode[firstMode]);
-				if (hex) statusColors[key] = hex;
+			const base = extractBaseHex(statusVar);
+			if (base) {
+				statusColors[key] = base;
+			} else {
+				const firstMode = Object.keys(statusVar.valuesByMode)[0];
+				if (firstMode) {
+					const hex = parseColorValue(statusVar.valuesByMode[firstMode]);
+					if (hex) statusColors[key] = hex;
+				}
 			}
 		}
 	}
@@ -514,6 +533,7 @@ export function GeneratePage() {
 									</div>
 									{generated && (
 										<ColorRampPreview
+											inputHex={primaryColor}
 											scale={generated.primitives.find(
 												(s) => s.name === "brand-primary",
 											)}
@@ -557,6 +577,7 @@ export function GeneratePage() {
 											</div>
 											{generated && (
 												<ColorRampPreview
+													inputHex={secondaryColor}
 													scale={generated.primitives.find(
 														(s) => s.name === "brand-secondary",
 													)}
@@ -611,8 +632,9 @@ export function GeneratePage() {
 						</Frame>
 
 						{/* ── Status Colors ── */}
-						<details className={styles.detailsSection}>
-							<summary className={styles.detailsSummary}>Status Colors</summary>
+						<Frame>
+							<FrameHeader><h3 className={styles.sectionTitle}>Status Colors</h3></FrameHeader>
+							<FramePanel className={styles.sectionContent}>
 								<div className={styles.statusColorGrid}>
 									{(
 										[
@@ -649,10 +671,19 @@ export function GeneratePage() {
 													value={statusColors[key] ?? ""}
 												/>
 											</div>
+											{generated && (
+												<ColorRampPreview
+													inputHex={statusColors[key] || fallback}
+													scale={generated.primitives.find(
+														(s) => s.name === key,
+													)}
+												/>
+											)}
 										</div>
 									))}
 								</div>
-						</details>
+							</FramePanel>
+						</Frame>
 
 						{/* ── Radius ── */}
 						<Frame>
@@ -880,10 +911,14 @@ export function GeneratePage() {
 
 function ColorRampPreview({
 	scale,
+	inputHex,
 }: {
 	scale: { hexValues: Record<number, string> } | undefined;
+	inputHex?: string;
 }) {
 	if (!scale) return null;
+	const mapped500 = scale.hexValues[500];
+	const differs = inputHex && mapped500 && inputHex.toUpperCase() !== mapped500.toUpperCase();
 	return (
 		<div className={styles.colorRamp}>
 			<div className={styles.colorRampSwatches}>
@@ -898,7 +933,7 @@ function ColorRampPreview({
 			</div>
 			<div className={styles.colorRampLabels}>
 				<span>50</span>
-				<span>500</span>
+				<span>{differs ? `500: ${mapped500}` : "500"}</span>
 				<span>950</span>
 			</div>
 		</div>

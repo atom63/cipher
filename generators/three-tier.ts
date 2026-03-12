@@ -359,7 +359,9 @@ function generatePrimitives(config: BrandConfig): {
 				brandScale.shades[step],
 				"primitives",
 				{
-					description: `Brand primary ${step}`,
+					description: step === 500
+						? `Brand primary ${step} [base:${config.primary}]`
+						: `Brand primary ${step}`,
 					originalValue: brandScale.hexValues[step],
 				},
 			),
@@ -376,7 +378,9 @@ function generatePrimitives(config: BrandConfig): {
 					secondaryScale.shades[step],
 					"primitives",
 					{
-						description: `Brand secondary ${step}`,
+						description: step === 500
+							? `Brand secondary ${step} [base:${config.secondary}]`
+							: `Brand secondary ${step}`,
 						originalValue: secondaryScale.hexValues[step],
 					},
 				),
@@ -403,7 +407,9 @@ function generatePrimitives(config: BrandConfig): {
 					scale.shades[step],
 					"primitives",
 					{
-						description: `${status.name} ${step}`,
+						description: step === 500
+							? `${status.name} ${step} [base:${status.hex}]`
+							: `${status.name} ${step}`,
 						originalValue: scale.hexValues[step],
 					},
 				),
