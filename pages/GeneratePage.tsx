@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ClipboardCopy, Dices, RefreshCw, Wand2 } from "lucide-react";
+import { Check, ChevronDown, Dices, RefreshCw, Wand2 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
@@ -14,6 +14,7 @@ import {
 } from "../components/ui";
 import { Button } from "../components/ui/Button";
 import { CheckboxWithLabel } from "../components/ui/Checkbox";
+import { CopyButton } from "../components/ui/CopyButton";
 import { Input } from "../components/ui/Input";
 import { NumberField } from "../components/ui/NumberField";
 import { oklchToRgb, rgbToHex, SHADE_STEPS } from "../generators/color-scale";
@@ -287,7 +288,7 @@ export function GeneratePage() {
 	const [view, setView] = useState<ViewState>("loading");
 	const [isUpdate, setIsUpdate] = useState(false);
 	const postMessage = usePostMessage();
-	const { showError, showSuccess } = useToast();
+	const { showError } = useToast();
 
 	// Config state
 	const [primaryColor, setPrimaryColor] = useState("#3B82F6");
@@ -446,14 +447,10 @@ export function GeneratePage() {
 		});
 	}, [generated, isUpdate, postMessage]);
 
-	const handleCopyCss = useCallback(() => {
-		if (!brandConfig) return;
-		const css = generateCss(brandConfig);
-		navigator.clipboard.writeText(css).then(
-			() => showSuccess("CSS copied to clipboard"),
-			() => showError("Failed to copy CSS"),
-		);
-	}, [brandConfig, showSuccess, showError]);
+	const getCssText = useCallback(() => {
+		if (!brandConfig) return "";
+		return generateCss(brandConfig);
+	}, [brandConfig]);
 
 	const handleRefresh = useCallback(() => {
 		setView("loading");
@@ -936,10 +933,9 @@ export function GeneratePage() {
 						<Dices size={14} />
 						Shuffle Colors
 					</Button>
-					<Button disabled={!generated} onClick={handleCopyCss} variant="ghost">
-						<ClipboardCopy size={14} />
+					<CopyButton disabled={!generated} label="CSS" text={getCssText}>
 						Copy CSS
-					</Button>
+					</CopyButton>
 					<Button disabled={!generated} onClick={handleSubmit} variant="primary">
 						<Wand2 size={14} />
 						{isUpdate ? "Update in Figma" : "Create in Figma"}

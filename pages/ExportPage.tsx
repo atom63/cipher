@@ -3,7 +3,6 @@ import {
 	Check,
 	CircleOff,
 	Code,
-	Copy,
 	Download,
 	FileDown,
 } from "lucide-react";
@@ -17,6 +16,7 @@ import {
 	Alert,
 	Button,
 	CodeBlock,
+	CopyButton,
 	EmptyState,
 	Frame,
 	FrameFooter,
@@ -64,7 +64,7 @@ export function ExportPage() {
 	const [expandedCssFile, setExpandedCssFile] = useState<string | null>(null);
 
 	const postMessage = usePostMessage();
-	const { showSuccess, showError } = useToast();
+	const { showError } = useToast();
 
 	useEffect(() => {
 		postMessage({ type: "get-collections" });
@@ -164,20 +164,11 @@ export function ExportPage() {
 		URL.revokeObjectURL(url);
 	};
 
-	const copyToClipboard = (text: string, label: string) => {
-		navigator.clipboard
-			.writeText(text)
-			.then(() => showSuccess(`Copied ${label}`))
-			.catch(() => showError("Failed to copy"));
-	};
-
-	const copyAllCSS = () => {
-		const all = cssFiles
+	const allCssText = () =>
+		cssFiles
 			.filter((f) => f.name !== "index.css")
 			.map((f) => `/* === ${f.name} === */\n${f.content}`)
 			.join("\n\n");
-		copyToClipboard(all, "all CSS");
-	};
 
 	const downloadCSS = (file: CSSFileInfo) => {
 		const blob = new Blob([file.content], { type: "text/css" });
@@ -243,17 +234,13 @@ export function ExportPage() {
 										<span className={styles.cssFileCount}>
 											{file.variableCount}
 										</span>
-										<Button
-											data-tooltip="Copy"
-											onClick={(e: React.MouseEvent) => {
-												e.stopPropagation();
-												copyToClipboard(file.content, file.name);
-											}}
+										<CopyButton
+											iconSize={12}
+											label={file.name}
+											onClick={(e) => e.stopPropagation()}
 											size="icon-sm"
-											variant="ghost"
-										>
-											<Copy size={12} />
-										</Button>
+											text={file.content}
+										/>
 										<Button
 											data-tooltip="Download"
 											onClick={(e: React.MouseEvent) => {
@@ -278,10 +265,9 @@ export function ExportPage() {
 				</PageBody>
 
 				<PageFooter>
-					<Button onClick={copyAllCSS} variant="ghost">
-						<Copy size={14} />
+					<CopyButton label="all CSS" text={allCssText}>
 						Copy All
-					</Button>
+					</CopyButton>
 					<Button onClick={handleExportAgain} variant="ghost">
 						<FileDown size={14} />
 						Export Again
