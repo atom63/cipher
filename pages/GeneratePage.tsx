@@ -50,15 +50,25 @@ interface ExtractedConfig {
 	radiusAnchor: number;
 	secondaryColor: string | null;
 	statusColors: StatusColorOverrides;
+	typescale: TypescaleConfig | null;
 }
 
-function rgbStringToHex(rgb: string): string | null {
-	const match = rgb.match(/r:\s*([\d.]+).*?g:\s*([\d.]+).*?b:\s*([\d.]+)/);
-	if (!match) return null;
-	const r = Math.round(Number.parseFloat(match[1]) * 255);
-	const g = Math.round(Number.parseFloat(match[2]) * 255);
-	const b = Math.round(Number.parseFloat(match[3]) * 255);
-	return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase();
+/** Parse a color value string (hex or rgba) into a normalised uppercase hex */
+function parseColorValue(value: string): string | null {
+	// Already hex — normalise
+	const hexMatch = value.match(/^#([0-9a-fA-F]{6})$/);
+	if (hexMatch) return `#${hexMatch[1].toUpperCase()}`;
+
+	// rgba(r, g, b, a) — ignore alpha
+	const rgbaMatch = value.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+	if (rgbaMatch) {
+		const r = Number.parseInt(rgbaMatch[1], 10);
+		const g = Number.parseInt(rgbaMatch[2], 10);
+		const b = Number.parseInt(rgbaMatch[3], 10);
+		return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase();
+	}
+
+	return null;
 }
 
 function extractBrandConfig(
@@ -72,22 +82,25 @@ function extractBrandConfig(
 				v.name === name,
 		);
 
-	const primaryVar = find("primitives", "color/brand/500");
+	// Try renamed paths first, fall back to legacy names
+	const primaryVar =
+		find("primitives", "color/brand-primary/500") ?? find("primitives", "color/brand/500");
 	let primaryColor = "#3B82F6";
 	if (primaryVar) {
 		const firstMode = Object.keys(primaryVar.valuesByMode)[0];
 		if (firstMode) {
-			const hex = rgbStringToHex(primaryVar.valuesByMode[firstMode]);
+			const hex = parseColorValue(primaryVar.valuesByMode[firstMode]);
 			if (hex) primaryColor = hex;
 		}
 	}
 
-	const secondaryVar = find("primitives", "color/secondary/500");
+	const secondaryVar =
+		find("primitives", "color/brand-secondary/500") ?? find("primitives", "color/secondary/500");
 	let secondaryColor: string | null = null;
 	if (secondaryVar) {
 		const firstMode = Object.keys(secondaryVar.valuesByMode)[0];
 		if (firstMode) {
-			secondaryColor = rgbStringToHex(secondaryVar.valuesByMode[firstMode]);
+			secondaryColor = parseColorValue(secondaryVar.valuesByMode[firstMode]);
 		}
 	}
 
@@ -141,10 +154,88 @@ function extractBrandConfig(
 		if (statusVar) {
 			const firstMode = Object.keys(statusVar.valuesByMode)[0];
 			if (firstMode) {
-				const hex = rgbStringToHex(statusVar.valuesByMode[firstMode]);
+				const hex = parseColorValue(statusVar.valuesByMode[firstMode]);
 				if (hex) statusColors[key] = hex;
 			}
 		}
+	}
+
+	// --- Extract typescale config ---
+	let typescale: TypescaleConfig | null = null;
+	const baseSizeVar = find("primitives", "font/typescale/base/size/md");
+	if (baseSizeVar) {
+		const firstMode = Object.keys(baseSizeVar.valuesByMode)[0];
+		const base = firstMode ? Number.parseFloat(baseSizeVar.valuesByMode[firstMode]) : 16;
+
+		// Count steps up/down by probing known step names
+		const upNames = ["lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl"];
+		const downNames = ["sm", "xs"];
+		let stepsUp = 0;
+		for (const name of upNames) {
+			if (find("primitives", `font/typescale/${name}/size/md`)) stepsUp++;
+			else break;
+		}
+		let stepsDown = 0;
+		for (const name of downNames) {
+			if (find("primitives", `font/typescale/${name}/size/md`)) stepsDown++;
+			else break;
+		}
+
+		// Derive ratio from first step up
+		let ratio = "major-third";
+		const lgSizeVar = find("primitives", "font/typescale/lg/size/md");
+		if (lgSizeVar && base > 0) {
+			const lgMode = Object.keys(lgSizeVar.valuesByMode)[0];
+			if (lgMode) {
+				const lgSize = Number.parseFloat(lgSizeVar.valuesByMode[lgMode]);
+				const measured = lgSize / base;
+				// Find closest matching named ratio
+				let bestKey = "major-third";
+				let bestDiff = Number.POSITIVE_INFINITY;
+				for (const [key, r] of Object.entries(TYPESCALE_RATIOS)) {
+					const diff = Math.abs(r.value - measured);
+					if (diff < bestDiff) {
+						bestDiff = diff;
+						bestKey = key;
+					}
+				}
+				ratio = bestKey;
+			}
+		}
+
+		// Derive line heights
+		const baseLhVar = find("primitives", "font/typescale/base/line-height/md");
+		let lineHeightBody = 150;
+		if (baseLhVar && base > 0) {
+			const lhMode = Object.keys(baseLhVar.valuesByMode)[0];
+			if (lhMode) {
+				const lh = Number.parseFloat(baseLhVar.valuesByMode[lhMode]);
+				lineHeightBody = Math.round((lh / base) * 100);
+			}
+		}
+
+		let lineHeightHeading = 125;
+		if (lgSizeVar) {
+			const lgLhVar = find("primitives", "font/typescale/lg/line-height/md");
+			if (lgLhVar) {
+				const lgMode = Object.keys(lgSizeVar.valuesByMode)[0];
+				const lhMode = Object.keys(lgLhVar.valuesByMode)[0];
+				if (lgMode && lhMode) {
+					const lgSize = Number.parseFloat(lgSizeVar.valuesByMode[lgMode]);
+					const lgLh = Number.parseFloat(lgLhVar.valuesByMode[lhMode]);
+					if (lgSize > 0) lineHeightHeading = Math.round((lgLh / lgSize) * 100);
+				}
+			}
+		}
+
+		typescale = {
+			base: Number.isNaN(base) ? 16 : base,
+			ratio,
+			lineHeightBody,
+			lineHeightHeading,
+			stepsUp,
+			stepsDown,
+		};
 	}
 
 	return {
@@ -154,6 +245,7 @@ function extractBrandConfig(
 		radiusAnchor,
 		fonts,
 		statusColors,
+		typescale,
 	};
 }
 
@@ -220,6 +312,8 @@ export function GeneratePage() {
 						if (extracted.secondaryColor) {
 							setSecondaryColor(extracted.secondaryColor);
 							setHasSecondary(true);
+						} else {
+							setHasSecondary(false);
 						}
 						setGrayName(extracted.grayName);
 						setRadiusAnchor(extracted.radiusAnchor);
@@ -232,6 +326,9 @@ export function GeneratePage() {
 						}
 						if (Object.values(extracted.statusColors).some(Boolean)) {
 							setStatusColors(extracted.statusColors);
+						}
+						if (extracted.typescale) {
+							setTypescale(extracted.typescale);
 						}
 					}
 					setView("config");
@@ -418,7 +515,7 @@ export function GeneratePage() {
 									{generated && (
 										<ColorRampPreview
 											scale={generated.primitives.find(
-												(s) => s.name === "brand",
+												(s) => s.name === "brand-primary",
 											)}
 										/>
 									)}
@@ -461,7 +558,7 @@ export function GeneratePage() {
 											{generated && (
 												<ColorRampPreview
 													scale={generated.primitives.find(
-														(s) => s.name === "secondary",
+														(s) => s.name === "brand-secondary",
 													)}
 												/>
 											)}

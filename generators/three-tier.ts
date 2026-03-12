@@ -344,39 +344,39 @@ function generatePrimitives(config: BrandConfig): {
 
 
 	// --- Compute color scales for preview ---
-	const brandScale = generateColorScale("brand", config.primary);
+	const brandScale = generateColorScale("brand-primary", config.primary);
 	const scales: ColorScale[] = [brandScale];
 
 	if (config.secondary) {
-		scales.push(generateColorScale("secondary", config.secondary));
+		scales.push(generateColorScale("brand-secondary", config.secondary));
 	}
 
-	// --- Brand color full ramp (color/brand/50 – color/brand/950) ---
+	// --- Brand primary color full ramp (color/brand-primary/50 – 950) ---
 	for (const step of SHADE_STEPS) {
 		tokens.push(
 			makeToken(
-				`color/brand/${step}`,
+				`color/brand-primary/${step}`,
 				brandScale.shades[step],
 				"primitives",
 				{
-					description: `Brand ${step}`,
+					description: `Brand primary ${step}`,
 					originalValue: brandScale.hexValues[step],
 				},
 			),
 		);
 	}
 
-	// --- Secondary full ramp (if provided) ---
+	// --- Brand secondary full ramp (if provided) ---
 	if (config.secondary) {
-		const secondaryScale = generateColorScale("secondary", config.secondary);
+		const secondaryScale = generateColorScale("brand-secondary", config.secondary);
 		for (const step of SHADE_STEPS) {
 			tokens.push(
 				makeToken(
-					`color/secondary/${step}`,
+					`color/brand-secondary/${step}`,
 					secondaryScale.shades[step],
 					"primitives",
 					{
-						description: `Secondary ${step}`,
+						description: `Brand secondary ${step}`,
 						originalValue: secondaryScale.hexValues[step],
 					},
 				),
@@ -568,7 +568,7 @@ interface SemanticDef {
 function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 	const surfL = (step: number) => `{abstractions.surface.light.${step}}`;
 	const surfD = (step: number) => `{abstractions.surface.dark.${step}}`;
-	const primary = "{primitives.color.brand.500}";
+	const primary = "{primitives.color.brand-primary.500}";
 	const danger = "{primitives.color.danger.500}";
 	const success = "{primitives.color.success.500}";
 	const warning = "{primitives.color.warning.500}";
@@ -738,8 +738,8 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 		// --- Sidebar tokens ---
 		{
 			name: "sidebar",
-			light: "{semantics.card}",
-			dark: "{semantics.background}",
+			light: surfL(3),
+			dark: surfD(3),
 			description: "Sidebar background",
 		},
 		{
@@ -794,8 +794,8 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 		},
 		{
 			name: "dark",
-			light: "{primitives.color.gray.dark.1}",
-			dark: "{primitives.color.gray.dark.1}",
+			light: surfD(1),
+			dark: surfD(1),
 			description: "Always-dark surface (for forced-dark contexts)",
 		},
 	];
@@ -805,8 +805,8 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 		defs.push(
 			{
 				name: "secondary-accent",
-				light: "{primitives.color.secondary.500}",
-				dark: "{primitives.color.secondary.500}",
+				light: "{primitives.color.brand-secondary.500}",
+				dark: "{primitives.color.brand-secondary.500}",
 				description: "Secondary accent color",
 			},
 		);
@@ -927,20 +927,20 @@ export function generateCss(config: BrandConfig): string {
 	// Primitives as @theme inline
 	lines.push("@theme inline {");
 
-	// Brand color scale (from preview scales — for CSS utility classes)
-	const brandScale = system.primitives.find((s) => s.name === "brand");
+	// Brand primary color scale
+	const brandScale = system.primitives.find((s) => s.name === "brand-primary");
 	if (brandScale) {
 		for (const step of SHADE_STEPS) {
-			lines.push(`  --color-brand-${step}: ${brandScale.hexValues[step]};`);
+			lines.push(`  --color-brand-primary-${step}: ${brandScale.hexValues[step]};`);
 		}
 	}
 
-	// Secondary colors
-	const secondaryScale = system.primitives.find((s) => s.name === "secondary");
+	// Brand secondary colors (sorted right after brand primary)
+	const secondaryScale = system.primitives.find((s) => s.name === "brand-secondary");
 	if (secondaryScale) {
 		for (const step of SHADE_STEPS) {
 			lines.push(
-				`  --color-secondary-${step}: ${secondaryScale.hexValues[step]};`,
+				`  --color-brand-secondary-${step}: ${secondaryScale.hexValues[step]};`,
 			);
 		}
 	}

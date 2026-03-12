@@ -16,19 +16,19 @@ export const SHADE_STEPS = [
 export type ShadeStep = (typeof SHADE_STEPS)[number];
 
 // Target lightness values for each shade step (in OKLCH L)
-// These produce a well-distributed scale from very light to very dark
+// Calibrated to match Tailwind/Radix brightness — avoids over-darkening
 const SHADE_LIGHTNESS: Record<ShadeStep, number> = {
 	50: 0.97,
-	100: 0.93,
-	200: 0.87,
-	300: 0.78,
-	400: 0.68,
-	500: 0.58,
-	600: 0.48,
-	700: 0.4,
-	800: 0.32,
-	900: 0.24,
-	950: 0.17,
+	100: 0.94,
+	200: 0.88,
+	300: 0.80,
+	400: 0.70,
+	500: 0.60,
+	600: 0.52,
+	700: 0.44,
+	800: 0.36,
+	900: 0.28,
+	950: 0.20,
 };
 
 // Chroma multipliers — lighter and darker shades have reduced saturation
