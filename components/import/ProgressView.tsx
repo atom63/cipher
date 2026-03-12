@@ -1,8 +1,8 @@
 import {
 	AlertTriangle,
 	Check,
-	CheckCircle,
 	ChevronRight,
+	FileDown,
 	Plus,
 	Undo2,
 	X,
@@ -64,7 +64,8 @@ export function SuccessView({
 	const allFailed = success === 0 && failed > 0;
 	const isOverrideMode = importMode === "override";
 	const actionVerb = actionLabel ?? (isOverrideMode ? "Override" : "Import");
-	const actionVerbPast = actionLabelPast ?? (isOverrideMode ? "overridden" : "imported");
+	const actionVerbPast =
+		actionLabelPast ?? (isOverrideMode ? "overridden" : "imported");
 
 	// Categorize changes for display
 	const changedTokens = changes.filter((c) => c.action === "updated");
@@ -72,66 +73,88 @@ export function SuccessView({
 	const unchangedTokens = changes.filter((c) => c.action === "unchanged");
 	const hasChanges = changedTokens.length > 0;
 
+	const statusIcon = allFailed ? (
+		<X size={24} />
+	) : hasErrors ? (
+		<AlertTriangle size={24} />
+	) : (
+		<Check size={24} />
+	);
+
+	const title = allFailed
+		? `${actionVerb} Failed`
+		: hasErrors
+			? `${actionVerb} Completed with ${isOverrideMode ? "Warnings" : "Errors"}`
+			: `${actionVerb} Complete`;
+
+	const subtitle = allFailed
+		? `No tokens were ${actionVerbPast}`
+		: `${success} token${success !== 1 ? "s" : ""} ${actionVerbPast} successfully`;
+
 	return (
 		<div className={styles.successView}>
 			<div
 				className={styles.successIcon}
 				data-status={allFailed ? "error" : hasErrors ? "warning" : "success"}
 			>
-				{allFailed ? (
-					<X size={24} />
-				) : hasErrors ? (
-					<AlertTriangle size={24} />
-				) : (
-					<Check size={24} />
-				)}
+				{statusIcon}
 			</div>
-			<h2>
-				{allFailed
-					? `${actionVerb} Failed`
-					: hasErrors
-						? `${actionVerb} Completed with ${isOverrideMode ? "Warnings" : "Errors"}`
-						: `${actionVerb} Complete!`}
-			</h2>
 
+			<div className={styles.successContent}>
+				<h2>{title}</h2>
+				<p>{subtitle}</p>
+			</div>
+
+			{/* Stats */}
 			<div className={styles.successStats}>
 				{success > 0 && (
-					<p className={styles.successStat}>
-						<CheckCircle size={14} />
-						<span>
-							Successfully {actionVerbPast}: <strong>{success}</strong> token
-							{success !== 1 ? "s" : ""}
+					<div className={styles.successStat}>
+						<span className={styles.successStatLabel}>
+							{isOverrideMode ? "Overridden" : "Imported"}
 						</span>
-					</p>
+						<strong className={styles.successStatValue}>{success}</strong>
+					</div>
 				)}
 				{failed > 0 && (
-					<p
-						className={isOverrideMode ? styles.skippedStat : styles.failedStat}
-					>
-						{isOverrideMode ? (
-							<AlertTriangle size={14} />
-						) : (
-							<XCircle size={14} />
-						)}
-						<span>
-							{isOverrideMode ? "Skipped" : "Failed"}: <strong>{failed}</strong>{" "}
-							token{failed !== 1 ? "s" : ""}
-							{isOverrideMode && " (tokens or references not found)"}
+					<div className={styles.successStat}>
+						<span className={styles.successStatLabel}>
+							{isOverrideMode ? "Skipped" : "Failed"}
 						</span>
-					</p>
+						<strong className={styles.successStatValue}>{failed}</strong>
+					</div>
+				)}
+				{changedTokens.length > 0 && (
+					<div className={styles.successStat}>
+						<span className={styles.successStatLabel}>Updated</span>
+						<strong className={styles.successStatValue}>
+							{changedTokens.length}
+						</strong>
+					</div>
+				)}
+				{createdTokens.length > 0 && (
+					<div className={styles.successStat}>
+						<span className={styles.successStatLabel}>Created</span>
+						<strong className={styles.successStatValue}>
+							{createdTokens.length}
+						</strong>
+					</div>
+				)}
+				{unchangedTokens.length > 0 && (
+					<div className={styles.successStat}>
+						<span className={styles.successStatLabel}>Unchanged</span>
+						<strong className={styles.successStatValue}>
+							{unchangedTokens.length}
+						</strong>
+					</div>
 				)}
 			</div>
 
-			{/* Changes Summary */}
-			{changes.length > 0 && (
-				<details className={styles.changesDetails} open={hasChanges}>
+			{/* Changes Detail */}
+			{hasChanges && (
+				<details className={styles.changesDetails} open>
 					<summary>
-						{changedTokens.length > 0
-							? `${changedTokens.length} updated`
-							: `${changes.length} token${changes.length !== 1 ? "s" : ""}`}
-						{createdTokens.length > 0 && ` · ${createdTokens.length} created`}
-						{unchangedTokens.length > 0 &&
-							` · ${unchangedTokens.length} unchanged`}
+						{changedTokens.length} value{changedTokens.length !== 1 ? "s" : ""}{" "}
+						changed
 					</summary>
 					<ScrollArea className={styles.changesScroll}>
 						<ul className={styles.changesList}>
@@ -155,23 +178,20 @@ export function SuccessView({
 				</details>
 			)}
 
+			{/* Error Details */}
 			{hasErrors && (
-				<details
-					className={styles.errorDetails}
-					data-override-mode={isOverrideMode}
-					open={allFailed}
-				>
+				<details className={styles.errorDetails} open={allFailed}>
 					<summary>
 						{allFailed ? (
 							<>
-								<AlertTriangle size={14} /> {isOverrideMode ? "Skip" : "Error"}{" "}
-								Details
+								<XCircle size={12} /> {errors.length} error
+								{errors.length !== 1 ? "s" : ""}
 							</>
 						) : (
 							<>
-								<AlertTriangle size={14} /> View{" "}
-								{isOverrideMode ? "Skipped Tokens" : "Error Details"} (
-								{errors.length})
+								<AlertTriangle size={12} /> {errors.length}{" "}
+								{isOverrideMode ? "skipped" : "error"}
+								{errors.length !== 1 ? "s" : ""}
 							</>
 						)}
 					</summary>
@@ -192,8 +212,9 @@ export function SuccessView({
 						Undo
 					</Button>
 				)}
-				<Button onClick={onClose} variant="secondary">
-					Close
+				<Button onClick={onClose} variant="ghost">
+					<FileDown size={14} />
+					{actionVerb} Again
 				</Button>
 				<Button onClick={onImportMore} variant="default">
 					<Plus size={14} />

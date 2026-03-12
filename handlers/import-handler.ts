@@ -11,6 +11,56 @@ import type {
 import { parseColorToRGBA } from "../parsers/color-parsers";
 import { debug } from "../utils/debug";
 
+/**
+ * Update the paint style opacity for a variable that uses color-mix().
+ * Finds the paint style whose name matches the variable name and updates
+ * the fill opacity to match the color-mix transparency value.
+ */
+function updatePaintStyleOpacity(variable: Variable, opacity: number): void {
+	try {
+		const varNameNorm = variable.name.toLowerCase();
+		const paintStyles = figma.getLocalPaintStyles();
+
+		for (const style of paintStyles) {
+			// Match style name to variable name (strip collection prefix)
+			const styleNameNorm = style.name
+				.replace(/^(semantics|abstractions|primitives)\//i, "")
+				.toLowerCase();
+			if (styleNameNorm !== varNameNorm) continue;
+
+			// Update opacity on fills that reference this variable
+			const updatedPaints = style.paints.map((paint) => {
+				if (paint.type === "SOLID") {
+					const boundVars = paint.boundVariables;
+					if (boundVars?.color?.id === variable.id) {
+						return { ...paint, opacity };
+					}
+				}
+				if (
+					"gradientStops" in paint &&
+					Array.isArray(paint.gradientStops)
+				) {
+					const hasRef = paint.gradientStops.some(
+						(stop) => stop.boundVariables?.color?.id === variable.id,
+					);
+					if (hasRef) {
+						return { ...paint, opacity };
+					}
+				}
+				return paint;
+			});
+
+			style.paints = updatedPaints as Paint[];
+			debug(
+				`🎨 Updated paint style "${style.name}" opacity to ${opacity}`,
+			);
+			return;
+		}
+	} catch (e) {
+		debug(`⚠️ Could not update paint style opacity: ${e}`);
+	}
+}
+
 // Create Figma variables from tokens (supports multi-collection with references)
 // Note: collectionName parameter is currently unused - tokens are grouped by their category property
 // This allows multi-collection imports (primitives, abstractions, semantic) in a single operation
@@ -496,6 +546,14 @@ export async function createVariablesFromTokens(
 						type: "VARIABLE_ALIAS",
 						id: newRefId,
 					});
+
+					// Update paint style opacity for color-mix() tokens
+					// color-mix(in srgb, var(--X), transparent N%) exports a variable
+					// alias with style-level opacity — we need to update the paint style
+					const styleOpacity = (token as any).styleOpacity;
+					if (styleOpacity !== undefined && styleOpacity < 1) {
+						updatePaintStyleOpacity(variable, styleOpacity);
+					}
 
 					// Set description after setting value (for references)
 					if (token.description) {

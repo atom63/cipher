@@ -348,6 +348,12 @@ export function TokenTable({
 		onTokensUpdated(updated);
 	};
 
+	// Tokens auto-skipped due to non-roundtrippable values
+	const autoSkippedFontTokens = useMemo(
+		() => tokens.filter((t) => t.type === "fontFamily" && t.action === "skip"),
+		[tokens],
+	);
+
 	// Dynamic stats - calculate for ALL categories present
 	const categoryStats = tokens.reduce(
 		(acc, token) => {
@@ -411,6 +417,15 @@ export function TokenTable({
 							</button>
 						))}
 				</div>
+
+				{/* Auto-skipped tokens hint */}
+				{autoSkippedFontTokens.length > 0 && (
+					<Alert variant="info">
+						{autoSkippedFontTokens.length} font{" "}
+						{autoSkippedFontTokens.length === 1 ? "token" : "tokens"} skipped —
+						font families need to be set manually in Figma.
+					</Alert>
+				)}
 
 				{/* Conflict Summary */}
 				{conflicts.length > 0 && (

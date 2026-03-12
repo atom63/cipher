@@ -54,7 +54,7 @@
   --secondary-foreground: var(--surface-light-11);
   --muted: var(--surface-light-3);
   --muted-foreground: var(--surface-light-11);
-  --accent: color-mix(in srgb, var(--surface-light-4), transparent 20%);
+  --accent: color-mix(in srgb, var(--surface-light-4), transparent 80%);
   --accent-foreground: var(--surface-light-12);
   --destructive: var(--color-danger-500);
   --success: var(--color-success-500);
@@ -94,7 +94,7 @@
   --secondary-foreground: var(--surface-dark-11);
   --muted: var(--surface-dark-3);
   --muted-foreground: var(--surface-dark-11);
-  --accent: color-mix(in srgb, var(--surface-dark-6), transparent 20%);
+  --accent: color-mix(in srgb, var(--surface-dark-6), transparent 80%);
   --accent-foreground: var(--surface-dark-12);
   --destructive: var(--color-danger-500);
   --success: var(--color-success-500);

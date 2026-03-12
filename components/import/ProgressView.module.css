@@ -1,5 +1,6 @@
 /* ============================================
    SUCCESS VIEW
+   Normalized to match ExportPage success pattern
    ============================================ */
 
 .successView {
@@ -10,7 +11,7 @@
   justify-content: center;
   padding: var(--spacing-3xl) var(--spacing-xl);
   text-align: center;
-  animation: success-fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: successFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* --- Status Icon --- */
@@ -26,7 +27,7 @@
   background: var(--success);
   border-radius: var(--radius-xl);
   box-shadow: 0 0 0 4px color-mix(in oklch, var(--success) 15%, transparent);
-  animation: success-icon-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+  animation: successIconPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
 
 .successIcon[data-status="error"] {
@@ -39,15 +40,25 @@
   box-shadow: 0 0 0 4px color-mix(in oklch, var(--warning) 15%, transparent);
 }
 
-/* --- Title --- */
+/* --- Title + Subtitle --- */
 
-.successView h2 {
-  margin: 0 0 var(--spacing-lg);
+.successContent {
+  margin-bottom: var(--spacing-lg);
+  animation: successSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+.successContent h2 {
+  margin: 0 0 var(--spacing-2xs);
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--foreground);
   text-wrap: balance;
-  animation: success-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+.successContent p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
 }
 
 /* --- Stats Card --- */
@@ -63,112 +74,28 @@
   background: var(--border);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  animation: success-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+  animation: successSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 }
 
-.successStats p {
+.successStat {
   display: flex;
   gap: var(--spacing-sm);
   align-items: center;
+  justify-content: space-between;
   padding: var(--spacing-sm) var(--spacing-md);
-  margin: 0;
   font-size: var(--text-sm);
   color: var(--foreground);
   background: var(--background);
 }
 
-.successStats p strong {
+.successStatLabel {
+  color: var(--muted-foreground);
+}
+
+.successStatValue {
   font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
   color: var(--foreground);
-}
-
-/* Success stat colors */
-.successStat {
-  color: var(--success);
-}
-
-.failedStat {
-  color: var(--destructive);
-}
-
-.skippedStat {
-  color: var(--warning);
-}
-
-/* --- Error Details --- */
-
-.errorDetails {
-  width: 100%;
-  margin-bottom: var(--spacing-md);
-  text-align: left;
-}
-
-.errorDetails summary {
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--foreground);
-  cursor: pointer;
-  background: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.errorDetails summary:hover {
-  background: var(--accent);
-  border-color: var(--input);
-}
-
-.errorDetailsContent {
-  max-height: 200px;
-  padding: var(--spacing-md);
-  margin-top: var(--spacing-xs);
-  background: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-}
-
-.errorList {
-  padding-left: var(--spacing-lg);
-  margin: 0;
-  list-style: none;
-}
-
-.errorList li {
-  padding: var(--spacing-xs) 0;
-  font-size: var(--text-xs);
-  line-height: 1.5;
-  color: var(--foreground);
-  word-break: break-word;
-}
-
-.errorList li + li {
-  border-top: 1px solid var(--border);
-}
-
-/* Override mode - warning colors */
-.errorDetails[data-override-mode="true"] summary {
-  color: var(--warning-foreground);
-  background: var(--warning);
-  border-color: var(--warning);
-}
-
-.errorDetails[data-override-mode="true"] summary:hover {
-  opacity: 0.9;
-}
-
-/* Error mode - destructive colors */
-.errorDetails[data-override-mode="false"] summary {
-  color: var(--destructive-foreground);
-  background: var(--destructive);
-  border-color: var(--destructive);
-}
-
-.errorDetails[data-override-mode="false"] summary:hover {
-  opacity: 0.9;
 }
 
 /* --- Changes Details --- */
@@ -180,7 +107,7 @@
   text-align: left;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  animation: success-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+  animation: successSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
 }
 
 .changesDetails summary {
@@ -261,6 +188,63 @@
   border-top: 1px solid var(--border);
 }
 
+/* --- Error Details --- */
+
+.errorDetails {
+  width: 100%;
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  animation: successSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+.errorDetails summary {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  background: var(--muted);
+  transition: background-color 0.15s ease;
+}
+
+.errorDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.errorDetails summary:hover {
+  background: var(--accent);
+}
+
+.errorDetailsContent {
+  max-height: 160px;
+}
+
+.errorList {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.errorList li {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  word-break: break-word;
+}
+
+.errorList li + li {
+  border-top: 1px solid var(--border);
+}
+
 /* --- Actions --- */
 
 .successActions {
@@ -268,23 +252,19 @@
   gap: var(--spacing-sm);
   justify-content: center;
   margin-top: var(--spacing-lg);
-  animation: success-text-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+  animation: successSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
 }
 
 /* ============================================
    ANIMATIONS
    ============================================ */
 
-@keyframes success-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+@keyframes successFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@keyframes success-icon-in {
+@keyframes successIconPop {
   from {
     opacity: 0;
     transform: scale(0.7);
@@ -295,7 +275,7 @@
   }
 }
 
-@keyframes success-text-in {
+@keyframes successSlideUp {
   from {
     opacity: 0;
     transform: translateY(6px);
@@ -309,9 +289,10 @@
 @media (prefers-reduced-motion: reduce) {
   .successView,
   .successIcon,
-  .successView h2,
+  .successContent,
   .successStats,
   .changesDetails,
+  .errorDetails,
   .successActions {
     animation: none;
   }

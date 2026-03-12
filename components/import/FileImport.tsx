@@ -15,7 +15,12 @@ interface FileImportProps {
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 /** Files to skip on CSS import — computed/non-roundtrippable outputs */
-const SKIP_CSS_FILES = ["index.css", "radius.css", "typescales.css"];
+const SKIP_CSS_FILES = [
+	"index.css",
+	"radius.css",
+	"typescales.css",
+	"effects.css",
+];
 
 function getExt(name: string): string {
 	return name.split(".").pop()?.toLowerCase() ?? "";

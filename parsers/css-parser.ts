@@ -33,7 +33,6 @@ const FILE_CATEGORY_MAP: Record<string, TokenCategory> = {
 	"primitives.css": "primitives",
 	"abstractions.css": "abstractions",
 	"semantics.css": "semantics",
-	"effects.css": "primitives",
 };
 
 /** Fallback: selector-to-category when no file section is active */
@@ -63,6 +62,10 @@ const COLOR_PATTERNS = /^(#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\(|oklch\()/;
 
 /** color-mix() pattern */
 const COLOR_MIX_RE = /^color-mix\(/;
+
+/** color-mix() with var() reference — Cipher export pattern for opacity on aliases */
+const COLOR_MIX_VAR_RE =
+	/^color-mix\(\s*in\s+srgb\s*,\s*var\(\s*--([\w-]+)\s*\)\s*,\s*transparent\s+(\d+(?:\.\d+)?)%\s*\)$/;
 
 /** Numeric value with optional unit */
 const NUMERIC_RE =
@@ -118,12 +121,16 @@ function sectionAtOffset(
 }
 
 /**
- * Strip CSS comments from source text, EXCEPT section headers.
- * We need section headers to survive for offset-based section lookup,
- * so we strip all comments first and do section detection on the original.
+ * Strip CSS comments from source text, preserving section headers.
+ * Section headers (`/* === filename.css === *​/`) must survive so that
+ * offset-based section lookup works correctly on the stripped text.
  */
 function stripComments(css: string): string {
-	return css.replace(/\/\*[\s\S]*?\*\//g, "");
+	return css.replace(/\/\*[\s\S]*?\*\//g, (match) => {
+		// Preserve section headers (/* === filename.css === */)
+		if (/===\s*.+?\.css\s*===/.test(match)) return match;
+		return "";
+	});
 }
 
 /**
@@ -174,7 +181,7 @@ function modeFromSelector(
 	if (fileCategory !== "semantics") return undefined;
 	const trimmed = selector.trim();
 	if (trimmed === ".dark" || trimmed.includes("dark")) return "Dark";
-	if (trimmed === ":root" || trimmed.includes("light")) return "Light";
+	if (trimmed === ":root" || trimmed.includes(":root") || trimmed.includes("light")) return "Light";
 	return undefined;
 }
 
@@ -183,6 +190,11 @@ function modeFromSelector(
  */
 function inferType(name: string, value: string): TokenType {
 	if (VAR_REF_RE.test(value)) {
+		return "reference";
+	}
+
+	// color-mix(in srgb, var(--X), transparent N%) — reference with opacity
+	if (COLOR_MIX_VAR_RE.test(value)) {
 		return "reference";
 	}
 
@@ -227,10 +239,28 @@ function toFigmaName(name: string): string {
  * Convert a var(--ref) value to the `{category.path}` reference format.
  */
 function convertVarReference(value: string): string {
+	// color-mix(in srgb, var(--X), transparent N%) — extract var reference
+	const mixMatch = value.match(COLOR_MIX_VAR_RE);
+	if (mixMatch) {
+		const refName = mixMatch[1];
+		return `{${refName.replace(/-/g, ".")}}`;
+	}
+
 	const match = value.match(VAR_REF_RE);
 	if (!match) return value;
 	const refName = match[1];
 	return `{${refName.replace(/-/g, ".")}}`;
+}
+
+/**
+ * Extract opacity from a color-mix() expression.
+ * Returns opacity as 0-1 float, or undefined if not a color-mix pattern.
+ */
+function extractColorMixOpacity(value: string): number | undefined {
+	const match = value.match(COLOR_MIX_VAR_RE);
+	if (!match) return undefined;
+	const transparencyPercent = Number.parseFloat(match[2]);
+	return 1 - transparencyPercent / 100;
 }
 
 /**
@@ -299,17 +329,17 @@ export function parseCSS(cssText: string): CSSParseResult {
 	let skipped = 0;
 	let tokenIndex = 0;
 
-	// Build section map from original text (before stripping comments)
-	const sections = buildSectionMap(cssText);
-	const isCipherExport =
-		sections.length > 0 &&
-		sections.some((s) => FILE_CATEGORY_MAP[s.filename] !== undefined);
-
 	// Also detect via category comment pattern (single-file case)
 	const hasCategoryComment = CATEGORY_COMMENT_RE.test(cssText);
 
-	// Strip comments for parsing
+	// Strip comments for parsing (preserves section headers)
 	const stripped = stripComments(cssText);
+
+	// Build section map from stripped text so offsets align with block matches
+	const sections = buildSectionMap(stripped);
+	const isCipherExport =
+		sections.length > 0 &&
+		sections.some((s) => FILE_CATEGORY_MAP[s.filename] !== undefined);
 
 	// Find all selector blocks
 	for (const blockMatch of stripped.matchAll(BLOCK_RE)) {
@@ -317,8 +347,9 @@ export function parseCSS(cssText: string): CSSParseResult {
 		const blockBody = blockMatch[2];
 		const blockStartOffset = blockMatch.index + blockMatch[1].length + 1;
 
-		// Determine file section for this block
-		const sectionFile = sectionAtOffset(sections, blockMatch.index);
+		// Determine file section for this block (use brace offset, not block
+		// start, because the selector match may include a preceding section header)
+		const sectionFile = sectionAtOffset(sections, blockStartOffset);
 		const fileCategory = sectionFile
 			? FILE_CATEGORY_MAP[sectionFile] ?? null
 			: null;
@@ -355,9 +386,11 @@ export function parseCSS(cssText: string): CSSParseResult {
 
 			const figmaName = toFigmaName(varName);
 
-			// Font-family tokens contain CSS font stacks that trigger Figma
-			// font-loading errors — auto-skip them on import
+			// Auto-skip tokens that can't round-trip as Figma variables
 			const action = type === "fontFamily" ? "skip" : "import";
+
+			// Extract opacity from color-mix() references
+			const styleOpacity = extractColorMixOpacity(rawValue);
 
 			tokens.push({
 				id: generateTokenId(varName, tokenIndex++),
@@ -370,6 +403,8 @@ export function parseCSS(cssText: string): CSSParseResult {
 				action,
 				// Put modeName at top level (import handler reads token.modeName)
 				...(modeName ? { modeName } : {}),
+				// Style-level opacity from color-mix() — import handler updates paint style
+				...(styleOpacity !== undefined ? { styleOpacity } : {}),
 			} as any);
 
 			parsed++;

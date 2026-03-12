@@ -97,6 +97,32 @@ describe("parseCSS", () => {
 		});
 	});
 
+	describe("color-mix() references", () => {
+		test("parses color-mix with var() as reference with styleOpacity", () => {
+			const css = `:root {
+				--accent: color-mix(in srgb, var(--surface-light-4), transparent 20%);
+			}`;
+
+			const result = parseCSS(css);
+			expect(result.tokens).toHaveLength(1);
+			const token = result.tokens[0] as any;
+			expect(token.type).toBe("reference");
+			expect(token.value).toBe("{surface.light.4}");
+			expect(token.styleOpacity).toBe(0.8);
+			expect(token.action).toBe("import");
+		});
+
+		test("color-mix without var() stays as color type", () => {
+			const css = `:root {
+				--blend: color-mix(in srgb, red, blue 50%);
+			}`;
+
+			const result = parseCSS(css);
+			expect(result.tokens).toHaveLength(1);
+			expect(result.tokens[0].type).toBe("color");
+		});
+	});
+
 	describe("multiple selectors", () => {
 		test("parses .dark selector as semantics category", () => {
 			const css = `.dark {
