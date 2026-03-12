@@ -9,6 +9,7 @@ import type {
 	TokenAction,
 	TokenCategory,
 } from "../../types/tokens";
+import { PageBody, PageFooter, PageLayout } from "../layout";
 import { Button, Checkbox, EmptyState, ScrollArea, SectionHeader } from "../ui";
 import { Alert } from "../ui/Alert";
 import { BatchRenameDialog } from "./BatchRenameDialog";
@@ -23,6 +24,8 @@ export interface ImportConflict {
 
 interface TokenTableProps {
 	conflicts?: ImportConflict[];
+	/** Whether import is in override mode (update existing variables) */
+	importMode?: "import" | "override";
 	onCancel: () => void;
 	onImport: () => void;
 	onTokensUpdated: (tokens: DesignToken[]) => void;
@@ -240,6 +243,7 @@ export function TokenTable({
 	onImport,
 	onCancel,
 	conflicts = [],
+	importMode = "import",
 }: TokenTableProps) {
 	const [filter, setFilter] = useState<TokenCategory | "all">("all");
 	const [editing, setEditing] = useState<EditingState | null>(null);
@@ -375,134 +379,152 @@ export function TokenTable({
 	}, [conflicts]);
 
 	return (
-		<div className={styles.tokenTableContainer}>
-			<SectionHeader
-				description={`${stats.total} ${stats.total === 1 ? "token" : "tokens"} found · ${stats.toImport} selected for import`}
-				title="Review Tokens"
-				variant="secondary"
-			/>
+		<PageLayout>
+			<PageBody className={styles.tokenTableBody}>
+				<SectionHeader
+					description={`${stats.total} ${stats.total === 1 ? "token" : "tokens"} found · ${stats.toImport} selected for import`}
+					title="Review Tokens"
+					variant="secondary"
+				/>
 
-			{/* Stats - Dynamic category filters */}
-			<div className={styles.statsBar}>
-				<button
-					className={`${styles.statChip} ${filter === "all" ? styles.active : ""}`}
-					onClick={() => setFilter("all")}
-					type="button"
-				>
-					All ({stats.total})
-				</button>
-				{Object.entries(stats.byCategory)
-					.sort(([, a], [, b]) => b - a) // Sort by count descending
-					.map(([category, count]) => (
-						<button
-							className={`${styles.statChip} ${filter === category ? styles.active : ""}`}
-							key={category}
-							onClick={() => setFilter(category as TokenCategory)}
-							type="button"
-						>
-							{category.charAt(0).toUpperCase() + category.slice(1)} ({count})
-						</button>
-					))}
-			</div>
-
-			{/* Conflict Summary */}
-			{conflicts.length > 0 && (
-				<Alert
-					title={`${conflicts.length} ${conflicts.length === 1 ? "conflict" : "conflicts"} detected`}
-					variant="warning"
-				>
-					{conflicts.length}{" "}
-					{conflicts.length === 1
-						? "token already exists"
-						: "tokens already exist"}{" "}
-					in the target collection. Deselect to skip, or keep selected to
-					overwrite existing values.
-				</Alert>
-			)}
-
-			{/* Validation Results */}
-			{validation.issues.length > 0 && (
-				<Alert
-					title={
-						validation.valid
-							? `${validation.stats.warnings} ${validation.stats.warnings === 1 ? "warning" : "warnings"}`
-							: `${validation.stats.errors} ${validation.stats.errors === 1 ? "error" : "errors"} — fix before importing`
-					}
-					variant={validation.valid ? "warning" : "error"}
-				>
-					<ul className={styles.validationList}>
-						{validation.issues.slice(0, 5).map((issue) => (
-							<li key={`${issue.tokenId}-${issue.type}`}>
-								<strong>{issue.tokenName}</strong>: {issue.message}
-							</li>
-						))}
-						{validation.issues.length > 5 && (
-							<li>…and {validation.issues.length - 5} more</li>
-						)}
-					</ul>
-				</Alert>
-			)}
-
-			{/* List Header */}
-			<div className={styles.listHeader}>
-				<div className={styles.colCheck}>
-					<Checkbox
-						checked={allSelected}
-						id="select-all"
-						indeterminate={!(allSelected || noneSelected)}
-						onChange={handleToggleAll}
-						size="sm"
-					/>
-				</div>
-				<div className={styles.colName}>Name</div>
-				<div className={styles.colValue}>
-					<span>Value</span>
-					<Button
-						onClick={() => setShowBatchRename(true)}
-						size="sm"
-						title="Find and replace in token names"
-						variant="ghost"
+				{/* Stats - Dynamic category filters */}
+				<div className={styles.statsBar}>
+					<button
+						className={styles.statChip}
+						data-selected={filter === "all"}
+						onClick={() => setFilter("all")}
+						type="button"
 					>
-						<Search size={14} />
-						Batch Rename
-					</Button>
+						All ({stats.total})
+					</button>
+					{Object.entries(stats.byCategory)
+						.sort(([, a], [, b]) => b - a) // Sort by count descending
+						.map(([category, count]) => (
+							<button
+								className={styles.statChip}
+								data-selected={filter === category}
+								key={category}
+								onClick={() => setFilter(category as TokenCategory)}
+								type="button"
+							>
+								{category.charAt(0).toUpperCase() + category.slice(1)} ({count})
+							</button>
+						))}
 				</div>
-			</div>
 
-			{/* Token List */}
-			<ScrollArea className={styles.tokenList}>
-				{filteredTokens.length === 0 ? (
-					<EmptyState
-						description={
-							filter === "all"
-								? undefined
-								: "Select a different category or show all tokens."
+				{/* Conflict Summary */}
+				{conflicts.length > 0 && (
+					<Alert
+						title={
+							importMode === "override"
+								? `${conflicts.length} ${conflicts.length === 1 ? "variable" : "variables"} will be updated`
+								: `${conflicts.length} ${conflicts.length === 1 ? "conflict" : "conflicts"} detected`
 						}
-						icon={<Search size={24} />}
-						size="sm"
-						title={filter === "all" ? "No tokens found" : `No ${filter} tokens`}
-					/>
-				) : (
-					filteredTokens.map((token) => (
-						<TokenRow
-							conflict={conflictMap.get(token.id)}
-							editing={editing}
-							key={token.id}
-							onCancelEdit={handleCancelEdit}
-							onNameChange={handleNameChange}
-							onStartEdit={setEditing}
-							onToggle={handleToggleToken}
-							onValueChange={handleValueChange}
-							token={token}
-						/>
-					))
+						variant={importMode === "override" ? "info" : "warning"}
+					>
+						{importMode === "override" ? (
+							<>
+								{conflicts.length}{" "}
+								{conflicts.length === 1
+									? "existing variable matches"
+									: "existing variables match"}{" "}
+								tokens in this import. Values will be overwritten.
+							</>
+						) : (
+							<>
+								{conflicts.length}{" "}
+								{conflicts.length === 1
+									? "token already exists"
+									: "tokens already exist"}{" "}
+								in the target collection. Deselect to skip, or keep selected to
+								overwrite existing values.
+							</>
+						)}
+					</Alert>
 				)}
-			</ScrollArea>
 
-			{/* Actions */}
-			<div className={styles.tableActions}>
-				<Button onClick={onCancel}variant="ghost" >
-					<X size={14} />
+				{/* Validation Results */}
+				{validation.issues.length > 0 && (
+					<Alert
+						title={
+							validation.valid
+								? `${validation.stats.warnings} ${validation.stats.warnings === 1 ? "warning" : "warnings"}`
+								: `${validation.stats.errors} ${validation.stats.errors === 1 ? "error" : "errors"} — fix before importing`
+						}
+						variant={validation.valid ? "warning" : "error"}
+					>
+						<ul className={styles.validationList}>
+							{validation.issues.slice(0, 5).map((issue) => (
+								<li key={`${issue.tokenId}-${issue.type}`}>
+									<strong>{issue.tokenName}</strong>: {issue.message}
+								</li>
+							))}
+							{validation.issues.length > 5 && (
+								<li>…and {validation.issues.length - 5} more</li>
+							)}
+						</ul>
+					</Alert>
+				)}
+
+				{/* List Header */}
+				<div className={styles.listHeader}>
+					<div className={styles.colCheck}>
+						<Checkbox
+							checked={allSelected}
+							id="select-all"
+							indeterminate={!(allSelected || noneSelected)}
+							onChange={handleToggleAll}
+							size="sm"
+						/>
+					</div>
+					<div className={styles.colName}>Name</div>
+					<div className={styles.colValue}>
+						<span>Value</span>
+						<Button
+							onClick={() => setShowBatchRename(true)}
+							size="sm"
+							title="Find and replace in token names"
+							variant="ghost"
+						>
+							<Search size={14} />
+							Batch Rename
+						</Button>
+					</div>
+				</div>
+
+				{/* Token List */}
+				<ScrollArea className={styles.tokenList}>
+					{filteredTokens.length === 0 ? (
+						<EmptyState
+							description={
+								filter === "all"
+									? undefined
+									: "Select a different category or show all tokens."
+							}
+							icon={<Search size={24} />}
+							size="sm"
+							title={filter === "all" ? "No tokens found" : `No ${filter} tokens`}
+						/>
+					) : (
+						filteredTokens.map((token) => (
+							<TokenRow
+								conflict={conflictMap.get(token.id)}
+								editing={editing}
+								key={token.id}
+								onCancelEdit={handleCancelEdit}
+								onNameChange={handleNameChange}
+								onStartEdit={setEditing}
+								onToggle={handleToggleToken}
+								onValueChange={handleValueChange}
+								token={token}
+							/>
+						))
+					)}
+				</ScrollArea>
+			</PageBody>
+
+			<PageFooter>
+				<Button onClick={onCancel} variant="ghost">
 					Cancel
 				</Button>
 				<Button
@@ -524,7 +546,7 @@ export function TokenTable({
 						</>
 					)}
 				</Button>
-			</div>
+			</PageFooter>
 
 			{/* Batch Rename Dialog */}
 			{showBatchRename && (
@@ -534,6 +556,6 @@ export function TokenTable({
 					tokens={tokens}
 				/>
 			)}
-		</div>
+		</PageLayout>
 	);
 }

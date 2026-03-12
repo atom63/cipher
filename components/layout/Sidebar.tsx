@@ -120,19 +120,21 @@ export function Sidebar({
 			</div>
 
 			{/* Collapse Toggle */}
-			<button
-				aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-				className={styles.sidebarCollapseToggle}
-				onClick={onToggleCollapse}
-				title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-				type="button"
-			>
-				{collapsed ? (
-					<ChevronRight aria-hidden="true" size={18} />
-				) : (
-					<ChevronLeft aria-hidden="true" size={18} />
-				)}
-			</button>
+			<div className={styles.sidebarCollapseToggleContainer}>
+				<button
+					aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+					className={styles.sidebarCollapseToggle}
+					onClick={onToggleCollapse}
+					title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+					type="button"
+				>
+					{collapsed ? (
+						<ChevronRight aria-hidden="true" size={18} />
+					) : (
+						<ChevronLeft aria-hidden="true" size={18} />
+					)}
+				</button>
+			</div>
 		</aside>
 	);
 }

@@ -30,8 +30,8 @@ describe("figmaTypeToTokenType", () => {
 			expect(figmaTypeToTokenType("FLOAT", "layout/spacing/4")).toBe("spacing");
 		});
 
-		test("infers sizing from size/sizes path", () => {
-			expect(figmaTypeToTokenType("FLOAT", "sizes/icon")).toBe("sizing");
+		test("infers sizing from size path", () => {
+			expect(figmaTypeToTokenType("FLOAT", "size/icon")).toBe("sizing");
 			expect(figmaTypeToTokenType("FLOAT", "size/button")).toBe("sizing");
 		});
 

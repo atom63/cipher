@@ -6,7 +6,7 @@
 
 /// <reference types="@figma/plugin-typings" />
 
-import { generateCSS } from "./handlers/css-generator";
+import { generateCSS, toVarName } from "./handlers/css-generator";
 import {
 	exportStylesAsTokens,
 	exportVariablesAsTokens,
@@ -16,6 +16,7 @@ import {
 	importStylesFromTokens,
 } from "./handlers/import-handler";
 // Import modules
+import { parseCSS } from "./parsers/css-parser";
 import { parseJSON } from "./parsers/token-parsers";
 import type { PluginSettings, UIToMainMessage } from "./types/messages";
 import { debug } from "./utils/debug";
@@ -67,12 +68,38 @@ async function saveSettings(
 figma.ui.onmessage = async (msg: UIToMainMessage) => {
 	switch (msg.type) {
 		case "parse-tokens": {
-			const { content } = msg.data;
-			const parsed = parseJSON(content);
-			figma.ui.postMessage({
-				type: "tokens-parsed",
-				data: parsed,
-			});
+			const { content, format } = msg.data;
+			if (format === "css") {
+				const cssResult = parseCSS(content);
+				// Convert CSSParseResult → ParsedTokens shape
+				const byCategory: Record<string, number> = {};
+				for (const t of cssResult.tokens) {
+					byCategory[t.category] = (byCategory[t.category] || 0) + 1;
+				}
+				figma.ui.postMessage({
+					type: "tokens-parsed",
+					data: {
+						tokens: cssResult.tokens,
+						errors: cssResult.errors.map((e) => ({
+							message: e.message,
+							line: e.line,
+							severity: "warning" as const,
+						})),
+						stats: {
+							total: cssResult.tokens.length,
+							byCategory,
+							conflicts: 0,
+							errors: cssResult.errors.length,
+						},
+						isCipherExport: cssResult.isCipherExport,
+					},
+				});
+			} else {
+				figma.ui.postMessage({
+					type: "tokens-parsed",
+					data: parseJSON(content),
+				});
+			}
 			break;
 		}
 
@@ -717,7 +744,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				p.toLowerCase().replace(/[\s-_]/g, "");
 
 			// Find a float variable by style path + property suffix, then fall back to value + name hints
-			// e.g. styleName="typography/large-title", suffix="font-size" → looks for "typography/large-title/font-size"
+			// e.g. styleName="typography/large-title", suffix="font/size" → looks for "typography/large-title/font/size"
 			const findFloatVar = (
 				value: number,
 				styleName: string,
@@ -878,10 +905,10 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					const bv = (textStyle as any).boundVariables || {};
 					const styleName = textStyle.name;
 
-					// fontSize — path-based: e.g. "typography/large-title" → "typography/large-title/font-size"
+					// fontSize — path-based: e.g. "typography/large-title" → "typography/large-title/font/size"
 					if (!bv.fontSize) {
 						const size = textStyle.fontSize as number;
-						const result = findFloatVar(size, styleName, "font-size");
+						const result = findFloatVar(size, styleName, "font/size");
 						if (result) {
 							suggestions.push({
 								styleId,
@@ -895,7 +922,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						}
 					}
 
-					// lineHeight — path-based: e.g. "typography/large-title" → "typography/large-title/line-height"
+					// lineHeight — path-based: e.g. "typography/large-title" → "typography/large-title/line/height"
 					if (!bv.lineHeight) {
 						const lh = textStyle.lineHeight as any;
 						if (
@@ -904,7 +931,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							lh.unit === "PIXELS" &&
 							typeof lh.value === "number"
 						) {
-							const result = findFloatVar(lh.value, styleName, "line-height");
+							const result = findFloatVar(lh.value, styleName, "line/height");
 							if (result) {
 								suggestions.push({
 									styleId,
@@ -925,7 +952,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						const result = findStringVar(
 							family,
 							styleName,
-							"font-family",
+							"font/family",
 							"family",
 						);
 						if (result) {
@@ -970,7 +997,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							const result = findFloatVar(
 								numWeight,
 								styleName,
-								"font-weight",
+								"font/weight",
 								"weight",
 							);
 							if (result) {
@@ -1765,6 +1792,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				existingValues: Record<string, string>;
 				existingId: string;
 			}[] = [];
+			let cssToFigmaNameMap: Record<string, string> = {};
 
 			// Find the target collection(s)
 			const allCollections = figma.variables.getLocalVariableCollections();
@@ -1775,14 +1803,16 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				return c.name === collectionName;
 			});
 
-			if (targetCollections.length > 0) {
+			if (allCollections.length > 0) {
 				// Build a map of existing variable names to their info
+				// Scan ALL collections so conflicts are detected even when tokens
+				// route to a different collection than expected
 				const existingVarMap = new Map<
 					string,
 					{ id: string; valuesByMode: Record<string, string> }
 				>();
 
-				for (const collection of targetCollections) {
+				for (const collection of allCollections) {
 					const modeNames = new Map(
 						collection.modes.map((m) => [m.modeId, m.name]),
 					);
@@ -1832,10 +1862,41 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					}
 				}
 
-				// Check each token for conflicts
+				// Build reverse name map: CSS variable name → actual Figma variable name.
+				// Uses toVarName (the same function the CSS exporter uses) to produce
+				// the exact CSS custom property name for each variable, ensuring the
+				// reverse lookup matches precisely — including prefix manipulation,
+				// category stripping, and all other transformations.
+				// Iterate ALL local collections (not just selected ones) so the map
+				// covers variables that may be routed to unexpected collections
+				// (e.g. typescales from "responsive", blurs from "primitives").
+				for (const collection of allCollections) {
+					for (const varId of collection.variableIds) {
+						const variable = figma.variables.getVariableById(varId);
+						if (!variable) continue;
+						const cssVar = toVarName(
+							variable.name,
+							variable.resolvedType,
+							collection.name,
+						);
+						// Strip leading "--" to get the token name as the CSS parser sees it
+						const tokenName = cssVar.startsWith("--")
+							? cssVar.substring(2)
+							: cssVar;
+						cssToFigmaNameMap[tokenName] = variable.name;
+					}
+				}
+
+				// Check each token for conflicts (deduplicate by figmaName —
+				// Light/Dark mode tokens share the same Figma variable)
+				const seenConflictNames = new Set<string>();
 				for (const token of tokens) {
-					const existing = existingVarMap.get(token.figmaName);
-					if (existing) {
+					// Try matching with corrected name from the map
+					const correctedName =
+						cssToFigmaNameMap[token.name] || token.figmaName;
+					const existing = existingVarMap.get(correctedName);
+					if (existing && !seenConflictNames.has(correctedName)) {
+						seenConflictNames.add(correctedName);
 						conflicts.push({
 							tokenId: token.id,
 							existingValues: existing.valuesByMode,
@@ -1847,7 +1908,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			figma.ui.postMessage({
 				type: "import-conflicts-result",
-				data: { conflicts },
+				data: { conflicts, nameMap: cssToFigmaNameMap },
 			});
 			break;
 		}

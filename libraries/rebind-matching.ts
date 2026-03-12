@@ -27,7 +27,7 @@ export interface MatchResult<T> {
 
 /**
  * Find a float variable by:
- * 1. Path-based: variable name includes stylePath/suffix (e.g. "typography/large-title/font-size")
+ * 1. Path-based: variable name includes stylePath/suffix (e.g. "typography/large-title/font/size")
  * 2. Fallback: value match + name contains one of the hint strings
  */
 export function findFloatVar(

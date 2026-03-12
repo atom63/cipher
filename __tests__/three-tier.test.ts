@@ -182,19 +182,19 @@ describe("non-color tokens", () => {
 		}
 	});
 
-	test("generates duration tokens in primitives (motion/duration/N)", () => {
+	test("generates duration tokens in primitives (duration/N)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 		});
 		const durationTokens = result.tokens.filter(
 			(t) =>
 				t.category === "primitives" &&
-				t.figmaName.startsWith("motion/duration/"),
+				t.figmaName.startsWith("duration/"),
 		);
 		expect(durationTokens.length).toBeGreaterThan(0);
 		const names = durationTokens.map((t) => t.figmaName);
-		expect(names).toContain("motion/duration/250");
-		expect(names).toContain("motion/duration/500");
+		expect(names).toContain("duration/250");
+		expect(names).toContain("duration/500");
 	});
 
 	test("generates duration aliases in abstractions (duration/N)", () => {
@@ -208,7 +208,7 @@ describe("non-color tokens", () => {
 		// Duration aliases reference primitives
 		for (const token of durationAliases) {
 			expect(String(token.originalValue)).toMatch(
-				/^\{primitives\.motion\.duration\./,
+				/^\{primitives\.duration\./,
 			);
 		}
 	});
@@ -253,8 +253,8 @@ describe("non-color tokens", () => {
 		// Each step has min/sm/md variants
 		expect(names).toContain("font/typescale/base/size/min");
 		expect(names).toContain("font/typescale/base/size/md");
-		expect(names).toContain("font/typescale/base/line-height/min");
-		expect(names).toContain("font/typescale/base/line-height/md");
+		expect(names).toContain("font/typescale/base/line/height/min");
+		expect(names).toContain("font/typescale/base/line/height/md");
 	});
 
 	test("different ratios produce different heading sizes", () => {
@@ -321,11 +321,11 @@ describe("abstractions", () => {
 		const brandTokens = result.tokens.filter(
 			(t) =>
 				t.category === "primitives" &&
-				t.figmaName.startsWith("color/brand-primary/"),
+				t.figmaName.startsWith("color/brand/primary/"),
 		);
 		// 11 shades: 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950
 		expect(brandTokens.length).toBe(11);
-		expect(brandTokens.find((t) => t.figmaName === "color/brand-primary/500")).toBeDefined();
+		expect(brandTokens.find((t) => t.figmaName === "color/brand/primary/500")).toBeDefined();
 	});
 
 	test("includes status color primitives", () => {
@@ -367,27 +367,27 @@ describe("abstractions", () => {
 			secondary: "#10B981",
 		});
 		const secondaryTokens = result.tokens.filter(
-			(t) => t.category === "primitives" && t.figmaName.startsWith("color/brand-secondary/"),
+			(t) => t.category === "primitives" && t.figmaName.startsWith("color/brand/secondary/"),
 		);
 		expect(secondaryTokens.length).toBe(11);
-		expect(secondaryTokens.find((t) => t.figmaName === "color/brand-secondary/500")).toBeDefined();
+		expect(secondaryTokens.find((t) => t.figmaName === "color/brand/secondary/500")).toBeDefined();
 	});
 
 	test("no secondary ramp without secondary color", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const secondaryTokens = result.tokens.filter(
-			(t) => t.category === "primitives" && t.figmaName.startsWith("color/brand-secondary/"),
+			(t) => t.category === "primitives" && t.figmaName.startsWith("color/brand/secondary/"),
 		);
 		expect(secondaryTokens.length).toBe(0);
 	});
 
-	test("includes zLayer tokens in primitives", () => {
+	test("includes z-layer tokens in primitives", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const names = result.tokens
 			.filter((t) => t.category === "primitives")
 			.map((t) => t.figmaName);
-		expect(names).toContain("zLayer/default");
-		expect(names).toContain("zLayer/modal");
+		expect(names).toContain("z/layer/default");
+		expect(names).toContain("z/layer/modal");
 	});
 
 	test("includes font family abstraction aliases (primary/secondary/tertiary)", () => {
@@ -563,7 +563,7 @@ describe("responsive", () => {
 		const fontSizeTokens = result.tokens.filter(
 			(t) =>
 				t.category === "responsive" &&
-				t.figmaName === "typography/base/font-size",
+				t.figmaName === "typography/base/font/size",
 		);
 		expect(fontSizeTokens.length).toBe(3); // one per mode
 
@@ -583,13 +583,13 @@ describe("responsive", () => {
 		const lhTokens = result.tokens.filter(
 			(t) =>
 				t.category === "responsive" &&
-				t.figmaName === "typography/base/line-height",
+				t.figmaName === "typography/base/line/height",
 		);
 		expect(lhTokens.length).toBe(3);
 
 		const tablet = lhTokens.find((t) => (t as any).modeName === "tablet (sm)");
 		expect(tablet?.originalValue).toBe(
-			"{primitives.font.typescale.base.line-height.sm}",
+			"{primitives.font.typescale.base.line.height.sm}",
 		);
 	});
 

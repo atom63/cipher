@@ -165,6 +165,13 @@ export async function createVariablesFromTokens(
 					) {
 						figmaType = "COLOR";
 					} else if (
+						token.type === "color" &&
+						typeof token.value === "string"
+					) {
+						// color-mix() and other complex color expressions — store as STRING
+						figmaType = "STRING";
+						processedValue = token.originalValue || String(token.value);
+					} else if (
 						token.type === "spacing" ||
 						token.type === "sizing" ||
 						token.type === "borderRadius" ||
@@ -358,11 +365,13 @@ export async function createVariablesFromTokens(
 					}
 
 					// Parse reference: {primitives.zinc.50} -> primitives/zinc/50
-					const refMatch = token.originalValue.match(/\{([^}]+)\}/);
+					// Use token.value (converted format) over originalValue (raw CSS var())
+					const refSource = typeof token.value === "string" ? token.value : token.originalValue;
+					const refMatch = refSource.match(/\{([^}]+)\}/);
 					if (!refMatch) {
 						results.failed++;
 						results.errors.push(
-							`❌ "${token.figmaName}" - Invalid reference format: "${token.originalValue}". References should be in format {collection.token.path}`,
+							`❌ "${token.figmaName}" - Invalid reference format: "${refSource}". References should be in format {collection.token.path}`,
 						);
 						continue;
 					}
@@ -376,6 +385,12 @@ export async function createVariablesFromTokens(
 					// Look up by composite key: collection:path
 					const compositeKey = `${refCollection}:${refTokenPath}`;
 					let referencedVariable = variableMap.get(compositeKey);
+
+					// Fallback: try the full path as a variable name (CSS imports use
+					// the full Figma variable name as the reference path)
+					if (!referencedVariable) {
+						referencedVariable = variableMap.get(refPath);
+					}
 
 					// Fallback: try without collection prefix (for backwards compatibility)
 					if (!referencedVariable) {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
 	CollectionSelector,
 	FileImport,
@@ -36,8 +36,14 @@ type ImportViewState =
 export function ImportPage() {
 	const [view, setView] = useState<ImportViewState>("upload");
 	const [tokens, setTokens] = useState<DesignToken[]>([]);
+	const [isCipherExport, setIsCipherExport] = useState(false);
 	const [collectionName, setCollectionName] = useState("Design Tokens");
-	const [importMode, setImportMode] = useState<"import" | "override">("import");
+	const [importMode, setImportModeState] = useState<"import" | "override">("import");
+	const importModeRef = useRef(importMode);
+	const setImportMode = (mode: "import" | "override") => {
+		importModeRef.current = mode;
+		setImportModeState(mode);
+	};
 	const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
 	const [stylesData, setStylesData] = useState<any>(undefined);
 	const [conflicts, setConflicts] = useState<ImportConflict[]>([]);
@@ -70,7 +76,10 @@ export function ImportPage() {
 
 			if (parsedData.tokens.length > 0) {
 				setTokens(parsedData.tokens);
-				// Capture styles section from combined export for round-trip import
+				if (parsedData.isCipherExport) {
+					setIsCipherExport(true);
+					setImportMode("override");
+				}
 				if (parsedData.styles) {
 					setStylesData(parsedData.styles);
 				}
@@ -100,10 +109,48 @@ export function ImportPage() {
 		}
 
 		if (msg.type === "import-conflicts-result") {
-			const { conflicts: conflictData } = msg.data;
+			const { conflicts: conflictData, nameMap } = msg.data;
 			setConflicts(conflictData);
 
-			if (conflictData.length > 0) {
+			// Apply name corrections from the Figma-side reverse map.
+			// CSS export converts "/" → "-" (lossy), so the parser's toFigmaName()
+			// guesses wrong for names with literal hyphens (e.g., "brand-primary").
+			// The nameMap provides the authoritative CSS-name → Figma-name mapping.
+			if (nameMap && Object.keys(nameMap).length > 0) {
+				setTokens((prev) =>
+					prev.map((t) => {
+						const correctedName = nameMap[t.name];
+						const nameChanged = correctedName && correctedName !== t.figmaName;
+
+						// Fix reference values: {color.brand.primary.500} → {color/brand-primary/500}
+						// This must run for ALL reference tokens, not just those whose own name changed
+						let correctedValue = t.value;
+						if (t.type === "reference" && typeof t.value === "string") {
+							const refMatch = t.value.match(/\{([^}]+)\}/);
+							if (refMatch) {
+								const refCssName = refMatch[1].replace(/\./g, "-");
+								const refFigmaName = nameMap[refCssName];
+								if (refFigmaName) {
+									correctedValue = `{${refFigmaName}}`;
+								}
+							}
+						}
+
+						const valueChanged = correctedValue !== t.value;
+						if (!nameChanged && !valueChanged) return t;
+
+						return {
+							...t,
+							...(nameChanged ? { figmaName: correctedName } : {}),
+							...(valueChanged ? { value: correctedValue } : {}),
+						};
+					}),
+				);
+			}
+
+			// In "import" mode, default conflicting tokens to skip (user can opt-in to overwrite)
+			// In "override" mode, keep all tokens as "import" — the whole point is to update existing values
+			if (conflictData.length > 0 && importModeRef.current !== "override") {
 				const conflictIds = new Set(
 					conflictData.map((c: ImportConflict) => c.tokenId),
 				);
@@ -125,6 +172,10 @@ export function ImportPage() {
 
 	const handleTokensParsed = (parsed: ParsedTokens) => {
 		setTokens(parsed.tokens);
+		if (parsed.isCipherExport) {
+			setIsCipherExport(true);
+			setImportMode("override");
+		}
 		if (parsed.styles) {
 			setStylesData(parsed.styles);
 		}
@@ -182,6 +233,7 @@ export function ImportPage() {
 	const resetState = () => {
 		setView("upload");
 		setTokens([]);
+		setIsCipherExport(false);
 		setCollectionName("Design Tokens");
 		setImportMode("import");
 		setSelectedCollections([]);
@@ -217,6 +269,32 @@ export function ImportPage() {
 
 	const handleImportMore = () => resetState();
 
+	// Views with their own PageLayout render directly (no page-content wrapper)
+	if (view === "collection") {
+		return (
+			<CollectionSelector
+				isCipherExport={isCipherExport}
+				onCancel={handleCancel}
+				onSelect={handleCollectionSelected}
+				tokens={tokens}
+			/>
+		);
+	}
+
+	if (view === "review") {
+		return (
+			<TokenTable
+				conflicts={conflicts}
+				importMode={importMode}
+				onCancel={handleBackToCollection}
+				onImport={handleImport}
+				onTokensUpdated={setTokens}
+				tokens={tokens}
+			/>
+		);
+	}
+
+	// Simple views use page-content wrapper
 	return (
 		<div className="page-content">
 			{view === "upload" && (
@@ -233,24 +311,6 @@ export function ImportPage() {
 						</FramePanel>
 					</Frame>
 				</>
-			)}
-
-			{view === "collection" && (
-				<CollectionSelector
-					onCancel={handleCancel}
-					onSelect={handleCollectionSelected}
-					tokens={tokens}
-				/>
-			)}
-
-			{view === "review" && (
-				<TokenTable
-					conflicts={conflicts}
-					onCancel={handleBackToCollection}
-					onImport={handleImport}
-					onTokensUpdated={setTokens}
-					tokens={tokens}
-				/>
 			)}
 
 			{view === "progress" && <ProgressView />}

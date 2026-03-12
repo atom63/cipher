@@ -243,7 +243,7 @@ describe("generateStyles — text", () => {
 			expect(leaf.data.fontSizeBoundVariable).toBeDefined();
 			expect(leaf.data.fontSizeBoundVariable.collectionName).toBe("responsive");
 			expect(leaf.data.fontSizeBoundVariable.variableName).toMatch(
-				/^typography\/.+\/font-size$/,
+				/^typography\/.+\/font\/size$/,
 			);
 		}
 	});
@@ -255,7 +255,7 @@ describe("generateStyles — text", () => {
 			expect(leaf.data.lineHeightBoundVariable).toBeDefined();
 			expect(leaf.data.lineHeightBoundVariable.collectionName).toBe("responsive");
 			expect(leaf.data.lineHeightBoundVariable.variableName).toMatch(
-				/^typography\/.+\/line-height$/,
+				/^typography\/.+\/line\/height$/,
 			);
 		}
 	});

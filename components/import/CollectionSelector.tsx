@@ -2,6 +2,7 @@ import { ArrowRight, FolderOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFigmaMessage, usePostMessage } from "../../hooks/useFigmaMessage";
 import type { DesignToken } from "../../types/tokens";
+import { PageBody, PageFooter, PageLayout } from "../layout";
 import {
 	Button,
 	CheckboxCard,
@@ -21,6 +22,8 @@ interface Collection {
 }
 
 interface CollectionSelectorProps {
+	/** Whether this is a Cipher CSS export (enables streamlined update flow) */
+	isCipherExport?: boolean;
 	onCancel: () => void;
 	onSelect: (
 		mode: "new" | "existing",
@@ -33,12 +36,13 @@ interface CollectionSelectorProps {
 
 export function CollectionSelector({
 	tokens,
+	isCipherExport = false,
 	onSelect,
 	onCancel,
 }: CollectionSelectorProps) {
 	const { showWarning } = useToast();
-	const [mode, setMode] = useState<"new" | "existing">("new");
-	const [importMode, setImportMode] = useState<"import" | "override">("import");
+	const [mode, setMode] = useState<"new" | "existing">(isCipherExport ? "existing" : "new");
+	const [importMode, setImportMode] = useState<"import" | "override">(isCipherExport ? "override" : "import");
 	const [collections, setCollections] = useState<Collection[]>([]);
 	const [selectedCollectionId, setSelectedCollectionId] = useState<string>("");
 	const [newCollectionName, setNewCollectionName] = useState("Design Tokens");
@@ -146,200 +150,211 @@ export function CollectionSelector({
 		count: tokens.filter((t) => t.category === collectionName).length,
 	}));
 
+	// Determine footer content based on state
+	const footerContent = loading ? null : isMultiCollection ? (
+		<PageFooter>
+			<Button onClick={onCancel} variant="ghost">
+				Cancel
+			</Button>
+			<Button
+				disabled={selectedCollections.size === 0}
+				onClick={handleContinue}
+				variant="primary"
+			>
+				<ArrowRight size={14} />
+				Continue ({selectedCollections.size} of{" "}
+				{detectedCollections.length})
+			</Button>
+		</PageFooter>
+	) : (
+		<PageFooter>
+			<Button onClick={onCancel} variant="ghost">
+				Cancel
+			</Button>
+			<Button
+				disabled={mode === "existing" && collections.length === 0}
+				onClick={handleContinue}
+				variant="primary"
+			>
+				<ArrowRight size={14} />
+				Continue to Review
+			</Button>
+		</PageFooter>
+	);
+
 	return (
-		<div className={styles.collectionSelector}>
-			<SectionHeader
-				description={
-					isMultiCollection
-						? "This file contains multiple collections that will be created in Figma"
-						: "Select where to import your design tokens"
-				}
-				title={
-					isMultiCollection
-						? "Multiple Collections Detected"
-						: "Choose Collection"
-				}
-				variant="secondary"
-			/>
+		<PageLayout className={styles.collectionSelector}>
+			<PageBody>
+				<SectionHeader
+					description={
+						isCipherExport
+							? "Update your Figma variables with edited CSS values"
+							: isMultiCollection
+								? "This file contains multiple collections that will be created in Figma"
+								: "Select where to import your design tokens"
+					}
+					title={
+						isCipherExport
+							? "Update Variables"
+							: isMultiCollection
+								? "Multiple Collections Detected"
+								: "Choose Collection"
+					}
+					variant="secondary"
+				/>
 
-			{loading ? (
-				<LoadingState message="Loading collections…" />
-			) : isMultiCollection ? (
-				<>
-					<div className={styles.collectionForm}>
-						<RadioGroup
-							label="Action"
-							name="actionType"
-							onChange={(value: string) =>
-								setImportMode(value as "import" | "override")
-							}
-							options={[
-								{
-									value: "import",
-									label: "Import (Create & Update)",
-									description:
-										"Create new and update existing. Errors on missing references.",
-								},
-								{
-									value: "override",
-									label: "Override (Update Only)",
-									description:
-										"Only update existing. Skips missing tokens and references.",
-								},
-							]}
-							value={importMode}
-						/>
-					</div>
-
-					<div className={styles.multiCollectionPreview}>
-						<div className={styles.previewHeader}>
-							<p className={styles.previewIntro}>Collections</p>
-							<Button onClick={toggleAllCollections}size="sm" variant="ghost" >
-								{selectedCollections.size === detectedCollections.length
-									? "Deselect All"
-									: "Select All"}
-							</Button>
-						</div>
-						<div className={styles.collectionPreviewList}>
-							{collectionStats.map(({ name, count }) => (
-								<CheckboxCard
-									checked={selectedCollections.has(name)}
-									description={`${count} variable${count !== 1 ? "s" : ""}`}
-									id={`collection-${name}`}
-									key={name}
-									label={name}
-									onChange={() => toggleCollection(name)}
-								/>
-							))}
-						</div>
-					</div>
-
-					<div className={styles.collectionActions}>
-						<Button onClick={onCancel}variant="ghost" >
-							Cancel
-						</Button>
-						<Button
-							disabled={selectedCollections.size === 0}
-							onClick={handleContinue}
-							variant="primary"
-						>
-							<ArrowRight size={14} />
-							Continue ({selectedCollections.size} of{" "}
-							{detectedCollections.length})
-						</Button>
-					</div>
-				</>
-			) : (
-				<>
-					<div className={styles.collectionForm}>
-						<RadioGroup
-							label="Action"
-							name="actionType"
-							onChange={(value: string) =>
-								setImportMode(value as "import" | "override")
-							}
-							options={[
-								{
-									value: "import",
-									label: "Import (Create & Update)",
-									description:
-										"Create new and update existing. Errors on missing references.",
-								},
-								{
-									value: "override",
-									label: "Override (Update Only)",
-									description:
-										"Only update existing. Skips missing tokens and references.",
-								},
-							]}
-							value={importMode}
-						/>
-
-						<RadioGroup
-							description="Create a new collection or append to an existing one"
-							label="Import Mode"
-							name="importMode"
-							onChange={(value: string) => setMode(value as "new" | "existing")}
-							options={[
-								{
-									value: "new",
-									label: "Create New Collection",
-									description: "Start fresh with a new variable collection",
-								},
-								{
-									value: "existing",
-									label: "Append to Existing Collection",
-									description:
-										collections.length > 0
-											? `Add to one of ${collections.length} existing collection${collections.length !== 1 ? "s" : ""}`
-											: "No existing collections found",
-								},
-							]}
-							value={mode}
-						/>
-					</div>
-
-					{mode === "new" ? (
+				{loading ? (
+					<LoadingState message="Loading collections…" />
+				) : isMultiCollection ? (
+					<>
 						<div className={styles.collectionForm}>
-							<Input
-								description="Name for the new variable collection"
-								label="Collection Name"
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setNewCollectionName(e.target.value)
+							<RadioGroup
+								label="Action"
+								name="actionType"
+								onChange={(value: string) =>
+									setImportMode(value as "import" | "override")
 								}
-								placeholder="Design Tokens"
-								value={newCollectionName}
+								options={[
+									{
+										value: "import",
+										label: "Import (Create & Update)",
+										description:
+											"Create new and update existing. Errors on missing references.",
+									},
+									{
+										value: "override",
+										label: "Override (Update Only)",
+										description:
+											"Only update existing. Skips missing tokens and references.",
+									},
+								]}
+								value={importMode}
 							/>
 						</div>
-					) : (
-						<div className={styles.collectionForm}>
-							{collections.length === 0 ? (
-								<EmptyState
-									description="Create a new collection to get started"
-									icon={<FolderOpen size={48} strokeWidth={1.5} />}
-									title="No collections found"
-								/>
-							) : (
-								<>
-									<RadioGroup
-										description="Variables will be added to the selected collection"
-										label="Select Collection"
-										name="collection"
-										onChange={setSelectedCollectionId}
-										options={collections.map((collection) => ({
-											value: collection.id,
-											label: collection.name,
-											description: `${collection.variableCount} variable${collection.variableCount !== 1 ? "s" : ""}`,
-											icon: <FolderOpen size={16} />,
-										}))}
-										value={selectedCollectionId}
-									/>
-									{selectedCollection && (
-										<div className={styles.collectionPreview}>
-											<strong>Selected:</strong> {selectedCollection.name} (
-											{selectedCollection.variableCount} existing variables)
-										</div>
-									)}
-								</>
-							)}
-						</div>
-					)}
 
-					<div className={styles.collectionActions}>
-						<Button onClick={onCancel}variant="ghost" >
-							Cancel
-						</Button>
-						<Button
-							disabled={mode === "existing" && collections.length === 0}
-							onClick={handleContinue}
-							variant="primary"
-						>
-							<ArrowRight size={14} />
-							Continue to Review
-						</Button>
-					</div>
-				</>
-			)}
-		</div>
+						<div className={styles.multiCollectionPreview}>
+							<div className={styles.previewHeader}>
+								<p className={styles.previewIntro}>Collections</p>
+								<Button onClick={toggleAllCollections} size="sm" variant="ghost">
+									{selectedCollections.size === detectedCollections.length
+										? "Deselect All"
+										: "Select All"}
+								</Button>
+							</div>
+							<div className={styles.collectionPreviewList}>
+								{collectionStats.map(({ name, count }) => (
+									<CheckboxCard
+										checked={selectedCollections.has(name)}
+										description={`${count} variable${count !== 1 ? "s" : ""}`}
+										id={`collection-${name}`}
+										key={name}
+										label={name}
+										onChange={() => toggleCollection(name)}
+									/>
+								))}
+							</div>
+						</div>
+					</>
+				) : (
+					<>
+						<div className={styles.collectionForm}>
+							<RadioGroup
+								label="Action"
+								name="actionType"
+								onChange={(value: string) =>
+									setImportMode(value as "import" | "override")
+								}
+								options={[
+									{
+										value: "import",
+										label: "Import (Create & Update)",
+										description:
+											"Create new and update existing. Errors on missing references.",
+									},
+									{
+										value: "override",
+										label: "Override (Update Only)",
+										description:
+											"Only update existing. Skips missing tokens and references.",
+									},
+								]}
+								value={importMode}
+							/>
+
+							<RadioGroup
+								description="Create a new collection or append to an existing one"
+								label="Import Mode"
+								name="importMode"
+								onChange={(value: string) => setMode(value as "new" | "existing")}
+								options={[
+									{
+										value: "new",
+										label: "Create New Collection",
+										description: "Start fresh with a new variable collection",
+									},
+									{
+										value: "existing",
+										label: "Append to Existing Collection",
+										description:
+											collections.length > 0
+												? `Add to one of ${collections.length} existing collection${collections.length !== 1 ? "s" : ""}`
+												: "No existing collections found",
+									},
+								]}
+								value={mode}
+							/>
+						</div>
+
+						{mode === "new" ? (
+							<div className={styles.collectionForm}>
+								<Input
+									description="Name for the new variable collection"
+									label="Collection Name"
+									onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+										setNewCollectionName(e.target.value)
+									}
+									placeholder="Design Tokens"
+									value={newCollectionName}
+								/>
+							</div>
+						) : (
+							<div className={styles.collectionForm}>
+								{collections.length === 0 ? (
+									<EmptyState
+										description="Create a new collection to get started"
+										icon={<FolderOpen size={48} strokeWidth={1.5} />}
+										title="No collections found"
+									/>
+								) : (
+									<>
+										<RadioGroup
+											description="Variables will be added to the selected collection"
+											label="Select Collection"
+											name="collection"
+											onChange={setSelectedCollectionId}
+											options={collections.map((collection) => ({
+												value: collection.id,
+												label: collection.name,
+												description: `${collection.variableCount} variable${collection.variableCount !== 1 ? "s" : ""}`,
+												icon: <FolderOpen size={16} />,
+											}))}
+											value={selectedCollectionId}
+										/>
+										{selectedCollection && (
+											<div className={styles.collectionPreview}>
+												<strong>Selected:</strong> {selectedCollection.name} (
+												{selectedCollection.variableCount} existing variables)
+											</div>
+										)}
+									</>
+								)}
+							</div>
+						)}
+					</>
+				)}
+			</PageBody>
+
+			{footerContent}
+		</PageLayout>
 	);
 }

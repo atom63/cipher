@@ -1,0 +1,76 @@
+/* abstractions — 32 variables */
+
+/* Tailwind CSS v4 @theme inline */
+@theme inline {
+  --duration-fast: var(--duration-fast);
+  --duration-instant: var(--duration-instant);
+  --duration-normal: var(--duration-normal);
+  --duration-slow: var(--duration-slow);
+  --duration-slower: var(--duration-slower);
+  --font-family-primary: var(--font-family-primary);
+  --font-family-secondary: var(--font-family-secondary);
+  --font-family-tertiary: var(--font-family-tertiary);
+  --surface-dark-1: var(--surface-dark-1);
+  --surface-dark-10: var(--surface-dark-10);
+  --surface-dark-11: var(--surface-dark-11);
+  --surface-dark-12: var(--surface-dark-12);
+  --surface-dark-2: var(--surface-dark-2);
+  --surface-dark-3: var(--surface-dark-3);
+  --surface-dark-4: var(--surface-dark-4);
+  --surface-dark-5: var(--surface-dark-5);
+  --surface-dark-6: var(--surface-dark-6);
+  --surface-dark-7: var(--surface-dark-7);
+  --surface-dark-8: var(--surface-dark-8);
+  --surface-dark-9: var(--surface-dark-9);
+  --surface-light-1: var(--surface-light-1);
+  --surface-light-10: var(--surface-light-10);
+  --surface-light-11: var(--surface-light-11);
+  --surface-light-12: var(--surface-light-12);
+  --surface-light-2: var(--surface-light-2);
+  --surface-light-3: var(--surface-light-3);
+  --surface-light-4: var(--surface-light-4);
+  --surface-light-5: var(--surface-light-5);
+  --surface-light-6: var(--surface-light-6);
+  --surface-light-7: var(--surface-light-7);
+  --surface-light-8: var(--surface-light-8);
+  --surface-light-9: var(--surface-light-9);
+
+  --font-sans: var(--font-family-primary);
+  --font-serif: var(--font-family-secondary);
+  --font-mono: var(--font-family-tertiary);
+}
+
+:root {
+  --surface-light-1: var(--color-gray-light-1);
+  --surface-dark-1: var(--color-gray-dark-1);
+  --surface-light-2: var(--color-gray-light-2);
+  --surface-dark-2: var(--color-gray-dark-2);
+  --surface-light-3: var(--color-gray-light-3);
+  --surface-dark-3: var(--color-gray-dark-3);
+  --surface-light-4: var(--color-gray-light-4);
+  --surface-dark-4: var(--color-gray-dark-4);
+  --surface-light-5: var(--color-gray-light-5);
+  --surface-dark-5: var(--color-gray-dark-5);
+  --surface-light-6: var(--color-gray-light-6);
+  --surface-dark-6: var(--color-gray-dark-6);
+  --surface-light-7: var(--color-gray-light-7);
+  --surface-dark-7: var(--color-gray-dark-7);
+  --surface-light-8: var(--color-gray-light-8);
+  --surface-dark-8: var(--color-gray-dark-8);
+  --surface-light-9: var(--color-gray-light-9);
+  --surface-dark-9: var(--color-gray-dark-9);
+  --surface-light-10: var(--color-gray-light-10);
+  --surface-dark-10: var(--color-gray-dark-10);
+  --surface-light-11: var(--color-gray-light-11);
+  --surface-dark-11: var(--color-gray-dark-11);
+  --surface-light-12: var(--color-gray-light-12);
+  --surface-dark-12: var(--color-gray-dark-12);
+  --duration-instant: var(--duration-none);
+  --duration-fast: var(--duration-150);
+  --duration-normal: var(--duration-250);
+  --duration-slow: var(--duration-500);
+  --duration-slower: var(--duration-1000);
+  --font-family-primary: var(--font-family-sans);
+  --font-family-secondary: var(--font-family-serif);
+  --font-family-tertiary: var(--font-family-mono);
+}

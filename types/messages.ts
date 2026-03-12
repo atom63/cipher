@@ -50,10 +50,11 @@ export interface SelectedStyleGroup {
 // UI → MAIN THREAD MESSAGES
 // ============================================================================
 
-/** Parse token JSON content */
+/** Parse token content (JSON or CSS) */
 export interface ParseTokensMessage {
 	data: {
 		content: string;
+		format?: "json" | "css";
 	};
 	type: "parse-tokens";
 }
@@ -791,6 +792,8 @@ export interface ImportConflictsResultMessage {
 			existingValues: Record<string, string>;
 			existingId: string;
 		}[];
+		/** CSS-form name → actual Figma variable name, for fixing lossy hyphen/slash mapping */
+		nameMap?: Record<string, string>;
 	};
 	type: "import-conflicts-result";
 }

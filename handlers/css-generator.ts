@@ -146,120 +146,26 @@ function normalizeName(name: string): string {
 // ============================================================================
 
 // Infer CSS variable prefix from variable name path
-function inferPrefix(name: string, _resolvedType: string): string {
-	const lower = name.toLowerCase();
-	const firstSegment = lower.split("/")[0];
-
-	// Spacing → --spacing-*
-	if (firstSegment === "spacing" || lower.includes("/spacing/"))
-		return "spacing";
-	// Sizes → --size-* (note: "sizes" category maps to "size" prefix)
-	if (firstSegment === "size" || firstSegment === "sizes") return "size";
-	// Radius → --radius-*
-	if (firstSegment === "radius" || lower.includes("/radius/")) return "radius";
-	// Rounded → --rounded-*
-	if (firstSegment === "rounded") return "rounded";
-	// Z-index → --z-*
-	if (
-		firstSegment === "z-index" ||
-		firstSegment === "zindex" ||
-		firstSegment === "zlayer"
-	)
-		return "z";
-	// Font → --font-* (must come before generic /size/ check to avoid
-	// font/typescale/base/size/md → --size-font-typescale-... )
-	if (firstSegment === "font") return "font";
-	// Size (matches deeper paths like component/size/*)
-	if (lower.includes("/size/")) return "size";
-	// Container → --container-*
-	if (firstSegment === "container") return "container";
-	// Motion / easing → --ease-*
-	if (firstSegment === "motion" && lower.includes("easing")) return "ease";
-	// Duration — any path containing "duration" (but not easing)
-	if (lower.includes("duration")) return "duration";
-	// Breakpoints → --breakpoint-*
-	if (firstSegment === "breakpoints" || firstSegment === "breakpoint")
-		return "breakpoint";
-	// Screen → --screen-*
-	if (firstSegment === "screen") return "screen";
-	// Shadow → --shadow-*
-	if (firstSegment === "shadow") return "shadow";
-	// Blur → --blur-*
-	if (firstSegment === "blur") return "blur";
-	// Gap → --gap-*
-	if (firstSegment === "gap") return "gap";
-	// Margin → --margin-*
-	if (firstSegment === "margin") return "margin";
-	// Gutter → --gutter-*
-	if (firstSegment === "gutter") return "gutter";
-	// Surface → --surface-*
-	if (firstSegment === "surface") return "surface";
-
-	// Default: --color-* for color types
-	return "color";
-}
-
 /**
- * Convert variable name to CSS variable name.
+ * Convert a Figma variable name to a CSS custom property name.
  *
- * Naming rules (matching generate-tokens.js):
- * - Semantics collection: no type prefix → --background
- * - Spacing: strip "spacing/" from path, add --spacing- prefix → --spacing-4
- * - Sizes: strip "sizes/" from path, add --size- prefix → --size-0
- * - Radius: strip "radius/" from path, add --radius- prefix → --radius-lg
- * - Duration/Motion: keep full path, add --duration- prefix → --duration-motion-duration-250
- * - Color: strip "color/" from path, add --color- prefix → --color-zinc-50
- * - Everything else: add --color- prefix → --color-font-family-sans
+ * Figma variable paths use `/` as segment separators. CSS custom properties
+ * use `-`. The conversion is a simple 1:1 replacement — no prefix inference
+ * or category stripping needed because Figma variable names are structured
+ * to produce the correct CSS name directly.
+ *
+ * Examples:
+ *   color/brand/primary/500  → --color-brand-primary-500
+ *   spacing/4                → --spacing-4
+ *   z/layer/base             → --z-layer-base
+ *   background (semantics)   → --background
  */
 function toVarName(
 	name: string,
-	resolvedType: string,
-	collectionName?: string,
+	_resolvedType: string,
+	_collectionName?: string,
 ): string {
-	const cssName = name.replace(/\//g, "-").replace(/\s+/g, "-").toLowerCase();
-
-	// Semantics: no type prefix, use name directly
-	if (collectionName?.toLowerCase() === "semantics") {
-		return `--${cssName}`;
-	}
-
-	const prefix = inferPrefix(name, resolvedType);
-
-	// Strip redundant category from the path to avoid double-prefix
-	let cleanName = cssName;
-
-	if (prefix === "color") {
-		// Strip leading "color-" from path since prefix adds it
-		if (cleanName.startsWith("color-")) {
-			cleanName = cleanName.substring("color-".length);
-		}
-	} else {
-		// For non-color prefixes, strip the matching category segment
-		const prefixPattern = `${prefix}-`;
-		if (cleanName.startsWith(prefixPattern)) {
-			cleanName = cleanName.substring(prefixPattern.length);
-		}
-		// Also strip legacy/alternate category names that map to different prefixes
-		if (cleanName.startsWith("spacing-")) {
-			cleanName = cleanName.replace(/^spacing-/, "");
-		} else if (cleanName.startsWith("sizes-")) {
-			cleanName = cleanName.replace(/^sizes-/, "");
-		} else if (cleanName.startsWith("radius-")) {
-			cleanName = cleanName.replace(/^radius-/, "");
-		} else if (cleanName.startsWith("rounded-")) {
-			cleanName = cleanName.replace(/^rounded-/, "");
-		} else if (cleanName.startsWith("zlayer-")) {
-			cleanName = cleanName.replace(/^zlayer-/, "layer-");
-		} else if (cleanName.startsWith("motion-easing-")) {
-			cleanName = cleanName.replace(/^motion-easing-/, "");
-		} else if (cleanName.startsWith("motion-duration-")) {
-			cleanName = cleanName.replace(/^motion-duration-/, "");
-		} else if (cleanName.startsWith("breakpoints-")) {
-			cleanName = cleanName.replace(/^breakpoints-/, "");
-		}
-	}
-
-	return `--${prefix}-${cleanName}`;
+	return `--${name.replace(/\//g, "-").replace(/\s+/g, "-").toLowerCase()}`;
 }
 
 // ============================================================================
@@ -1282,7 +1188,6 @@ function generateRadiusCSS(): CSSFile | null {
 // Exported for testing
 export {
 	toVarName,
-	inferPrefix,
 	normalizeName,
 	modeToSelector,
 	isResponsiveMode,
@@ -1342,7 +1247,9 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 		primitivesExclude.push("--shadow-");
 		primitivesExclude.push("--blur-");
 	}
-	if (radiusFile) primitivesExclude.push("--rounded-");
+	// Note: --rounded-* stays in primitives.css (actual variable values).
+	// radius.css is a computed Tailwind helper file (--radius-* with calc()),
+	// not a round-trippable export of the rounded variables.
 
 	// Excluded from :root only (still appear in @theme inline with literal values):
 	// Breakpoints only need @theme inline — Tailwind compiles them into @media

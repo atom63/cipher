@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
 	detectFontCategory,
-	inferPrefix,
 	inferTailwindFontKey,
 	isFontFamilyVariable,
 	isResponsiveMode,
@@ -16,158 +15,53 @@ import {
 } from "../handlers/css-generator";
 
 // =========================================================================
-// inferPrefix — maps variable name + type to CSS prefix
-// =========================================================================
-
-describe("inferPrefix", () => {
-	test("returns 'color' for COLOR type", () => {
-		expect(inferPrefix("anything/here", "COLOR")).toBe("color");
-		expect(inferPrefix("primary", "COLOR")).toBe("color");
-	});
-
-	test("returns 'spacing' for spacing paths", () => {
-		expect(inferPrefix("spacing/md", "FLOAT")).toBe("spacing");
-		expect(inferPrefix("layout/spacing/4", "FLOAT")).toBe("spacing");
-	});
-
-	test("returns 'radius' for radius paths", () => {
-		expect(inferPrefix("radius/lg", "FLOAT")).toBe("radius");
-		expect(inferPrefix("component/radius/sm", "FLOAT")).toBe("radius");
-	});
-
-	test("returns 'size' for size/sizes paths", () => {
-		expect(inferPrefix("size/button", "FLOAT")).toBe("size");
-		expect(inferPrefix("sizes/icon", "FLOAT")).toBe("size");
-	});
-
-	test("returns 'z' for z-index/zlayer paths", () => {
-		expect(inferPrefix("z-index/modal", "FLOAT")).toBe("z");
-		expect(inferPrefix("zindex/popover", "FLOAT")).toBe("z");
-		expect(inferPrefix("zlayer/default", "FLOAT")).toBe("z");
-	});
-
-	test("returns 'duration' for paths containing 'duration'", () => {
-		expect(inferPrefix("duration/fast", "FLOAT")).toBe("duration");
-		expect(inferPrefix("motion/duration/250", "FLOAT")).toBe("duration");
-	});
-
-	test("returns 'ease' for motion/easing paths", () => {
-		expect(inferPrefix("motion/easing/linear", "FLOAT")).toBe("ease");
-	});
-
-	test("returns 'font' for font typescale size paths", () => {
-		expect(inferPrefix("font/typescale/body/size/md", "FLOAT")).toBe("font");
-	});
-
-	test("returns 'font' for font typescale line-height paths", () => {
-		expect(inferPrefix("font/typescale/body/line-height/md", "FLOAT")).toBe(
-			"font",
-		);
-	});
-
-	test("returns 'rounded' for rounded paths", () => {
-		expect(inferPrefix("rounded/lg", "FLOAT")).toBe("rounded");
-	});
-
-	test("returns correct prefix for known paths", () => {
-		expect(inferPrefix("shadow/lg", "FLOAT")).toBe("shadow");
-		expect(inferPrefix("breakpoints/sm", "FLOAT")).toBe("breakpoint");
-		expect(inferPrefix("container/3xs", "FLOAT")).toBe("container");
-		expect(inferPrefix("screen/iphone-16-pro", "FLOAT")).toBe("screen");
-		expect(inferPrefix("blur/md", "FLOAT")).toBe("blur");
-		expect(inferPrefix("font/family/sans", "STRING")).toBe("font");
-	});
-
-	test("defaults to 'color' for unrecognized paths", () => {
-		expect(inferPrefix("custom-value", "FLOAT")).toBe("color");
-		expect(inferPrefix("opacity/50", "FLOAT")).toBe("color");
-		expect(inferPrefix("icon/lg", "FLOAT")).toBe("color");
-	});
-});
-
-// =========================================================================
-// toVarName — variable name to CSS custom property
+// toVarName — simple slash-to-dash conversion for CSS custom properties
 // =========================================================================
 
 describe("toVarName", () => {
-	test("converts slash-separated names to dashes with color prefix", () => {
-		expect(toVarName("zinc/50", "COLOR")).toBe("--color-zinc-50");
-	});
-
-	test("strips redundant 'color/' from color paths", () => {
+	test("converts slash-separated names to dashes", () => {
+		expect(toVarName("color/brand/primary/500", "COLOR")).toBe("--color-brand-primary-500");
 		expect(toVarName("color/zinc/50", "COLOR")).toBe("--color-zinc-50");
-	});
-
-	test("doesn't double prefix when name starts with prefix", () => {
-		expect(toVarName("spacing/md", "FLOAT")).toBe("--spacing-md");
 	});
 
 	test("lowercases the output", () => {
 		expect(toVarName("Color/Primary", "COLOR")).toBe("--color-primary");
 	});
 
-	test("strips sizes/ to produce --size-*", () => {
-		expect(toVarName("sizes/0", "FLOAT")).toBe("--size-0");
-		expect(toVarName("sizes/icon", "FLOAT")).toBe("--size-icon");
-	});
-
-	test("semantics vars have no prefix", () => {
-		expect(toVarName("background", "COLOR", "semantics")).toBe(
-			"--background",
-		);
-		expect(toVarName("foreground", "COLOR", "semantics")).toBe(
-			"--foreground",
-		);
-		expect(toVarName("card-foreground", "COLOR", "semantics")).toBe(
-			"--card-foreground",
-		);
-		expect(toVarName("theme/theme", "STRING", "semantics")).toBe(
-			"--theme-theme",
-		);
-		expect(toVarName("util/overlay-transparent", "COLOR", "semantics")).toBe(
-			"--util-overlay-transparent",
-		);
-	});
-
-	test("motion/duration keeps duration path with --duration- prefix", () => {
-		expect(toVarName("motion/duration/250", "FLOAT")).toBe("--duration-250");
-	});
-
-	test("motion/easing gets --ease- prefix", () => {
-		expect(toVarName("motion/easing/linear", "FLOAT")).toBe(
-			"--ease-linear",
-		);
-	});
-
-	test("zlayer paths produce --z-layer-* naming", () => {
-		expect(toVarName("zlayer/default", "FLOAT")).toBe("--z-layer-default");
-		expect(toVarName("zlayer/modal", "FLOAT")).toBe("--z-layer-modal");
-	});
-
-	test("font typescale size paths get --font- prefix", () => {
-		expect(toVarName("font/typescale/body/size/md", "FLOAT")).toBe(
-			"--font-typescale-body-size-md",
-		);
-	});
-
-	test("font typescale line-height paths get --font- prefix", () => {
-		expect(toVarName("font/typescale/body/line-height/md", "FLOAT")).toBe(
-			"--font-typescale-body-line-height-md",
-		);
-	});
-
-	test("font paths get --font- prefix", () => {
-		expect(toVarName("font/family/sans", "STRING")).toBe(
-			"--font-family-sans",
-		);
-	});
-
-	test("uses correct prefix for container, breakpoint, screen paths", () => {
+	test("handles spacing, size, and other simple paths", () => {
+		expect(toVarName("spacing/4", "FLOAT")).toBe("--spacing-4");
+		expect(toVarName("size/0", "FLOAT")).toBe("--size-0");
 		expect(toVarName("container/3xs", "FLOAT")).toBe("--container-3xs");
-		expect(toVarName("breakpoints/sm", "FLOAT")).toBe("--breakpoint-sm");
-		expect(toVarName("screen/iphone-16-pro", "FLOAT")).toBe(
-			"--screen-iphone-16-pro",
-		);
+	});
+
+	test("handles restructured paths that produce correct CSS", () => {
+		expect(toVarName("z/layer/base", "FLOAT")).toBe("--z-layer-base");
+		expect(toVarName("z/layer/modal", "FLOAT")).toBe("--z-layer-modal");
+		expect(toVarName("duration/250", "FLOAT")).toBe("--duration-250");
+		expect(toVarName("ease/linear", "FLOAT")).toBe("--ease-linear");
+		expect(toVarName("breakpoint/sm", "FLOAT")).toBe("--breakpoint-sm");
+	});
+
+	test("semantics paths work the same (no special casing needed)", () => {
+		expect(toVarName("background", "COLOR", "semantics")).toBe("--background");
+		expect(toVarName("foreground", "COLOR", "semantics")).toBe("--foreground");
+		expect(toVarName("card-foreground", "COLOR", "semantics")).toBe("--card-foreground");
+	});
+
+	test("font and screen paths preserve hyphens within segments", () => {
+		expect(toVarName("font/family/sans", "STRING")).toBe("--font-family-sans");
+		expect(toVarName("screen/iphone-16-pro", "FLOAT")).toBe("--screen-iphone-16-pro");
+	});
+
+	test("handles font typescale paths", () => {
+		expect(toVarName("font/typescale/body/size/md", "FLOAT")).toBe("--font-typescale-body-size-md");
+		expect(toVarName("font/typescale/body/line-height/md", "FLOAT")).toBe("--font-typescale-body-line-height-md");
+	});
+
+	test("handles shadow and blur paths", () => {
+		expect(toVarName("shadow/0", "STRING")).toBe("--shadow-0");
+		expect(toVarName("blur/xs", "FLOAT")).toBe("--blur-xs");
+		expect(toVarName("rounded/lg", "FLOAT")).toBe("--rounded-lg");
 	});
 });
 

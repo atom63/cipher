@@ -258,7 +258,7 @@ function generatePrimitives(config: BrandConfig): {
 	// --- Sizes ---
 	for (const [key, px] of Object.entries(SIZES_SCALE)) {
 		tokens.push(
-			makeToken(`sizes/${key}`, px, "primitives", {
+			makeToken(`size/${key}`, px, "primitives", {
 				type: "sizing",
 				originalValue: `${px}px`,
 				description: `Size ${key} (${px}px)`,
@@ -280,7 +280,7 @@ function generatePrimitives(config: BrandConfig): {
 	// --- Motion / Duration raw values ---
 	for (const [key, ms] of Object.entries(DURATION_RAW)) {
 		tokens.push(
-			makeToken(`motion/duration/${key}`, ms, "primitives", {
+			makeToken(`duration/${key}`, ms, "primitives", {
 				type: "number",
 				originalValue: `${ms}ms`,
 				description: `Duration ${key === "none" ? "0" : key}ms`,
@@ -291,7 +291,7 @@ function generatePrimitives(config: BrandConfig): {
 	// --- Motion / Easing curves ---
 	for (const [key, value] of Object.entries(EASING_CURVES)) {
 		tokens.push(
-			makeToken(`motion/easing/${key}`, value, "primitives", {
+			makeToken(`ease/${key}`, value, "primitives", {
 				type: "string",
 				originalValue: value,
 				description: `Easing ${key}`,
@@ -302,7 +302,7 @@ function generatePrimitives(config: BrandConfig): {
 	// --- Breakpoints ---
 	for (const [key, value] of Object.entries(BREAKPOINTS)) {
 		tokens.push(
-			makeToken(`breakpoints/${key}`, value, "primitives", {
+			makeToken(`breakpoint/${key}`, value, "primitives", {
 				type: "number",
 				originalValue: `${value}px`,
 				description: `Breakpoint ${key}`,
@@ -350,7 +350,7 @@ function generatePrimitives(config: BrandConfig): {
 	// --- Z-layer scale ---
 	for (const [name, value] of Object.entries(ZLAYER_SCALE)) {
 		tokens.push(
-			makeToken(`zLayer/${name}`, value, "primitives", {
+			makeToken(`z/layer/${name}`, value, "primitives", {
 				type: "number",
 				originalValue: `${value}`,
 				description: `Z-index layer ${name}`,
@@ -378,11 +378,11 @@ function generatePrimitives(config: BrandConfig): {
 		scales.push(generateColorScale("brand-secondary", config.secondary));
 	}
 
-	// --- Brand primary color full ramp (color/brand-primary/50 – 950) ---
+	// --- Brand primary color full ramp (color/brand/primary/50 – 950) ---
 	for (const step of SHADE_STEPS) {
 		tokens.push(
 			makeToken(
-				`color/brand-primary/${step}`,
+				`color/brand/primary/${step}`,
 				brandScale.shades[step],
 				"primitives",
 				{
@@ -401,7 +401,7 @@ function generatePrimitives(config: BrandConfig): {
 		for (const step of SHADE_STEPS) {
 			tokens.push(
 				makeToken(
-					`color/brand-secondary/${step}`,
+					`color/brand/secondary/${step}`,
 					secondaryScale.shades[step],
 					"primitives",
 					{
@@ -482,7 +482,7 @@ function generatePrimitives(config: BrandConfig): {
 			);
 			tokens.push(
 				makeToken(
-					`font/typescale/${step.name}/line-height/${variant}`,
+					`font/typescale/${step.name}/line/height/${variant}`,
 					lineHeights[variant],
 					"primitives",
 					{
@@ -535,7 +535,7 @@ function generateAbstractions(_config: BrandConfig): DesignToken[] {
 
 	// --- Duration semantic aliases ---
 	for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
-		const ref = `{primitives.motion.duration.${rawKey}}`;
+		const ref = `{primitives.duration.${rawKey}}`;
 		tokens.push(
 			makeToken(`duration/${name}`, ref, "abstractions", {
 				type: "duration",
@@ -601,7 +601,7 @@ interface SemanticDef {
 function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 	const surfL = (step: number) => `{abstractions.surface.light.${step}}`;
 	const surfD = (step: number) => `{abstractions.surface.dark.${step}}`;
-	const primary = "{primitives.color.brand-primary.500}";
+	const primary = "{primitives.color.brand.primary.500}";
 	const danger = "{primitives.color.danger.500}";
 	const success = "{primitives.color.success.500}";
 	const warning = "{primitives.color.warning.500}";
@@ -838,8 +838,8 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 		defs.push(
 			{
 				name: "secondary-accent",
-				light: "{primitives.color.brand-secondary.500}",
-				dark: "{primitives.color.brand-secondary.500}",
+				light: "{primitives.color.brand.secondary.500}",
+				dark: "{primitives.color.brand.secondary.500}",
 				description: "Secondary accent color",
 			},
 		);
@@ -896,7 +896,7 @@ function generateResponsive(config: BrandConfig): DesignToken[] {
 			// font-size
 			tokens.push(
 				makeToken(
-					`typography/${step.name}/font-size`,
+					`typography/${step.name}/font/size`,
 					`{primitives.font.typescale.${step.name}.size.${variant}}`,
 					"responsive",
 					{
@@ -911,12 +911,12 @@ function generateResponsive(config: BrandConfig): DesignToken[] {
 			// line-height
 			tokens.push(
 				makeToken(
-					`typography/${step.name}/line-height`,
-					`{primitives.font.typescale.${step.name}.line-height.${variant}}`,
+					`typography/${step.name}/line/height`,
+					`{primitives.font.typescale.${step.name}.line.height.${variant}}`,
 					"responsive",
 					{
 						type: "number",
-						originalValue: `{primitives.font.typescale.${step.name}.line-height.${variant}}`,
+						originalValue: `{primitives.font.typescale.${step.name}.line.height.${variant}}`,
 						description: `${step.name} line height (${mode})`,
 						modeName: mode,
 					},
@@ -1193,11 +1193,11 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 
 		for (const step of typeSteps) {
 			const sizeBinding = {
-				variableName: `typography/${step.name}/font-size`,
+				variableName: `typography/${step.name}/font/size`,
 				collectionName: "responsive",
 			};
 			const lineHeightBinding = {
-				variableName: `typography/${step.name}/line-height`,
+				variableName: `typography/${step.name}/line/height`,
 				collectionName: "responsive",
 			};
 			const fontFamilyBinding = {

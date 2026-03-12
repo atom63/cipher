@@ -93,6 +93,8 @@ export interface DesignToken {
 
 export interface ParsedTokens {
 	errors: ParseError[];
+	/** Whether the imported file is a Cipher CSS export (enables update flow) */
+	isCipherExport?: boolean;
 	stats: {
 		total: number;
 		byCategory: Record<string, number>; // Flexible to support any category

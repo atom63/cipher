@@ -30,8 +30,10 @@ export interface ValidationResult {
 }
 
 /**
- * Parse a reference string like "{primitives.zinc.50}" and return
- * { collection: "primitives", path: "zinc/50", full: "primitives/zinc/50" }
+ * Parse a reference string and return structured parts for lookup.
+ * Handles two formats:
+ * - Dot-separated (from CSS parser): "{primitives.zinc.50}" → full: "primitives/zinc/50"
+ * - Slash-separated (after name-map correction): "{color/brand-primary/500}" → full: "color/brand-primary/500"
  */
 function parseRef(ref: string): {
 	collection: string;
@@ -40,10 +42,23 @@ function parseRef(ref: string): {
 } | null {
 	const match = ref.match(/\{([^}]+)\}/);
 	if (!match) return null;
-	const parts = match[1].split(".");
+	const inner = match[1];
+
+	// Slash-separated (corrected by name map): split on first "/"
+	if (inner.includes("/")) {
+		const slashIdx = inner.indexOf("/");
+		return {
+			collection: inner.substring(0, slashIdx),
+			path: inner.substring(slashIdx + 1),
+			full: inner,
+		};
+	}
+
+	// Dot-separated (original CSS parser output)
+	const parts = inner.split(".");
 	const collection = parts[0];
 	const path = parts.slice(1).join("/");
-	return { collection, path, full: match[1].replace(/\./g, "/") };
+	return { collection, path, full: inner.replace(/\./g, "/") };
 }
 
 /**
@@ -119,7 +134,8 @@ function detectCircularRef(
 	if (visited.has(key)) return true; // cycle found
 	visited.add(key);
 
-	const targets = lookupRef(token.originalValue, tokenMap);
+	const refValue = typeof token.value === "string" ? token.value : token.originalValue;
+	const targets = lookupRef(refValue, tokenMap);
 	if (!targets) return false; // broken ref handled separately
 
 	for (const target of targets) {
@@ -145,7 +161,8 @@ function resolveTokenType(
 	if (visited.has(key)) return null; // cycle
 	visited.add(key);
 
-	const targets = lookupRef(token.originalValue, tokenMap);
+	const refValue = typeof token.value === "string" ? token.value : token.originalValue;
+	const targets = lookupRef(refValue, tokenMap);
 	if (!targets || targets.length === 0) return null;
 
 	return resolveTokenType(targets[0], tokenMap, new Set(visited));
@@ -186,7 +203,8 @@ function toFigmaType(
  */
 function isSelfRef(token: DesignToken): boolean {
 	if (token.type !== "reference") return false;
-	const parsed = parseRef(token.originalValue);
+	const refValue = typeof token.value === "string" ? token.value : token.originalValue;
+	const parsed = parseRef(refValue);
 	if (!parsed) return false;
 
 	// Check: does the ref resolve back to this token?
@@ -244,15 +262,17 @@ export function validateTokens(tokens: DesignToken[]): ValidationResult {
 			continue;
 		}
 
-		// Broken reference check
-		const targets = lookupRef(token.originalValue, tokenMap);
+		// Broken reference check — use token.value (converted {dot.path} format)
+		// not token.originalValue (raw CSS var() syntax)
+		const refValue = typeof token.value === "string" ? token.value : token.originalValue;
+		const targets = lookupRef(refValue, tokenMap);
 		if (!targets || targets.length === 0) {
 			issues.push({
 				tokenId: token.id,
 				tokenName: token.figmaName,
 				severity: "warning",
 				type: "broken-ref",
-				message: `Reference "${token.originalValue}" not found in import set (may exist in Figma)`,
+				message: `Reference "${refValue}" not found in import set (may exist in Figma)`,
 			});
 			continue;
 		}

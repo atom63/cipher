@@ -206,8 +206,6 @@ export function figmaTypeToTokenType(
 
 			// Check for size/sizing tokens
 			if (
-				nameLower.includes("/sizes/") ||
-				nameLower.startsWith("sizes/") ||
 				nameLower.includes("/size/") ||
 				nameLower.startsWith("size/")
 			) {

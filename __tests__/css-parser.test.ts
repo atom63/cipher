@@ -32,12 +32,22 @@ describe("parseCSS", () => {
 
 		test("parses string values", () => {
 			const css = `:root {
-				--font-family-body: "Inter", sans-serif;
+				--brand-tagline: "Design with precision";
 			}`;
 
 			const result = parseCSS(css);
 			expect(result.tokens).toHaveLength(1);
 			expect(result.tokens[0].type).toBe("string");
+		});
+
+		test("parses font-family values", () => {
+			const css = `:root {
+				--font-family-body: "Inter", sans-serif;
+			}`;
+
+			const result = parseCSS(css);
+			expect(result.tokens).toHaveLength(1);
+			expect(result.tokens[0].type).toBe("fontFamily");
 		});
 	});
 
