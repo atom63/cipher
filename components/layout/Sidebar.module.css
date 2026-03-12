@@ -24,7 +24,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--spacing-2xs);
+  gap: var(--spacing-md);
   padding: var(--spacing-md) var(--spacing-sm);
   overflow-y: auto;
 }
@@ -32,7 +32,7 @@
 .sidebarSection {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--spacing-sm);
 }
 
 .sidebarSeparator {

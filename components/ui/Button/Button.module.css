@@ -200,7 +200,7 @@
    GHOST - Minimal button
    ============================================ */
 .ghost {
-  color: var(--foreground);
+  color: var(--muted-foreground);
   background-color: transparent;
   border-color: transparent;
 }

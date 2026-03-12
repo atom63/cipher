@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ClipboardCopy, RefreshCw, Wand2 } from "lucide-react";
+import { Check, ChevronDown, ClipboardCopy, Dices, RefreshCw, Wand2 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
@@ -16,7 +16,7 @@ import { Button } from "../components/ui/Button";
 import { CheckboxWithLabel } from "../components/ui/Checkbox";
 import { Input } from "../components/ui/Input";
 import { NumberField } from "../components/ui/NumberField";
-import { SHADE_STEPS } from "../generators/color-scale";
+import { oklchToRgb, rgbToHex, SHADE_STEPS } from "../generators/color-scale";
 import { RADIX_GRAYS } from "../generators/radix-grays";
 import {
 	type BrandConfig,
@@ -465,6 +465,39 @@ export function GeneratePage() {
 		setResult(null);
 	}, []);
 
+	const handleShuffle = useCallback(() => {
+		const randHex = (l: number, c: number, h: number) =>
+			rgbToHex(oklchToRgb({ l, c, h })).toUpperCase();
+
+		// Primary: bright, punchy color (L 0.65–0.78, high chroma)
+		const primaryHue = Math.random() * 360;
+		setPrimaryColor(randHex(0.65 + Math.random() * 0.13, 0.16 + Math.random() * 0.10, primaryHue));
+
+		// Secondary: offset 60–180° from primary, similarly bright
+		const secondaryHue = (primaryHue + 60 + Math.random() * 120) % 360;
+		setSecondaryColor(randHex(0.65 + Math.random() * 0.13, 0.14 + Math.random() * 0.10, secondaryHue));
+		setHasSecondary(true);
+
+		// Surface: random Radix preset per mode
+		setGrayLight(RADIX_GRAYS[Math.floor(Math.random() * RADIX_GRAYS.length)].name);
+		setGrayDark(RADIX_GRAYS[Math.floor(Math.random() * RADIX_GRAYS.length)].name);
+		setGrayLightHex("");
+		setGrayDarkHex("");
+
+		// Status: semantic hue ranges, bright and clean
+		const ranges: Record<string, [number, number]> = {
+			danger: [15, 35],
+			success: [150, 170],
+			warning: [65, 85],
+			info: [230, 265],
+		};
+		const newStatus: Record<string, string> = {};
+		for (const [key, [lo, hi]] of Object.entries(ranges)) {
+			newStatus[key] = randHex(0.65 + Math.random() * 0.12, 0.16 + Math.random() * 0.08, lo + Math.random() * (hi - lo));
+		}
+		setStatusColors(newStatus);
+	}, []);
+
 	// ---- Loading ----
 	if (view === "loading") {
 		return (
@@ -899,6 +932,10 @@ export function GeneratePage() {
 
 				</PageBody>
 				<PageFooter>
+					<Button onClick={handleShuffle} variant="ghost">
+						<Dices size={14} />
+						Shuffle Colors
+					</Button>
 					<Button disabled={!generated} onClick={handleCopyCss} variant="ghost">
 						<ClipboardCopy size={14} />
 						Copy CSS
