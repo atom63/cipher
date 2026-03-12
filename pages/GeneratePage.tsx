@@ -2,6 +2,7 @@ import { Check, ChevronDown, ClipboardCopy, RefreshCw, Wand2 } from "lucide-reac
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
+import { PageBody, PageFooter, PageLayout } from "../components/layout";
 import {
 	Frame,
 	FrameHeader,
@@ -328,25 +329,25 @@ export function GeneratePage() {
 	// ---- Loading ----
 	if (view === "loading") {
 		return (
-			<div className={styles.page}>
+			<PageLayout>
 				<LoadingState message="Loading variables from Figma…" />
-			</div>
+			</PageLayout>
 		);
 	}
 
 	// ---- Progress ----
 	if (view === "progress") {
 		return (
-			<div className={styles.page}>
+			<PageLayout>
 				<ProgressView message={isUpdate ? "Updating variables in Figma…" : "Creating variables in Figma…"} />
-			</div>
+			</PageLayout>
 		);
 	}
 
 	// ---- Success ----
 	if (view === "success" && result) {
 		return (
-			<div className={styles.page}>
+			<PageLayout>
 				<SuccessView
 					actionLabel={isUpdate ? "Update" : "Generate"}
 					actionLabelPast={isUpdate ? "updated" : "generated"}
@@ -357,15 +358,15 @@ export function GeneratePage() {
 					onImportMore={handleReset}
 					success={result.success}
 				/>
-			</div>
+			</PageLayout>
 		);
 	}
 
 	// ---- Config ----
 	if (view === "config") {
 		return (
-			<div className={styles.page}>
-				<div className={styles.pageBody}>
+			<PageLayout>
+				<PageBody>
 					<SectionHeader
 						action={
 							isUpdate ? (
@@ -760,8 +761,8 @@ export function GeneratePage() {
 
 					</div>
 
-				</div>
-				<div className={styles.actions}>
+				</PageBody>
+				<PageFooter>
 					<Button disabled={!generated} onClick={handleCopyCss} variant="ghost">
 						<ClipboardCopy size={14} />
 						Copy CSS
@@ -770,8 +771,8 @@ export function GeneratePage() {
 						<Wand2 size={14} />
 						{isUpdate ? "Update in Figma" : "Create in Figma"}
 					</Button>
-				</div>
-			</div>
+				</PageFooter>
+			</PageLayout>
 		);
 	}
 

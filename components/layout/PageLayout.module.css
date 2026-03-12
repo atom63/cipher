@@ -1,0 +1,27 @@
+/* Page layout — sticky footer pattern */
+.page {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow: hidden;
+}
+
+.body {
+	flex: 1;
+	min-height: 0;
+	padding: var(--spacing-xl);
+	overflow-y: auto;
+}
+
+.footer {
+	display: flex;
+	flex-shrink: 0;
+	gap: var(--spacing-md);
+	padding: var(--spacing-md) var(--spacing-xl);
+	background: var(--background);
+	border-top: 1px solid var(--border);
+}
+
+.footer > *:last-child {
+	margin-left: auto;
+}

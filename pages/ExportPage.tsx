@@ -1,8 +1,6 @@
 import {
 	Archive,
 	Check,
-	ChevronDown,
-	ChevronRight,
 	CircleOff,
 	Code,
 	Copy,
@@ -10,9 +8,15 @@ import {
 	FileDown,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { PageBody, PageFooter, PageLayout } from "../components/layout";
 import {
+	Accordion,
+	AccordionItem,
+	AccordionPanel,
+	AccordionTrigger,
 	Alert,
 	Button,
+	CodeBlock,
 	EmptyState,
 	Frame,
 	FrameFooter,
@@ -25,6 +29,7 @@ import {
 	useToast,
 } from "../components/ui";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
+
 import type { CSSFileInfo } from "../types/messages";
 import { downloadAsZip } from "../utils/zip-download";
 import styles from "./ExportPage.module.css";
@@ -41,7 +46,7 @@ type ColorFormat = "oklch" | "hex" | "rgba";
 
 export function ExportPage() {
 	const [view, setView] = useState<ExportViewState>("selection");
-	const [activeTab, setActiveTab] = useState<"json" | "css">("json");
+	const [activeTab, setActiveTab] = useState<"json" | "css">("css");
 	const [collections, setCollections] = useState<Collection[]>([]);
 	const [colorFormat, setColorFormat] = useState<ColorFormat>("oklch");
 	const [loading, setLoading] = useState(true);
@@ -71,10 +76,7 @@ export function ExportPage() {
 			if (msg.data.colorFormat) {
 				setColorFormat(msg.data.colorFormat as ColorFormat);
 			}
-			if (msg.data.lastExportTab) {
-				setActiveTab(msg.data.lastExportTab === "css" ? "css" : "json");
 			}
-		}
 
 		if (msg.type === "collections-list") {
 			const cols = msg.data.collections.map((c) => ({
@@ -117,8 +119,7 @@ export function ExportPage() {
 	};
 
 	const handleTabChange = (tabId: string) => {
-		const tab = tabId as "json" | "css";
-		setActiveTab(tab);
+		setActiveTab(tabId as "json" | "css");
 	};
 
 	const totalVariables = collections.reduce(
@@ -217,97 +218,88 @@ export function ExportPage() {
 
 	// CSS Preview
 	if (view === "css-preview" && cssFiles.length > 0) {
+		const visibleFiles = cssFiles.filter((f) => f.name !== "index.css");
 		return (
-			<div className="page-content">
-				<SectionHeader
-					description={`${cssStats?.totalVariables ?? 0} variables from ${cssStats?.totalCollections ?? 0} collection${(cssStats?.totalCollections ?? 0) !== 1 ? "s" : ""}`}
-					title="CSS Export"
-					variant="primary"
-				/>
+			<PageLayout>
+				<PageBody>
+					<SectionHeader
+						description={`${cssStats?.totalVariables ?? 0} variables across ${visibleFiles.length} files`}
+						title="CSS Export"
+						variant="primary"
+					/>
 
-				<Frame>
-					<FrameFooter>
-						<Button onClick={copyAllCSS} variant="ghost">
-							<Copy size={14} />
-							Copy All
-						</Button>
-						<Button
-							onClick={() =>
-								downloadAsZip(
-									cssFiles.map((f) => ({ name: f.name, content: f.content })),
-									"design-tokens-css",
-								)
-							}
-							variant="ghost"
-						>
-							<Archive size={14} />
-							Download ZIP
-						</Button>
-						<Button onClick={handleExportAgain} variant="ghost">
-							<FileDown size={14} />
-							Export Again
-						</Button>
-					</FrameFooter>
-					<FramePanel>
-						<div className={styles.cssFileList}>
-							{cssFiles
-								.filter((f) => f.name !== "index.css")
-								.map((file) => {
-									const isExpanded = expandedCssFile === file.name;
-									return (
-										<div className={styles.cssFileItem} key={file.name}>
-											<div
-												className={styles.cssFileHeader}
-												onClick={() =>
-													setExpandedCssFile(isExpanded ? null : file.name)
-												}
-											>
-												{isExpanded ? (
-													<ChevronDown size={14} />
-												) : (
-													<ChevronRight size={14} />
-												)}
-												<span className={styles.cssFileName}>{file.name}</span>
-												<span className={styles.cssFileCount}>
-													{file.variableCount} vars
-												</span>
-												<Button
-													data-tooltip="Copy"
-													onClick={(e: React.MouseEvent) => {
-														e.stopPropagation();
-														copyToClipboard(file.content, file.name);
-													}}
-													size="icon-sm"
-													variant="ghost"
-												>
-													<Copy size={12} />
-												</Button>
-												<Button
-													data-tooltip="Download"
-													onClick={(e: React.MouseEvent) => {
-														e.stopPropagation();
-														downloadCSS(file);
-													}}
-													size="icon-sm"
-													variant="ghost"
-												>
-													<Download size={12} />
-												</Button>
-											</div>
-											{isExpanded && (
-												<ScrollArea className={styles.cssPreviewCode} orientation="both">
-													<pre className={styles.cssPreviewPre}>
-														<code>{file.content}</code>
-													</pre>
-												</ScrollArea>
-											)}
-										</div>
-									);
-								})}
-						</div>
-					</FramePanel>
-				</Frame>
-			</div>
+					<Accordion variant="flat">
+						{visibleFiles.map((file) => {
+							const isExpanded = expandedCssFile === file.name;
+							return (
+								<AccordionItem expanded={isExpanded} key={file.name}>
+									<AccordionTrigger
+										expanded={isExpanded}
+										onClick={() =>
+											setExpandedCssFile(isExpanded ? null : file.name)
+										}
+									>
+										<span className={styles.cssFileName}>{file.name}</span>
+										<span className={styles.cssFileCount}>
+											{file.variableCount}
+										</span>
+										<Button
+											data-tooltip="Copy"
+											onClick={(e: React.MouseEvent) => {
+												e.stopPropagation();
+												copyToClipboard(file.content, file.name);
+											}}
+											size="icon-sm"
+											variant="ghost"
+										>
+											<Copy size={12} />
+										</Button>
+										<Button
+											data-tooltip="Download"
+											onClick={(e: React.MouseEvent) => {
+												e.stopPropagation();
+												downloadCSS(file);
+											}}
+											size="icon-sm"
+											variant="ghost"
+										>
+											<Download size={12} />
+										</Button>
+									</AccordionTrigger>
+									<AccordionPanel expanded={isExpanded}>
+										<ScrollArea className={styles.cssPreviewCode} orientation="horizontal">
+											<CodeBlock>{file.content}</CodeBlock>
+										</ScrollArea>
+									</AccordionPanel>
+								</AccordionItem>
+							);
+						})}
+					</Accordion>
+				</PageBody>
+
+				<PageFooter>
+					<Button onClick={copyAllCSS} variant="ghost">
+						<Copy size={14} />
+						Copy All
+					</Button>
+					<Button onClick={handleExportAgain} variant="ghost">
+						<FileDown size={14} />
+						Export Again
+					</Button>
+					<Button
+						onClick={() =>
+							downloadAsZip(
+								cssFiles.map((f) => ({ name: f.name, content: f.content })),
+								"design-tokens-css",
+							)
+						}
+						variant="primary"
+					>
+						<Archive size={14} />
+						Download ZIP
+					</Button>
+				</PageFooter>
+			</PageLayout>
 		);
 	}
 
@@ -317,7 +309,7 @@ export function ExportPage() {
 			<div className="page-content">
 				<div className={styles.successView}>
 					<div className={styles.successIcon}>
-						<Check size={40} />
+						<Check size={24} />
 					</div>
 
 					<div className={styles.successContent}>
@@ -326,30 +318,28 @@ export function ExportPage() {
 					</div>
 
 					<div className={styles.successStats}>
-						<div className={styles.successStatsContent}>
-							<div className={styles.successStatRow}>
-								<span className={styles.successStatLabel}>Collections</span>
-								<strong className={styles.successStatValue}>
-									{exportResult.collectionCount}
-								</strong>
-							</div>
-							<div className={styles.successStatRow}>
-								<span className={styles.successStatLabel}>Variables</span>
-								<strong className={styles.successStatValue}>
-									{exportResult.variableCount}
-								</strong>
-							</div>
-							<div className={styles.successStatRow}>
-								<span className={styles.successStatLabel}>Color Format</span>
-								<strong className={styles.successStatValue}>
-									{exportResult.format.toUpperCase()}
-								</strong>
-							</div>
+						<div className={styles.successStat}>
+							<span className={styles.successStatLabel}>Collections</span>
+							<strong className={styles.successStatValue}>
+								{exportResult.collectionCount}
+							</strong>
+						</div>
+						<div className={styles.successStat}>
+							<span className={styles.successStatLabel}>Variables</span>
+							<strong className={styles.successStatValue}>
+								{exportResult.variableCount}
+							</strong>
+						</div>
+						<div className={styles.successStat}>
+							<span className={styles.successStatLabel}>Format</span>
+							<strong className={styles.successStatValue}>
+								{exportResult.format.toUpperCase()}
+							</strong>
 						</div>
 					</div>
 
 					<div className={styles.successActions}>
-						<Button onClick={handleExportAgain}variant="default" >
+						<Button onClick={handleExportAgain} variant="default">
 							<FileDown size={14} />
 							Export Again
 						</Button>
@@ -379,106 +369,104 @@ export function ExportPage() {
 
 	// Main selection view
 	return (
-		<div className="page-content">
-			<SectionHeader
-				description={`${totalVariables} variables across ${collections.length} collection${collections.length !== 1 ? "s" : ""}`}
-				title="Export"
-				variant="primary"
-			/>
+		<PageLayout>
+			<PageBody>
+				<SectionHeader
+					description={`${totalVariables} variables across ${collections.length} collection${collections.length !== 1 ? "s" : ""}`}
+					title="Export"
+					variant="primary"
+				/>
 
-			<Frame>
-				<FrameFooter>
-					<span className={styles.formatLabel}>Color format</span>
-					<div className={styles.formatOptions}>
-						{(["oklch", "hex", "rgba"] as const).map((fmt) => (
-							<button
-								className={styles.formatOption}
-								data-selected={colorFormat === fmt}
-								key={fmt}
-								onClick={() => handleColorFormatChange(fmt)}
-								type="button"
-							>
-								{fmt.toUpperCase()}
-							</button>
-						))}
-					</div>
-				</FrameFooter>
-				{colorFormat !== "rgba" && (
-					<div style={{ padding: "var(--spacing-sm)" }}>
-						<Alert variant="info">
-							Variables with opacity values will only export correctly in RGBA format.
-						</Alert>
-					</div>
-				)}
-				<FramePanel>
-					<Tabs
-						activeTab={activeTab}
-						onTabChange={handleTabChange}
-						size="sm"
-						tabs={[
-							{ id: "json", label: "JSON" },
-							{ id: "css", label: "CSS" },
-						]}
-					>
-						<TabPanel activeTab={activeTab} id="json">
-							<div className={styles.tabContent}>
-								<p className={styles.tabDescription}>
-									Structured token file for cross-platform use, Style Dictionary
-									pipelines, or re-importing into Figma.
-								</p>
+				<Frame>
+					<FrameFooter>
+						<span className={styles.formatLabel}>Color format</span>
+						<div className={styles.formatOptions}>
+							{(["oklch", "hex", "rgba"] as const).map((fmt) => (
+								<button
+									className={styles.formatOption}
+									data-selected={colorFormat === fmt}
+									key={fmt}
+									onClick={() => handleColorFormatChange(fmt)}
+									type="button"
+								>
+									{fmt.toUpperCase()}
+								</button>
+							))}
+						</div>
+					</FrameFooter>
+					{colorFormat !== "rgba" && (
+						<div style={{ padding: "var(--spacing-sm)" }}>
+							<Alert variant="info">
+								Variables with opacity values will only export correctly in RGBA format.
+							</Alert>
+						</div>
+					)}
+					<FramePanel>
+						<Tabs
+							activeTab={activeTab}
+							onTabChange={handleTabChange}
+							size="sm"
+							tabs={[
+								{ id: "json", label: "JSON" },
+								{ id: "css", label: "CSS" },
+							]}
+						>
+							<TabPanel activeTab={activeTab} id="json">
+								<div className={styles.tabContent}>
+									<p className={styles.tabDescription}>
+										Structured token file for cross-platform use, Style Dictionary
+										pipelines, or re-importing into Figma.
+									</p>
 
-								<div className={styles.collectionSummary}>
-									{collections.map((c) => (
-										<div className={styles.collectionRow} key={c.id}>
-											<span className={styles.collectionName}>{c.name}</span>
-											<span className={styles.collectionMeta}>
-												{c.variableCount} var{c.variableCount !== 1 ? "s" : ""}
-												{c.modes.length > 1 && ` · ${c.modes.join(", ")}`}
-											</span>
-										</div>
-									))}
+									<div className={styles.collectionSummary}>
+										{collections.map((c) => (
+											<div className={styles.collectionRow} key={c.id}>
+												<span className={styles.collectionName}>{c.name}</span>
+												<span className={styles.collectionMeta}>
+													{c.variableCount} var{c.variableCount !== 1 ? "s" : ""}
+													{c.modes.length > 1 && ` · ${c.modes.join(", ")}`}
+												</span>
+											</div>
+										))}
+									</div>
 								</div>
+							</TabPanel>
 
-								<div className={styles.exportActions}>
-									<Button onClick={handleExportJSON} variant="primary">
-										<Download size={14} />
-										Export JSON
-									</Button>
+							<TabPanel activeTab={activeTab} id="css">
+								<div className={styles.tabContent}>
+									<p className={styles.tabDescription}>
+										Production-ready CSS custom properties with{" "}
+										<code>color-mix()</code> opacity and <code>@theme inline</code>{" "}
+										for Tailwind. Import <code>index.css</code> and go.
+									</p>
+
+									<div className={styles.collectionSummary}>
+										{collections.map((c) => (
+											<div className={styles.collectionRow} key={c.id}>
+												<span className={styles.collectionName}>{c.name}</span>
+												<span className={styles.collectionMeta}>
+													{c.variableCount} var{c.variableCount !== 1 ? "s" : ""}
+													{c.modes.length > 1 && ` · ${c.modes.join(", ")}`}
+												</span>
+											</div>
+										))}
+									</div>
 								</div>
-							</div>
-						</TabPanel>
+							</TabPanel>
+						</Tabs>
+					</FramePanel>
+				</Frame>
+			</PageBody>
 
-						<TabPanel activeTab={activeTab} id="css">
-							<div className={styles.tabContent}>
-								<p className={styles.tabDescription}>
-									Production-ready CSS custom properties with{" "}
-									<code>color-mix()</code> opacity and <code>@theme inline</code>{" "}
-									for Tailwind. Import <code>index.css</code> and go.
-								</p>
-
-								<div className={styles.collectionSummary}>
-									{collections.map((c) => (
-										<div className={styles.collectionRow} key={c.id}>
-											<span className={styles.collectionName}>{c.name}</span>
-											<span className={styles.collectionMeta}>
-												{c.variableCount} var{c.variableCount !== 1 ? "s" : ""}
-												{c.modes.length > 1 && ` · ${c.modes.join(", ")}`}
-											</span>
-										</div>
-									))}
-								</div>
-
-								<div className={styles.exportActions}>
-									<Button onClick={handleExportCSS} variant="primary">
-										<Code size={14} />
-										Export CSS
-									</Button>
-								</div>
-							</div>
-						</TabPanel>
-					</Tabs>
-				</FramePanel>
-			</Frame>
-		</div>
+			<PageFooter>
+				<Button
+					onClick={activeTab === "css" ? handleExportCSS : handleExportJSON}
+					variant="primary"
+				>
+					{activeTab === "css" ? <Code size={14} /> : <Download size={14} />}
+					{activeTab === "css" ? "Export CSS" : "Export JSON"}
+				</Button>
+			</PageFooter>
+		</PageLayout>
 	);
 }

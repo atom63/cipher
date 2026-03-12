@@ -1,0 +1,107 @@
+/* ============================================
+   ACCORDION
+   ============================================ */
+
+.accordion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+}
+
+/* Flat variant — borderless items in a continuous list */
+.accordion[data-variant="flat"] {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+/* --- Item --- */
+
+.item {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-radius 0.15s ease;
+}
+
+.item[data-expanded="true"] {
+  border-radius: var(--radius);
+}
+
+.accordion[data-variant="flat"] .item {
+  border: none;
+  border-radius: 0;
+}
+
+.accordion[data-variant="flat"] .item + .item {
+  border-top: 1px solid var(--border);
+}
+
+/* --- Trigger --- */
+
+.trigger {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: background-color 0.15s ease;
+}
+
+.trigger:hover {
+  background: var(--accent);
+}
+
+.trigger:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring);
+}
+
+.trigger[data-expanded="true"] {
+  background: var(--muted);
+}
+
+/* --- Chevron --- */
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  transition: transform 0.2s ease;
+}
+
+.chevron[data-expanded="true"] {
+  transform: rotate(90deg);
+}
+
+/* --- Panel --- */
+
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.2s ease;
+}
+
+.panel[data-expanded="true"] {
+  grid-template-rows: 1fr;
+}
+
+.panelInner {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .chevron,
+  .panel {
+    transition: none;
+  }
+}

@@ -1,5 +1,11 @@
 // Centralized exports for all UI components
 
+export {
+	Accordion,
+	AccordionItem,
+	AccordionPanel,
+	AccordionTrigger,
+} from "./Accordion";
 export { Alert } from "./Alert";
 // Feedback Components
 export { Badge, CountBadge, StatusBadge } from "./Badge";
@@ -19,6 +25,7 @@ export {
 	CheckboxWithDescription,
 	CheckboxWithLabel,
 } from "./Checkbox";
+export { CodeBlock } from "./CodeBlock";
 export { ColorSwatch, GradientSwatch } from "./ColorSwatch";
 export { ConfirmDialog, Dialog, DialogActions } from "./Dialog";
 export { Dropdown } from "./Dropdown";
