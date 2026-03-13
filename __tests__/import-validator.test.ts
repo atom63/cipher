@@ -116,8 +116,8 @@ describe("validateTokens", () => {
 		it("allows valid reference chains (A -> B -> C)", () => {
 			const tokens = [
 				token({ figmaName: "base", category: "primitives" }),
-				refToken("mid", "{primitives.base}", "abstractions"),
-				refToken("top", "{abstractions.mid}", "semantics"),
+				refToken("mid", "{primitives.base}", "aliases"),
+				refToken("top", "{aliases.mid}", "semantics"),
 			];
 			const result = validateTokens(tokens);
 			expect(result.valid).toBe(true);

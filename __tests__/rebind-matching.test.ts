@@ -281,7 +281,7 @@ describe("findStringVar", () => {
 // =============================================================================
 
 describe("typography rebind scenario", () => {
-	// Simulates real Figma variable setup with responsive + abstraction collections
+	// Simulates real Figma variable setup with responsive + alias collections
 	const floatVars: VarEntry[] = [
 		// Responsive typography (3 modes: desktop, tablet, mobile)
 		{
@@ -302,7 +302,7 @@ describe("typography rebind scenario", () => {
 		},
 		{ id: "fs:b", name: "typography/body/font/size", values: [14, 14, 14] },
 		{ id: "lh:b", name: "typography/body/line/height", values: [20, 20, 20] },
-		// Abstraction: font weights
+		// Alias: font weights
 		{ id: "fw:d", name: "font/weight/default", values: [400] },
 		{ id: "fw:s", name: "font/weight/strong", values: [500] },
 		// Spacing (should NOT match typography)

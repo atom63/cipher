@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Dices, RefreshCw, Wand2 } from "lucide-react";
+import { Check, ChevronDown, Dices, RefreshCw, Trash2, Wand2 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
@@ -13,7 +13,8 @@ import {
 	useToast,
 } from "../components/ui";
 import { Button } from "../components/ui/Button";
-import { CheckboxWithLabel } from "../components/ui/Checkbox";
+import { Checkbox, CheckboxWithLabel } from "../components/ui/Checkbox";
+import { Dialog, DialogActions } from "../components/ui/Dialog";
 import { CopyButton } from "../components/ui/CopyButton";
 import { Input } from "../components/ui/Input";
 import { NumberField } from "../components/ui/NumberField";
@@ -93,7 +94,7 @@ function extractBrandConfig(
 
 	// Try renamed paths first, fall back to legacy names
 	const primaryVar =
-		find("primitives", "color/brand-primary/500") ?? find("primitives", "color/brand/500");
+		find("primitives", "color/brand/primary/500") ?? find("primitives", "color/brand-primary/500");
 	let primaryColor = "#3B82F6";
 	// Prefer original base hex from description to avoid OKLCH round-trip drift
 	const primaryBase = extractBaseHex(primaryVar);
@@ -108,7 +109,7 @@ function extractBrandConfig(
 	}
 
 	const secondaryVar =
-		find("primitives", "color/brand-secondary/500") ?? find("primitives", "color/secondary/500");
+		find("primitives", "color/brand/secondary/500") ?? find("primitives", "color/brand-secondary/500");
 	let secondaryColor: string | null = null;
 	const secondaryBase = extractBaseHex(secondaryVar);
 	if (secondaryBase) {
@@ -234,7 +235,7 @@ function extractBrandConfig(
 		}
 
 		// Derive line heights
-		const baseLhVar = find("primitives", "font/typescale/base/line-height/md");
+		const baseLhVar = find("primitives", "font/typescale/base/line/height/md");
 		let lineHeightBody = 150;
 		if (baseLhVar && base > 0) {
 			const lhMode = Object.keys(baseLhVar.valuesByMode)[0];
@@ -246,7 +247,7 @@ function extractBrandConfig(
 
 		let lineHeightHeading = 125;
 		if (lgSizeVar) {
-			const lgLhVar = find("primitives", "font/typescale/lg/line-height/md");
+			const lgLhVar = find("primitives", "font/typescale/lg/line/height/md");
 			if (lgLhVar) {
 				const lgMode = Object.keys(lgSizeVar.valuesByMode)[0];
 				const lhMode = Object.keys(lgLhVar.valuesByMode)[0];
@@ -312,14 +313,32 @@ export function GeneratePage() {
 	// Result state
 	const [result, setResult] = useState<ImportResults | null>(null);
 
+	// Existing variables and styles (for orphan detection during updates)
+	const [existingVariables, setExistingVariables] = useState<VariableInfo[]>([]);
+	const [existingStyles, setExistingStyles] = useState<{ id: string; name: string; category: string }[]>([]);
+
+	// Orphan cleanup dialog
+	const [showOrphanDialog, setShowOrphanDialog] = useState(false);
+	const [orphanVarIds, setOrphanVarIds] = useState<Set<string>>(new Set());
+	const [orphanStyleIds, setOrphanStyleIds] = useState<Set<string>>(new Set());
+
 	// Available fonts from Figma
 	const [availableFonts, setAvailableFonts] = useState<string[]>([]);
 
-	// Load existing variables and available fonts on mount
+	// Load existing variables, styles, and available fonts on mount
 	useEffect(() => {
 		postMessage({ type: "get-variables" });
+		postMessage({ type: "get-style-details" });
 		postMessage({ type: "get-available-fonts" });
 	}, [postMessage]);
+
+	// Refs for values used in message callback (avoids stale closures)
+	const generatedRef = useRef<GeneratedSystem | null>(null);
+	const isUpdateRef = useRef(isUpdate);
+	const viewRef = useRef(view);
+	const proceedWithImportRef = useRef(() => {});
+	isUpdateRef.current = isUpdate;
+	viewRef.current = view;
 
 	// Handle messages
 	useFigmaMessage(
@@ -330,6 +349,8 @@ export function GeneratePage() {
 						variables: VariableInfo[];
 						collections: CollectionInfo[];
 					};
+
+					setExistingVariables(data.variables);
 
 					if (data.variables.length === 0) {
 						// Fresh file — generate mode
@@ -368,9 +389,20 @@ export function GeneratePage() {
 					}
 					setView("config");
 				}
+				if (msg.type === "style-details-list") {
+					const data = msg.data as {
+						styles: { id: string; name: string; category: string }[];
+					};
+					setExistingStyles(data.styles);
+				}
 				if (msg.type === "available-fonts") {
 					const data = msg.data as { fonts: string[] };
 					setAvailableFonts(data.fonts);
+				}
+				if (msg.type === "variables-deleted" && viewRef.current === "progress") {
+					// Orphan variables deleted — now proceed with import
+					proceedWithImportRef.current();
+					return;
 				}
 				if (msg.type === "import-complete" || msg.type === "variables-created") {
 					setResult(msg.data as ImportResults);
@@ -382,7 +414,7 @@ export function GeneratePage() {
 					setView("config");
 				}
 			},
-			[showError],
+			[showError, postMessage],
 		),
 	);
 
@@ -432,9 +464,80 @@ export function GeneratePage() {
 		if (!brandConfig) return null;
 		return generateDesignSystem(brandConfig);
 	}, [brandConfig]);
+	generatedRef.current = generated;
+
+	// Collect all style names from the nested generated styles object
+	const collectGeneratedStyleNames = useCallback((stylesObj: Record<string, any>): Set<string> => {
+		const names = new Set<string>();
+		const walk = (obj: any, path: string) => {
+			for (const [key, value] of Object.entries(obj)) {
+				const fullPath = path ? `${path}/${key}` : key;
+				if (value && typeof value === "object" && "id" in value && "type" in value) {
+					names.add(fullPath);
+				} else if (value && typeof value === "object") {
+					walk(value, fullPath);
+				}
+			}
+		};
+		for (const category of ["paint", "text", "effect"]) {
+			if (stylesObj[category]) walk(stylesObj[category], "");
+		}
+		return names;
+	}, []);
+
+	// Compute orphaned variables (exist in Figma but not in generated set)
+	const orphanedVariables = useMemo(() => {
+		if (!isUpdate || !generated || existingVariables.length === 0) return [];
+
+		const MANAGED_COLLECTIONS = new Set(["primitives", "aliases", "semantics", "responsive"]);
+
+		const generatedNames = new Map<string, Set<string>>();
+		for (const token of generated.tokens) {
+			const collection = token.category;
+			if (!generatedNames.has(collection)) {
+				generatedNames.set(collection, new Set());
+			}
+			generatedNames.get(collection)?.add(token.figmaName);
+		}
+
+		return existingVariables.filter((v) => {
+			const collName = v.collectionName.toLowerCase();
+			if (!MANAGED_COLLECTIONS.has(collName)) return false;
+			const namesInCollection = generatedNames.get(collName);
+			if (!namesInCollection) return true;
+			return !namesInCollection.has(v.name);
+		});
+	}, [isUpdate, generated, existingVariables]);
+
+	// Compute orphaned styles (exist in Figma but not in generated set)
+	const orphanedStyles = useMemo(() => {
+		if (!isUpdate || !generated || existingStyles.length === 0) return [];
+
+		const generatedStyleNames = collectGeneratedStyleNames(generated.styles);
+
+		// Only check styles whose names match generator patterns (group/key format)
+		// Generator creates: semantics/*, primary/*, secondary/*, tertiary/*, shadow/*, blur/*, backdrop-blur/*
+		const MANAGED_PREFIXES = ["semantics/", "primary/", "secondary/", "tertiary/", "shadow/", "blur/", "backdrop-blur/"];
+
+		return existingStyles.filter((s) => {
+			const isManaged = MANAGED_PREFIXES.some((p) => s.name.startsWith(p));
+			if (!isManaged) return false;
+			return !generatedStyleNames.has(s.name);
+		});
+	}, [isUpdate, generated, existingStyles, collectGeneratedStyleNames]);
+
+	const totalOrphans = orphanedVariables.length + orphanedStyles.length;
 
 	const handleSubmit = useCallback(() => {
 		if (!generated) return;
+
+		if (isUpdate && totalOrphans > 0) {
+			setOrphanVarIds(new Set(orphanedVariables.map((v) => v.id)));
+			setOrphanStyleIds(new Set(orphanedStyles.map((s) => s.id)));
+			setShowOrphanDialog(true);
+			return;
+		}
+
 		setView("progress");
 		postMessage({
 			type: "create-variables",
@@ -445,7 +548,58 @@ export function GeneratePage() {
 				stylesData: generated.styles,
 			},
 		});
+	}, [generated, isUpdate, totalOrphans, orphanedVariables, orphanedStyles, postMessage]);
+
+	const proceedWithImport = useCallback(() => {
+		if (!generated) return;
+		postMessage({
+			type: "create-variables",
+			data: {
+				tokens: generated.tokens,
+				...(isUpdate ? { collectionName: "generated" } : {}),
+				importMode: "import",
+				stylesData: generated.styles,
+			},
+		});
 	}, [generated, isUpdate, postMessage]);
+	proceedWithImportRef.current = proceedWithImport;
+
+	const handleOrphanConfirm = useCallback(() => {
+		if (!generated) return;
+		setShowOrphanDialog(false);
+		setView("progress");
+
+		// Delete orphan styles (fire-and-forget, grouped by category)
+		if (orphanStyleIds.size > 0) {
+			const byCategory: Record<string, string[]> = {};
+			for (const s of orphanedStyles) {
+				if (!orphanStyleIds.has(s.id)) continue;
+				if (!byCategory[s.category]) byCategory[s.category] = [];
+				byCategory[s.category].push(s.id);
+			}
+			for (const [category, ids] of Object.entries(byCategory)) {
+				postMessage({ type: "delete-styles", data: { styleIds: ids, category: category as "paint" | "text" | "effect" } });
+			}
+		}
+
+		if (orphanVarIds.size > 0) {
+			// Delete variables, then import on "variables-deleted" response
+			postMessage({
+				type: "delete-variables",
+				data: { variableIds: [...orphanVarIds] },
+			});
+		} else {
+			// No variable orphans to delete, proceed directly
+			proceedWithImport();
+		}
+	}, [generated, orphanVarIds, orphanStyleIds, orphanedStyles, postMessage, proceedWithImport]);
+
+	const handleOrphanSkip = useCallback(() => {
+		if (!generated) return;
+		setShowOrphanDialog(false);
+		setView("progress");
+		proceedWithImport();
+	}, [generated, proceedWithImport]);
 
 	const getCssText = useCallback(() => {
 		if (!brandConfig) return "";
@@ -455,6 +609,7 @@ export function GeneratePage() {
 	const handleRefresh = useCallback(() => {
 		setView("loading");
 		postMessage({ type: "get-variables" });
+		postMessage({ type: "get-style-details" });
 	}, [postMessage]);
 
 	const handleReset = useCallback(() => {
@@ -533,8 +688,107 @@ export function GeneratePage() {
 
 	// ---- Config ----
 	if (view === "config") {
+		// Group orphan variables by collection
+		const orphanVarsByCollection = orphanedVariables.reduce<Record<string, VariableInfo[]>>((acc, v) => {
+			const key = v.collectionName;
+			if (!acc[key]) acc[key] = [];
+			acc[key].push(v);
+			return acc;
+		}, {});
+
+		// Group orphan styles by category
+		const orphanStylesByCategory = orphanedStyles.reduce<Record<string, { id: string; name: string; category: string }[]>>((acc, s) => {
+			const label = s.category === "paint" ? "Paint styles" : s.category === "text" ? "Text styles" : "Effect styles";
+			if (!acc[label]) acc[label] = [];
+			acc[label].push(s);
+			return acc;
+		}, {});
+
+		const selectedOrphanCount = orphanVarIds.size + orphanStyleIds.size;
+
 		return (
 			<PageLayout>
+				{/* Orphan cleanup dialog */}
+				<Dialog
+					footer={
+						<DialogActions>
+							<Button onClick={handleOrphanSkip} variant="outline">
+								Skip
+							</Button>
+							<Button
+								onClick={handleOrphanConfirm}
+								variant={selectedOrphanCount > 0 ? "destructive" : "primary"}
+							>
+								{selectedOrphanCount > 0
+									? `Remove ${selectedOrphanCount} item${selectedOrphanCount !== 1 ? "s" : ""}`
+									: "Continue"}
+							</Button>
+						</DialogActions>
+					}
+					isOpen={showOrphanDialog}
+					maxWidth="sm"
+					onClose={() => setShowOrphanDialog(false)}
+					title="Unused items detected"
+				>
+					<p className={styles.orphanDescription}>
+						{totalOrphans} item{totalOrphans !== 1 ? "s" : ""} from
+						the previous generation {totalOrphans !== 1 ? "are" : "is"} no longer
+						in your config. Uncheck any you want to keep.
+					</p>
+					<div className={styles.orphanList}>
+						{Object.entries(orphanVarsByCollection).map(([collection, vars]) => (
+							<div className={styles.orphanGroup} key={`var-${collection}`}>
+								<span className={styles.orphanCollectionName}>{collection}</span>
+								{vars.map((v) => (
+									<div className={styles.orphanItem} key={v.id}>
+										<Checkbox
+											checked={orphanVarIds.has(v.id)}
+											id={`orphan-${v.id}`}
+											onChange={() => {
+												setOrphanVarIds((prev) => {
+													const next = new Set(prev);
+													if (next.has(v.id)) next.delete(v.id);
+													else next.add(v.id);
+													return next;
+												});
+											}}
+											size="sm"
+										/>
+										<label className={styles.orphanName} htmlFor={`orphan-${v.id}`}>
+											{v.name}
+										</label>
+									</div>
+								))}
+							</div>
+						))}
+						{Object.entries(orphanStylesByCategory).map(([label, items]) => (
+							<div className={styles.orphanGroup} key={`style-${label}`}>
+								<span className={styles.orphanCollectionName}>{label}</span>
+								{items.map((s) => (
+									<div className={styles.orphanItem} key={s.id}>
+										<Checkbox
+											checked={orphanStyleIds.has(s.id)}
+											id={`orphan-${s.id}`}
+											onChange={() => {
+												setOrphanStyleIds((prev) => {
+													const next = new Set(prev);
+													if (next.has(s.id)) next.delete(s.id);
+													else next.add(s.id);
+													return next;
+												});
+											}}
+											size="sm"
+										/>
+										<label className={styles.orphanName} htmlFor={`orphan-${s.id}`}>
+											{s.name}
+										</label>
+									</div>
+								))}
+							</div>
+						))}
+					</div>
+				</Dialog>
+
 				<PageBody>
 					<SectionHeader
 						action={

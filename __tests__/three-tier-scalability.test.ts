@@ -62,7 +62,7 @@ describe("combinatorial config coverage", () => {
 		});
 		expect(result.tokens.length).toBeGreaterThan(0);
 		expect(result.stats.primitiveCount).toBeGreaterThan(0);
-		expect(result.stats.abstractionCount).toBeGreaterThan(0);
+		expect(result.stats.aliasCount).toBeGreaterThan(0);
 		expect(result.stats.semanticCount).toBeGreaterThan(0);
 	});
 });
@@ -99,7 +99,7 @@ describe("reference integrity", () => {
 		}
 	});
 
-	test("semantics reference abstractions, not primitives directly (for surface/accent)", () => {
+	test("semantics reference aliases, not primitives directly (for surface/accent)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			secondary: "#10B981",
@@ -112,10 +112,10 @@ describe("reference integrity", () => {
 				String(t.originalValue).startsWith("{"),
 		);
 
-		// Semantic color references should go through abstractions or primitives (for utility tokens)
+		// Semantic color references should go through aliases or primitives (for utility tokens)
 		for (const token of semanticColors) {
 			const ref = String(token.originalValue);
-			expect(ref).toMatch(/^\{(abstractions|primitives|semantics)\./);
+			expect(ref).toMatch(/^\{(aliases|primitives|semantics)\./);
 		}
 	});
 });
@@ -159,13 +159,13 @@ describe("cross-mode consistency", () => {
 		expect(lightNames.size).toBe(darkNames.size);
 	});
 
-	test("primitives and abstractions are single-mode (no modeName)", () => {
+	test("primitives and aliases are single-mode (no modeName)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 		});
 
 		const nonSemantics = result.tokens.filter(
-			(t) => t.category === "primitives" || t.category === "abstractions",
+			(t) => t.category === "primitives" || t.category === "aliases",
 		);
 
 		for (const token of nonSemantics) {
@@ -189,7 +189,7 @@ describe("token count stability", () => {
 
 		// All tiers are always generated
 		expect(result.stats.primitiveCount).toBeGreaterThan(0);
-		expect(result.stats.abstractionCount).toBeGreaterThan(0);
+		expect(result.stats.aliasCount).toBeGreaterThan(0);
 		expect(result.stats.semanticCount).toBeGreaterThan(0);
 		expect(result.stats.totalCount).toBeGreaterThan(100);
 	});
@@ -269,17 +269,17 @@ describe("token naming structure", () => {
 		expect(prefixes.has("font/family")).toBe(true);
 	});
 
-	test("abstractions use correct path prefixes", () => {
+	test("aliases use correct path prefixes", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 		});
 
-		const abstractions = result.tokens.filter(
-			(t) => t.category === "abstractions",
+		const aliases = result.tokens.filter(
+			(t) => t.category === "aliases",
 		);
-		const absNames = abstractions.map((t) => t.figmaName);
+		const absNames = aliases.map((t) => t.figmaName);
 
-		// Surface and duration aliases remain in abstractions
+		// Surface and duration aliases remain in aliases
 		expect(absNames.some((n) => n.startsWith("surface/light/"))).toBe(true);
 		expect(absNames.some((n) => n.startsWith("surface/dark/"))).toBe(true);
 		expect(absNames.some((n) => n.startsWith("duration/"))).toBe(true);
@@ -367,7 +367,7 @@ describe("edge cases", () => {
 		}
 	});
 
-	test("custom font overrides generate proper abstraction references", () => {
+	test("custom font overrides generate proper alias references", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 			fonts: { sans: "Geist", serif: "Lora", mono: "JetBrains Mono" },
@@ -378,9 +378,9 @@ describe("edge cases", () => {
 		);
 		expect(sansPrim?.value).toBe("Geist");
 
-		// Abstractions should reference primitives
+		// Aliases should reference primitives
 		const primaryAbs = result.tokens.find(
-			(t) => t.category === "abstractions" && t.figmaName === "font/family/primary",
+			(t) => t.category === "aliases" && t.figmaName === "font/family/primary",
 		);
 		expect(primaryAbs?.originalValue).toBe("{primitives.font.family.sans}");
 	});

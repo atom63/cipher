@@ -1,5 +1,5 @@
 // Design system token generator — always three-tier
-// Primitives → Abstractions → Semantics
+// Primitives → Aliases → Semantics
 // Output is DesignToken[] compatible with the existing import handler
 
 import type { ColorValue, DesignToken } from "../types/tokens";
@@ -82,7 +82,7 @@ export interface GeneratedSystem {
 	radixGrayLight: RadixGrayScale | null;
 	stats: {
 		primitiveCount: number;
-		abstractionCount: number;
+		aliasCount: number;
 		semanticCount: number;
 		totalCount: number;
 	};
@@ -159,17 +159,7 @@ function generatePrimitives(config: BrandConfig): {
 	const grayLightName = config.grayLight ?? config.grayName ?? "slate";
 	const grayDarkName = config.grayDark ?? grayLightName;
 
-	// --- Font families (clean names for Figma variable binding) ---
-	const fontNames = resolveFontNames(config.fonts);
-	for (const [name, fontName] of Object.entries(fontNames)) {
-		tokens.push(
-			makeToken(`font/family/${name}`, fontName, "primitives", {
-				type: "string",
-				originalValue: fontName,
-				description: `Font family ${name}`,
-			}),
-		);
-	}
+	// ── Colors ────────────────────────────────────────────────────────────
 
 	// --- White alpha scale (color/white/0 - color/white/100) ---
 	const alphaSteps = [0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as const;
@@ -241,134 +231,6 @@ function generatePrimitives(config: BrandConfig): {
 			),
 		);
 	}
-
-	// --- Spacing ---
-	for (const [key, px] of Object.entries(SPACING_SCALE)) {
-		// Figma doesn't allow dots in variable names — replace with underscores (matches reference)
-		const figmaKey = key.replace(".", "_");
-		tokens.push(
-			makeToken(`spacing/${figmaKey}`, px, "primitives", {
-				type: "spacing",
-				originalValue: `${px}px`,
-				description: `Spacing ${key} (${px}px)`,
-			}),
-		);
-	}
-
-	// --- Sizes ---
-	for (const [key, px] of Object.entries(SIZES_SCALE)) {
-		tokens.push(
-			makeToken(`size/${key}`, px, "primitives", {
-				type: "sizing",
-				originalValue: `${px}px`,
-				description: `Size ${key} (${px}px)`,
-			}),
-		);
-	}
-
-	// --- Containers ---
-	for (const [key, value] of Object.entries(CONTAINER_SCALE)) {
-		tokens.push(
-			makeToken(`container/${key}`, value, "primitives", {
-				type: "number",
-				originalValue: `${value}px`,
-				description: `Container max-width ${key}`,
-			}),
-		);
-	}
-
-	// --- Motion / Duration raw values ---
-	for (const [key, ms] of Object.entries(DURATION_RAW)) {
-		tokens.push(
-			makeToken(`duration/${key}`, ms, "primitives", {
-				type: "number",
-				originalValue: `${ms}ms`,
-				description: `Duration ${key === "none" ? "0" : key}ms`,
-			}),
-		);
-	}
-
-	// --- Motion / Easing curves ---
-	for (const [key, value] of Object.entries(EASING_CURVES)) {
-		tokens.push(
-			makeToken(`ease/${key}`, value, "primitives", {
-				type: "string",
-				originalValue: value,
-				description: `Easing ${key}`,
-			}),
-		);
-	}
-
-	// --- Breakpoints ---
-	for (const [key, value] of Object.entries(BREAKPOINTS)) {
-		tokens.push(
-			makeToken(`breakpoint/${key}`, value, "primitives", {
-				type: "number",
-				originalValue: `${value}px`,
-				description: `Breakpoint ${key}`,
-			}),
-		);
-	}
-
-	// --- Screen sizes ---
-	for (const [key, value] of Object.entries(SCREEN_SIZES)) {
-		tokens.push(
-			makeToken(`screen/${key}`, value, "primitives", {
-				type: "number",
-				originalValue: `${value}px`,
-				description: `Screen width ${key}`,
-			}),
-		);
-	}
-
-	// --- Shadows (multi-layer) ---
-	for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
-		const cssValue = shadowToCss(layers);
-		tokens.push(
-			makeToken(`shadow/${level}`, cssValue, "primitives", {
-				type: "boxShadow",
-				originalValue: cssValue,
-				description: `Shadow elevation ${level}`,
-			}),
-		);
-	}
-
-	// --- Rounded (radius scale) ---
-	const radiusScale = computeRadiusScale(
-		config.radius ?? DEFAULT_RADIUS.anchor,
-	);
-	for (const [size, px] of Object.entries(radiusScale)) {
-		tokens.push(
-			makeToken(`rounded/${size}`, px, "primitives", {
-				type: "borderRadius",
-				originalValue: `${px}px`,
-				description: `Border radius ${size} (${px}px)`,
-			}),
-		);
-	}
-
-	// --- Z-layer scale ---
-	for (const [name, value] of Object.entries(ZLAYER_SCALE)) {
-		tokens.push(
-			makeToken(`z/layer/${name}`, value, "primitives", {
-				type: "number",
-				originalValue: `${value}`,
-				description: `Z-index layer ${name}`,
-			}),
-		);
-	}
-
-	// --- Blur scale (Tailwind-aligned) ---
-	for (const [name, px] of Object.entries(BLUR_SCALE)) {
-		tokens.push(
-			makeToken(`blur/${name}`, px, "primitives", {
-				type: "number",
-				originalValue: String(px),
-				description: `Blur ${name} (${px}px)`,
-			}),
-		);
-	}
-
 
 	// --- Compute color scales for preview ---
 	const brandScale = generateColorScale("brand-primary", config.primary);
@@ -444,6 +306,20 @@ function generatePrimitives(config: BrandConfig): {
 		}
 	}
 
+	// ── Typography ────────────────────────────────────────────────────────
+
+	// --- Font families (clean names for Figma variable binding) ---
+	const fontNames = resolveFontNames(config.fonts);
+	for (const [name, fontName] of Object.entries(fontNames)) {
+		tokens.push(
+			makeToken(`font/family/${name}`, fontName, "primitives", {
+				type: "string",
+				originalValue: fontName,
+				description: `Font family ${name}`,
+			}),
+		);
+	}
+
 	// --- Typescale with responsive variants (min, sm, md) ---
 	const typeSteps = computeTypescale(config.typescale);
 	const baseSize = config.typescale?.base ?? 16;
@@ -495,14 +371,153 @@ function generatePrimitives(config: BrandConfig): {
 		}
 	}
 
+	// ── Spacing & Sizing ──────────────────────────────────────────────────
+
+	// --- Spacing ---
+	for (const [key, px] of Object.entries(SPACING_SCALE)) {
+		// Figma doesn't allow dots in variable names — replace with underscores (matches reference)
+		const figmaKey = key.replace(".", "_");
+		tokens.push(
+			makeToken(`spacing/${figmaKey}`, px, "primitives", {
+				type: "spacing",
+				originalValue: `${px}px`,
+				description: `Spacing ${key} (${px}px)`,
+			}),
+		);
+	}
+
+	// --- Sizes ---
+	for (const [key, px] of Object.entries(SIZES_SCALE)) {
+		tokens.push(
+			makeToken(`size/${key}`, px, "primitives", {
+				type: "sizing",
+				originalValue: `${px}px`,
+				description: `Size ${key} (${px}px)`,
+			}),
+		);
+	}
+
+	// --- Containers ---
+	for (const [key, value] of Object.entries(CONTAINER_SCALE)) {
+		tokens.push(
+			makeToken(`container/${key}`, value, "primitives", {
+				type: "number",
+				originalValue: `${value}px`,
+				description: `Container max-width ${key}`,
+			}),
+		);
+	}
+
+	// ── Radius ────────────────────────────────────────────────────────────
+
+	// --- Rounded (radius scale) ---
+	const radiusScale = computeRadiusScale(
+		config.radius ?? DEFAULT_RADIUS.anchor,
+	);
+	for (const [size, px] of Object.entries(radiusScale)) {
+		tokens.push(
+			makeToken(`rounded/${size}`, px, "primitives", {
+				type: "borderRadius",
+				originalValue: `${px}px`,
+				description: `Border radius ${size} (${px}px)`,
+			}),
+		);
+	}
+
+	// ── Effects ───────────────────────────────────────────────────────────
+
+	// --- Shadows (multi-layer) ---
+	for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
+		const cssValue = shadowToCss(layers);
+		tokens.push(
+			makeToken(`shadow/${level}`, cssValue, "primitives", {
+				type: "boxShadow",
+				originalValue: cssValue,
+				description: `Shadow elevation ${level}`,
+			}),
+		);
+	}
+
+	// --- Blur scale (Tailwind-aligned) ---
+	for (const [name, px] of Object.entries(BLUR_SCALE)) {
+		tokens.push(
+			makeToken(`blur/${name}`, px, "primitives", {
+				type: "number",
+				originalValue: String(px),
+				description: `Blur ${name} (${px}px)`,
+			}),
+		);
+	}
+
+	// ── Z-layers ──────────────────────────────────────────────────────────
+
+	// --- Z-layer scale ---
+	for (const [name, value] of Object.entries(ZLAYER_SCALE)) {
+		tokens.push(
+			makeToken(`z/layer/${name}`, value, "primitives", {
+				type: "number",
+				originalValue: `${value}`,
+				description: `Z-index layer ${name}`,
+			}),
+		);
+	}
+
+	// ── Motion ────────────────────────────────────────────────────────────
+
+	// --- Duration raw values ---
+	for (const [key, ms] of Object.entries(DURATION_RAW)) {
+		tokens.push(
+			makeToken(`duration/${key}`, ms, "primitives", {
+				type: "number",
+				originalValue: `${ms}ms`,
+				description: `Duration ${key === "none" ? "0" : key}ms`,
+			}),
+		);
+	}
+
+	// --- Easing curves ---
+	for (const [key, value] of Object.entries(EASING_CURVES)) {
+		tokens.push(
+			makeToken(`ease/${key}`, value, "primitives", {
+				type: "string",
+				originalValue: value,
+				description: `Easing ${key}`,
+			}),
+		);
+	}
+
+	// ── Layout ────────────────────────────────────────────────────────────
+
+	// --- Breakpoints ---
+	for (const [key, value] of Object.entries(BREAKPOINTS)) {
+		tokens.push(
+			makeToken(`breakpoint/${key}`, value, "primitives", {
+				type: "number",
+				originalValue: `${value}px`,
+				description: `Breakpoint ${key}`,
+			}),
+		);
+	}
+
+	// --- Screen sizes ---
+	for (const [key, value] of Object.entries(SCREEN_SIZES)) {
+		tokens.push(
+			makeToken(`screen/${key}`, value, "primitives", {
+				type: "number",
+				originalValue: `${value}px`,
+				description: `Screen width ${key}`,
+			}),
+		);
+	}
+
 	return { tokens, scales, radixGrayLight, radixGrayDark, neutralScaleLight, neutralScaleDark };
 }
 
 // =========================================================================
-// Abstractions — indirection layer, SINGLE MODE
+// Aliases — indirection layer, SINGLE MODE
 // =========================================================================
 
-function generateAbstractions(_config: BrandConfig): DesignToken[] {
+function generateAliases(_config: BrandConfig): DesignToken[] {
 	const tokens: DesignToken[] = [];
 
 	// --- Surface (light/dark gray references) ---
@@ -511,7 +526,7 @@ function generateAbstractions(_config: BrandConfig): DesignToken[] {
 			makeToken(
 				`surface/light/${i}`,
 				`{primitives.color.gray.light.${i}}`,
-				"abstractions",
+				"aliases",
 				{
 					description: `Surface light step ${i}`,
 					originalValue: `{primitives.color.gray.light.${i}}`,
@@ -523,7 +538,7 @@ function generateAbstractions(_config: BrandConfig): DesignToken[] {
 			makeToken(
 				`surface/dark/${i}`,
 				`{primitives.color.gray.dark.${i}}`,
-				"abstractions",
+				"aliases",
 				{
 					description: `Surface dark step ${i}`,
 					originalValue: `{primitives.color.gray.dark.${i}}`,
@@ -537,7 +552,7 @@ function generateAbstractions(_config: BrandConfig): DesignToken[] {
 	for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
 		const ref = `{primitives.duration.${rawKey}}`;
 		tokens.push(
-			makeToken(`duration/${name}`, ref, "abstractions", {
+			makeToken(`duration/${name}`, ref, "aliases", {
 				type: "duration",
 				originalValue: ref,
 				description: `Duration ${name} (${DURATION_RAW[rawKey]}ms)`,
@@ -550,7 +565,7 @@ function generateAbstractions(_config: BrandConfig): DesignToken[] {
 		makeToken(
 			"font/family/primary",
 			"{primitives.font.family.sans}",
-			"abstractions",
+			"aliases",
 			{
 				type: "string",
 				originalValue: "{primitives.font.family.sans}",
@@ -562,7 +577,7 @@ function generateAbstractions(_config: BrandConfig): DesignToken[] {
 		makeToken(
 			"font/family/secondary",
 			"{primitives.font.family.serif}",
-			"abstractions",
+			"aliases",
 			{
 				type: "string",
 				originalValue: "{primitives.font.family.serif}",
@@ -574,7 +589,7 @@ function generateAbstractions(_config: BrandConfig): DesignToken[] {
 		makeToken(
 			"font/family/tertiary",
 			"{primitives.font.family.mono}",
-			"abstractions",
+			"aliases",
 			{
 				type: "string",
 				originalValue: "{primitives.font.family.mono}",
@@ -599,8 +614,8 @@ interface SemanticDef {
 }
 
 function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
-	const surfL = (step: number) => `{abstractions.surface.light.${step}}`;
-	const surfD = (step: number) => `{abstractions.surface.dark.${step}}`;
+	const surfL = (step: number) => `{aliases.surface.light.${step}}`;
+	const surfD = (step: number) => `{aliases.surface.dark.${step}}`;
 	const primary = "{primitives.color.brand.primary.500}";
 	const danger = "{primitives.color.danger.500}";
 	const success = "{primitives.color.success.500}";
@@ -837,10 +852,10 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 	if (hasSecondary) {
 		defs.push(
 			{
-				name: "secondary-accent",
+				name: "brand-secondary",
 				light: "{primitives.color.brand.secondary.500}",
 				dark: "{primitives.color.brand.secondary.500}",
-				description: "Secondary accent color",
+				description: "Brand secondary color",
 			},
 		);
 	}
@@ -874,7 +889,7 @@ function generateSemantics(config: BrandConfig): DesignToken[] {
 // =========================================================================
 // Responsive — multi-mode collection for breakpoint switching
 // Modes: "desktop (md)", "tablet (sm)", "mobile (min)"
-// Each token references the corresponding abstraction variant
+// Each token references the corresponding alias variant
 // =========================================================================
 
 const RESPONSIVE_MODES = ["desktop (md)", "tablet (sm)", "mobile (min)"] as const;
@@ -1070,7 +1085,7 @@ export function generateCss(config: BrandConfig): string {
 	return lines.join("\n");
 }
 
-/** Convert a token reference like {abstractions.surface.light.1} to a CSS var */
+/** Convert a token reference like {aliases.surface.light.1} to a CSS var */
 function refToCssVar(ref: string): string {
 	const match = ref.match(/^\{([^}]+)\}$/);
 	if (!match) return ref;
@@ -1078,7 +1093,7 @@ function refToCssVar(ref: string): string {
 
 	// Surface references → gray step
 	const surfaceMatch = path.match(
-		/^abstractions\.surface\.(light|dark)\.(\d+)$/,
+		/^aliases\.surface\.(light|dark)\.(\d+)$/,
 	);
 	if (surfaceMatch) {
 		return `var(--color-gray-${surfaceMatch[2]})`;
@@ -1123,9 +1138,12 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 	};
 
 	// --- Paint styles: semantic colors bound to variables ---
+	// Skip brand-secondary — it's a pass-through to the brand secondary primitive
+	// and should not generate a separate paint style
 	const semanticPaint: Record<string, any> = {};
 	const semanticDefs = buildSemanticDefs(!!config.secondary);
 	for (const def of semanticDefs) {
+		if (def.name === "brand-secondary") continue;
 		const styleName = def.name;
 		const opacity = styleName === "accent" ? 0.8 : 1;
 		const binding = {
@@ -1181,9 +1199,9 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 	// --- Text styles: primary, secondary, tertiary (each font family) ---
 	// Each family gets regular + strong variants for every typescale step
 	const fontFamilies = [
-		{ key: "primary", fontName: fontNames.sans, familyVar: "font/family/primary", collection: "abstractions" },
-		{ key: "secondary", fontName: fontNames.serif, familyVar: "font/family/secondary", collection: "abstractions" },
-		{ key: "tertiary", fontName: fontNames.mono, familyVar: "font/family/tertiary", collection: "abstractions" },
+		{ key: "primary", fontName: fontNames.sans, familyVar: "font/family/primary", collection: "aliases" },
+		{ key: "secondary", fontName: fontNames.serif, familyVar: "font/family/secondary", collection: "aliases" },
+		{ key: "tertiary", fontName: fontNames.mono, familyVar: "font/family/tertiary", collection: "aliases" },
 	];
 
 	const textStyles: Record<string, Record<string, any>> = {};
@@ -1275,7 +1293,7 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 /**
  * Generate a complete three-tier design system from brand configuration.
  *
- * Always generates: Primitives → Abstractions → Semantics + Styles
+ * Always generates: Primitives → Aliases → Semantics + Styles
  */
 export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 	tokenIdCounter = 0;
@@ -1290,12 +1308,12 @@ export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 		neutralScaleDark,
 	} = generatePrimitives(config);
 
-	const abstractionTokens = generateAbstractions(config);
+	const aliasTokens = generateAliases(config);
 
 	const semanticTokens = generateSemantics(config);
 	const responsiveTokens = generateResponsive(config);
 
-	const tokens = [...primitiveTokens, ...abstractionTokens, ...semanticTokens, ...responsiveTokens];
+	const tokens = [...primitiveTokens, ...aliasTokens, ...semanticTokens, ...responsiveTokens];
 
 	return {
 		tokens,
@@ -1308,7 +1326,7 @@ export function generateDesignSystem(config: BrandConfig): GeneratedSystem {
 		styles: generateStyles(config),
 		stats: {
 			primitiveCount: primitiveTokens.length,
-			abstractionCount: abstractionTokens.length,
+			aliasCount: aliasTokens.length,
 			semanticCount: semanticTokens.length,
 			totalCount: tokens.length,
 		},

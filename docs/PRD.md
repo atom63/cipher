@@ -19,7 +19,7 @@
 - **Figma's variable editor is slow**: No bulk rename, no find/replace, no batch value changes, no cross-collection operations. Managing 500+ tokens is tedious.
 - **Export requires a pipeline**: Figma Variables → JSON → external script → CSS → code. Too many steps for what should be one action.
 - **Opacity is lost in translation**: Figma stores opacity separately from color values. Standard exports drop it. Recovering it requires traversing `styles.json` metadata.
-- **Token structure is tribal knowledge**: Setting up a proper layered token system (primitives → abstractions → semantics) requires expertise most teams don't have.
+- **Token structure is tribal knowledge**: Setting up a proper layered token system (primitives → aliases → semantics) requires expertise most teams don't have.
 
 ### The Solution
 
@@ -149,7 +149,7 @@ Match the current `exports/styles/` structure:
 ```
 tokens/
   primitives.css      — Raw values (colors, spacing, typography, radius)
-  abstractions.css    — Semantic mappings with @theme inline
+  aliases.css         — Semantic mappings with @theme inline
   semantics.css       — Context-aware tokens (Light/Dark modes)
   typescales.css      — Responsive typography with breakpoints
   shadow-tokens.css   — Shadow elevation tokens
@@ -204,7 +204,7 @@ The 4-layer architecture is opinionated and effective, but shouldn't be forced o
 
 ```
 primitives/      → Raw values (colors, spacing, typography, radius)
-abstractions/    → Semantic mappings (surface, primary, accent)
+aliases/         → Semantic mappings (surface, primary, accent)
 semantics/       → Context-aware tokens with modes (Light/Dark)
 responsive/      → Viewport-aware tokens (mobile/tablet/desktop)
 ```

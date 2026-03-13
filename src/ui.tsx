@@ -57,7 +57,7 @@ function App() {
 	const toggleTheme = () => {
 		const next = isDark ? "light" : "dark";
 		setIsDark(!isDark);
-		applyTheme(next);
+		applyTheme(next, true);
 		postMessage({ type: "save-settings", data: { theme: next } });
 	};
 

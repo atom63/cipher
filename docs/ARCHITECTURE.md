@@ -15,16 +15,16 @@ Raw values that form the foundation of your design system. These are context-ind
 - Typography: `primitives/font/size/16`
 - Radius: `primitives/radius/8`
 
-### 2. **Abstractions** (Semantic Mapping Layer)
+### 2. **Aliases** (Semantic Mapping Layer)
 Semantic names mapped to primitive values. These provide meaning without context.
 
 **Examples:**
-- `abstractions/surface/500` → `{primitives.color.zinc.500}`
-- `abstractions/primary/solid` → `{primitives.color.emerald.500}`
-- `abstractions/rounded/base` → `{primitives.radius.12}`
+- `aliases/surface/500` → `{primitives.color.zinc.500}`
+- `aliases/primary/solid` → `{primitives.color.emerald.500}`
+- `aliases/rounded/base` → `{primitives.radius.12}`
 
 ### 3. **Semantics** (Context Layer)
-Context-aware tokens that adapt to modes (Light/Dark). These reference abstractions or primitives.
+Context-aware tokens that adapt to modes (Light/Dark). These reference aliases or primitives.
 
 **Modes:** Light, Dark
 

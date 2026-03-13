@@ -192,6 +192,8 @@ export interface TypescaleConfig {
 	lineHeightBody: number;
 	/** Line-height for headings (upscales) as percentage (default: 125) */
 	lineHeightHeading: number;
+	/** Maximum font size cap in px (default: 128). Prevents aggressive ratios (e.g. golden) from producing impractical sizes. */
+	maxSize?: number;
 	/** Scale ratio key or numeric value (default: "major-third" = 1.25) */
 	ratio: string;
 	/** Number of sizes below base (default: 2, max: 2 — matches Tailwind xs/sm) */
@@ -202,6 +204,7 @@ export interface TypescaleConfig {
 
 export const DEFAULT_TYPESCALE: TypescaleConfig = {
 	base: 16,
+	maxSize: 128,
 	ratio: "major-third",
 	lineHeightBody: 150,
 	lineHeightHeading: 125,
@@ -231,9 +234,10 @@ export function computeTypescale(config?: TypescaleConfig): TypeStep[] {
 
 	const steps: TypeStep[] = [];
 
-	// Upscales — heading line-height (largest first)
+	// Upscales — heading line-height (largest first), capped at maxSize
+	const maxSize = c.maxSize ?? 128;
 	for (let i = stepsUp; i >= 1; i--) {
-		const size = round(c.base * ratio ** i);
+		const size = Math.min(maxSize, round(c.base * ratio ** i));
 		steps.push({
 			name: STEP_NAMES_UP[i - 1],
 			size,

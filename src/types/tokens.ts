@@ -28,7 +28,7 @@ export type TokenCategory =
 	| "effects"
 	| "borders"
 	| "primitives"
-	| "abstractions"
+	| "aliases"
 	| "semantic"
 	| "semantics" // Alternative spelling used in some token files
 	| "radius"

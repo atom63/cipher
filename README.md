@@ -18,14 +18,14 @@ Export variables as production-ready CSS custom properties with:
 - `color-mix(in srgb, var(--token), transparent N%)` for style-level opacity preservation
 - Tailwind CSS v4 `@theme inline` blocks
 - Color formats: OKLCH, HEX, RGBA, HSL
-- Multi-file output: primitives, abstractions, semantics, typescales, effects, radius
+- Multi-file output: primitives, aliases, semantics, typescales, effects, radius
 - ZIP download, individual file copy, and clipboard support
 
 ### JSON Export
 Structured token format with variable names, values per mode, types, and collection metadata.
 
 ### Token Generator
-Generate complete three-tier token systems (primitives → abstractions → semantics) from:
+Generate complete three-tier token systems (primitives → aliases → semantics) from:
 - **Brand colors** — Primary + optional secondary, generates 50–950 color scales via OKLCH
 - **Surface tones** — Light/dark gray scales from Radix presets (13 palettes) or custom hex
 - **Status colors** — Danger, success, warning, info with full scale generation

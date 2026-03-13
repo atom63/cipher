@@ -24,7 +24,7 @@ function updatePaintStyleOpacity(variable: Variable, opacity: number): void {
 		for (const style of paintStyles) {
 			// Match style name to variable name (strip collection prefix)
 			const styleNameNorm = style.name
-				.replace(/^(semantics|abstractions|primitives)\//i, "")
+				.replace(/^(semantics|aliases|primitives)\//i, "")
 				.toLowerCase();
 			if (styleNameNorm !== varNameNorm) continue;
 
@@ -63,7 +63,7 @@ function updatePaintStyleOpacity(variable: Variable, opacity: number): void {
 
 // Create Figma variables from tokens (supports multi-collection with references)
 // Note: collectionName parameter is currently unused - tokens are grouped by their category property
-// This allows multi-collection imports (primitives, abstractions, semantic) in a single operation
+// This allows multi-collection imports (primitives, aliases, semantic) in a single operation
 export async function createVariablesFromTokens(
 	tokens: DesignToken[],
 	_collectionName: string,
@@ -97,7 +97,7 @@ export async function createVariablesFromTokens(
 		// Responsive collection is processed last as it may reference other collections
 		const collectionOrder = [
 			"primitives",
-			"abstractions",
+			"aliases",
 			"semantics",
 			"responsive",
 		];
@@ -615,6 +615,15 @@ export async function createVariablesFromTokens(
 			}
 		}
 
+		// --- Auto-rebuild responsive collection from imported typescale primitives ---
+		// If primitives include font/typescale/*/size/* tokens but no responsive
+		// tokens were imported, synthesize the responsive collection with aliases
+		// pointing back to the primitives. This ensures CSS → Figma roundtrip
+		// preserves the full typescale system.
+		if (tokensByCollection["primitives"] && !tokensByCollection["responsive"]) {
+			rebuildResponsiveFromPrimitives(variableMap, results, undoEntries);
+		}
+
 		// Attach undo data
 		results.undoData = undoEntries;
 
@@ -643,6 +652,183 @@ export async function createVariablesFromTokens(
 		);
 		return results;
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Auto-rebuild responsive collection from imported typescale primitives
+// ---------------------------------------------------------------------------
+
+const RESPONSIVE_MODES = ["desktop (md)", "tablet (sm)", "mobile (min)"] as const;
+const MODE_TO_VARIANT: Record<string, string> = {
+	"desktop (md)": "md",
+	"tablet (sm)": "sm",
+	"mobile (min)": "min",
+};
+
+/** Pattern: font/typescale/{step}/size/{variant} or font/typescale/{step}/line/height/{variant} */
+const TYPESCALE_RE = /^font\/typescale\/([^/]+)\/(size|line\/height)\/(min|sm|md)$/;
+
+function rebuildResponsiveFromPrimitives(
+	variableMap: Map<string, Variable>,
+	results: ImportResults,
+	undoEntries: ImportUndoEntry[],
+) {
+	// Scan imported primitives for typescale tokens
+	const steps = new Set<string>();
+	for (const [key] of variableMap) {
+		const match = key.match(TYPESCALE_RE);
+		if (match) steps.add(match[1]);
+	}
+
+	if (steps.size === 0) return;
+
+	debug(`🔄 Rebuilding responsive collection for ${steps.size} typescale steps`);
+
+	// Get or create responsive collection
+	const existingCollections = figma.variables.getLocalVariableCollections();
+	let collection = existingCollections.find((c) => c.name === "responsive");
+	if (!collection) {
+		collection = figma.variables.createVariableCollection("responsive");
+		debug("✨ Created responsive collection");
+	}
+
+	// Ensure modes exist
+	const modeMap = new Map<string, string>();
+	const firstModeName = RESPONSIVE_MODES[0];
+	const firstModeId = collection.modes[0].modeId;
+	if (collection.modes[0].name !== firstModeName) {
+		collection.renameMode(firstModeId, firstModeName);
+	}
+	modeMap.set(firstModeName, firstModeId);
+
+	for (let i = 1; i < RESPONSIVE_MODES.length; i++) {
+		const modeName = RESPONSIVE_MODES[i];
+		const existingMode = collection.modes.find((m) => m.name === modeName);
+		if (existingMode) {
+			modeMap.set(modeName, existingMode.modeId);
+		} else {
+			const newModeId = collection.addMode(modeName);
+			modeMap.set(modeName, newModeId);
+		}
+	}
+
+	// For each step, create typography/{step}/font/size and typography/{step}/line/height
+	// Each mode aliases to the matching primitive variant
+	const props = [
+		{ responsiveProp: "font/size", primitiveProp: "size" },
+		{ responsiveProp: "line/height", primitiveProp: "line/height" },
+	];
+
+	for (const step of steps) {
+		for (const { responsiveProp, primitiveProp } of props) {
+			const varName = `typography/${step}/${responsiveProp}`;
+
+			// Get or create the responsive variable
+			let variable: Variable | undefined;
+			const existing = figma.variables
+				.getLocalVariables()
+				.find((v) => v.name === varName && v.variableCollectionId === collection!.id);
+
+			if (existing) {
+				variable = existing;
+			} else {
+				try {
+					variable = figma.variables.createVariable(varName, collection!, "FLOAT");
+					undoEntries.push({ variableId: variable.id, action: "created" });
+					results.success++;
+					results.changes.push({
+						name: varName,
+						type: "reference",
+						action: "created",
+						newValue: `responsive alias`,
+					});
+				} catch (error) {
+					debug(`⚠️ Failed to create responsive variable: ${varName}`, error);
+					continue;
+				}
+			}
+
+			// Set alias for each mode
+			for (const mode of RESPONSIVE_MODES) {
+				const modeId = modeMap.get(mode);
+				if (!modeId) continue;
+
+				const variant = MODE_TO_VARIANT[mode];
+				const primitivePath = `font/typescale/${step}/${primitiveProp}/${variant}`;
+
+				// Look up the primitive variable
+				const primitiveVar =
+					variableMap.get(`primitives:${primitivePath}`) ||
+					variableMap.get(primitivePath);
+
+				if (!primitiveVar) {
+					debug(`⚠️ Missing primitive for responsive alias: ${primitivePath}`);
+					continue;
+				}
+
+				variable.setValueForMode(modeId, {
+					type: "VARIABLE_ALIAS",
+					id: primitiveVar.id,
+				});
+			}
+
+			variable.description = `${step} ${responsiveProp.replace(/\//g, " ")} (responsive)`;
+		}
+	}
+
+	// Also rebuild viewport/screen token if screen primitives exist
+	const screenMap: Record<string, string> = {
+		"desktop (md)": "screen/macbook-air",
+		"tablet (sm)": "screen/ipad-pro-11",
+		"mobile (min)": "screen/iphone-16-pro",
+	};
+
+	const hasScreenPrimitives = Object.values(screenMap).some(
+		(path) => variableMap.has(`primitives:${path}`) || variableMap.has(path),
+	);
+
+	if (hasScreenPrimitives) {
+		let screenVar = figma.variables
+			.getLocalVariables()
+			.find((v) => v.name === "viewport/screen" && v.variableCollectionId === collection!.id);
+
+		if (!screenVar) {
+			try {
+				screenVar = figma.variables.createVariable("viewport/screen", collection!, "FLOAT");
+				undoEntries.push({ variableId: screenVar.id, action: "created" });
+				results.success++;
+				results.changes.push({
+					name: "viewport/screen",
+					type: "reference",
+					action: "created",
+					newValue: "responsive alias",
+				});
+			} catch {
+				// Skip if creation fails
+			}
+		}
+
+		if (screenVar) {
+			for (const mode of RESPONSIVE_MODES) {
+				const modeId = modeMap.get(mode);
+				if (!modeId) continue;
+
+				const path = screenMap[mode];
+				const primitiveVar =
+					variableMap.get(`primitives:${path}`) || variableMap.get(path);
+
+				if (primitiveVar) {
+					screenVar.setValueForMode(modeId, {
+						type: "VARIABLE_ALIAS",
+						id: primitiveVar.id,
+					});
+				}
+			}
+			screenVar.description = "Viewport width (responsive)";
+		}
+	}
+
+	debug(`✅ Responsive collection rebuilt with ${steps.size} typescale steps`);
 }
 
 // Import Figma Styles from style export JSON

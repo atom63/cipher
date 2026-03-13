@@ -76,8 +76,8 @@ describe("normalizeName", () => {
 		);
 	});
 
-	test("strips abstractions prefix", () => {
-		expect(normalizeName("abstractions/surface/1")).toBe("surface/1");
+	test("strips aliases prefix", () => {
+		expect(normalizeName("aliases/surface/1")).toBe("surface/1");
 	});
 
 	test("strips primitives prefix", () => {

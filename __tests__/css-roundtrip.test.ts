@@ -124,12 +124,12 @@ describe("primitives round-trip", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Full bundle round-trip: abstractions with var() references
+// Full bundle round-trip: aliases with var() references
 // ---------------------------------------------------------------------------
 
-describe("abstractions round-trip", () => {
+describe("aliases round-trip", () => {
 	const css = bundle({
-		"abstractions.css": `
+		"aliases.css": `
 :root {
   --surface-light-1: var(--color-zinc-50);
   --surface-light-4: var(--color-zinc-200);
@@ -149,10 +149,10 @@ describe("abstractions round-trip", () => {
 		expect(light4!.action).toBe("import");
 	});
 
-	test("all tokens in abstractions category", () => {
+	test("all tokens in aliases category", () => {
 		const result = parseCSS(css);
 		for (const token of result.tokens) {
-			expect(token.category).toBe("abstractions");
+			expect(token.category).toBe("aliases");
 		}
 	});
 });
@@ -288,7 +288,7 @@ describe("@theme inline deduplication", () => {
 describe("multi-file bundle routing", () => {
 	const css = bundle({
 		"primitives.css": `:root { --color-zinc-50: rgba(250, 250, 250, 1); }`,
-		"abstractions.css": `:root { --surface-light-1: var(--color-zinc-50); }`,
+		"aliases.css": `:root { --surface-light-1: var(--color-zinc-50); }`,
 		"semantics.css": `:root { --background: var(--surface-light-1); }`,
 	});
 
@@ -301,7 +301,7 @@ describe("multi-file bundle routing", () => {
 		const bg = result.tokens.find((t) => t.figmaName === "background");
 
 		expect(zinc!.category).toBe("primitives");
-		expect(surface!.category).toBe("abstractions");
+		expect(surface!.category).toBe("aliases");
 		expect(bg!.category).toBe("semantics");
 	});
 

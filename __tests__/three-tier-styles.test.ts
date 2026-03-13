@@ -260,7 +260,7 @@ describe("generateStyles — text", () => {
 		}
 	});
 
-	test("each font family binds to its corresponding abstraction variable", () => {
+	test("each font family binds to its corresponding alias variable", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		const familyMap: Record<string, string> = {
 			primary: "font/family/primary",
@@ -274,7 +274,7 @@ describe("generateStyles — text", () => {
 			for (const leaf of leaves) {
 				expect(leaf.data.fontFamilyBoundVariable).toBeDefined();
 				expect(leaf.data.fontFamilyBoundVariable.variableName).toBe(varName);
-				expect(leaf.data.fontFamilyBoundVariable.collectionName).toBe("abstractions");
+				expect(leaf.data.fontFamilyBoundVariable.collectionName).toBe("aliases");
 			}
 		}
 	});

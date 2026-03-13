@@ -31,7 +31,7 @@ export interface CSSParseResult {
  * Computed files (radius.css, typescales.css) are skipped by FileImport. */
 const FILE_CATEGORY_MAP: Record<string, TokenCategory> = {
 	"primitives.css": "primitives",
-	"abstractions.css": "abstractions",
+	"aliases.css": "aliases",
 	"semantics.css": "semantics",
 };
 
@@ -46,7 +46,7 @@ const SELECTOR_CATEGORY_MAP: Record<string, TokenCategory> = {
 const SECTION_HEADER_RE = /\/\*\s*===\s*(.+?\.css)\s*===\s*\*\//g;
 
 /** Comment pattern: / * category — N variables * / */
-const CATEGORY_COMMENT_RE = /\/\*\s*(primitives|abstractions|semantics|effects|typescales|radius)\b/;
+const CATEGORY_COMMENT_RE = /\/\*\s*(primitives|aliases|semantics|effects|typescales|radius)\b/;
 
 /** Regex that finds selector blocks: selector { ... } */
 const BLOCK_RE = /([^{}]+)\{([^}]*)\}/g;

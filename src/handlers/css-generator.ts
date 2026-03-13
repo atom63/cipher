@@ -131,12 +131,12 @@ function buildStyleOpacityMap(): Map<string, number> {
 
 /**
  * Normalize a style or variable name for comparison.
- * Strips collection prefixes (semantics/, abstractions/, primitives/)
+ * Strips collection prefixes (semantics/, aliases/, primitives/)
  * and common intermediary segments (status/) to match across naming conventions.
  */
 function normalizeName(name: string): string {
 	return name
-		.replace(/^(semantics|abstractions|primitives)\//i, "")
+		.replace(/^(semantics|aliases|primitives)\//i, "")
 		.replace(/\/status\//g, "/")
 		.toLowerCase();
 }
@@ -515,7 +515,7 @@ function modeToSelector(modeName: string): string {
 /**
  * Tailwind v4 theme namespaces — only variables with these prefixes get
  * registered in @theme inline for primitives. Other collections register
- * all variables (abstractions) or map to --color-* (semantics).
+ * all variables (aliases) or map to --color-* (semantics).
  */
 const TAILWIND_THEME_PREFIXES = [
 	"--spacing-",
@@ -625,7 +625,7 @@ function generateThemeInline(
 
 			entries.push(`  ${varName}: var(${varName});`);
 		} else {
-			// Other collections (abstractions, etc.): register all
+			// Other collections (aliases, etc.): register all
 			entries.push(`  ${varName}: var(${varName});`);
 		}
 
@@ -1072,7 +1072,7 @@ function generateRadiusCSS(): CSSFile | null {
 		const collections = figma.variables.getLocalVariableCollections();
 
 		// Find the radius anchor value. Strategy:
-		// 1. Look for "rounded/lg" in abstractions (the anchor point at 10px)
+		// 1. Look for "rounded/lg" in aliases (the anchor point at 10px)
 		// 2. Fall back to "corner-radius" or "corner/radius" in primitives
 		let anchor: number | null = null;
 
@@ -1219,10 +1219,10 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 		? buildStyleOpacityMap()
 		: new Map<string, number>();
 
-	// Sort: dependency order (primitives → abstractions → semantics), then by mode count
+	// Sort: dependency order (primitives → aliases → semantics), then by mode count
 	const COLLECTION_ORDER: Record<string, number> = {
 		primitives: 0,
-		abstractions: 1,
+		aliases: 1,
 		semantics: 2,
 	};
 	const sorted = [...selected].sort((a, b) => {

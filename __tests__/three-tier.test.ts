@@ -11,7 +11,7 @@ describe("generateDesignSystem", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const categories = new Set(result.tokens.map((t) => t.category));
 		expect(categories).toContain("primitives");
-		expect(categories).toContain("abstractions");
+		expect(categories).toContain("aliases");
 		expect(categories).toContain("semantics");
 		expect(categories).toContain("responsive");
 	});
@@ -21,13 +21,13 @@ describe("generateDesignSystem", () => {
 		expect(result.stats.totalCount).toBe(result.tokens.length);
 
 		const primitives = result.tokens.filter((t) => t.category === "primitives");
-		const abstractions = result.tokens.filter(
-			(t) => t.category === "abstractions",
+		const aliases = result.tokens.filter(
+			(t) => t.category === "aliases",
 		);
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
 
 		expect(primitives.length).toBe(result.stats.primitiveCount);
-		expect(abstractions.length).toBe(result.stats.abstractionCount);
+		expect(aliases.length).toBe(result.stats.aliasCount);
 		expect(semantics.length).toBe(result.stats.semanticCount);
 	});
 
@@ -197,12 +197,12 @@ describe("non-color tokens", () => {
 		expect(names).toContain("duration/500");
 	});
 
-	test("generates duration aliases in abstractions (duration/N)", () => {
+	test("generates duration aliases in aliases (duration/N)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
 		});
 		const durationAliases = result.tokens.filter(
-			(t) => t.category === "abstractions" && t.figmaName.startsWith("duration/"),
+			(t) => t.category === "aliases" && t.figmaName.startsWith("duration/"),
 		);
 		expect(durationAliases.length).toBeGreaterThan(0);
 		// Duration aliases reference primitives
@@ -293,15 +293,15 @@ describe("non-color tokens", () => {
 });
 
 // =========================================================================
-// Abstractions
+// Aliases
 // =========================================================================
 
-describe("abstractions", () => {
+describe("aliases", () => {
 	test("surface references point to gray primitives", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const surfaceLight1 = result.tokens.find(
 			(t) =>
-				t.category === "abstractions" && t.figmaName === "surface/light/1",
+				t.category === "aliases" && t.figmaName === "surface/light/1",
 		);
 		expect(surfaceLight1?.originalValue).toBe(
 			"{primitives.color.gray.light.1}",
@@ -309,7 +309,7 @@ describe("abstractions", () => {
 
 		const surfaceDark1 = result.tokens.find(
 			(t) =>
-				t.category === "abstractions" && t.figmaName === "surface/dark/1",
+				t.category === "aliases" && t.figmaName === "surface/dark/1",
 		);
 		expect(surfaceDark1?.originalValue).toBe(
 			"{primitives.color.gray.dark.1}",
@@ -390,30 +390,30 @@ describe("abstractions", () => {
 		expect(names).toContain("z/layer/modal");
 	});
 
-	test("includes font family abstraction aliases (primary/secondary/tertiary)", () => {
+	test("includes font family aliasaliases (primary/secondary/tertiary)", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const absNames = result.tokens
-			.filter((t) => t.category === "abstractions")
+			.filter((t) => t.category === "aliases")
 			.map((t) => t.figmaName);
 		expect(absNames).toContain("font/family/primary");
 		expect(absNames).toContain("font/family/secondary");
 		expect(absNames).toContain("font/family/tertiary");
 	});
 
-	test("font family abstractions reference primitives", () => {
+	test("font family aliases reference primitives", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const primary = result.tokens.find(
-			(t) => t.category === "abstractions" && t.figmaName === "font/family/primary",
+			(t) => t.category === "aliases" && t.figmaName === "font/family/primary",
 		);
 		expect(primary?.originalValue).toBe("{primitives.font.family.sans}");
 
 		const secondary = result.tokens.find(
-			(t) => t.category === "abstractions" && t.figmaName === "font/family/secondary",
+			(t) => t.category === "aliases" && t.figmaName === "font/family/secondary",
 		);
 		expect(secondary?.originalValue).toBe("{primitives.font.family.serif}");
 
 		const tertiary = result.tokens.find(
-			(t) => t.category === "abstractions" && t.figmaName === "font/family/tertiary",
+			(t) => t.category === "aliases" && t.figmaName === "font/family/tertiary",
 		);
 		expect(tertiary?.originalValue).toBe("{primitives.font.family.mono}");
 	});
@@ -421,20 +421,20 @@ describe("abstractions", () => {
 	test("does not include font weight aliases (handled by Tailwind natively)", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const absNames = result.tokens
-			.filter((t) => t.category === "abstractions")
+			.filter((t) => t.category === "aliases")
 			.map((t) => t.figmaName);
 		expect(absNames).not.toContain("font/weight/default");
 		expect(absNames).not.toContain("font/weight/strong");
 	});
 
-	test("all abstractions are single-mode (no modeName)", () => {
+	test("all aliases are single-mode (no modeName)", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
 		});
-		const abstractions = result.tokens.filter(
-			(t) => t.category === "abstractions",
+		const aliases = result.tokens.filter(
+			(t) => t.category === "aliases",
 		);
-		for (const token of abstractions) {
+		for (const token of aliases) {
 			expect((token as any).modeName).toBeUndefined();
 		}
 	});
@@ -494,18 +494,18 @@ describe("semantics", () => {
 		expect(names).toContain("sidebar-border");
 	});
 
-	test("background references surface abstractions", () => {
+	test("background references surface aliases", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const bgTokens = result.tokens.filter(
 			(t) => t.category === "semantics" && t.figmaName === "background",
 		);
 		const light = bgTokens.find((t) => (t as any).modeName === "Light");
 		const dark = bgTokens.find((t) => (t as any).modeName === "Dark");
-		expect(light?.originalValue).toBe("{abstractions.surface.light.2}");
-		expect(dark?.originalValue).toBe("{abstractions.surface.dark.1}");
+		expect(light?.originalValue).toBe("{aliases.surface.light.2}");
+		expect(dark?.originalValue).toBe("{aliases.surface.dark.1}");
 	});
 
-	test("semantic color tokens reference abstractions or primitives", () => {
+	test("semantic color tokens reference aliases or primitives", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
 		});
@@ -517,19 +517,19 @@ describe("semantics", () => {
 		);
 		for (const token of semanticColors) {
 			expect(String(token.originalValue)).toMatch(
-				/^\{(abstractions|primitives|semantics)\./,
+				/^\{(aliases|primitives|semantics)\./,
 			);
 		}
 	});
 
-	test("includes secondary-accent when secondary provided", () => {
+	test("includes brand-secondary when secondary provided", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
 			secondary: "#10B981",
 		});
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
 		const names = semantics.map((t) => t.figmaName);
-		expect(names).toContain("secondary-accent");
+		expect(names).toContain("brand-secondary");
 	});
 
 	test("light and dark for forced-mode contexts", () => {

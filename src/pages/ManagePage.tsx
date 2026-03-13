@@ -535,8 +535,8 @@ export function ManagePage({
 		const COLLECTION_ORDER: Record<string, number> = {
 			primitive: 0,
 			primitives: 0,
-			abstraction: 1,
-			abstractions: 1,
+			alias: 1,
+			aliases: 1,
 			semantic: 2,
 			semantics: 2,
 			responsive: 3,

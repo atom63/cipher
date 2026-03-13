@@ -1,6 +1,8 @@
 import type { PluginSettings } from "../types/messages";
 
 const THEME_STYLE_ID = "cipher-theme-override";
+const THEME_TRANSITION_ID = "cipher-theme-transition";
+const THEME_TRANSITION_MS = 200;
 
 const LIGHT_TOKENS = `
 :root:root {
@@ -84,7 +86,17 @@ const DARK_TOKENS = `
  * - "light": injects light tokens, overrides .figma-dark
  * - "dark": injects dark tokens, forces dark mode
  */
-export function applyTheme(theme: PluginSettings["theme"]) {
+/**
+ * Apply theme by injecting/removing a <style> tag that overrides CSS variables.
+ *
+ * When `animate` is true, a temporary transition is added to all elements
+ * so the color change feels smooth rather than jarring.
+ */
+export function applyTheme(theme: PluginSettings["theme"], animate = false) {
+	if (animate) {
+		enableThemeTransition();
+	}
+
 	let styleEl = document.getElementById(
 		THEME_STYLE_ID,
 	) as HTMLStyleElement | null;
@@ -102,4 +114,27 @@ export function applyTheme(theme: PluginSettings["theme"]) {
 	}
 
 	styleEl.textContent = theme === "light" ? LIGHT_TOKENS : DARK_TOKENS;
+}
+
+/**
+ * Temporarily inject a global transition on background-color, color, border-color,
+ * box-shadow, and fill so the theme swap animates. Removes itself after the
+ * transition duration to avoid interfering with hover/focus transitions.
+ */
+function enableThemeTransition() {
+	let el = document.getElementById(THEME_TRANSITION_ID) as HTMLStyleElement | null;
+	if (!el) {
+		el = document.createElement("style");
+		el.id = THEME_TRANSITION_ID;
+		document.head.appendChild(el);
+	}
+	el.textContent = `*, *::before, *::after {
+  transition: background-color ${THEME_TRANSITION_MS}ms ease-out,
+              color ${THEME_TRANSITION_MS}ms ease-out,
+              border-color ${THEME_TRANSITION_MS}ms ease-out,
+              box-shadow ${THEME_TRANSITION_MS}ms ease-out,
+              fill ${THEME_TRANSITION_MS}ms ease-out !important;
+}`;
+	// Remove after transition completes
+	setTimeout(() => el?.remove(), THEME_TRANSITION_MS + 50);
 }
