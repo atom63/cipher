@@ -152,7 +152,7 @@ function CardHeader({ className, padding = "md", ...props }: CardHeaderProps) {
 function CardLabel({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span
-      className={cn("type-caption-1 text-foreground", className)}
+      className={cn("text-foreground text-sm", className)}
       data-slot="card-label"
       {...props}
     />
@@ -364,7 +364,7 @@ function CardTitle({ className, lineClamp = 2, ...props }: CardTitleProps) {
   return (
     <span
       className={cn(
-        "type-callout head sm:type-headline font-bold text-foreground",
+        "font-bold text-foreground text-lg",
         lineClamp === 1 && "line-clamp-1",
         lineClamp === 2 && "line-clamp-2",
         lineClamp === 3 && "line-clamp-3",
@@ -393,7 +393,7 @@ function CardDescription({
   return (
     <span
       className={cn(
-        "type-footnote sm:type-body text-muted-foreground leading-5",
+        "text-muted-foreground text-sm leading-5",
         lineClamp === 1 && "line-clamp-1",
         lineClamp === 2 && "line-clamp-2",
         lineClamp === 3 && "line-clamp-3",

@@ -59,7 +59,7 @@ function SectionLinks({ links }: { links: SectionLink[] }) {
           <a
             className={cn(
               "flex w-full items-center overflow-hidden no-underline",
-              "type-subhead !leading-[1.15]",
+              "!leading-[1.15] text-sm",
               "transition-colors duration-150 ease-out",
               "[@media(hover:hover)]:hover:text-foreground",
               s.id === activeId ? "text-foreground" : "text-muted-foreground/50"
@@ -102,7 +102,7 @@ export function ContentAsideItems({
       <Link
         className={cn(
           "inline-flex items-center gap-1.5 no-underline",
-          "type-subhead text-muted-foreground",
+          "text-muted-foreground text-sm",
           "transition-colors duration-150 ease-out",
           "[@media(hover:hover)]:hover:text-foreground"
         )}

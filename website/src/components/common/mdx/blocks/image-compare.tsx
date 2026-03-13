@@ -1,5 +1,5 @@
-import { Compare } from "@/components/custom/compare/compare";
-import { mdxStyles } from "@/components/mdx/mdx-styles";
+import { Compare } from "@/components/common/custom/compare/compare";
+import { mdxStyles } from "@/components/common/mdx/mdx-styles";
 import { cn } from "@/lib/utils";
 import { MediaCaption } from "./media-caption";
 

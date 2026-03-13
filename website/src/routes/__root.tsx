@@ -14,15 +14,26 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
-  useDebugMode();
-
   const location = useLocation();
 
-  // Scroll to top on route change
+  // Scroll to top on route change, then to section if requested via state
   // biome-ignore lint/correctness/useExhaustiveDependencies: Only trigger on pathname change
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [location.pathname]);
+
+    const scrollTarget = (location.state as { scrollTo?: string })?.scrollTo;
+    if (scrollTarget) {
+      // Wait for entrance animation to finish, then smooth-scroll to section
+      const timer = setTimeout(() => {
+        const el = document.getElementById(scrollTarget);
+        if (el) {
+          const top = el.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top, behavior: "smooth" });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, location.state]);
 
   // Set default page metadata with structured data
   usePageMeta({
@@ -31,23 +42,30 @@ function RootComponent() {
 
   return (
     <ThemeProvider>
-      <PasswordGate enabled={false}>
-        <GridProvider>
-          <TooltipProvider>
-            <motion.div
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              className="min-h-screen"
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              key={location.pathname}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Outlet />
-            </motion.div>
-            <Toaster position="top-right" />
-            {/* <ReactQueryDevtools initialIsOpen={false} /> */}
-          </TooltipProvider>
-        </GridProvider>
-      </PasswordGate>
+      <RootInner location={location} />
     </ThemeProvider>
+  );
+}
+
+function RootInner({ location }: { location: ReturnType<typeof useLocation> }) {
+  useDebugMode();
+
+  return (
+    <PasswordGate disabled>
+      <GridProvider>
+        <TooltipProvider>
+          <motion.div
+            animate={{ opacity: 1, filter: "blur(0px)" }}
+            className="min-h-screen"
+            initial={{ opacity: 0, filter: "blur(4px)" }}
+            key={location.pathname}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Outlet />
+          </motion.div>
+          <Toaster position="top-right" />
+        </TooltipProvider>
+      </GridProvider>
+    </PasswordGate>
   );
 }

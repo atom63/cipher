@@ -22,7 +22,7 @@ export function MediaCaption({ children, className }: MediaCaptionProps) {
   return (
     <figcaption
       className={cn(
-        "type-subhead mt-3 text-center text-muted-foreground leading-relaxed",
+        "mt-3 text-center text-muted-foreground text-sm leading-relaxed",
         className
       )}
     >

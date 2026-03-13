@@ -20,8 +20,11 @@ const PasswordGateContext = createContext<PasswordGateContextType | undefined>(
 
 function PasswordGate({
   children,
-  enabled = true,
-}: { children: React.ReactNode; enabled?: boolean }) {
+  disabled = false,
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+}) {
   const [isUnlocked, setIsUnlocked] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -48,7 +51,7 @@ function PasswordGate({
     setValue("");
   };
 
-  if (!enabled || isUnlocked) {
+  if (disabled) {
     return (
       <PasswordGateContext.Provider value={{ isUnlocked: true, lock }}>
         {children}
@@ -56,51 +59,59 @@ function PasswordGate({
     );
   }
 
-  return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6">
-      <div className="flex flex-col items-center gap-2">
-        <h1 className="type-title-3 font-bold">Enter Passcode</h1>
-        <p className="text-muted-foreground text-sm">
-          Enter the 4-digit code to continue
-        </p>
+  if (!isUnlocked) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-6">
+        <div className="flex flex-col items-center gap-2">
+          <h1 className="font-bold text-xl">Enter Passcode</h1>
+          <p className="text-muted-foreground text-sm">
+            Enter the 4-digit code to continue
+          </p>
+        </div>
+        <InputOTP
+          autoFocus
+          maxLength={4}
+          onChange={(v) => {
+            setValue(v);
+            setError(false);
+          }}
+          onComplete={handleComplete}
+          value={value}
+        >
+          <InputOTPGroup>
+            <InputOTPSlot
+              aria-invalid={error}
+              className={cn(error && "border-destructive")}
+              index={0}
+            />
+            <InputOTPSlot
+              aria-invalid={error}
+              className={cn(error && "border-destructive")}
+              index={1}
+            />
+            <InputOTPSlot
+              aria-invalid={error}
+              className={cn(error && "border-destructive")}
+              index={2}
+            />
+            <InputOTPSlot
+              aria-invalid={error}
+              className={cn(error && "border-destructive")}
+              index={3}
+            />
+          </InputOTPGroup>
+        </InputOTP>
+        {error && (
+          <p className="text-destructive text-sm">Incorrect passcode</p>
+        )}
       </div>
-      <InputOTP
-        autoFocus
-        maxLength={4}
-        onChange={(v) => {
-          setValue(v);
-          setError(false);
-        }}
-        onComplete={handleComplete}
-        value={value}
-      >
-        <InputOTPGroup>
-          <InputOTPSlot
-            aria-invalid={error}
-            className={cn(error && "border-destructive")}
-            index={0}
-          />
-          <InputOTPSlot
-            aria-invalid={error}
-            className={cn(error && "border-destructive")}
-            index={1}
-          />
-          <InputOTPSlot
-            aria-invalid={error}
-            className={cn(error && "border-destructive")}
-            index={2}
-          />
-          <InputOTPSlot
-            aria-invalid={error}
-            className={cn(error && "border-destructive")}
-            index={3}
-          />
-        </InputOTPGroup>
-      </InputOTP>
-      {error && (
-        <p className="text-destructive text-sm">Incorrect passcode</p>
-      )}
-    </div>
+    );
+  }
+
+  return (
+    <PasswordGateContext.Provider value={{ isUnlocked, lock }}>
+      {children}
+    </PasswordGateContext.Provider>
   );
 }
 

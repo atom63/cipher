@@ -1,0 +1,36 @@
+/* Effects — 14 tokens (shadows, blurs) */
+
+:root {
+  --shadow-0: 0px 0px 0px 0px rgba(0, 0, 0, 0);
+  --shadow-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.05), 0px 1px 3px 0px rgba(0, 0, 0, 0.1);
+  --shadow-2: 0px 1px 3px 0px rgba(0, 0, 0, 0.04), 0px 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-3: 0px 4px 6px -2px rgba(0, 0, 0, 0.05), 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-4: 0px 8px 10px -3px rgba(0, 0, 0, 0.04), 0px 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-5: 0px 10px 15px -3px rgba(0, 0, 0, 0.04), 0px 25px 50px -12px rgba(0, 0, 0, 0.1);
+  --shadow-6: 0px 12px 20px -4px rgba(0, 0, 0, 0.04), 0px 30px 60px -18px rgba(0, 0, 0, 0.12);
+
+  --blur-2xl: 40px;
+  --blur-3xl: 64px;
+  --blur-lg: 16px;
+  --blur-md: 12px;
+  --blur-sm: 8px;
+  --blur-xl: 24px;
+  --blur-xs: 4px;
+}
+
+@theme inline {
+  --shadow-0: var(--shadow-0);
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+  --shadow-4: var(--shadow-4);
+  --shadow-5: var(--shadow-5);
+  --shadow-6: var(--shadow-6);
+  --blur-2xl: var(--blur-2xl);
+  --blur-3xl: var(--blur-3xl);
+  --blur-lg: var(--blur-lg);
+  --blur-md: var(--blur-md);
+  --blur-sm: var(--blur-sm);
+  --blur-xl: var(--blur-xl);
+  --blur-xs: var(--blur-xs);
+}

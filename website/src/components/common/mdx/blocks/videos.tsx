@@ -1,5 +1,5 @@
-import { MediaCaption } from "@/components/mdx/blocks/media-caption";
-import { mdxStyles } from "@/components/mdx/mdx-styles";
+import { MediaCaption } from "@/components/common/mdx/blocks/media-caption";
+import { mdxStyles } from "@/components/common/mdx/mdx-styles";
 import { Video } from "@/components/ui/video";
 import { cn } from "@/lib/utils";
 

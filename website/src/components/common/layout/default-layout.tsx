@@ -8,17 +8,21 @@ interface DefaultLayoutProps {
   children: ReactNode;
   className?: string;
   nav?: "header" | "aside" | "none";
+  noPadding?: boolean;
   showFooter?: boolean;
 }
 
 export default function DefaultLayout({
   children,
   className,
+  noPadding = false,
 }: DefaultLayoutProps) {
   return (
     <div className="relative flex min-h-screen flex-col">
       <WebHeader />
-      <Page className={cn("flex-1", className)}>{children}</Page>
+      <Page className={cn("flex-1", className)} noPadding={noPadding}>
+        {children}
+      </Page>
       <WebFooter />
     </div>
   );
