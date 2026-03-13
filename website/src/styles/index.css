@@ -11,7 +11,9 @@
 @custom-variant light (&:not(.dark *));
 @custom-variant dark (&:is(.dark *));
 
-:root { text-autospace: normal; }
+:root {
+  text-autospace: normal;
+}
 
 /* shadcn base layer styles */
 @layer base {

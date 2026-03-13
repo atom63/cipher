@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { type PhotoSwipeImage, usePhotoSwipe } from '@/components/common/custom/photo-swipe'
-import { MediaCaption } from '@/components/common/mdx/blocks/media-caption'
-import { mdxStyles } from '@/components/common/mdx/mdx-styles'
-import Image, { type AspectRatio } from '@/components/ui/image'
-import { cn } from '@/lib/utils'
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type PhotoSwipeImage,
+  usePhotoSwipe,
+} from "@/components/common/custom/photo-swipe";
+import { MediaCaption } from "@/components/common/mdx/blocks/media-caption";
+import { mdxStyles } from "@/components/common/mdx/mdx-styles";
+import Image, { type AspectRatio } from "@/components/ui/image";
+import { cn } from "@/lib/utils";
 
 /**
  * MDX Image Component
@@ -49,62 +52,62 @@ import { cn } from '@/lib/utils'
  */
 
 export interface MDXImageProps {
-  alt?: string
-  aspectRatio?: AspectRatio
-  caption?: string
-  className?: string
-  priority?: boolean
-  src: string
+  alt?: string;
+  aspectRatio?: AspectRatio;
+  caption?: string;
+  className?: string;
+  priority?: boolean;
+  src: string;
 }
 
 export function MDXImage({
   src,
   alt,
-  aspectRatio = 'auto',
+  aspectRatio = "auto",
   caption,
   priority = false,
   className,
 }: MDXImageProps) {
   const [imageDimensions, setImageDimensions] = useState<{
-    width: number
-    height: number
-  } | null>(null)
+    width: number;
+    height: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!src) {
-      return
+      return;
     }
-    const img = new window.Image()
+    const img = new window.Image();
     img.onload = () => {
       setImageDimensions({
         width: img.naturalWidth,
         height: img.naturalHeight,
-      })
-    }
-    img.src = src
-  }, [src])
+      });
+    };
+    img.src = src;
+  }, [src]);
 
   const lightboxImages = useMemo<PhotoSwipeImage[]>(() => {
     if (!(src && imageDimensions)) {
-      return []
+      return [];
     }
     return [
       {
         src,
         width: imageDimensions.width,
         height: imageDimensions.height,
-        alt: alt || '',
+        alt: alt || "",
       },
-    ]
-  }, [src, imageDimensions, alt])
+    ];
+  }, [src, imageDimensions, alt]);
 
-  const { openPhotoSwipe } = usePhotoSwipe(lightboxImages)
+  const { openPhotoSwipe } = usePhotoSwipe(lightboxImages);
 
   const handleImageClick = useCallback(() => {
     if (lightboxImages.length > 0) {
-      openPhotoSwipe(0)
+      openPhotoSwipe(0);
     }
-  }, [lightboxImages.length, openPhotoSwipe])
+  }, [lightboxImages.length, openPhotoSwipe]);
 
   const imageElement = (
     <button
@@ -115,13 +118,13 @@ export function MDXImage({
       <Image
         alt={alt}
         aspectRatio={aspectRatio}
-        className={cn('overflow-hidden rounded-lg', className)}
+        className={cn("overflow-hidden rounded-lg", className)}
         lazy={!priority}
         priority={priority}
         src={src}
       />
     </button>
-  )
+  );
 
   if (caption) {
     return (
@@ -129,10 +132,10 @@ export function MDXImage({
         {imageElement}
         <MediaCaption>{caption}</MediaCaption>
       </figure>
-    )
+    );
   }
 
-  return <div className={mdxStyles.spacing.media}>{imageElement}</div>
+  return <div className={mdxStyles.spacing.media}>{imageElement}</div>;
 }
 
 /**
@@ -159,30 +162,35 @@ export function MDXImage({
  * ```
  */
 export interface ImageGridProps {
-  children: React.ReactNode
-  className?: string
-  cols?: 2 | 3 | 4
-  gap?: 'sm' | 'md' | 'lg'
+  children: React.ReactNode;
+  className?: string;
+  cols?: 2 | 3 | 4;
+  gap?: "sm" | "md" | "lg";
 }
 
-export function ImageGrid({ children, cols = 2, gap = 'md', className }: ImageGridProps) {
+export function ImageGrid({
+  children,
+  cols = 2,
+  gap = "md",
+  className,
+}: ImageGridProps) {
   const gridStyles = {
-    2: 'grid-cols-1 md:grid-cols-2',
-    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
-    4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
-  }
+    2: "grid-cols-1 md:grid-cols-2",
+    3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+    4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
+  };
 
   const gapStyles = {
-    sm: 'gap-2',
-    md: 'gap-4',
-    lg: 'gap-6',
-  }
+    sm: "gap-2",
+    md: "gap-4",
+    lg: "gap-6",
+  };
 
   return (
     <div
       className={cn(
         mdxStyles.spacing.media,
-        'grid [&>*]:my-0',
+        "grid [&>*]:my-0",
         gridStyles[cols],
         gapStyles[gap],
         className
@@ -190,7 +198,7 @@ export function ImageGrid({ children, cols = 2, gap = 'md', className }: ImageGr
     >
       {children}
     </div>
-  )
+  );
 }
 
 /**
@@ -220,22 +228,28 @@ export function ImageGrid({ children, cols = 2, gap = 'md', className }: ImageGr
  * ```
  */
 export interface ImageComparisonProps {
-  after: { alt?: string; src: string }
-  aspectRatio?: AspectRatio
-  before: { alt?: string; src: string }
-  className?: string
-  labels?: { after?: string; before?: string }
+  after: { alt?: string; src: string };
+  aspectRatio?: AspectRatio;
+  before: { alt?: string; src: string };
+  className?: string;
+  labels?: { after?: string; before?: string };
 }
 
 export function ImageComparison({
   before,
   after,
-  aspectRatio = '16/9',
-  labels = { before: 'Before', after: 'After' },
+  aspectRatio = "16/9",
+  labels = { before: "Before", after: "After" },
   className,
 }: ImageComparisonProps) {
   return (
-    <div className={cn(mdxStyles.spacing.media, 'grid grid-cols-2 gap-4', className)}>
+    <div
+      className={cn(
+        mdxStyles.spacing.media,
+        "grid grid-cols-2 gap-4",
+        className
+      )}
+    >
       <div className="space-y-2">
         {labels.before && (
           <div className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
@@ -253,7 +267,7 @@ export function ImageComparison({
         <Image alt={after.alt} aspectRatio={aspectRatio} src={after.src} />
       </div>
     </div>
-  )
+  );
 }
 
-export default MDXImage
+export default MDXImage;

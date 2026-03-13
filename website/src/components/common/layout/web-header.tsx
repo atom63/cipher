@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/common/theme/theme-toggle";
+import { cn } from "@/lib/utils";
 import { AnimatedLogo } from "../icon/cipher/app-logo";
 import Container from "./container";
 
@@ -25,7 +25,7 @@ export default function WebHeader({ className }: WebHeaderProps) {
             className="rounded-sm text-foreground no-underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             to="/"
           >
-            <AnimatedLogo height={24} />
+            <AnimatedLogo colored height={24} />
           </Link>
 
           <nav className="flex items-center gap-4">

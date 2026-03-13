@@ -5,7 +5,6 @@ html[data-theme-transitioning] *::after {
   animation-duration: 0s !important;
 }
 
-
 /* Global Animation Policy - Prevent theme color transitions */
 @layer utilities {
   /* Theme transition utilities */

@@ -1,55 +1,88 @@
 import {
   ArrowRight,
+  BookOpen,
+  ChevronRight,
   Code,
-  Layers,
+  ExternalLink,
+  FileCode2,
+  FolderSync,
   Lock,
   Palette,
   RefreshCw,
   Sliders,
   Type,
-  Upload,
+  Wand2,
   Zap,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useScroll, useTransform } from "motion/react";
+import { useRef } from "react";
+import { RichButton } from "@/components/common/custom/rich-button";
 import Container from "@/components/common/layout/container";
 import DefaultLayout from "@/components/common/layout/default-layout";
-import Section from "@/components/common/layout/section";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { RichButton } from "@/components/common/custom/rich-button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import {
+  duration as d,
+  ease as easeTokens,
+} from "@/styles/tokens/motion";
 
 // ---------------------------------------------------------------------------
-// Animation
+// Constants
 // ---------------------------------------------------------------------------
 
-const ease = [0.16, 1, 0.3, 1] as const;
+const EASE_REVEAL = easeTokens.fast;
+const FIGMA_URL =
+  "https://www.figma.com/community/plugin/1613643367110247078";
+const GITHUB_URL = "https://github.com/atom63/cipher";
 
-function FadeUp({
+const GRID_BG_STYLE = {
+  backgroundImage: `linear-gradient(var(--foreground) 1px, transparent 1px),
+    linear-gradient(90deg, var(--foreground) 1px, transparent 1px)`,
+  backgroundSize: `var(--spacing-20) var(--spacing-20)`,
+} as const;
+
+// Stable motion config objects
+const REVEAL_ANIMATE = { opacity: 1, y: 0 };
+const REVEAL_VIEWPORT = { once: true, margin: "-80px" } as const;
+const FADE_ANIMATE = { opacity: 1 };
+const FADE_VIEWPORT = { once: true } as const;
+
+// ---------------------------------------------------------------------------
+// Motion primitives
+// ---------------------------------------------------------------------------
+
+function Reveal({
   children,
   delay = 0,
   className,
+  y = 20,
 }: {
   children: React.ReactNode;
   delay?: number;
   className?: string;
+  y?: number;
 }) {
   const reduced = useReducedMotion();
   return (
     <motion.div
       className={className}
-      initial={reduced ? false : { opacity: 0, y: 24 }}
-      transition={{ duration: 0.7, delay, ease }}
-      viewport={{ once: true, margin: "-60px" }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={reduced ? false : { opacity: 0, y }}
+      transition={{ duration: d.slow, delay, ease: EASE_REVEAL }}
+      viewport={REVEAL_VIEWPORT}
+      whileInView={REVEAL_ANIMATE}
     >
       {children}
     </motion.div>
   );
 }
 
-function FadeIn({
+function Fade({
   children,
   delay = 0,
   className,
@@ -63,9 +96,9 @@ function FadeIn({
     <motion.div
       className={className}
       initial={reduced ? false : { opacity: 0 }}
-      transition={{ duration: 1, delay, ease }}
-      viewport={{ once: true }}
-      whileInView={{ opacity: 1 }}
+      transition={{ duration: d.slower, delay, ease: EASE_REVEAL }}
+      viewport={FADE_VIEWPORT}
+      whileInView={FADE_ANIMATE}
     >
       {children}
     </motion.div>
@@ -73,302 +106,286 @@ function FadeIn({
 }
 
 // ---------------------------------------------------------------------------
-// Workflow card visuals
+// Hero video with parallax
 // ---------------------------------------------------------------------------
 
-function GenerateVisual() {
-  const swatchOpacities = [100, 80, 60, 40, 20];
-  const graySteps = [
-    "var(--surface-light-12)",
-    "var(--surface-light-9)",
-    "var(--surface-light-7)",
-    "var(--surface-light-5)",
-    "var(--surface-light-3)",
-  ];
+function HeroVideo({ reduced }: { reduced?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
 
   return (
-    <div className="space-y-3 p-4">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="font-semibold text-[10px] text-foreground/70 uppercase tracking-wider">
-            Brand Color
-          </span>
-          <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] text-primary">
-            #F76B15
-          </span>
-        </div>
-        <div className="flex gap-1">
-          {swatchOpacities.map((opacity, i) => (
-            <div
-              className={`h-6 flex-1 rounded-sm ${i === 0 ? "ring-1 ring-primary/40 ring-offset-1 ring-offset-card" : ""}`}
-              key={opacity}
-              style={{
-                backgroundColor: `color-mix(in srgb, var(--primary) ${opacity}%, transparent)`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
+    <motion.div
+      className="relative overflow-hidden rounded-2xl border border-border/40 shadow-6 lg:rounded-3xl"
+      ref={ref}
+      style={reduced ? {} : { y, scale }}
+    >
+      <div className="pointer-events-none absolute -inset-px rounded-[inherit] bg-linear-to-b from-primary/20 via-transparent to-transparent" />
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="font-semibold text-[10px] text-foreground/70 uppercase tracking-wider">
-            Surface Tone
-          </span>
-          <span className="text-[9px] text-muted-foreground">Sand</span>
-        </div>
-        <div className="flex gap-1">
-          {graySteps.map((color) => (
-            <div
-              className="h-6 flex-1 rounded-sm"
-              key={color}
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 rounded-md border border-border/40 bg-background/50 px-2.5 py-1.5">
-        <Type className="size-3 text-muted-foreground/60" />
-        <span className="text-[11px] text-foreground/80">
-          Major Third — 1.250
-        </span>
-      </div>
-
-      <div className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-[11px] text-primary-foreground">
-        <Zap className="size-3" />
-        Generate Token System
-      </div>
-    </div>
-  );
-}
-
-function ExportVisual() {
-  const files = [
-    { name: "primitives.css", vars: 142 },
-    { name: "aliases.css", vars: 30 },
-    { name: "semantics.css", vars: 37 },
-    { name: "typescales.css", vars: 18 },
-    { name: "effects.css", vars: 6 },
-  ];
-
-  return (
-    <div className="p-4">
-      <div className="mb-3 flex gap-1 rounded-md border border-border/40 p-0.5">
-        {["OKLCH", "HEX", "RGBA"].map((fmt, i) => (
-          <div
-            className={`flex-1 rounded py-1 text-center font-medium text-[10px] ${
-              i === 0
-                ? "bg-foreground text-background"
-                : "text-muted-foreground"
-            }`}
-            key={fmt}
-          >
-            {fmt}
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-1">
-        {files.map((file) => (
-          <div
-            className="flex items-center justify-between rounded-md border border-border/30 bg-background/30 px-2.5 py-1.5"
-            key={file.name}
-          >
-            <span className="font-mono text-[10px] text-foreground/70">
-              {file.name}
-            </span>
-            <span className="text-[9px] text-muted-foreground">
-              {file.vars} vars
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-3 flex gap-2">
-        <div className="flex flex-1 items-center justify-center gap-1 rounded-md border border-border/40 bg-background/50 py-1.5 text-[10px] text-muted-foreground">
-          <Code className="size-3" />
-          Copy All
-        </div>
-        <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-primary py-1.5 font-medium text-[10px] text-primary-foreground">
-          Download ZIP
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ImportVisual() {
-  const tokens = [
-    { name: "--background", status: "new" },
-    { name: "--foreground", status: "new" },
-    { name: "--primary", status: "conflict" },
-    { name: "--border", status: "new" },
-    { name: "--ring", status: "skip" },
-  ];
-
-  return (
-    <div className="p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="font-semibold text-[10px] text-foreground/70 uppercase tracking-wider">
-          Review Tokens
-        </span>
-        <span className="text-[9px] text-muted-foreground">
-          5 from semantics.css
-        </span>
-      </div>
-
-      <div className="space-y-1">
-        {tokens.map((token) => (
-          <div
-            className="flex items-center justify-between rounded-md border border-border/30 bg-background/30 px-2.5 py-1.5"
-            key={token.name}
-          >
-            <span className="font-mono text-[10px] text-primary/80">
-              {token.name}
-            </span>
-            <span
-              className={`rounded px-1.5 py-0.5 font-semibold text-[8px] uppercase tracking-wider ${
-                token.status === "new"
-                  ? "bg-success/10 text-success"
-                  : token.status === "conflict"
-                    ? "bg-warning/10 text-warning"
-                    : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {token.status}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-3 flex gap-2">
-        <div className="flex flex-1 items-center justify-center rounded-md border border-border/40 bg-background/50 py-1.5 text-[10px] text-muted-foreground">
-          Cancel
-        </div>
-        <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-primary py-1.5 font-medium text-[10px] text-primary-foreground">
-          <Upload className="size-3" />
-          Import 4 Tokens
-        </div>
-      </div>
-    </div>
+      <video
+        autoPlay
+        className="relative block w-full"
+        loop
+        muted
+        playsInline
+        preload="metadata"
+      >
+        <source src="/placeholder/output.webm" type="video/webm" />
+        <source src="/placeholder/placeholder.mp4" type="video/mp4" />
+      </video>
+    </motion.div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Code showcase
+// Feature data
 // ---------------------------------------------------------------------------
 
-const CSS_FILES = [
-  { active: false, name: "primitives.css" },
-  { active: false, name: "aliases.css" },
-  { active: true, name: "semantics.css" },
-  { active: false, name: "typescales.css" },
-  { active: false, name: "effects.css" },
-];
-
-const CODE_LINES: (
-  | { dim: boolean; indent: number; text: string }
-  | { dim: boolean; indent: number; token: string; value: string }
-)[] = [
-  { indent: 0, text: "@theme inline {", dim: true },
-  { indent: 1, token: "--color-background", value: "var(--background)", dim: true },
-  { indent: 1, token: "--color-primary", value: "var(--primary)", dim: true },
-  { indent: 0, text: "}", dim: true },
-  { indent: 0, text: "", dim: true },
-  { indent: 0, text: ":root {", dim: false },
-  { indent: 1, token: "--background", value: "var(--surface-light-2)", dim: false },
-  { indent: 1, token: "--foreground", value: "var(--surface-light-12)", dim: false },
-  { indent: 1, token: "--primary", value: "var(--color-brand-primary-500)", dim: false },
-  { indent: 1, token: "--border", value: "var(--surface-light-6)", dim: true },
-  { indent: 0, text: "}", dim: false },
-  { indent: 0, text: "", dim: true },
-  { indent: 0, text: ".dark {", dim: false },
-  { indent: 1, token: "--background", value: "var(--surface-dark-1)", dim: false },
-  { indent: 1, token: "--primary", value: "var(--color-brand-primary-400)", dim: false },
-  { indent: 0, text: "}", dim: false },
-];
-
-// ---------------------------------------------------------------------------
-// Data
-// ---------------------------------------------------------------------------
-
-const WORKFLOW = [
+const HERO_FEATURES = [
   {
-    title: "Generate",
-    description:
-      "Pick a brand color, surface tone, type scale, and radius. Cipher builds a full three-tier token system in your Figma file.",
-    Visual: GenerateVisual,
+    label: "GENERATE",
+    icon: Wand2,
+    title: "Generate a full token system",
+    body: "Create primitives, aliases, and semantics from a small set of design inputs — color, surfaces, radius, type scale, and font mappings.",
+    bullets: [
+      "Three-tier token model",
+      "First-time setup or update existing",
+    ],
+    screenshot: "/og.png",
+    screenshotAlt:
+      "Cipher Generate page showing color scale preview and brand configuration",
   },
   {
-    title: "Export",
-    description:
-      "Production CSS in seven files with Tailwind v4 @theme blocks. OKLCH, HEX, RGBA, or HSL. Download as ZIP.",
-    Visual: ExportVisual,
-  },
-  {
-    title: "Import",
-    description:
-      "Edit in code, sync back to Figma. Auto-detects Cipher exports. Per-token conflict resolution. Full undo.",
-    Visual: ImportVisual,
+    label: "ROUND-TRIP",
+    icon: FolderSync,
+    title: "Round-trip between Figma and code",
+    body: "Import JSON, CSS, folders, or ZIP files back into Figma with preview, conflict checks, and reference-aware creation.",
+    bullets: ["Preview before write", "Import or override modes"],
+    screenshot: "/og.png",
+    screenshotAlt:
+      "Cipher Import page showing token review table with conflict detection",
   },
 ];
 
-const FEATURES = [
+const GRID_FEATURES = [
+  {
+    label: "VARIABLES",
+    icon: Sliders,
+    title: "Manage variables at scale",
+    body: "Search, rename, move, duplicate, delete, edit by mode, scale values, and swap references.",
+    screenshot: "/og.png",
+    screenshotAlt: "Cipher variable manager with bulk operations",
+  },
+  {
+    label: "STYLES",
+    icon: Palette,
+    title: "Fix and maintain styles",
+    body: "Browse styles, detect broken bindings, and apply rebind suggestions in batch.",
+    screenshot: "/og.png",
+    screenshotAlt: "Cipher Styles page with rebind suggestions",
+  },
+  {
+    label: "EXPORT",
+    icon: FileCode2,
+    title: "Export production-ready tokens",
+    body: "Structured JSON and CSS with Tailwind v4 @theme inline, split files, and color format selection.",
+    screenshot: "/og.png",
+    screenshotAlt: "Cipher Export page showing CSS output",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Differentiators
+// ---------------------------------------------------------------------------
+
+const DIFF = [
   {
     icon: Palette,
-    title: "OKLCH Color Science",
-    description:
-      "Perceptually uniform lightness steps, not hue-shifting heuristics.",
-  },
-  {
-    icon: Type,
-    title: "Responsive Typography",
-    description:
-      "Breakpoint-aware font-size and line-height with @media queries.",
+    title: "OKLCH color science",
+    text: "Perceptually uniform lightness steps across every generated scale.",
   },
   {
     icon: Zap,
-    title: "Tailwind v4 Native",
-    description:
-      "@theme inline blocks in every file. Drop in, no config gymnastics.",
+    title: "Opacity preservation",
+    text: "Style-level opacity retained via color-mix() in CSS output.",
+  },
+  {
+    icon: Type,
+    title: "Responsive typography",
+    text: "Breakpoint-aware font-size and line-height in every export.",
   },
   {
     icon: Sliders,
-    title: "Surface Saturation",
-    description:
-      "Adjust chroma of your entire gray palette with one slider.",
-  },
-  {
-    icon: Layers,
-    title: "Batch Operations",
-    description:
-      "Rename, move, scale, or delete across collections with dependency checking.",
+    title: "Surface saturation",
+    text: "Adjust chroma across your neutral palette with one slider.",
   },
   {
     icon: RefreshCw,
-    title: "Auto-Detection",
-    description:
-      "Re-open on an existing file and Cipher pre-fills your config.",
+    title: "Config auto-detection",
+    text: "Re-open on existing files — brand config extracted automatically.",
+  },
+  {
+    icon: Code,
+    title: "Tailwind v4 native",
+    text: "@theme inline blocks in every file. Zero config integration.",
   },
 ];
 
-const FIGMA_VARS = [
-  { path: "color/brand/primary/500", value: "#F76B15", swatch: "var(--primary)" },
-  { path: "color/gray/light/2", value: "#FDF8F6", swatch: "var(--surface-light-2)" },
-  { path: "surface/light/12", value: "#271D16", swatch: "var(--surface-light-12)" },
-  { path: "font/family/sans", value: "Inter", swatch: null },
-  { path: "spacing/4", value: "16px", swatch: null },
+// ---------------------------------------------------------------------------
+// FAQ data
+// ---------------------------------------------------------------------------
+
+const FAQ = [
+  {
+    q: 'What does "opinionated" mean?',
+    a: "Cipher is built around a clear token structure and workflow philosophy. Instead of trying to support every possible setup equally, it prioritizes readability, consistency, and maintainability.",
+  },
+  {
+    q: "Is Cipher free to use?",
+    a: "Yes. Cipher is currently free to use during beta.",
+  },
+  {
+    q: "Why is Cipher in beta?",
+    a: "Cipher is already usable today, but the workflow, docs, and feature set are still evolving. The beta label helps set expectations clearly while the product continues to improve.",
+  },
+  {
+    q: "What can Cipher export?",
+    a: "Cipher exports JSON token files and CSS token files, including support for Tailwind v4-friendly @theme inline output.",
+  },
+  {
+    q: "Can I import token files back into Figma?",
+    a: "Yes. Cipher supports importing JSON, CSS, folders, and ZIP archives with preview, conflict handling, and undo.",
+  },
+  {
+    q: "Does Cipher use cloud sync or external servers?",
+    a: "No. Cipher is local-only and does not use external servers or telemetry.",
+  },
+  {
+    q: "Who is Cipher for?",
+    a: "Cipher is for designers and developers who care about structured token workflows, readable systems, and better alignment between design and code.",
+  },
+  {
+    q: "What is the open-source website starter?",
+    a: "It is a public starter repo that applies Cipher\u2019s token structure in code, so you can explore or build on the workflow outside the plugin UI.",
+  },
 ];
 
-const CSS_OUTPUT = [
-  ":root {",
-  "  --primary: var(--color-brand-primary-500);",
-  "  --background: var(--surface-light-2);",
-  "  --foreground: var(--surface-light-12);",
-  "  --border: var(--surface-light-4);",
-  "  --muted-foreground: var(--surface-light-11);",
-  "}",
+// ---------------------------------------------------------------------------
+// Code block
+// ---------------------------------------------------------------------------
+
+type CodeLine =
+  | { text: string; dim: boolean }
+  | { token: string; value: string; dim: boolean };
+
+const CODE: CodeLine[] = [
+  { text: "@theme inline {", dim: true },
+  { token: "--color-background", value: "var(--background)", dim: true },
+  { token: "--color-primary", value: "var(--primary)", dim: true },
+  { text: "}", dim: true },
+  { text: "", dim: true },
+  { text: ":root {", dim: false },
+  { token: "--background", value: "var(--surface-light-2)", dim: false },
+  { token: "--foreground", value: "var(--surface-light-12)", dim: false },
+  {
+    token: "--primary",
+    value: "var(--color-brand-primary-500)",
+    dim: false,
+  },
+  { token: "--border", value: "var(--surface-light-6)", dim: true },
+  { text: "}", dim: false },
+  { text: "", dim: true },
+  { text: ".dark {", dim: false },
+  { token: "--background", value: "var(--surface-dark-1)", dim: false },
+  {
+    token: "--primary",
+    value: "var(--color-brand-primary-400)",
+    dim: false,
+  },
+  { text: "}", dim: false },
+];
+
+const FILE_TABS = [
+  "primitives.css",
+  "aliases.css",
+  "semantics.css",
+  "typescales.css",
+  "effects.css",
+];
+
+function CodeBlock({ reduced }: { reduced?: boolean }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/50 shadow-5">
+      <div className="flex overflow-x-auto border-border/40 border-b bg-card/80">
+        {FILE_TABS.map((name, i) => (
+          <div
+            className={`shrink-0 border-border/20 border-r px-4 py-3 font-mono text-xs ${
+              i === 2
+                ? "bg-background/80 text-foreground"
+                : "text-muted-foreground/35"
+            }`}
+            key={name}
+          >
+            {name}
+          </div>
+        ))}
+      </div>
+      <motion.div
+        className="p-5 sm:p-6"
+        initial={reduced ? false : { opacity: 0 }}
+        transition={{ duration: d.slow, ease: EASE_REVEAL }}
+        viewport={{ once: true }}
+        whileInView={{ opacity: 1 }}
+      >
+        {CODE.map((line, i) => (
+          <div
+            className={`font-mono text-xs leading-7 sm:leading-8 ${
+              line.dim ? "opacity-30" : ""
+            }`}
+            key={i}
+          >
+            {"token" in line ? (
+              <span>
+                {"  "}
+                <span className="text-primary/85">{line.token}</span>
+                <span className="text-foreground/20">: </span>
+                <span className="text-foreground/50">{line.value}</span>
+                <span className="text-foreground/20">;</span>
+              </span>
+            ) : (
+              <span className="text-foreground/60">{line.text}</span>
+            )}
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Three-tier architecture
+// ---------------------------------------------------------------------------
+
+const TIERS = [
+  {
+    label: "Primitives",
+    desc: "Raw values",
+    tokens: ["brand/primary/500", "gray/light/9", "font/size/base"],
+  },
+  {
+    label: "Aliases",
+    desc: "Mapped references",
+    tokens: ["surface/light/2", "font/family/primary", "radius/md"],
+  },
+  {
+    label: "Semantics",
+    desc: "UI-facing tokens",
+    tokens: ["background", "foreground", "primary"],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -379,12 +396,12 @@ export default function Home() {
   const reduced = useReducedMotion();
 
   usePageMeta({
-    title: "Design Tokens That Actually Ship",
+    title: "A Highly Opinionated Token System for Figma",
     description:
-      "Cipher generates a production-ready token system inside Figma — primitives, aliases, semantics — and exports CSS your codebase can use today. Free & open source.",
-    ogTitle: "Cipher — Design Tokens That Actually Ship",
+      "Cipher helps you generate structured token systems, manage variables and styles at scale, and round-trip production-ready tokens between Figma and code.",
+    ogTitle: "Cipher — A Highly Opinionated Token System for Figma",
     ogDescription:
-      "Generate, export, and import a complete design token system between Figma and code. OKLCH colors, responsive typography, Tailwind v4 ready.",
+      "Generate, manage, export, and re-import design tokens with a workflow built for readability, consistency, and real product use.",
     keywords: [
       "design tokens",
       "figma plugin",
@@ -399,396 +416,589 @@ export default function Home() {
 
   return (
     <DefaultLayout noPadding>
-      {/* =============================================================== */}
-      {/* HERO — centered, confident                                      */}
-      {/* =============================================================== */}
+      {/* ================================================================ */}
+      {/* 1. HERO                                                          */}
+      {/* ================================================================ */}
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-[-20%] left-1/2 h-[700px] w-[1000px] -translate-x-1/2 rounded-full bg-primary/[0.06] blur-[180px]" />
+          <div
+            className="absolute inset-0 opacity-2 dark:opacity-4"
+            style={GRID_BG_STYLE}
+          />
+          <div className="absolute top-[-30%] right-[-15%] h-[700px] w-[700px] rounded-full bg-primary/10 blur-[200px] contain-strict dark:bg-primary/6" />
+          <div className="absolute bottom-[-20%] left-[-10%] h-[400px] w-[400px] rounded-full bg-primary/5 blur-[150px] contain-strict" />
         </div>
 
-        <Container padding="x">
-          <div className="relative flex flex-col items-center pt-24 pb-8 text-center sm:pt-32 sm:pb-12 lg:pt-44 lg:pb-16">
-            <FadeUp>
-              <Badge size="default" variant="primaryMuted">
-                Figma Plugin — Free & Open Source
-              </Badge>
-            </FadeUp>
-
-            <FadeUp delay={0.05}>
-              <h1 className="mt-6 max-w-4xl font-extrabold text-[clamp(2.75rem,7vw,5.5rem)] leading-[1.02] tracking-tight">
-                Design tokens that{" "}
-                <span className="text-primary">actually ship.</span>
-              </h1>
-            </FadeUp>
-
-            <FadeUp delay={0.1}>
-              <p className="mt-6 max-w-xl text-muted-foreground text-xl leading-relaxed sm:text-2xl">
-                Figma gives you variables — not a design system. Cipher
-                generates the structure your code needs and exports production
-                CSS out of the box.
+        <Container
+          className="relative pt-28 pb-8 sm:pt-36 sm:pb-12 lg:pt-44 lg:pb-16"
+          maxWidth="default"
+          padding="x"
+        >
+          <div className="mx-auto max-w-4xl text-center">
+            <Reveal delay={0} y={0}>
+              <p className="font-mono text-primary text-xs tracking-[0.25em]">
+                BETA · FREE TO USE
               </p>
-            </FadeUp>
+            </Reveal>
 
-            <FadeUp delay={0.15}>
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:mt-12">
-                <RichButton size="lg">
-                  Install from Figma
+            <Reveal delay={0.04} y={32}>
+              <h1 className="mt-5 font-extrabold text-9xl text-foreground leading-[0.92] tracking-[-0.04em]">
+                A highly opinionated{" "}
+                <span className="font-serif italic text-primary">
+                  token system
+                </span>{" "}
+                for Figma.
+              </h1>
+            </Reveal>
+
+            <Reveal delay={0.08} y={16}>
+              <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground leading-relaxed">
+                Generate structured token systems, manage variables and styles
+                at scale, and round-trip production-ready tokens between Figma
+                and code.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.12} y={12}>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <RichButton
+                  onClick={() =>
+                    window.open(FIGMA_URL, "_blank", "noopener,noreferrer")
+                  }
+                  size="lg"
+                  type="button"
+                >
+                  Install plugin
                   <ArrowRight className="size-4" />
                 </RichButton>
-                <Button asChild size="lg" variant="ghost">
-                  <a
-                    href="https://github.com/atom63/cipher"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    View Source
-                  </a>
-                </Button>
+                <a
+                  className="inline-flex items-center gap-2 rounded-lg border border-border/50 bg-card/50 px-5 py-2.5 font-medium text-foreground text-sm transition-colors hover:bg-card"
+                  href="/docs"
+                >
+                  <BookOpen className="size-4" />
+                  View docs
+                </a>
               </div>
-            </FadeUp>
+            </Reveal>
 
-            <FadeIn delay={0.3}>
-              <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-muted-foreground/60 text-sm tracking-wide sm:mt-14">
-                <span>230+ tokens</span>
-                <span className="text-border">·</span>
-                <span>7 CSS files</span>
-                <span className="text-border">·</span>
-                <span>Tailwind v4 ready</span>
+            <Fade delay={0.18}>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-muted-foreground/40 text-sm">
+                <span>Local-only</span>
+                <span className="text-border/40">·</span>
+                <span>No external servers</span>
+                <span className="text-border/40">·</span>
+                <span>No telemetry</span>
+                <span className="text-border/40">·</span>
+                <span>Free during beta</span>
               </div>
-            </FadeIn>
+            </Fade>
+          </div>
+        </Container>
+
+        <Container
+          className="relative pb-24 sm:pb-32 lg:pb-40"
+          maxWidth="wide"
+          padding="x"
+        >
+          <Reveal delay={0.22} y={40}>
+            <HeroVideo reduced={reduced} />
+          </Reveal>
+        </Container>
+      </section>
+
+      {/* ================================================================ */}
+      {/* 2. WHY — asymmetric with architecture diagram                   */}
+      {/* ================================================================ */}
+      <section className="border-border/30 border-y bg-card/30">
+        <Container
+          className="py-24 sm:py-32 lg:py-40"
+          maxWidth="default"
+          padding="x"
+        >
+          <div className="grid items-start gap-12 lg:grid-cols-[1fr_1fr] lg:gap-16">
+            {/* Left — statement */}
+            <Reveal>
+              <div className="lg:sticky lg:top-32">
+                <h2 className="font-extrabold text-8xl text-foreground leading-[1.08] tracking-tight">
+                  Figma gives you variables.{" "}
+                  <span className="text-primary">
+                    Cipher gives you a system.
+                  </span>
+                </h2>
+                <p className="mt-5 max-w-md text-base text-muted-foreground leading-relaxed">
+                  Design token workflows often become fragmented across files,
+                  tools, and codebases. Naming drifts, structure gets harder
+                  to maintain, and exports still need cleanup. Cipher makes
+                  that hidden logic readable, portable, and aligned.
+                </p>
+                <div className="mt-7 flex flex-col gap-2.5">
+                  {[
+                    "Structure over sprawl",
+                    "Clarity beats configurability",
+                    "Readable systems scale better",
+                  ].map((point, i) => (
+                    <Reveal delay={0.06 + i * 0.03} key={point} y={8}>
+                      <div className="flex items-center gap-3">
+                        <span className="block h-px w-4 bg-primary/30" />
+                        <span className="text-muted-foreground/60 text-sm">
+                          {point}
+                        </span>
+                      </div>
+                    </Reveal>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+
+            {/* Right — three-tier architecture */}
+            <Reveal delay={0.08} y={24}>
+              <div className="flex flex-col gap-2.5">
+                {TIERS.map((tier, ti) => (
+                  <div key={tier.label}>
+                    <div className="rounded-xl border border-border/40 bg-background/60 p-5 transition-colors hover:border-primary/15">
+                      <div className="flex items-baseline justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-primary/40 text-xs">
+                            {String(ti + 1).padStart(2, "0")}
+                          </span>
+                          <span className="font-semibold text-foreground text-sm">
+                            {tier.label}
+                          </span>
+                        </div>
+                        <span className="text-muted-foreground/40 text-xs">
+                          {tier.desc}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {tier.tokens.map((t) => (
+                          <span
+                            className="rounded-md border border-border/20 bg-card/50 px-2.5 py-1 font-mono text-foreground/50 text-xs"
+                            key={t}
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    {ti < TIERS.length - 1 && (
+                      <div className="flex justify-center py-1">
+                        <ChevronRight className="size-3.5 rotate-90 text-border/60" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Reveal>
           </div>
         </Container>
       </section>
 
-      {/* =============================================================== */}
-      {/* CODE SHOWCASE — the proof                                       */}
-      {/* =============================================================== */}
+      {/* ================================================================ */}
+      {/* 3. FEATURES — hero cards + supporting grid                      */}
+      {/* ================================================================ */}
       <section>
-        <Container maxWidth="narrow" padding="x">
-          <FadeUp>
-            <div className="overflow-hidden rounded-xl border border-border/60 shadow-(--shadow-5)">
-              {/* File tabs */}
-              <div className="flex items-center gap-0 overflow-x-auto border-border/50 border-b bg-card/80">
-                {CSS_FILES.map((file) => (
-                  <div
-                    className={`shrink-0 border-border/30 border-r px-3.5 py-2 font-mono text-[11px] ${
-                      file.active
-                        ? "bg-background/80 text-foreground"
-                        : "text-muted-foreground/50"
-                    }`}
-                    key={file.name}
-                  >
-                    {file.name}
-                  </div>
-                ))}
-                <div className="flex-1" />
-                <Badge
-                  className="mr-3 shrink-0"
-                  size="sm"
-                  variant="orange"
+        <Container
+          className="py-24 sm:py-32 lg:py-40"
+          maxWidth="default"
+          padding="x"
+        >
+          <div className="mx-auto max-w-2xl text-center">
+            <Reveal>
+              <p className="font-mono text-primary text-xs tracking-[0.25em]">
+                FEATURES
+              </p>
+              <h2 className="mt-3 font-extrabold text-8xl text-foreground leading-[1.08] tracking-tight">
+                From raw variables to a usable system
+              </h2>
+            </Reveal>
+            <Reveal delay={0.04}>
+              <p className="mt-4 text-muted-foreground leading-relaxed">
+                Generate, manage, export, and re-import tokens through a
+                workflow built around structure, readability, and control.
+              </p>
+            </Reveal>
+          </div>
+
+          {/* Hero feature cards — horizontal on desktop */}
+          <div className="mt-16 flex flex-col gap-4 sm:mt-20">
+            {HERO_FEATURES.map((feat, fi) => (
+              <Reveal delay={fi * 0.05} key={feat.label}>
+                <div
+                  className={`group overflow-hidden rounded-xl border border-border/40 bg-card/40 transition-colors hover:border-primary/15 hover:bg-card/50 ${
+                    fi % 2 === 0
+                      ? "lg:grid lg:grid-cols-[1fr_1.2fr]"
+                      : "lg:grid lg:grid-cols-[1.2fr_1fr]"
+                  }`}
                 >
-                  Cipher
-                </Badge>
-              </div>
-
-              {/* Code lines */}
-              <div className="bg-card/40 p-4 sm:p-5">
-                {CODE_LINES.map((line, i) => (
-                  <motion.div
-                    className={`font-mono text-[12px] leading-6 sm:text-[13px] sm:leading-7 ${line.dim ? "opacity-40" : ""}`}
-                    initial={reduced ? false : { opacity: 0, x: -8 }}
-                    key={"text" in line ? `t-${line.text}` : `v-${line.token}`}
-                    transition={{
-                      duration: 0.4,
-                      delay: 0.3 + i * 0.035,
-                      ease,
-                    }}
-                    viewport={{ once: true }}
-                    whileInView={{ opacity: line.dim ? 0.4 : 1, x: 0 }}
+                  <div
+                    className={`overflow-hidden border-border/30 border-b lg:border-b-0 ${
+                      fi % 2 === 0
+                        ? "lg:border-r lg:order-first"
+                        : "lg:order-last lg:border-l"
+                    }`}
                   >
-                    {"text" in line ? (
-                      <span className="text-foreground/70">
-                        {"  ".repeat(line.indent)}
-                        {line.text}
-                      </span>
-                    ) : (
-                      <span>
-                        {"  ".repeat(line.indent)}
-                        <span className="text-primary/80">{line.token}</span>
-                        <span className="text-foreground/30">: </span>
-                        <span className="text-foreground/60">{line.value}</span>
-                        <span className="text-foreground/30">;</span>
-                      </span>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </FadeUp>
-        </Container>
-      </section>
-
-      {/* =============================================================== */}
-      {/* WORKFLOW — three cards                                           */}
-      {/* =============================================================== */}
-      <section>
-        <Container maxWidth="default" padding="all">
-          <Section gap={false} removeTopSpacing={false} spacing="generous">
-            <FadeUp>
-              <p className="font-semibold text-primary text-sm uppercase tracking-widest">
-                How it works
-              </p>
-              <h2 className="mt-3 max-w-md font-bold text-[clamp(1.75rem,3.5vw,3rem)] leading-[1.1] tracking-tight">
-                Three steps. Zero config files.
-              </h2>
-            </FadeUp>
-
-            <div className="mt-10 grid gap-5 sm:mt-14 md:grid-cols-3 md:gap-6">
-              {WORKFLOW.map((step, i) => (
-                <FadeUp delay={i * 0.08} key={step.title}>
-                  <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/50 bg-card/40">
-                    {/* Card title bar */}
-                    <div className="flex items-center gap-2 border-border/40 border-b px-3 py-2">
-                      <div className="flex items-center gap-1.5">
-                        <div className="size-2 rounded-full bg-border/80" />
-                        <div className="size-2 rounded-full bg-border/80" />
-                        <div className="size-2 rounded-full bg-border/80" />
-                      </div>
-                      <span className="ml-1 font-mono text-[10px] text-muted-foreground/50">
-                        Cipher — {step.title}
-                      </span>
-                    </div>
-
-                    {/* Visual */}
-                    <div aria-hidden="true">
-                      <step.Visual />
-                    </div>
-
-                    {/* Description */}
-                    <div className="mt-auto border-border/30 border-t p-4">
-                      <h3 className="font-bold text-base text-foreground">
-                        {step.title}
-                      </h3>
-                      <p className="mt-1 text-[13px] text-muted-foreground leading-relaxed">
-                        {step.description}
+                    <img
+                      alt={feat.screenshotAlt}
+                      className="block aspect-video w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] lg:aspect-auto lg:h-full"
+                      height={450}
+                      loading="lazy"
+                      src={feat.screenshot}
+                      width={800}
+                    />
+                  </div>
+                  <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
+                    <div className="flex items-center gap-2">
+                      <feat.icon className="size-4 text-primary/60" />
+                      <p className="font-mono text-primary/80 text-xs tracking-[0.25em]">
+                        {feat.label}
                       </p>
                     </div>
+                    <h3 className="mt-3 font-bold text-foreground text-xl leading-snug tracking-tight sm:text-2xl">
+                      {feat.title}
+                    </h3>
+                    <p className="mt-2.5 max-w-sm text-muted-foreground text-sm leading-relaxed">
+                      {feat.body}
+                    </p>
+                    <ul className="mt-4 space-y-1.5">
+                      {feat.bullets.map((b) => (
+                        <li
+                          className="flex items-center gap-2 text-muted-foreground/60 text-xs"
+                          key={b}
+                        >
+                          <span className="block size-1 shrink-0 rounded-full bg-primary/35" />
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </FadeUp>
-              ))}
-            </div>
-          </Section>
-        </Container>
-      </section>
+                </div>
+              </Reveal>
+            ))}
+          </div>
 
-      {/* =============================================================== */}
-      {/* FEATURES — compact grid                                         */}
-      {/* =============================================================== */}
-      <section className="border-border/40 border-y bg-card/30">
-        <Container maxWidth="default" padding="all">
-          <Section gap={false} removeTopSpacing={false} spacing="generous">
-            <FadeUp>
-              <p className="font-semibold text-primary text-sm uppercase tracking-widest">
-                Why Cipher
-              </p>
-              <h2 className="mt-3 max-w-sm font-bold text-[clamp(1.75rem,3.5vw,3rem)] leading-[1.1] tracking-tight">
-                Not another variable exporter.
-              </h2>
-            </FadeUp>
-
-            <div className="mt-10 grid gap-x-10 gap-y-8 sm:mt-14 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-14">
-              {FEATURES.map((f, i) => (
-                <FadeUp delay={i * 0.04} key={f.title}>
-                  <div className="flex gap-3.5">
-                    <f.icon className="mt-0.5 size-5 shrink-0 text-primary/70" />
-                    <div>
-                      <h3 className="font-semibold text-base text-foreground">
-                        {f.title}
-                      </h3>
-                      <p className="mt-1 text-muted-foreground text-sm leading-relaxed">
-                        {f.description}
+          {/* Supporting feature cards — 3-col grid */}
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            {GRID_FEATURES.map((feat, i) => (
+              <Reveal delay={i * 0.04} key={feat.label}>
+                <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card/40 transition-colors hover:border-primary/15 hover:bg-card/50">
+                  <div className="overflow-hidden border-border/30 border-b">
+                    <img
+                      alt={feat.screenshotAlt}
+                      className="block aspect-4/3 w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                      height={300}
+                      loading="lazy"
+                      src={feat.screenshot}
+                      width={400}
+                    />
+                  </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="flex items-center gap-2">
+                      <feat.icon className="size-3.5 text-primary/60" />
+                      <p className="font-mono text-primary/80 text-xs tracking-[0.25em]">
+                        {feat.label}
                       </p>
                     </div>
-                  </div>
-                </FadeUp>
-              ))}
-            </div>
-          </Section>
-        </Container>
-      </section>
-
-      {/* =============================================================== */}
-      {/* OUTPUT PREVIEW — Figma vars → production CSS                     */}
-      {/* =============================================================== */}
-      <section>
-        <Container maxWidth="default" padding="all">
-          <Section gap={false} removeTopSpacing={false} spacing="default">
-            <FadeUp>
-              <p className="font-semibold text-primary text-sm uppercase tracking-widest">
-                Output
-              </p>
-              <h2 className="mt-3 font-bold text-[clamp(1.75rem,3.5vw,3rem)] leading-[1.1] tracking-tight">
-                Figma variables in. Production CSS out.
-              </h2>
-            </FadeUp>
-
-            <FadeUp delay={0.1}>
-              <div className="mt-6 grid gap-px overflow-hidden rounded-xl border border-border/50 bg-border/30 shadow-(--shadow-3) sm:mt-8 md:grid-cols-2">
-                {/* Left — Figma variables */}
-                <div className="bg-card/60 p-4 sm:p-5">
-                  <div className="mb-3 flex items-center gap-2">
-                    <div className="flex size-5 items-center justify-center rounded bg-foreground/10">
-                      <Layers className="size-3 text-foreground/60" />
-                    </div>
-                    <span className="font-mono font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
-                      Figma Variables
-                    </span>
-                  </div>
-                  <div className="space-y-1">
-                    {FIGMA_VARS.map((v, i) => (
-                      <motion.div
-                        className="flex items-center justify-between rounded-md border border-border/20 bg-background/40 px-2.5 py-1.5"
-                        initial={reduced ? false : { opacity: 0, x: -6 }}
-                        key={v.path}
-                        transition={{
-                          duration: 0.4,
-                          delay: 0.25 + i * 0.04,
-                          ease,
-                        }}
-                        viewport={{ once: true }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                      >
-                        <span className="font-mono text-[11px] text-foreground/70">
-                          {v.path}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          {v.swatch && (
-                            <span
-                              className="size-2.5 rounded-full"
-                              style={{ backgroundColor: v.swatch }}
-                            />
-                          )}
-                          <span className="font-mono text-[10px] text-muted-foreground">
-                            {v.value}
-                          </span>
-                        </span>
-                      </motion.div>
-                    ))}
+                    <h3 className="mt-2 font-semibold text-foreground leading-snug">
+                      {feat.title}
+                    </h3>
+                    <p className="mt-1.5 text-muted-foreground text-sm leading-relaxed">
+                      {feat.body}
+                    </p>
                   </div>
                 </div>
+              </Reveal>
+            ))}
+          </div>
 
-                {/* Right — CSS output */}
-                <div className="bg-card/40 p-4 sm:p-5">
-                  <div className="mb-3 flex items-center gap-2">
-                    <div className="flex size-5 items-center justify-center rounded bg-primary/10">
-                      <Code className="size-3 text-primary/70" />
-                    </div>
-                    <span className="font-mono font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
-                      semantics.css
-                    </span>
-                  </div>
-                  <div className="rounded-md border border-border/20 bg-background/40 p-3">
-                    {CSS_OUTPUT.map((line, i) => (
-                      <motion.div
-                        className="font-mono text-[11px] leading-5 sm:text-[12px] sm:leading-6"
-                        initial={reduced ? false : { opacity: 0, x: -6 }}
-                        key={line || `empty-${i}`}
-                        transition={{
-                          duration: 0.4,
-                          delay: 0.3 + i * 0.04,
-                          ease,
-                        }}
-                        viewport={{ once: true }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                      >
-                        {line.startsWith("  ") ? (
-                          <span>
-                            <span className="text-muted-foreground/60">
-                              {"  "}
-                            </span>
-                            <span className="text-primary/80">
-                              {line.trim().split(":")[0]}
-                            </span>
-                            <span className="text-foreground/30">: </span>
-                            <span className="text-foreground/60">
-                              {line.trim().split(": ").slice(1).join(": ")}
-                            </span>
-                          </span>
-                        ) : (
-                          <span className="text-foreground/50">{line}</span>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
+          {/* Opinionated statement — subtle accent, not heavy */}
+          <Reveal delay={0.06}>
+            <div className="mt-4 rounded-xl border border-border/40 bg-card/30 p-7 sm:p-10 lg:flex lg:items-center lg:gap-14">
+              <div className="shrink-0">
+                <p className="font-mono text-primary/80 text-xs tracking-[0.25em]">
+                  OPINIONATED
+                </p>
+                <h3 className="mt-2.5 font-bold text-foreground text-xl leading-snug tracking-tight sm:text-2xl">
+                  Built with a point of view.
+                </h3>
+              </div>
+              <div className="mt-4 lg:mt-0">
+                <p className="max-w-md text-muted-foreground text-sm leading-relaxed">
+                  Not trying to support every possible workflow equally. Built
+                  around a clearer and more readable way to organize token
+                  systems.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-4 text-muted-foreground/50 text-xs">
+                  <span>Structure over sprawl</span>
+                  <span className="text-border/40">·</span>
+                  <span>Clarity over configurability</span>
+                  <span className="text-border/40">·</span>
+                  <span>System-first workflow</span>
                 </div>
               </div>
-            </FadeUp>
-          </Section>
+            </div>
+          </Reveal>
         </Container>
       </section>
 
-      {/* =============================================================== */}
-      {/* CLOSE — trust + CTA combined                                    */}
-      {/* =============================================================== */}
-      <section className="border-border/40 border-t bg-card/30">
-        <Container maxWidth="default" padding="all">
-          <Section
-            className="flex flex-col items-center text-center"
-            removeTopSpacing={false}
-            spacing="spacious"
-          >
-            <FadeUp>
-              <Lock className="size-6 text-primary/70" />
-              <p className="mt-3 max-w-md text-muted-foreground text-sm leading-relaxed">
-                Runs entirely inside Figma — no servers, no analytics, no data
-                leaves your file. MIT licensed, open source, every operation
-                is undoable.
+      {/* ================================================================ */}
+      {/* 4. OPEN SOURCE — code proof                                     */}
+      {/* ================================================================ */}
+      <section className="border-border/30 border-t bg-card/30">
+        <Container
+          className="py-24 sm:py-32 lg:py-40"
+          maxWidth="default"
+          padding="x"
+        >
+          <div className="grid items-start gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
+            <Reveal>
+              <div className="lg:sticky lg:top-32">
+                <p className="font-mono text-primary text-xs tracking-[0.25em]">
+                  OPEN SOURCE
+                </p>
+                <h2 className="mt-3 font-extrabold text-7xl text-foreground leading-[1.08] tracking-tight">
+                  See the system{" "}
+                  <span className="text-primary">in code.</span>
+                </h2>
+                <p className="mt-4 max-w-md text-muted-foreground leading-relaxed">
+                  An open-source website starter that applies Cipher's token
+                  structure in code. Use it as a reference implementation or a
+                  boilerplate for rapid prototyping.
+                </p>
+
+                <Fade delay={0.12}>
+                  <div className="mt-7">
+                    <a
+                      className="inline-flex items-center gap-2 rounded-lg border border-border/50 bg-card/50 px-4 py-2 font-medium text-foreground text-sm transition-colors hover:bg-card"
+                      href={GITHUB_URL}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      <Code className="size-4" />
+                      View on GitHub
+                      <ExternalLink className="size-3 opacity-40" />
+                    </a>
+                  </div>
+                </Fade>
+
+                <Fade delay={0.16}>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {[
+                      "Cipher tokens in code",
+                      "Reference implementation",
+                      "Design engineer starter",
+                    ].map((tag) => (
+                      <span
+                        className="rounded-md border border-border/30 px-2.5 py-1 font-mono text-muted-foreground/40 text-xs"
+                        key={tag}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </Fade>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.08} y={24}>
+              <CodeBlock reduced={reduced} />
+            </Reveal>
+          </div>
+        </Container>
+      </section>
+
+      {/* ================================================================ */}
+      {/* 5. WHY CIPHER — clean list, no cards                            */}
+      {/* ================================================================ */}
+      <section>
+        <Container
+          className="py-24 sm:py-32 lg:py-40"
+          maxWidth="default"
+          padding="x"
+        >
+          <Reveal>
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="font-mono text-primary text-xs tracking-[0.25em]">
+                WHY CIPHER
               </p>
-            </FadeUp>
-
-            <FadeUp delay={0.06}>
-              <h2 className="mt-10 max-w-xl text-balance font-extrabold text-[clamp(1.75rem,5vw,4rem)] leading-[1.04] tracking-tight sm:mt-14">
-                Stop hand-wiring tokens.{" "}
-                <span className="text-primary">Start shipping.</span>
+              <h2 className="mt-3 font-extrabold text-8xl text-foreground leading-[1.08] tracking-tight">
+                Opinionated systems create clarity.
               </h2>
-            </FadeUp>
+              <p className="mx-auto mt-4 max-w-md text-muted-foreground leading-relaxed">
+                Not another variable exporter. A workflow built around how
+                token logic should actually be organized.
+              </p>
+            </div>
+          </Reveal>
 
-            <FadeUp delay={0.1}>
-              <div className="mt-8 sm:mt-10">
-                <RichButton size="lg">
-                  Install Cipher from Figma
+          <div className="mx-auto mt-14 grid max-w-4xl gap-x-16 gap-y-8 sm:mt-18 sm:grid-cols-2 lg:mt-20">
+            {DIFF.map((d, i) => (
+              <Reveal delay={i * 0.03} key={d.title}>
+                <div className="group flex gap-4">
+                  <div className="shrink-0 pt-0.5">
+                    <d.icon className="size-4 text-primary/40 transition-colors group-hover:text-primary/70" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground text-sm">
+                      {d.title}
+                    </h3>
+                    <p className="mt-1 text-muted-foreground text-sm leading-relaxed">
+                      {d.text}
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ================================================================ */}
+      {/* 6. TRUST + FAQ — side-by-side                                   */}
+      {/* ================================================================ */}
+      <section className="border-border/30 border-y bg-card/30">
+        <Container
+          className="py-24 sm:py-32 lg:py-40"
+          maxWidth="default"
+          padding="x"
+        >
+          <div className="grid gap-14 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
+            {/* Trust signals */}
+            <Reveal>
+              <div className="lg:sticky lg:top-32">
+                <p className="font-mono text-muted-foreground/50 text-xs tracking-[0.25em]">
+                  TRUST
+                </p>
+                <h2 className="mt-3 font-bold text-foreground text-xl tracking-tight">
+                  Built for confidence.
+                </h2>
+                <p className="mt-2.5 text-muted-foreground text-sm leading-relaxed">
+                  Cipher runs locally inside Figma. No external servers, no
+                  telemetry. Currently in beta and free to use.
+                </p>
+                <div className="mt-6 flex flex-col gap-3">
+                  {[
+                    {
+                      icon: Lock,
+                      label: "Local-only",
+                      desc: "Runs entirely inside Figma",
+                    },
+                    {
+                      icon: Zap,
+                      label: "Free during beta",
+                      desc: "No payment required",
+                    },
+                    {
+                      icon: RefreshCw,
+                      label: "Every action undoable",
+                      desc: "Safe to experiment",
+                    },
+                  ].map((item) => (
+                    <div
+                      className="flex items-center gap-3"
+                      key={item.label}
+                    >
+                      <item.icon className="size-3.5 shrink-0 text-primary/40" />
+                      <span className="font-medium text-foreground text-sm">
+                        {item.label}
+                      </span>
+                      <span className="text-muted-foreground/50 text-sm">
+                        — {item.desc}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+
+            {/* FAQ */}
+            <div>
+              <Reveal>
+                <p className="font-mono text-muted-foreground/50 text-xs tracking-[0.25em]">
+                  FAQ
+                </p>
+              </Reveal>
+              <Reveal delay={0.04}>
+                <Accordion className="mt-4">
+                  {FAQ.map((item, i) => (
+                    <AccordionItem key={i} value={`faq-${i}`}>
+                      <AccordionTrigger>{item.q}</AccordionTrigger>
+                      <AccordionContent>{item.a}</AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </Reveal>
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* ================================================================ */}
+      {/* 7. FINAL CTA                                                     */}
+      {/* ================================================================ */}
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute bottom-[-30%] left-1/2 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-primary/6 blur-[180px] contain-strict" />
+        </div>
+
+        <Container
+          className="relative py-28 sm:py-36 lg:py-44"
+          maxWidth="default"
+          padding="x"
+        >
+          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+            <Reveal delay={0.04} y={28}>
+              <h2 className="max-w-xl text-balance font-extrabold text-9xl text-foreground leading-[1.08] tracking-tight">
+                Bring more structure to your{" "}
+                <span className="text-primary">token workflow.</span>
+              </h2>
+            </Reveal>
+
+            <Reveal delay={0.08}>
+              <p className="mt-5 max-w-md text-muted-foreground leading-relaxed">
+                Generate, manage, export, and re-import tokens with a workflow
+                built for readability, consistency, and real product use.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.12} y={12}>
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+                <RichButton
+                  onClick={() =>
+                    window.open(FIGMA_URL, "_blank", "noopener,noreferrer")
+                  }
+                  size="lg"
+                  type="button"
+                >
+                  Install plugin
                   <ArrowRight className="size-4" />
                 </RichButton>
-              </div>
-            </FadeUp>
-
-            <FadeIn delay={0.2}>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-muted-foreground text-xs">
                 <a
-                  className="relative rounded-sm px-2 py-2 transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  href="https://github.com/atom63/cipher"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border/50 bg-card/50 px-5 py-2.5 font-medium text-foreground text-sm transition-colors hover:bg-card"
+                  href="/docs"
+                >
+                  <BookOpen className="size-4" />
+                  View docs
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 rounded-lg border border-border/50 bg-card/50 px-5 py-2.5 font-medium text-foreground text-sm transition-colors hover:bg-card"
+                  href={GITHUB_URL}
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  GitHub
-                </a>
-                <span aria-hidden="true" className="text-border">
-                  ·
-                </span>
-                <span className="px-2 py-2">MIT License</span>
-                <span aria-hidden="true" className="text-border">
-                  ·
-                </span>
-                <a
-                  className="relative rounded-sm px-2 py-2 transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  href="mailto:hello@atom63.com"
-                >
-                  Contact
+                  <Code className="size-4" />
+                  Boilerplate
                 </a>
               </div>
-            </FadeIn>
-          </Section>
+            </Reveal>
+
+            <Fade delay={0.18}>
+              <div className="mt-8 flex items-center justify-center gap-x-4 text-muted-foreground/40 text-sm">
+                <span>MIT License</span>
+                <span className="text-border/40">·</span>
+                <span>Free & Open Source</span>
+              </div>
+            </Fade>
+          </div>
         </Container>
       </section>
     </DefaultLayout>

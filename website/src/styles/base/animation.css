@@ -45,10 +45,26 @@
   }
 }
 
-
 @theme inline {
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  --animate-marquee: marquee var(--duration) linear infinite;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+
+  --animate-shine: shine var(--duration) infinite linear;
+
+  --animate-orbit: orbit calc(var(--duration) * 1s) linear infinite;
+
+  --animate-shiny-text: shiny-text-alt 2s infinite;
+
+  --animate-indeterminate: indeterminate 2s linear infinite;
+
+  --animate-thinking: thinking var(--duration) infinite linear;
+
+  --animate-radial: radial var(--duration) infinite linear reverse;
+
+  --animate-repeating-linear: repeating-linear var(--duration) infinite linear;
 
   @keyframes accordion-down {
     from {
@@ -68,9 +84,6 @@
     }
   }
 
-  --animate-marquee: marquee var(--duration) linear infinite;
-  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
-
   @keyframes marquee {
     0% {
       transform: translateX(0);
@@ -88,8 +101,6 @@
     }
   }
 
-  --animate-shine: shine var(--duration) infinite linear;
-
   @keyframes shine {
     0% {
       background-position: 0% 0%;
@@ -102,8 +113,6 @@
     }
   }
 
-  --animate-orbit: orbit calc(var(--duration) * 1s) linear infinite;
-
   @keyframes orbit {
     0% {
       transform: rotate(calc(var(--angle) * 1deg))
@@ -115,8 +124,6 @@
         rotate(calc((var(--angle) * -1deg) - 360deg));
     }
   }
-
-  --animate-shiny-text: shiny-text-alt 2s infinite;
   @keyframes shiny-text {
     0%,
     90%,
@@ -137,8 +144,6 @@
       background-position: calc(100% + var(--shiny-width)) 0;
     }
   }
-
-  --animate-indeterminate: indeterminate 2s linear infinite;
   @keyframes indeterminate {
     0% {
       transform: translateX(-100%);
@@ -150,8 +155,6 @@
       transform: translateX(100%);
     }
   }
-
-  --animate-thinking: thinking var(--duration) infinite linear;
   @keyframes thinking {
     0% {
       background-position: 0% 0%;
@@ -160,8 +163,6 @@
       background-position: -200% 200%;
     }
   }
-
-  --animate-radial: radial var(--duration) infinite linear reverse;
   @keyframes radial {
     0% {
       background-position: -200% -200%;
@@ -176,8 +177,6 @@
       background-size: 200% 200%;
     }
   }
-
-  --animate-repeating-linear: repeating-linear var(--duration) infinite linear;
   @keyframes repeating-linear {
     0% {
       background-position: 0% 0%;

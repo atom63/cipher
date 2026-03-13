@@ -1,5 +1,5 @@
-import { memo, useCallback, useEffect, useState } from 'react'
-import { mdxStyles } from '@/components/common/mdx/mdx-styles'
+import { memo, useCallback, useEffect, useState } from "react";
+import { mdxStyles } from "@/components/common/mdx/mdx-styles";
 import {
   Carousel,
   type CarouselApi,
@@ -7,10 +7,10 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from '@/components/ui/carousel'
-import Image from '@/components/ui/image'
-import { cn } from '@/lib/utils'
-import { MediaCaption } from './media-caption'
+} from "@/components/ui/carousel";
+import Image from "@/components/ui/image";
+import { cn } from "@/lib/utils";
+import { MediaCaption } from "./media-caption";
 
 /**
  * Image Carousel Block Component
@@ -49,106 +49,114 @@ import { MediaCaption } from './media-caption'
  */
 
 // Types
-type SlidesPerView = 1 | 2 | 3 | 4
-type AspectRatio = '1/1' | '4/3' | '3/4' | '16/9' | '9/16'
+type SlidesPerView = 1 | 2 | 3 | 4;
+type AspectRatio = "1/1" | "4/3" | "3/4" | "16/9" | "9/16";
 
 // Constants
 const SLIDE_BASIS_CLASSES: Record<SlidesPerView, string> = {
-  1: 'basis-full',
-  2: 'basis-1/2',
-  3: 'basis-1/3',
-  4: 'basis-1/4',
-} as const
+  1: "basis-full",
+  2: "basis-1/2",
+  3: "basis-1/3",
+  4: "basis-1/4",
+} as const;
 
-const DEFAULT_AUTOPLAY_DELAY = 3000
+const DEFAULT_AUTOPLAY_DELAY = 3000;
 
 // Interfaces
 export interface CarouselImage {
-  alt: string
-  caption?: string
-  src: string
+  alt: string;
+  caption?: string;
+  src: string;
 }
 
 export interface ImageCarouselBlockProps {
-  aspectRatio?: AspectRatio
-  autoplay?: boolean
-  autoplayDelay?: number
-  bordered?: boolean
-  caption?: string
-  className?: string
-  cursorIndicator?: boolean
-  hideArrows?: boolean
-  images: CarouselImage[]
-  showDots?: boolean
-  showThumbnails?: boolean
-  slidesPerView?: SlidesPerView
+  aspectRatio?: AspectRatio;
+  autoplay?: boolean;
+  autoplayDelay?: number;
+  bordered?: boolean;
+  caption?: string;
+  className?: string;
+  cursorIndicator?: boolean;
+  hideArrows?: boolean;
+  images: CarouselImage[];
+  showDots?: boolean;
+  showThumbnails?: boolean;
+  slidesPerView?: SlidesPerView;
 }
 
 // Helper Functions
 const getCarouselContentGap = (slidesPerView: SlidesPerView): string => {
   if (slidesPerView > 2) {
-    return '-ml-0 gap-1'
+    return "-ml-0 gap-1";
   }
   if (slidesPerView > 1) {
-    return '-ml-0 gap-2'
+    return "-ml-0 gap-2";
   }
-  return ''
-}
+  return "";
+};
 
-const calculateTotalPages = (imageCount: number, slidesPerView: SlidesPerView): number =>
-  Math.ceil(imageCount / slidesPerView)
+const calculateTotalPages = (
+  imageCount: number,
+  slidesPerView: SlidesPerView
+): number => Math.ceil(imageCount / slidesPerView);
 
-const getCurrentPage = (current: number, slidesPerView: SlidesPerView): number =>
-  Math.floor((current - 1) / slidesPerView)
+const getCurrentPage = (
+  current: number,
+  slidesPerView: SlidesPerView
+): number => Math.floor((current - 1) / slidesPerView);
 
 // Hooks
 const useCarouselApi = () => {
-  const [api, setApi] = useState<CarouselApi>()
-  const [current, setCurrent] = useState(0)
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
 
   useEffect(() => {
     if (!api) {
-      return
+      return;
     }
 
-    setCurrent(api.selectedScrollSnap() + 1)
+    setCurrent(api.selectedScrollSnap() + 1);
 
     const handleSelect = () => {
-      setCurrent(api.selectedScrollSnap() + 1)
-    }
+      setCurrent(api.selectedScrollSnap() + 1);
+    };
 
-    api.on('select', handleSelect)
+    api.on("select", handleSelect);
 
     return () => {
-      api.off('select', handleSelect)
-    }
-  }, [api])
+      api.off("select", handleSelect);
+    };
+  }, [api]);
 
-  return { api, setApi, current }
-}
+  return { api, setApi, current };
+};
 
-const useAutoplay = (api: CarouselApi | undefined, enabled: boolean, delay: number) => {
+const useAutoplay = (
+  api: CarouselApi | undefined,
+  enabled: boolean,
+  delay: number
+) => {
   useEffect(() => {
     if (!(api && enabled)) {
-      return
+      return;
     }
 
     const interval = setInterval(() => {
       if (api.canScrollNext()) {
-        api.scrollNext()
+        api.scrollNext();
       } else {
-        api.scrollTo(0)
+        api.scrollTo(0);
       }
-    }, delay)
+    }, delay);
 
-    return () => clearInterval(interval)
-  }, [api, enabled, delay])
-}
+    return () => clearInterval(interval);
+  }, [api, enabled, delay]);
+};
 
 // Main Component
 const ImageCarouselBlockComponent = ({
   images,
-  aspectRatio = '16/9',
+  aspectRatio = "16/9",
   className,
   showThumbnails = false,
   showDots = false,
@@ -159,62 +167,75 @@ const ImageCarouselBlockComponent = ({
   hideArrows = false,
   bordered = true,
 }: ImageCarouselBlockProps) => {
-  const { api, setApi, current } = useCarouselApi()
+  const { api, setApi, current } = useCarouselApi();
 
-  useAutoplay(api, autoplay, autoplayDelay)
+  useAutoplay(api, autoplay, autoplayDelay);
 
   const handlePageSelect = useCallback(
     (pageIndex: number) => {
-      api?.scrollTo(pageIndex * slidesPerView)
+      api?.scrollTo(pageIndex * slidesPerView);
     },
     [api, slidesPerView]
-  )
+  );
 
   const handleThumbnailClick = useCallback(
     (index: number) => {
-      api?.scrollTo(index)
+      api?.scrollTo(index);
     },
     [api]
-  )
+  );
 
   // Handle empty state
   if (!images || images.length === 0) {
     return (
       <div className={cn(mdxStyles.spacing.media, className)}>
         <div className="flex aspect-video items-center justify-center rounded-lg border border-border bg-muted p-8">
-          <span className="text-muted-foreground text-sm">No images provided for carousel</span>
+          <span className="text-muted-foreground text-sm">
+            No images provided for carousel
+          </span>
         </div>
         {caption && <MediaCaption>{caption}</MediaCaption>}
       </div>
-    )
+    );
   }
 
   // Single image - render as simple Image with caption
   if (images.length === 1) {
-    const image = images[0]
+    const image = images[0];
     if (!image) {
-      return null
+      return null;
     }
     return (
       <figure className={cn(mdxStyles.spacing.media, className)}>
-        <Image alt={image.alt} aspectRatio={aspectRatio} className="w-full" src={image.src} />
-        {(image.caption || caption) && <MediaCaption>{image.caption || caption}</MediaCaption>}
+        <Image
+          alt={image.alt}
+          aspectRatio={aspectRatio}
+          className="w-full"
+          src={image.src}
+        />
+        {(image.caption || caption) && (
+          <MediaCaption>{image.caption || caption}</MediaCaption>
+        )}
       </figure>
-    )
+    );
   }
 
-  const totalPages = calculateTotalPages(images.length, slidesPerView)
-  const currentPage = getCurrentPage(current, slidesPerView)
-  const shouldShowDots = showDots && images.length > slidesPerView
-  const shouldShowThumbnails = showThumbnails && images.length > 1
+  const totalPages = calculateTotalPages(images.length, slidesPerView);
+  const currentPage = getCurrentPage(current, slidesPerView);
+  const shouldShowDots = showDots && images.length > slidesPerView;
+  const shouldShowThumbnails = showThumbnails && images.length > 1;
 
   return (
     <figure className={cn(mdxStyles.spacing.media, className)}>
-      <div className={cn(bordered && 'overflow-hidden rounded-lg border border-border')}>
+      <div
+        className={cn(
+          bordered && "overflow-hidden rounded-lg border border-border"
+        )}
+      >
         <Carousel
           className="w-full"
           opts={{
-            align: 'start',
+            align: "start",
             loop: true,
             slidesToScroll: slidesPerView > 1 ? slidesPerView : 1,
           }}
@@ -223,7 +244,10 @@ const ImageCarouselBlockComponent = ({
           <CarouselContent className={getCarouselContentGap(slidesPerView)}>
             {images.map((image, index) => (
               <CarouselItem
-                className={cn(SLIDE_BASIS_CLASSES[slidesPerView], slidesPerView > 1 && 'px-0')}
+                className={cn(
+                  SLIDE_BASIS_CLASSES[slidesPerView],
+                  slidesPerView > 1 && "px-0"
+                )}
                 key={`${image.src}-${index}`}
               >
                 <div className="relative">
@@ -256,8 +280,10 @@ const ImageCarouselBlockComponent = ({
                 <button
                   aria-label={`Go to page ${index + 1}`}
                   className={cn(
-                    'size-2 rounded-full mix-blend-difference transition-all duration-200',
-                    currentPage === index ? 'scale-125 bg-white' : 'bg-white/50 hover:bg-white/70'
+                    "size-2 rounded-full mix-blend-difference transition-all duration-200",
+                    currentPage === index
+                      ? "scale-125 bg-white"
+                      : "bg-white/50 hover:bg-white/70"
                   )}
                   key={`dot-page-${index}-${images.length}`}
                   onClick={() => handlePageSelect(index)}
@@ -275,10 +301,10 @@ const ImageCarouselBlockComponent = ({
             <button
               aria-label={`View image ${index + 1}: ${image.alt}`}
               className={cn(
-                'relative aspect-square overflow-hidden rounded border-2 transition-all duration-200',
+                "relative aspect-square overflow-hidden rounded border-2 transition-all duration-200",
                 current === index + 1
-                  ? 'scale-105 border-primary'
-                  : 'border-muted hover:border-muted-foreground/50'
+                  ? "scale-105 border-primary"
+                  : "border-muted hover:border-muted-foreground/50"
               )}
               key={`thumb-${image.src}-${index}`}
               onClick={() => handleThumbnailClick(index)}
@@ -297,7 +323,7 @@ const ImageCarouselBlockComponent = ({
 
       {caption && <MediaCaption>{caption}</MediaCaption>}
     </figure>
-  )
-}
+  );
+};
 
-export const ImageCarouselBlock = memo(ImageCarouselBlockComponent)
+export const ImageCarouselBlock = memo(ImageCarouselBlockComponent);

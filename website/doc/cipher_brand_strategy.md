@@ -6,13 +6,13 @@ This document defines the **brand, narrative, and messaging foundation** for **C
 
 Its purpose is to guide how Cipher is described across:
 
-* plugin marketplace copy
-* website copy
-* feature descriptions
-* launch messaging
-* marketing assets
-* product UI language
-* documentation and supporting content
+- plugin marketplace copy
+- website copy
+- feature descriptions
+- launch messaging
+- marketing assets
+- product UI language
+- documentation and supporting content
 
 It also provides strategic direction for the broader identity system, including the logo, visual language, and product presentation. But its primary role is not to act as a formal corporate brand strategy. Instead, it is a **practical source of truth for product positioning, messaging, and content drafting**.
 
@@ -28,27 +28,35 @@ That idea should not be treated as a disclaimer. It is a core part of the produc
 
 The purpose of this document is to make content creation for Cipher more consistent and more intentional.
 
+### How to use this document
+
+Use this strategy in three passes when writing copy:
+
+1. **Positioning pass** — Confirm category framing, core claim, and audience fit.
+2. **Messaging pass** — Select descriptors, headline direction, and feature framing language.
+3. **Quality pass** — Remove hype, validate claim safety, and enforce terminology consistency.
+
 It should help answer questions like:
 
-* How should Cipher describe itself?
-* What makes it different from a generic plugin utility?
-* How should it talk about its features?
-* How should it explain being opinionated?
-* What kind of language should repeat across the website and product?
-* What should the tone feel like in launch copy and marketing language?
-* What claims should the brand avoid?
+- How should Cipher describe itself?
+- What makes it different from a generic plugin utility?
+- How should it talk about its features?
+- How should it explain being opinionated?
+- What kind of language should repeat across the website and product?
+- What should the tone feel like in launch copy and marketing language?
+- What claims should the brand avoid?
 
 This document should make it easier to write:
 
-* homepage headlines
-* plugin descriptions
-* feature section copy
-* FAQs
-* launch posts
-* teaser language
-* product summaries
-* UI labels and microcopy
-* documentation intros
+- homepage headlines
+- plugin descriptions
+- feature section copy
+- FAQs
+- launch posts
+- teaser language
+- product summaries
+- UI labels and microcopy
+- documentation intros
 
 In short, this is not only a brand doc. It is a **content drafting foundation**.
 
@@ -74,26 +82,26 @@ Not every tool needs to be infinitely flexible to be valuable. In many cases, a 
 
 ## 3. Product Definition
 
-**Cipher** is a Figma plugin for **importing, exporting, and syncing design tokens**.
+**Cipher** is a Figma plugin for **importing, exporting, and synchronizing design tokens**.
 
 At a functional level, it helps teams:
 
-* bring token data into Figma
-* push token data out to other systems
-* manage variables and styles more efficiently
-* reduce fragmentation across token sources
-* maintain consistency between design and code
-* support a more reliable source of truth
+- bring token data into Figma
+- push token data out to other systems
+- manage variables and styles more efficiently
+- reduce fragmentation across token sources
+- maintain consistency between design and code
+- support a more reliable source of truth
 
 At a product philosophy level, Cipher is not trying to be a universal tool for every team and every workflow.
 
 It is:
 
-* structured
-* deliberate
-* workflow-driven
-* system-first
-* opinionated by design
+- structured
+- deliberate
+- workflow-driven
+- system-first
+- opinionated by design
 
 The product should be described as:
 
@@ -123,12 +131,23 @@ This means Cipher should not only describe what it does. It should also describe
 
 The messaging should consistently communicate that Cipher is for people who value:
 
-* system clarity
-* reliable workflows
-* readable structure
-* better alignment between design and code
-* less manual maintenance
-* stronger token discipline
+- system clarity
+- reliable workflows
+- readable structure
+- better alignment between design and code
+- less manual maintenance
+- stronger token discipline
+
+### Terminology standards (apply everywhere)
+
+Use these terms consistently across website, plugin listing, and docs:
+
+- **token** = design token data (import/export context)
+- **variable** = Figma variable (in-product management context)
+- **collection** = Figma variable collection
+- **mode** = value mode within a collection (for example, Light and Dark)
+- **synchronize** = preferred long form in strategy copy
+- **sync** = acceptable short form in UI labels and tight marketing surfaces
 
 ---
 
@@ -180,20 +199,20 @@ Cipher acts as a **translation and synchronization layer** for design systems, s
 
 Cipher should not be framed as:
 
-* a creativity toy
-* a generic plugin utility
-* an AI assistant
-* a visual playground
-* an all-in-one system for everyone
+- a creativity toy
+- a generic plugin utility
+- an AI assistant
+- a visual playground
+- an all-in-one system for everyone
 
 It belongs in the territory of:
 
-* design system infrastructure
-* token management
-* structured workflows
-* system clarity
-* designer-developer workflow tooling
-* opinionated productivity tools
+- design system infrastructure
+- token management
+- structured workflows
+- system clarity
+- designer-developer workflow tooling
+- opinionated productivity tools
 
 ---
 
@@ -856,14 +875,14 @@ Great interfaces depend on systems beneath the surface. Cipher helps teams decod
 
 Based on this foundation, the next content and design stages should be:
 
-1. define a homepage messaging structure
-2. write a plugin marketplace description in short, medium, and full versions
-3. draft a feature framing system for the core capabilities
-4. develop a hero headline and supporting copy direction
-5. create a small launch messaging set for social and product release
-6. define UI naming and microcopy rules for the plugin
-7. explore logo directions based on structure, translation, and alignment
-8. build a lightweight visual system for web and product presentation
+1. Define a homepage messaging structure.
+2. Write plugin marketplace descriptions in short, medium, and full versions.
+3. Draft a feature framing system for core capabilities.
+4. Develop hero headline directions and supporting copy.
+5. Create a launch messaging set for social and product release.
+6. Define UI naming and microcopy rules for the plugin.
+7. Explore logo directions based on structure, translation, and alignment.
+8. Build a lightweight visual system for web and product presentation.
 
 ---
 
