@@ -8,6 +8,8 @@
 
 /// <reference types="@figma/plugin-typings" />
 
+const DEBUG = false;
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -204,7 +206,7 @@ export function logBinding(
 	context: string,
 	binding: BoundVariableInfo | null,
 ): void {
-	if (binding) {
+	if (binding && DEBUG) {
 		console.log(`🔗 ${context} → variable: ${binding.variableName}`);
 	}
 }
