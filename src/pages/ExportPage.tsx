@@ -192,18 +192,18 @@ export function ExportPage() {
 	// Loading
 	if (loading) {
 		return (
-			<div className="page-content">
+			<PageLayout>
 				<LoadingState message="Loading collections…" />
-			</div>
+			</PageLayout>
 		);
 	}
 
 	// Exporting
 	if (view === "exporting") {
 		return (
-			<div className="page-content">
+			<PageLayout>
 				<LoadingState message="Exporting…" />
-			</div>
+			</PageLayout>
 		);
 	}
 
@@ -292,7 +292,7 @@ export function ExportPage() {
 	// Success (JSON export)
 	if (view === "success" && exportResult) {
 		return (
-			<div className="page-content">
+			<PageLayout>
 				<div className={styles.successView}>
 					<div className={styles.successIcon}>
 						<Check size={24} />
@@ -331,25 +331,27 @@ export function ExportPage() {
 						</Button>
 					</div>
 				</div>
-			</div>
+			</PageLayout>
 		);
 	}
 
 	// No collections
 	if (collections.length === 0) {
 		return (
-			<div className="page-content">
-				<SectionHeader
-					description="Export your design tokens as JSON or CSS"
-					title="Export"
-					variant="primary"
-				/>
-				<EmptyState
-					description="This file has no variable collections to export."
-					icon={<CircleOff size={32} />}
-					title="No Variable Collections"
-				/>
-			</div>
+			<PageLayout>
+				<PageBody>
+					<SectionHeader
+						description="Export your design tokens as JSON or CSS"
+						title="Export"
+						variant="primary"
+					/>
+					<EmptyState
+						description="This file has no variable collections to export."
+						icon={<CircleOff size={32} />}
+						title="No Variable Collections"
+					/>
+				</PageBody>
+			</PageLayout>
 		);
 	}
 

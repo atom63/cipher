@@ -1,3 +1,4 @@
+import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import {
 	CollectionSelector,
@@ -6,7 +7,10 @@ import {
 	SuccessView,
 	TokenTable,
 } from "../components/import";
+import type { FileImportHandle } from "../components/import";
+import { PageBody, PageFooter, PageLayout } from "../components/layout";
 import {
+	Button,
 	Frame,
 	FramePanel,
 	SectionHeader,
@@ -34,6 +38,7 @@ type ImportViewState =
 	| "success";
 
 export function ImportPage() {
+	const fileImportRef = useRef<FileImportHandle>(null);
 	const [view, setView] = useState<ImportViewState>("upload");
 	const [tokens, setTokens] = useState<DesignToken[]>([]);
 	const [isCipherExport, setIsCipherExport] = useState(false);
@@ -269,7 +274,7 @@ export function ImportPage() {
 
 	const handleImportMore = () => resetState();
 
-	// Views with their own PageLayout render directly (no page-content wrapper)
+	// ---- Collection ----
 	if (view === "collection") {
 		return (
 			<CollectionSelector
@@ -281,6 +286,7 @@ export function ImportPage() {
 		);
 	}
 
+	// ---- Review ----
 	if (view === "review") {
 		return (
 			<TokenTable
@@ -294,28 +300,19 @@ export function ImportPage() {
 		);
 	}
 
-	// Simple views use page-content wrapper
-	return (
-		<div className="page-content">
-			{view === "upload" && (
-				<>
-					<SectionHeader
-						description="Import design tokens from JSON or CSS into Figma variables"
-						title="Import"
-						variant="primary"
-					/>
+	// ---- Progress ----
+	if (view === "progress") {
+		return (
+			<PageLayout>
+				<ProgressView />
+			</PageLayout>
+		);
+	}
 
-					<Frame>
-						<FramePanel>
-							<FileImport onTokensParsed={handleTokensParsed} />
-						</FramePanel>
-					</Frame>
-				</>
-			)}
-
-			{view === "progress" && <ProgressView />}
-
-			{view === "success" && (
+	// ---- Success ----
+	if (view === "success") {
+		return (
+			<PageLayout>
 				<SuccessView
 					changes={result.changes}
 					errors={result.errors}
@@ -327,7 +324,36 @@ export function ImportPage() {
 					success={result.success}
 					undoData={result.undoData}
 				/>
-			)}
-		</div>
+			</PageLayout>
+		);
+	}
+
+	// ---- Upload (default) ----
+	return (
+		<PageLayout>
+			<PageBody>
+				<SectionHeader
+					description="Import design tokens from JSON or CSS into Figma variables"
+					title="Import"
+					variant="primary"
+				/>
+
+				<Frame>
+					<FramePanel>
+						<FileImport ref={fileImportRef} onTokensParsed={handleTokensParsed} />
+					</FramePanel>
+				</Frame>
+			</PageBody>
+
+			<PageFooter>
+				<Button
+					onClick={() => fileImportRef.current?.openFilePicker()}
+					variant="primary"
+				>
+					<Upload size={14} />
+					Upload File
+				</Button>
+			</PageFooter>
+		</PageLayout>
 	);
 }

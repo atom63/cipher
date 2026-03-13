@@ -1,12 +1,16 @@
 import { FolderOpen } from "lucide-react";
 import type React from "react";
-import { useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { usePostMessage } from "../../hooks/useFigmaMessage";
 import type { ParsedTokens } from "../../types/tokens";
 import { getErrorMessage } from "../../utils/error-handler";
 import { readZip } from "../../utils/zip-read";
 import { LoadingState, useToast } from "../ui";
 import styles from "./FileImport.module.css";
+
+export interface FileImportHandle {
+	openFilePicker: () => void;
+}
 
 interface FileImportProps {
 	onTokensParsed: (tokens: ParsedTokens) => void;
@@ -90,14 +94,17 @@ async function getDroppedFiles(e: React.DragEvent): Promise<File[]> {
 	return Array.from(e.dataTransfer.files);
 }
 
-export function FileImport({
-	onTokensParsed: _onTokensParsed,
-}: FileImportProps) {
+export const FileImport = forwardRef<FileImportHandle, FileImportProps>(
+	function FileImport({ onTokensParsed: _onTokensParsed }, ref) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const { showError } = useToast();
 	const postMessage = usePostMessage();
+
+	useImperativeHandle(ref, () => ({
+		openFilePicker: () => fileInputRef.current?.click(),
+	}));
 
 	const sendToParse = (content: string, format: "json" | "css") => {
 		if (format === "json") {
@@ -287,4 +294,4 @@ export function FileImport({
 			</div>
 		</div>
 	);
-}
+});
