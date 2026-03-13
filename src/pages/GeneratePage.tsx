@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Dices, RefreshCw, Trash2, Wand2 } from "lucide-react";
+import { Check, ChevronDown, Dices, RefreshCw, Wand2 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
@@ -14,8 +14,8 @@ import {
 } from "../components/ui";
 import { Button } from "../components/ui/Button";
 import { Checkbox, CheckboxWithLabel } from "../components/ui/Checkbox";
-import { Dialog, DialogActions } from "../components/ui/Dialog";
 import { CopyButton } from "../components/ui/CopyButton";
+import { Dialog, DialogActions } from "../components/ui/Dialog";
 import { Input } from "../components/ui/Input";
 import { NumberField } from "../components/ui/NumberField";
 import { oklchToRgb, rgbToHex, SHADE_STEPS } from "../generators/color-scale";
@@ -414,7 +414,7 @@ export function GeneratePage() {
 					setView("config");
 				}
 			},
-			[showError, postMessage],
+			[showError],
 		),
 	);
 
@@ -487,7 +487,7 @@ export function GeneratePage() {
 
 	// Compute orphaned variables (exist in Figma but not in generated set)
 	const orphanedVariables = useMemo(() => {
-		if (!isUpdate || !generated || existingVariables.length === 0) return [];
+		if (!(isUpdate && generated ) || existingVariables.length === 0) return [];
 
 		const MANAGED_COLLECTIONS = new Set(["primitives", "aliases", "semantics", "responsive"]);
 
@@ -511,7 +511,7 @@ export function GeneratePage() {
 
 	// Compute orphaned styles (exist in Figma but not in generated set)
 	const orphanedStyles = useMemo(() => {
-		if (!isUpdate || !generated || existingStyles.length === 0) return [];
+		if (!(isUpdate && generated ) || existingStyles.length === 0) return [];
 
 		const generatedStyleNames = collectGeneratedStyleNames(generated.styles);
 

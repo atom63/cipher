@@ -1,5 +1,5 @@
 import { forwardRef, useMemo } from "react";
-import { type Token, tokenizeCSS } from "../../../utils/css-highlight";
+import { tokenizeCSS } from "../../../utils/css-highlight";
 import styles from "./CodeBlock.module.css";
 
 interface CodeBlockProps extends React.HTMLAttributes<HTMLPreElement> {

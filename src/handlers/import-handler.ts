@@ -727,20 +727,20 @@ async function rebuildResponsiveFromPrimitives(
 			let variable: Variable | undefined;
 			const existing = (await figma.variables
 				.getLocalVariablesAsync())
-				.find((v) => v.name === varName && v.variableCollectionId === collection!.id);
+				.find((v) => v.name === varName && v.variableCollectionId === collection?.id);
 
 			if (existing) {
 				variable = existing;
 			} else {
 				try {
-					variable = figma.variables.createVariable(varName, collection!, "FLOAT");
+					variable = figma.variables.createVariable(varName, collection as VariableCollection, "FLOAT");
 					undoEntries.push({ variableId: variable.id, action: "created" });
 					results.success++;
 					results.changes.push({
 						name: varName,
 						type: "reference",
 						action: "created",
-						newValue: `responsive alias`,
+						newValue: "responsive alias",
 					});
 				} catch (error) {
 					debug(`⚠️ Failed to create responsive variable: ${varName}`, error);
@@ -790,11 +790,11 @@ async function rebuildResponsiveFromPrimitives(
 	if (hasScreenPrimitives) {
 		let screenVar = (await figma.variables
 			.getLocalVariablesAsync())
-			.find((v) => v.name === "viewport/screen" && v.variableCollectionId === collection!.id);
+			.find((v) => v.name === "viewport/screen" && v.variableCollectionId === collection?.id);
 
 		if (!screenVar) {
 			try {
-				screenVar = figma.variables.createVariable("viewport/screen", collection!, "FLOAT");
+				screenVar = figma.variables.createVariable("viewport/screen", collection as VariableCollection, "FLOAT");
 				undoEntries.push({ variableId: screenVar.id, action: "created" });
 				results.success++;
 				results.changes.push({

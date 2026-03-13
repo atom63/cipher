@@ -148,7 +148,7 @@ describe("computeTypescale", () => {
 		const large = computeTypescale({ ...DEFAULT_TYPESCALE, ratio: "golden-ratio" });
 		const smallXl = small.find((s) => s.name === "xl");
 		const largeXl = large.find((s) => s.name === "xl");
-		expect(largeXl!.size).toBeGreaterThan(smallXl!.size);
+		expect(largeXl?.size).toBeGreaterThan(smallXl?.size as number);
 	});
 
 	test("custom stepsUp/stepsDown adjust step count", () => {

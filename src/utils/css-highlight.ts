@@ -88,7 +88,7 @@ export function tokenizeCSS(css: string): Token[] {
 			let j = i + 1;
 			while (j < len && /[\w-]/.test(css[j])) j++;
 			// Include the keyword after @, then any following text up to { or ;
-			const keyword = css.slice(i, j);
+			const _keyword = css.slice(i, j);
 			// Grab rest of at-rule params (e.g. "inline" after "@theme")
 			while (j < len && css[j] !== "{" && css[j] !== ";") j++;
 			tokens.push({ text: css.slice(i, j), type: "atrule" });
@@ -164,7 +164,6 @@ function tokenizeValue(value: string, tokens: Token[]): void {
 	let lastIndex = 0;
 	let match: RegExpExecArray | null;
 
-	// biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec loop
 	while ((match = funcRegex.exec(value)) !== null) {
 		// Text before function
 		if (match.index > lastIndex) {

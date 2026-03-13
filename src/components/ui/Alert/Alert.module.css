@@ -10,11 +10,11 @@
   line-height: 1.5;
   border: 1px solid;
   border-radius: var(--radius-md);
-  animation: alert-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
   transition:
     background-color var(--transition),
     border-color var(--transition),
     box-shadow var(--transition);
+  animation: alert-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* --- Icon --- */

@@ -32,7 +32,7 @@ figma.showUI(__html__, {
 // With "documentAccess": "dynamic-page" in manifest, the plugin can only
 // see the current page by default. Load all pages so variables, styles,
 // and cross-page nodes are accessible.
-figma.loadAllPagesAsync();
+const pagesReady = figma.loadAllPagesAsync();
 
 // Group styles by root folder, returning name + count pairs
 function groupStylesByRoot(
@@ -71,6 +71,9 @@ async function saveSettings(
 
 // Handle messages from the UI
 figma.ui.onmessage = async (msg: UIToMainMessage) => {
+	// Ensure all pages are loaded before handling any message
+	await pagesReady;
+
 	switch (msg.type) {
 		case "parse-tokens": {
 			const { content, format } = msg.data;
@@ -1798,11 +1801,11 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				existingValues: Record<string, string>;
 				existingId: string;
 			}[] = [];
-			let cssToFigmaNameMap: Record<string, string> = {};
+			const cssToFigmaNameMap: Record<string, string> = {};
 
 			// Find the target collection(s)
 			const allCollections = await figma.variables.getLocalVariableCollectionsAsync();
-			const targetCollections = allCollections.filter((c) => {
+			const _targetCollections = allCollections.filter((c) => {
 				if (selectedCollections && selectedCollections.length > 0) {
 					return selectedCollections.includes(c.name);
 				}

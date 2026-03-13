@@ -1,19 +1,11 @@
 import { Check, Copy } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { copyText } from "../../../utils/clipboard";
-import { useToast } from "../Toast";
 import { Button } from "../Button";
+import { useToast } from "../Toast";
 import styles from "./CopyButton.module.css";
 
 interface CopyButtonProps {
-	/** The text to copy, or a function that returns it (for lazy evaluation) */
-	text: string | (() => string);
-	/** Toast label shown after copying (e.g. "CSS", "all CSS") */
-	label?: string;
-	/** Button variant — defaults to ghost */
-	variant?: "ghost" | "outline" | "soft";
-	/** Button size — defaults to md */
-	size?: "sm" | "md" | "icon-xs" | "icon-sm" | "icon";
 	/** Optional children for labeled buttons. If omitted, renders icon-only. */
 	children?: React.ReactNode;
 	/** Additional class name */
@@ -22,8 +14,16 @@ interface CopyButtonProps {
 	disabled?: boolean;
 	/** Icon size in px */
 	iconSize?: number;
+	/** Toast label shown after copying (e.g. "CSS", "all CSS") */
+	label?: string;
 	/** onClick passthrough (e.g. for stopPropagation) */
 	onClick?: (e: React.MouseEvent) => void;
+	/** Button size — defaults to md */
+	size?: "sm" | "md" | "icon-xs" | "icon-sm" | "icon";
+	/** The text to copy, or a function that returns it (for lazy evaluation) */
+	text: string | (() => string);
+	/** Button variant — defaults to ghost */
+	variant?: "ghost" | "outline" | "soft";
 }
 
 const CHECK_DURATION = 1500;

@@ -1,5 +1,6 @@
 import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
+import type { FileImportHandle } from "../components/import";
 import {
 	CollectionSelector,
 	FileImport,
@@ -7,7 +8,6 @@ import {
 	SuccessView,
 	TokenTable,
 } from "../components/import";
-import type { FileImportHandle } from "../components/import";
 import { PageBody, PageFooter, PageLayout } from "../components/layout";
 import {
 	Button,
@@ -142,7 +142,7 @@ export function ImportPage() {
 						}
 
 						const valueChanged = correctedValue !== t.value;
-						if (!nameChanged && !valueChanged) return t;
+						if (!(nameChanged || valueChanged)) return t;
 
 						return {
 							...t,
@@ -340,7 +340,7 @@ export function ImportPage() {
 
 				<Frame>
 					<FramePanel>
-						<FileImport ref={fileImportRef} onTokensParsed={handleTokensParsed} />
+						<FileImport onTokensParsed={handleTokensParsed} ref={fileImportRef} />
 					</FramePanel>
 				</Frame>
 			</PageBody>

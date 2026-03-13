@@ -26,8 +26,8 @@ export {
 	CheckboxWithLabel,
 } from "./Checkbox";
 export { CodeBlock } from "./CodeBlock";
-export { CopyButton } from "./CopyButton";
 export { ColorSwatch, GradientSwatch } from "./ColorSwatch";
+export { CopyButton } from "./CopyButton";
 export { ConfirmDialog, Dialog, DialogActions } from "./Dialog";
 export { Dropdown } from "./Dropdown";
 export { EmptyState } from "./EmptyState";

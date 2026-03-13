@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { parseCSS } from "../src/parsers/css-parser";
 import { toVarName } from "../src/handlers/css-generator";
+import { parseCSS } from "../src/parsers/css-parser";
 
 // ---------------------------------------------------------------------------
 // CSS Round-Trip Tests
@@ -96,8 +96,8 @@ describe("primitives round-trip", () => {
 			(t) => t.figmaName === "color/brand/primary/500" && t.type === "color",
 		);
 		expect(color500).toBeDefined();
-		expect(color500!.type).toBe("color");
-		expect(typeof color500!.value).toBe("object");
+		expect(color500?.type).toBe("color");
+		expect(typeof color500?.value).toBe("object");
 	});
 
 	test("number tokens have correct type and parsed value", () => {
@@ -106,15 +106,15 @@ describe("primitives round-trip", () => {
 			(t) => t.figmaName === "spacing/4" && t.type === "number",
 		);
 		expect(spacing).toBeDefined();
-		expect(spacing!.value).toBe(16);
+		expect(spacing?.value).toBe(16);
 	});
 
 	test("font-family tokens are auto-skipped", () => {
 		const result = parseCSS(css);
 		const font = result.tokens.find((t) => t.figmaName === "font/family/sans");
 		expect(font).toBeDefined();
-		expect(font!.type).toBe("fontFamily");
-		expect(font!.action).toBe("skip");
+		expect(font?.type).toBe("fontFamily");
+		expect(font?.action).toBe("skip");
 	});
 
 	test("detects as Cipher export", () => {
@@ -144,9 +144,9 @@ describe("aliases round-trip", () => {
 			(t) => t.figmaName === "surface/light/4",
 		);
 		expect(light4).toBeDefined();
-		expect(light4!.type).toBe("reference");
-		expect(light4!.value).toBe("{color.zinc.200}");
-		expect(light4!.action).toBe("import");
+		expect(light4?.type).toBe("reference");
+		expect(light4?.value).toBe("{color.zinc.200}");
+		expect(light4?.action).toBe("import");
 	});
 
 	test("all tokens in aliases category", () => {
@@ -185,8 +185,8 @@ describe("semantics round-trip", () => {
 				(t as any).modeName === "Light",
 		);
 		expect(lightBg).toBeDefined();
-		expect(lightBg!.type).toBe("reference");
-		expect(lightBg!.value).toBe("{surface.light.1}");
+		expect(lightBg?.type).toBe("reference");
+		expect(lightBg?.value).toBe("{surface.light.1}");
 	});
 
 	test("Dark mode tokens have modeName=Dark", () => {
@@ -197,8 +197,8 @@ describe("semantics round-trip", () => {
 				(t as any).modeName === "Dark",
 		);
 		expect(darkBg).toBeDefined();
-		expect(darkBg!.type).toBe("reference");
-		expect(darkBg!.value).toBe("{surface.dark.1}");
+		expect(darkBg?.type).toBe("reference");
+		expect(darkBg?.value).toBe("{surface.dark.1}");
 	});
 
 	test("both Light and Dark modes preserved (not deduplicated)", () => {
@@ -287,9 +287,9 @@ describe("@theme inline deduplication", () => {
 
 describe("multi-file bundle routing", () => {
 	const css = bundle({
-		"primitives.css": `:root { --color-zinc-50: rgba(250, 250, 250, 1); }`,
-		"aliases.css": `:root { --surface-light-1: var(--color-zinc-50); }`,
-		"semantics.css": `:root { --background: var(--surface-light-1); }`,
+		"primitives.css": ":root { --color-zinc-50: rgba(250, 250, 250, 1); }",
+		"aliases.css": ":root { --surface-light-1: var(--color-zinc-50); }",
+		"semantics.css": ":root { --background: var(--surface-light-1); }",
 	});
 
 	test("each file routes to correct category", () => {
@@ -300,9 +300,9 @@ describe("multi-file bundle routing", () => {
 		);
 		const bg = result.tokens.find((t) => t.figmaName === "background");
 
-		expect(zinc!.category).toBe("primitives");
-		expect(surface!.category).toBe("aliases");
-		expect(bg!.category).toBe("semantics");
+		expect(zinc?.category).toBe("primitives");
+		expect(surface?.category).toBe("aliases");
+		expect(bg?.category).toBe("semantics");
 	});
 
 	test("stats count all declarations", () => {
@@ -318,8 +318,8 @@ describe("multi-file bundle routing", () => {
 
 describe("value changes survive round-trip", () => {
 	test("changed color value parses correctly", () => {
-		const original = `:root { --color-brand-primary-500: rgba(59, 130, 246, 1); }`;
-		const modified = `:root { --color-brand-primary-500: rgba(220, 38, 38, 1); }`;
+		const original = ":root { --color-brand-primary-500: rgba(59, 130, 246, 1); }";
+		const modified = ":root { --color-brand-primary-500: rgba(220, 38, 38, 1); }";
 
 		const r1 = parseCSS(original);
 		const r2 = parseCSS(modified);
@@ -331,8 +331,8 @@ describe("value changes survive round-trip", () => {
 	});
 
 	test("changed numeric value parses correctly", () => {
-		const original = `:root { --spacing-4: 16; }`;
-		const modified = `:root { --spacing-4: 18; }`;
+		const original = ":root { --spacing-4: 16; }";
+		const modified = ":root { --spacing-4: 18; }";
 
 		const r1 = parseCSS(original);
 		const r2 = parseCSS(modified);

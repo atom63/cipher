@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Pencil, Search, X } from "lucide-react";
+import { AlertTriangle, Check, Pencil, Search, } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import {
 	type ValidationResult,

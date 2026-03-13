@@ -136,10 +136,10 @@
 }
 
 .grayPreview {
-	flex: 1;
-	min-width: 0;
 	display: flex;
+	flex: 1;
 	gap: 1px;
+	min-width: 0;
 }
 
 .grayStep {
@@ -540,8 +540,8 @@
 .orphanDescription {
 	margin: 0 0 var(--spacing-md);
 	font-size: var(--text-sm);
-	color: var(--muted-foreground);
 	line-height: 1.5;
+	color: var(--muted-foreground);
 }
 
 .orphanList {
@@ -585,8 +585,8 @@
 
 .orphanItem {
 	display: flex;
-	align-items: center;
 	gap: var(--spacing-sm);
+	align-items: center;
 	padding: var(--spacing-2xs) 0;
 }
 

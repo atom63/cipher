@@ -157,9 +157,9 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
   font-family: var(--font-mono);
   color: var(--foreground);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

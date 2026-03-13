@@ -18,13 +18,13 @@
 
 /* Token colors — subtle, monochromatic with hints of brand */
 .comment {
-  color: var(--muted-foreground);
   font-style: italic;
+  color: var(--muted-foreground);
 }
 
 .selector {
-  color: var(--foreground);
   font-weight: var(--font-medium);
+  color: var(--foreground);
 }
 
 .property {
@@ -40,13 +40,13 @@
 }
 
 .atrule {
-  color: var(--primary);
   font-weight: var(--font-medium);
+  color: var(--primary);
 }
 
 .function {
-  color: var(--muted-foreground);
   font-style: italic;
+  color: var(--muted-foreground);
 }
 
 .string {

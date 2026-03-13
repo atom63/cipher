@@ -73,7 +73,7 @@ export function Dialog({
 			if (focusable.length === 0) return;
 
 			const first = focusable[0];
-			const last = focusable[focusable.length - 1];
+			const last = Array.from(focusable).at(-1);
 
 			if (e.shiftKey && document.activeElement === first) {
 				e.preventDefault();
