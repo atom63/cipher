@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { validateTokens } from "../parsers/import-validator";
-import type { DesignToken } from "../types/tokens";
+import { validateTokens } from "../src/parsers/import-validator";
+import type { DesignToken } from "../src/types/tokens";
 
 // Helper to create a minimal token
 function token(

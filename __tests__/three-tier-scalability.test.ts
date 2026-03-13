@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import type { BrandConfig } from "../generators/three-tier";
-import { generateCss, generateDesignSystem } from "../generators/three-tier";
+import type { BrandConfig } from "../src/generators/three-tier";
+import { generateCss, generateDesignSystem } from "../src/generators/three-tier";
 
 // =========================================================================
 // Combinatorial config coverage

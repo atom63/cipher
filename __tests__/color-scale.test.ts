@@ -6,7 +6,7 @@ import {
 	rgbToHex,
 	rgbToOklch,
 	SHADE_STEPS,
-} from "../generators/color-scale";
+} from "../src/generators/color-scale";
 
 describe("rgbToOklch", () => {
 	test("converts pure red", () => {

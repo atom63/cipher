@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { isVariableAlias } from "../libraries/variable-binding";
+import { isVariableAlias } from "../src/libraries/variable-binding";
 
 // Mock the figma global for functions that need it
 const mockVariables = new Map<string, Record<string, unknown>>();
@@ -61,7 +61,7 @@ describe("getBoundVariable", () => {
 	test("resolves bound variable from paint", async () => {
 		addMockVariable("VariableID:1:1", "color/primary", "col:1", "primitives");
 
-		const { getBoundVariable } = await import("../libraries/variable-binding");
+		const { getBoundVariable } = await import("../src/libraries/variable-binding");
 		const paint = {
 			boundVariables: {
 				color: { type: "VARIABLE_ALIAS", id: "VariableID:1:1" },
@@ -76,19 +76,19 @@ describe("getBoundVariable", () => {
 	});
 
 	test("returns null for unbound paint", async () => {
-		const { getBoundVariable } = await import("../libraries/variable-binding");
+		const { getBoundVariable } = await import("../src/libraries/variable-binding");
 		const paint = { boundVariables: {} };
 		expect(getBoundVariable(paint, "color")).toBeNull();
 	});
 
 	test("returns null for null input", async () => {
-		const { getBoundVariable } = await import("../libraries/variable-binding");
+		const { getBoundVariable } = await import("../src/libraries/variable-binding");
 		expect(getBoundVariable(null, "color")).toBeNull();
 		expect(getBoundVariable(undefined, "color")).toBeNull();
 	});
 
 	test("returns null when variable not found", async () => {
-		const { getBoundVariable } = await import("../libraries/variable-binding");
+		const { getBoundVariable } = await import("../src/libraries/variable-binding");
 		const paint = {
 			boundVariables: {
 				color: { id: "VariableID:999:999" },
@@ -103,7 +103,7 @@ describe("resolveVariableReference", () => {
 		addMockVariable("VariableID:1:1", "color/zinc/50", "col:1", "primitives");
 
 		const { resolveVariableReference } = await import(
-			"../libraries/variable-binding"
+			"../src/libraries/variable-binding"
 		);
 		const result = resolveVariableReference("VariableID:1:1");
 		expect(result).toBe("{primitives.color.zinc.50}");
@@ -111,7 +111,7 @@ describe("resolveVariableReference", () => {
 
 	test("returns null for unknown variable", async () => {
 		const { resolveVariableReference } = await import(
-			"../libraries/variable-binding"
+			"../src/libraries/variable-binding"
 		);
 		expect(resolveVariableReference("VariableID:999:999")).toBeNull();
 	});
@@ -120,7 +120,7 @@ describe("resolveVariableReference", () => {
 		addMockVariable("VariableID:2:1", "spacing/padding/lg", "col:2", "tokens");
 
 		const { resolveVariableReference } = await import(
-			"../libraries/variable-binding"
+			"../src/libraries/variable-binding"
 		);
 		const result = resolveVariableReference("VariableID:2:1");
 		expect(result).toBe("{tokens.spacing.padding.lg}");
@@ -133,7 +133,7 @@ describe("getAllBoundVariables", () => {
 		addMockVariable("VariableID:2:1", "shadow/radius", "col:1", "tokens");
 
 		const { getAllBoundVariables } = await import(
-			"../libraries/variable-binding"
+			"../src/libraries/variable-binding"
 		);
 		const effect = {
 			boundVariables: {

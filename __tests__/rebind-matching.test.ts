@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vitest";
-import type { StringVarEntry, VarEntry } from "../libraries/rebind-matching";
+import type { StringVarEntry, VarEntry } from "../src/libraries/rebind-matching";
 import {
 	colorKey,
 	findFloatVar,
 	findStringVar,
 	normalizePath,
 	WEIGHT_MAP,
-} from "../libraries/rebind-matching";
+} from "../src/libraries/rebind-matching";
 
 // =============================================================================
 // normalizePath

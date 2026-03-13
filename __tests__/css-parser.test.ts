@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseCSS } from "../parsers/css-parser";
+import { parseCSS } from "../src/parsers/css-parser";
 
 describe("parseCSS", () => {
 	describe("basic declarations", () => {

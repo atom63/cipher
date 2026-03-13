@@ -57,12 +57,25 @@ Cipher should feel like a sharp tool, not a toy. Restrained use of color, strong
 
 ## Project Structure
 ```
-components/ui/       → Reusable UI primitives (Button, Card, Input, etc.)
-components/import/   → Import workflow components
-components/layout/   → Sidebar, page chrome
-components/library/  → Color library selectors (Radix, Tailwind)
-pages/               → Top-level page components
-generators/          → Design system token generator engine
-exports/styles/      → Dev CSS token files (source of truth)
-types/               → Shared TypeScript types
+src/
+  code.ts              → Plugin sandbox entry (Figma main thread)
+  ui.tsx               → React UI entry
+  ui.scss              → Global styles / design tokens
+  components/ui/       → Reusable UI primitives (Button, Card, Input, etc.)
+  components/import/   → Import workflow components
+  components/layout/   → Sidebar, page chrome
+  components/library/  → Color library selectors (Radix, Tailwind)
+  pages/               → Top-level page components
+  handlers/            → CSS generation, export, import handlers
+  parsers/             → Token/CSS parsing utilities
+  generators/          → Design system token generator engine
+  libraries/           → Color converters, variable binding, rebind matching
+  hooks/               → Custom React hooks
+  types/               → Shared TypeScript types
+  utils/               → Debug utilities
+__tests__/             → Vitest test files
+assets/                → Plugin icon and cover image
+exports/styles/        → Reference CSS token files (source of truth)
+docs/                  → Architecture, PRD, publishing, legal docs
+dist/                  → Build output (gitignored)
 ```

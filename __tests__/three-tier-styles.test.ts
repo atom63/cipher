@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import type { BrandConfig } from "../generators/three-tier";
-import { generateDesignSystem } from "../generators/three-tier";
-import { SHADOW_SCALE } from "../generators/token-presets";
+import type { BrandConfig } from "../src/generators/three-tier";
+import { generateDesignSystem } from "../src/generators/three-tier";
+import { SHADOW_SCALE } from "../src/generators/token-presets";
 
 const defaultConfig: BrandConfig = {
 	primary: "#3B82F6",

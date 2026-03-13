@@ -75,7 +75,7 @@ if (!existsSync(distDir)) {
 
 // Build the plugin code (runs in Figma's sandbox)
 const codeContext = await esbuild.context({
-	entryPoints: [resolve(__dirname, "code.ts")],
+	entryPoints: [resolve(__dirname, "src/code.ts")],
 	bundle: true,
 	outfile: resolve(__dirname, "dist/code.js"),
 	platform: "node",
@@ -86,7 +86,7 @@ const codeContext = await esbuild.context({
 
 // Build the UI (React app)
 const uiContext = await esbuild.context({
-	entryPoints: [resolve(__dirname, "ui.tsx")],
+	entryPoints: [resolve(__dirname, "src/ui.tsx")],
 	bundle: true,
 	outfile: resolve(__dirname, "dist/ui.js"),
 	platform: "browser",
@@ -118,7 +118,7 @@ const cssPlugin = {
 };
 
 const cssContext = await esbuild.context({
-	entryPoints: [resolve(__dirname, "ui.scss")],
+	entryPoints: [resolve(__dirname, "src/ui.scss")],
 	bundle: true,
 	outfile: resolve(__dirname, "dist/ui.css"),
 	logLevel: "info",

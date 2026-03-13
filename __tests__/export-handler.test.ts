@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
 	convertVariableValue,
 	figmaTypeToTokenType,
-} from "../handlers/export-handler";
+} from "../src/handlers/export-handler";
 
 describe("figmaTypeToTokenType", () => {
 	test("maps COLOR to color", () => {

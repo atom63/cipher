@@ -20,9 +20,9 @@
 		"types": ["@figma/plugin-typings", "node"],
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["../../../src/*"]
+			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["**/*.ts", "**/*.tsx", "global.d.ts"],
-	"exclude": ["node_modules", "dist", "build.js", "libraries/radix-data.ts"]
+	"include": ["src/**/*.ts", "src/**/*.tsx", "__tests__/**/*.ts"],
+	"exclude": ["node_modules", "dist", "build.js", "src/libraries/radix-data.ts"]
 }

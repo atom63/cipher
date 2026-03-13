@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { isMainToUIMessage, isUIToMainMessage } from "../types/messages";
+import { isMainToUIMessage, isUIToMainMessage } from "../src/types/messages";
 
 describe("isUIToMainMessage", () => {
 	const uiToMainTypes = [

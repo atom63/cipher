@@ -9,7 +9,7 @@ import {
 	FONT_WEIGHTS,
 	SHADOW_SCALE,
 	SPACING_SCALE,
-} from "../generators/token-presets";
+} from "../src/generators/token-presets";
 
 // =========================================================================
 // computeRadiusScale — radius t-shirt sizes from anchor

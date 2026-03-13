@@ -4,8 +4,8 @@ import {
 	rgbToHex,
 	rgbToOklch,
 	rgbToRgba,
-} from "../libraries/color-converters";
-import { parseHexColor, parseOKLCHColor } from "../parsers/color-parsers";
+} from "../src/libraries/color-converters";
+import { parseHexColor, parseOKLCHColor } from "../src/parsers/color-parsers";
 
 describe("rgbToHex", () => {
 	test("converts pure red", () => {

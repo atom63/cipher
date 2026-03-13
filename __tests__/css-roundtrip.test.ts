@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { parseCSS } from "../parsers/css-parser";
-import { toVarName } from "../handlers/css-generator";
+import { parseCSS } from "../src/parsers/css-parser";
+import { toVarName } from "../src/handlers/css-generator";
 
 // ---------------------------------------------------------------------------
 // CSS Round-Trip Tests

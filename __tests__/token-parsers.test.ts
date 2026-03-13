@@ -6,7 +6,7 @@ import {
 	parseTokenObjectDynamic,
 	parseTokenValueGeneric,
 	transformTokenName,
-} from "../parsers/token-parsers";
+} from "../src/parsers/token-parsers";
 
 describe("generateTokenId", () => {
 	test("creates deterministic IDs", () => {

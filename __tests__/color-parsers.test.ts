@@ -6,7 +6,7 @@ import {
 	parseHslColor,
 	parseOKLCHColor,
 	parseRgbColor,
-} from "../parsers/color-parsers";
+} from "../src/parsers/color-parsers";
 
 describe("parseHexColor", () => {
 	test("parses 6-digit hex", () => {

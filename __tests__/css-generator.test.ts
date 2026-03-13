@@ -12,7 +12,7 @@ import {
 	TYPESCALE_ORDER,
 	toFontStack,
 	toVarName,
-} from "../handlers/css-generator";
+} from "../src/handlers/css-generator";
 
 // =========================================================================
 // toVarName — simple slash-to-dash conversion for CSS custom properties

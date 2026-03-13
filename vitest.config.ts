@@ -7,10 +7,10 @@ export default defineConfig({
 		coverage: {
 			provider: "v8",
 			include: [
-				"parsers/**/*.ts",
-				"libraries/color-converters.ts",
-				"libraries/variable-binding.ts",
-				"types/messages.ts",
+				"src/parsers/**/*.ts",
+				"src/libraries/color-converters.ts",
+				"src/libraries/variable-binding.ts",
+				"src/types/messages.ts",
 			],
 			reporter: ["text", "text-summary"],
 		},
