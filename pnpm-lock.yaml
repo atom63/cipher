@@ -6,7 +6,9 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  plugin:
     dependencies:
       lucide-react:
         specifier: ^0.577.0
@@ -51,6 +53,8 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@22.19.15)(sass@1.97.3)(tsx@4.21.0)
+
+  website: {}
 
 packages:
 

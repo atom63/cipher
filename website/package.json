@@ -1,0 +1,8 @@
+{
+	"name": "@cipher/website",
+	"version": "0.0.1",
+	"private": true,
+	"description": "Cipher landing page",
+	"type": "module",
+	"scripts": {}
+}

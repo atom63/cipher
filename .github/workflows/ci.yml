@@ -7,9 +7,12 @@ on:
     branches: [main]
 
 jobs:
-  check:
-    name: Typecheck, Lint & Test
+  plugin:
+    name: Plugin — Typecheck, Lint, Test & Build
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugin
 
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +27,7 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+        working-directory: .
 
       - name: Typecheck
         run: pnpm typecheck
@@ -33,25 +37,6 @@ jobs:
 
       - name: Test
         run: pnpm test
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: check
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
 
       - name: Build plugin
         run: pnpm build

@@ -1,0 +1,48 @@
+{
+	"name": "@cipher/plugin",
+	"version": "1.0.0",
+	"description": "Cipher - Design System Token Manager for Figma",
+	"type": "module",
+	"author": "You Zhang (ATOM63)",
+	"license": "MIT",
+	"scripts": {
+		"dev": "node build.js --watch",
+		"build": "node build.js",
+		"tokens": "tsx exports/scripts/generate-tokens.ts",
+		"tokens:watch": "tsx watch exports/scripts/generate-tokens.ts",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"typecheck": "tsc --noEmit",
+		"fix": "ultracite fix",
+		"lint": "ultracite check",
+		"check": "pnpm typecheck && pnpm lint && pnpm test"
+	},
+	"dependencies": {
+		"lucide-react": "^0.577.0",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.6",
+		"@figma/plugin-typings": "^1.123.0",
+		"@types/node": "^22.19.15",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
+		"esbuild": "^0.27.3",
+		"sass": "^1.97.3",
+		"tsx": "^4.19.2",
+		"typescript": "^5.7.2",
+		"ultracite": "^7.2.5",
+		"vitest": "^4.0.18"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild",
+			"@parcel/watcher"
+		]
+	}
+}

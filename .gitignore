@@ -1,5 +1,5 @@
 # Build output
-dist/
+**/dist/
 
 # Generated token files (auto-generated from tokens/base)
 tokens/styles/*.css
