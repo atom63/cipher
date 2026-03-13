@@ -213,11 +213,18 @@ export function ExportPage() {
 		return (
 			<PageLayout>
 				<PageBody>
-					<SectionHeader
-						description={`${cssStats?.totalVariables ?? 0} variables across ${visibleFiles.length} files`}
-						title="CSS Export"
-						variant="primary"
-					/>
+					<div className={styles.successView}>
+						<div className={styles.successIcon}>
+							<Check size={24} />
+						</div>
+						<div className={styles.successContent}>
+							<h2>CSS Export Complete</h2>
+							<p>
+								{cssStats?.totalVariables ?? 0} variables across{" "}
+								{visibleFiles.length} files
+							</p>
+						</div>
+					</div>
 
 					<Accordion variant="flat">
 						{visibleFiles.map((file) => {
@@ -325,9 +332,19 @@ export function ExportPage() {
 					</div>
 
 					<div className={styles.successActions}>
-						<Button onClick={handleExportAgain} variant="default">
+						<Button onClick={handleExportAgain} variant="ghost">
 							<FileDown size={14} />
 							Export Again
+						</Button>
+						<Button
+							onClick={() => {
+								handleExportAgain();
+								setActiveTab("css");
+							}}
+							variant="default"
+						>
+							<Code size={14} />
+							Export as CSS
 						</Button>
 					</div>
 				</div>
