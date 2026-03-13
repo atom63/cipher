@@ -57,11 +57,11 @@ interface CSSExportResult {
  * (e.g., utility styles at 10%, 20%, etc.). We match by checking if the style
  * name path corresponds to the variable name to avoid picking up utility styles.
  */
-function buildStyleOpacityMap(): Map<string, number> {
+async function buildStyleOpacityMap(): Promise<Map<string, number>> {
 	const opacityMap = new Map<string, number>();
 
 	try {
-		const paintStyles = figma.getLocalPaintStyles();
+		const paintStyles = await figma.getLocalPaintStylesAsync();
 
 		for (const style of paintStyles) {
 			for (const paint of style.paints) {
@@ -84,7 +84,7 @@ function buildStyleOpacityMap(): Map<string, number> {
 					const boundVars = paint.boundVariables;
 					if (boundVars?.color) {
 						const varId = boundVars.color.id;
-						const variable = figma.variables.getVariableById(varId);
+						const variable = await figma.variables.getVariableByIdAsync(varId);
 						if (!variable) continue;
 
 						// Match: style name should correspond to the variable name
@@ -108,7 +108,7 @@ function buildStyleOpacityMap(): Map<string, number> {
 						const boundVars = stop.boundVariables;
 						if (boundVars?.color) {
 							const varId = boundVars.color.id;
-							const variable = figma.variables.getVariableById(varId);
+							const variable = await figma.variables.getVariableByIdAsync(varId);
 							if (!variable) continue;
 
 							const normalizedStyleName = normalizeName(style.name);
@@ -234,22 +234,22 @@ function isFontFamilyVariable(variableName: string): boolean {
  * When the value is a variable alias and that variable has style-level opacity,
  * wraps the reference in color-mix().
  */
-function valueToCSS(
+async function valueToCSS(
 	value: VariableValue,
 	variable: Variable,
 	colorFormat: ColorFormat,
 	includeColorMix: boolean,
 	opacityMap: Map<string, number>,
 	_collectionName?: string,
-): string {
+): Promise<string> {
 	if (isVariableAlias(value)) {
 		const aliasId = (value as VariableAlias).id;
-		const ref = resolveVariableReference(aliasId);
+		const ref = await resolveVariableReference(aliasId);
 		if (ref) {
-			const refVar = figma.variables.getVariableById(aliasId);
+			const refVar = await figma.variables.getVariableByIdAsync(aliasId);
 			if (refVar) {
 				// Resolve the referenced variable's collection name for correct naming
-				const refCollection = figma.variables.getVariableCollectionById(
+				const refCollection = await figma.variables.getVariableCollectionByIdAsync(
 					refVar.variableCollectionId,
 				);
 				const refCollectionName = refCollection?.name;
@@ -318,7 +318,7 @@ function valueToCSS(
 // COLLECTION CSS GENERATION
 // ============================================================================
 
-function generateCollectionCSS(
+async function generateCollectionCSS(
 	collection: VariableCollection,
 	colorFormat: ColorFormat,
 	options: {
@@ -328,9 +328,9 @@ function generateCollectionCSS(
 		rootExcludePrefixes?: string[];
 	},
 	opacityMap: Map<string, number>,
-): CSSFile {
-	const allVariables = collection.variableIds
-		.map((id) => figma.variables.getVariableById(id))
+): Promise<CSSFile> {
+	const allVariables = (await Promise.all(collection.variableIds
+		.map((id) => figma.variables.getVariableByIdAsync(id))))
 		.filter((v): v is Variable => v !== null);
 
 	// Filter out excluded prefixes (e.g. shadow variables when shadow-tokens.css exists)
@@ -364,7 +364,7 @@ function generateCollectionCSS(
 	// @theme inline registers CSS variables with Tailwind v4
 	// Uses `variables` (not `rootVariables`) so breakpoints still appear here
 	if (options.includeThemeInline) {
-		lines.push(generateThemeInline(variables, collection, excludePrefixes));
+		lines.push(await generateThemeInline(variables, collection, excludePrefixes));
 	}
 
 	if (hasModes) {
@@ -381,7 +381,7 @@ function generateCollectionCSS(
 						variable.resolvedType,
 						colName,
 					);
-					const cssValue = valueToCSS(
+					const cssValue = await valueToCSS(
 						value,
 						variable,
 						colorFormat,
@@ -406,7 +406,7 @@ function generateCollectionCSS(
 						variable.resolvedType,
 						colName,
 					);
-					const cssValue = valueToCSS(
+					const cssValue = await valueToCSS(
 						value,
 						variable,
 						colorFormat,
@@ -430,7 +430,7 @@ function generateCollectionCSS(
 						variable.resolvedType,
 						colName,
 					);
-					const cssValue = valueToCSS(
+					const cssValue = await valueToCSS(
 						value,
 						variable,
 						colorFormat,
@@ -451,7 +451,7 @@ function generateCollectionCSS(
 			const value = variable.valuesByMode[mode.modeId];
 			if (value === undefined) continue;
 			const varName = toVarName(variable.name, variable.resolvedType, colName);
-			const cssValue = valueToCSS(
+			const cssValue = await valueToCSS(
 				value,
 				variable,
 				colorFormat,
@@ -546,16 +546,16 @@ function inferTailwindFontKey(
  * Resolve a FLOAT variable to its raw numeric value, walking through
  * alias chains and trying all modes. Returns null if unresolvable.
  */
-function resolveToNumber(variable: Variable): number | null {
+async function resolveToNumber(variable: Variable): Promise<number | null> {
 	for (const mId of Object.keys(variable.valuesByMode)) {
 		let v: VariableValue | undefined = variable.valuesByMode[mId];
 		let depth = 0;
 		while (isVariableAlias(v) && depth < 10) {
-			const refVar = figma.variables.getVariableById(
+			const refVar = await figma.variables.getVariableByIdAsync(
 				(v as VariableAlias).id,
 			);
 			if (!refVar) break;
-			const refCol = figma.variables.getVariableCollectionById(
+			const refCol = await figma.variables.getVariableCollectionByIdAsync(
 				refVar.variableCollectionId,
 			);
 			if (!refCol?.modes[0]) break;
@@ -567,11 +567,11 @@ function resolveToNumber(variable: Variable): number | null {
 	return null;
 }
 
-function generateThemeInline(
+async function generateThemeInline(
 	variables: Variable[],
 	collection: VariableCollection,
 	excludePrefixes?: string[],
-): string {
+): Promise<string> {
 	if (variables.length === 0) return "";
 
 	const colName = collection.name;
@@ -605,7 +605,7 @@ function generateThemeInline(
 			// var() is resolved at runtime but @media is evaluated at parse time.
 			// Resolve through alias chains to find the raw number, convert to rem.
 			if (varName.startsWith("--breakpoint-")) {
-				const numValue = resolveToNumber(variable);
+				const numValue = await resolveToNumber(variable);
 				if (numValue !== null) {
 					entries.push(`  ${varName}: ${numValue / 16}rem;`);
 					continue;
@@ -672,17 +672,17 @@ function generateThemeInline(
  * In Figma these all live under "Effects" — keeping them in one file mirrors
  * that mental model and avoids scattering related tokens across files.
  */
-function generateEffectsCSS(
+async function generateEffectsCSS(
 	colorFormat: ColorFormat,
 	opacityMap: Map<string, number>,
-): CSSFile | null {
+): Promise<CSSFile | null> {
 	try {
 		const shadowLines: string[] = [];
 		const shadowThemeLines: string[] = [];
 		let shadowCount = 0;
 
 		// --- Shadows from effect styles ---
-		const effectStyles = figma.getLocalEffectStyles();
+		const effectStyles = await figma.getLocalEffectStylesAsync();
 		const shadowStyles = effectStyles.filter(
 			(s) =>
 				s.name.toLowerCase().startsWith("shadow/") ||
@@ -730,14 +730,14 @@ function generateEffectsCSS(
 		const blurThemeLines: string[] = [];
 		let blurCount = 0;
 
-		const collections = figma.variables.getLocalVariableCollections();
+		const collections = await figma.variables.getLocalVariableCollectionsAsync();
 		const primitives = collections.find(
 			(c) => c.name.toLowerCase() === "primitives",
 		);
 
 		if (primitives) {
-			const blurVars = primitives.variableIds
-				.map((id) => figma.variables.getVariableById(id))
+			const blurVars = (await Promise.all(primitives.variableIds
+				.map((id) => figma.variables.getVariableByIdAsync(id))))
 				.filter((v): v is Variable => v !== null)
 				.filter((v) => v.name.toLowerCase().startsWith("blur/"));
 
@@ -745,7 +745,7 @@ function generateEffectsCSS(
 				const modeId = primitives.modes[0].modeId;
 				for (const variable of blurVars) {
 					const varName = toVarName(variable.name, variable.resolvedType, primitives.name);
-					const cssValue = valueToCSS(
+					const cssValue = await valueToCSS(
 						variable.valuesByMode[modeId],
 						variable,
 						colorFormat,
@@ -848,16 +848,16 @@ const TYPESCALE_ORDER = [
  *   2. Responsive :root + @media blocks (deltas only)
  *   3. [data-window-size] selectors for Figma plugin context
  */
-function generateTypescalesCSS(): CSSFile | null {
+async function generateTypescalesCSS(): Promise<CSSFile | null> {
 	try {
-		const collections = figma.variables.getLocalVariableCollections();
+		const collections = await figma.variables.getLocalVariableCollectionsAsync();
 		const responsive = collections.find(
 			(c) => c.name.toLowerCase() === "responsive",
 		);
 		if (!responsive) return null;
 
-		const variables = responsive.variableIds
-			.map((id) => figma.variables.getVariableById(id))
+		const variables = (await Promise.all(responsive.variableIds
+			.map((id) => figma.variables.getVariableByIdAsync(id))))
 			.filter((v): v is Variable => v !== null);
 
 		const typoVars = variables.filter((v) =>
@@ -888,19 +888,19 @@ function generateTypescalesCSS(): CSSFile | null {
 			modeIdMap[m.name] = m.modeId;
 		}
 
-		const resolveToPixels = (
+		const resolveToPixels = async (
 			variable: Variable,
 			modeId: string,
-		): string | null => {
+		): Promise<string | null> => {
 			let value = variable.valuesByMode[modeId];
 			if (value === undefined) return null;
 
 			let depth = 0;
 			while (isVariableAlias(value) && depth < 10) {
 				const aliasId = (value as VariableAlias).id;
-				const refVar = figma.variables.getVariableById(aliasId);
+				const refVar = await figma.variables.getVariableByIdAsync(aliasId);
 				if (!refVar) return null;
-				const refCollection = figma.variables.getVariableCollectionById(
+				const refCollection = await figma.variables.getVariableCollectionByIdAsync(
 					refVar.variableCollectionId,
 				);
 				if (!refCollection) return null;
@@ -914,7 +914,7 @@ function generateTypescalesCSS(): CSSFile | null {
 		};
 
 		// Resolve all typography values for a given mode
-		const resolveMode = (modeName: string): Map<string, string> => {
+		const resolveMode = async (modeName: string): Promise<Map<string, string>> => {
 			const modeId = modeIdMap[modeName];
 			if (!modeId) return new Map();
 			const values = new Map<string, string>();
@@ -922,7 +922,7 @@ function generateTypescalesCSS(): CSSFile | null {
 				for (const prop of ["font-size", "line-height"]) {
 					const variable = scales[scale][prop];
 					if (!variable) continue;
-					const px = resolveToPixels(variable, modeId);
+					const px = await resolveToPixels(variable, modeId);
 					if (!px) continue;
 					values.set(
 						`--typography-${scale}-${prop}`,
@@ -959,10 +959,10 @@ function generateTypescalesCSS(): CSSFile | null {
 				.join("|");
 
 		// Resolve values for every breakpoint
-		const resolved = TYPESCALE_BREAKPOINTS.map((bp) => ({
+		const resolved = await Promise.all(TYPESCALE_BREAKPOINTS.map(async (bp) => ({
 			...bp,
-			values: resolveMode(bp.mode),
-		}));
+			values: await resolveMode(bp.mode),
+		})));
 
 		const lines: string[] = [];
 		lines.push(
@@ -1067,9 +1067,9 @@ function generateTypescalesCSS(): CSSFile | null {
  * Generate radius.css with @theme inline block for Tailwind integration.
  * Uses --corner-radius anchor and --radius-multiplier for global scaling.
  */
-function generateRadiusCSS(): CSSFile | null {
+async function generateRadiusCSS(): Promise<CSSFile | null> {
 	try {
-		const collections = figma.variables.getLocalVariableCollections();
+		const collections = await figma.variables.getLocalVariableCollectionsAsync();
 
 		// Find the radius anchor value. Strategy:
 		// 1. Look for "rounded/lg" in aliases (the anchor point at 10px)
@@ -1077,8 +1077,8 @@ function generateRadiusCSS(): CSSFile | null {
 		let anchor: number | null = null;
 
 		for (const col of collections) {
-			const variables = col.variableIds
-				.map((id) => figma.variables.getVariableById(id))
+			const variables = (await Promise.all(col.variableIds
+				.map((id) => figma.variables.getVariableByIdAsync(id))))
 				.filter((v): v is Variable => v !== null);
 			const modeId = col.modes[0].modeId;
 
@@ -1091,11 +1091,11 @@ function generateRadiusCSS(): CSSFile | null {
 				// Follow aliases to get the resolved value
 				let depth = 0;
 				while (isVariableAlias(value) && depth < 10) {
-					const refVar = figma.variables.getVariableById(
+					const refVar = await figma.variables.getVariableByIdAsync(
 						(value as VariableAlias).id,
 					);
 					if (!refVar) break;
-					const refCol = figma.variables.getVariableCollectionById(
+					const refCol = await figma.variables.getVariableCollectionByIdAsync(
 						refVar.variableCollectionId,
 					);
 					if (!refCol) break;
@@ -1201,8 +1201,8 @@ export {
 	inferTailwindFontKey,
 };
 
-export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
-	const collections = figma.variables.getLocalVariableCollections();
+export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExportResult> {
+	const collections = await figma.variables.getLocalVariableCollectionsAsync();
 	const selected =
 		options.collectionIds.length > 0
 			? collections.filter((c) => options.collectionIds.includes(c.id))
@@ -1216,7 +1216,7 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 	// This detects opacity stored on Figma styles (not on variable values)
 	// and preserves it via color-mix() in the CSS output
 	const opacityMap = options.includeColorMix
-		? buildStyleOpacityMap()
+		? await buildStyleOpacityMap()
 		: new Map<string, number>();
 
 	// Sort: dependency order (primitives → aliases → semantics), then by mode count
@@ -1238,8 +1238,8 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 
 	// Generate specialized files first so we know which prefixes to exclude
 	// from primitives (avoids duplication)
-	const effectsFile = generateEffectsCSS(options.colorFormat, opacityMap);
-	const radiusFile = generateRadiusCSS();
+	const effectsFile = await generateEffectsCSS(options.colorFormat, opacityMap);
+	const radiusFile = await generateRadiusCSS();
 
 	// Excluded from primitives entirely (both @theme inline and :root):
 	const primitivesExclude: string[] = ["--font-weight-"];
@@ -1270,7 +1270,7 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 			continue;
 
 		const isPrimitives = colLower === "primitives";
-		const file = generateCollectionCSS(
+		const file = await generateCollectionCSS(
 			collection,
 			options.colorFormat,
 			{
@@ -1291,7 +1291,7 @@ export function generateCSS(options: CSSGeneratorOptions): CSSExportResult {
 		totalVariables += effectsFile.variableCount;
 	}
 
-	const typescaleFile = generateTypescalesCSS();
+	const typescaleFile = await generateTypescalesCSS();
 	if (typescaleFile) {
 		files.push(typescaleFile);
 		totalVariables += typescaleFile.variableCount;

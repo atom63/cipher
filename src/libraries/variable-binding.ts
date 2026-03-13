@@ -52,10 +52,10 @@ export type BindableProperty =
  * }
  * ```
  */
-export function getBoundVariable(
+export async function getBoundVariable(
 	obj: unknown,
 	property: BindableProperty,
-): BoundVariableInfo | null {
+): Promise<BoundVariableInfo | null> {
 	try {
 		if (!obj || typeof obj !== "object") return null;
 
@@ -70,10 +70,10 @@ export function getBoundVariable(
 		const variableId = boundVariables[property].id;
 		if (!variableId) return null;
 
-		const variable = figma.variables.getVariableById(variableId);
+		const variable = await figma.variables.getVariableByIdAsync(variableId);
 		if (!variable) return null;
 
-		const collection = figma.variables.getVariableCollectionById(
+		const collection = await figma.variables.getVariableCollectionByIdAsync(
 			variable.variableCollectionId,
 		);
 
@@ -103,14 +103,14 @@ export function getBoundVariable(
  * // Returns: { color: BoundVariableInfo, radius: BoundVariableInfo }
  * ```
  */
-export function getAllBoundVariables(
+export async function getAllBoundVariables(
 	obj: unknown,
 	properties: BindableProperty[],
-): Partial<Record<BindableProperty, BoundVariableInfo>> {
+): Promise<Partial<Record<BindableProperty, BoundVariableInfo>>> {
 	const result: Partial<Record<BindableProperty, BoundVariableInfo>> = {};
 
 	for (const property of properties) {
-		const binding = getBoundVariable(obj, property);
+		const binding = await getBoundVariable(obj, property);
 		if (binding) {
 			result[property] = binding;
 		}
@@ -125,8 +125,8 @@ export function getAllBoundVariables(
  * @param paint - A Figma paint object
  * @returns BoundVariableInfo if the paint's color is bound, null otherwise
  */
-export function getPaintBoundVariable(paint: Paint): BoundVariableInfo | null {
-	return getBoundVariable(paint, "color");
+export async function getPaintBoundVariable(paint: Paint): Promise<BoundVariableInfo | null> {
+	return await getBoundVariable(paint, "color");
 }
 
 /**
@@ -135,12 +135,12 @@ export function getPaintBoundVariable(paint: Paint): BoundVariableInfo | null {
  * @param effect - A Figma effect object
  * @returns Object with any bound properties
  */
-export function getEffectBoundVariables(effect: Effect): {
+export async function getEffectBoundVariables(effect: Effect): Promise<{
 	color?: BoundVariableInfo;
 	radius?: BoundVariableInfo;
 	spread?: BoundVariableInfo;
-} {
-	return getAllBoundVariables(effect, ["color", "radius", "spread"]);
+}> {
+	return await getAllBoundVariables(effect, ["color", "radius", "spread"]);
 }
 
 /**
@@ -155,12 +155,12 @@ export function getEffectBoundVariables(effect: Effect): {
  * // Returns: "{primitives.color.zinc.50}"
  * ```
  */
-export function resolveVariableReference(variableId: string): string | null {
+export async function resolveVariableReference(variableId: string): Promise<string | null> {
 	try {
-		const variable = figma.variables.getVariableById(variableId);
+		const variable = await figma.variables.getVariableByIdAsync(variableId);
 		if (!variable) return null;
 
-		const collection = figma.variables.getVariableCollectionById(
+		const collection = await figma.variables.getVariableCollectionByIdAsync(
 			variable.variableCollectionId,
 		);
 		const collectionName = collection?.name ?? "unknown";

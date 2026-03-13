@@ -11,8 +11,8 @@ beforeEach(() => {
 
 	(globalThis as unknown as { figma: unknown }).figma = {
 		variables: {
-			getVariableById: (id: string) => mockVariables.get(id) ?? null,
-			getVariableCollectionById: (id: string) =>
+			getVariableByIdAsync: async (id: string) => mockVariables.get(id) ?? null,
+			getVariableCollectionByIdAsync: async (id: string) =>
 				mockCollections.get(id) ?? null,
 		},
 	};
@@ -68,7 +68,7 @@ describe("getBoundVariable", () => {
 			},
 		};
 
-		const result = getBoundVariable(paint, "color");
+		const result = await getBoundVariable(paint, "color");
 		expect(result).not.toBeNull();
 		expect(result?.variableName).toBe("color/primary");
 		expect(result?.collectionName).toBe("primitives");
@@ -78,13 +78,13 @@ describe("getBoundVariable", () => {
 	test("returns null for unbound paint", async () => {
 		const { getBoundVariable } = await import("../src/libraries/variable-binding");
 		const paint = { boundVariables: {} };
-		expect(getBoundVariable(paint, "color")).toBeNull();
+		expect(await getBoundVariable(paint, "color")).toBeNull();
 	});
 
 	test("returns null for null input", async () => {
 		const { getBoundVariable } = await import("../src/libraries/variable-binding");
-		expect(getBoundVariable(null, "color")).toBeNull();
-		expect(getBoundVariable(undefined, "color")).toBeNull();
+		expect(await getBoundVariable(null, "color")).toBeNull();
+		expect(await getBoundVariable(undefined, "color")).toBeNull();
 	});
 
 	test("returns null when variable not found", async () => {
@@ -94,7 +94,7 @@ describe("getBoundVariable", () => {
 				color: { id: "VariableID:999:999" },
 			},
 		};
-		expect(getBoundVariable(paint, "color")).toBeNull();
+		expect(await getBoundVariable(paint, "color")).toBeNull();
 	});
 });
 
@@ -105,7 +105,7 @@ describe("resolveVariableReference", () => {
 		const { resolveVariableReference } = await import(
 			"../src/libraries/variable-binding"
 		);
-		const result = resolveVariableReference("VariableID:1:1");
+		const result = await resolveVariableReference("VariableID:1:1");
 		expect(result).toBe("{primitives.color.zinc.50}");
 	});
 
@@ -113,7 +113,7 @@ describe("resolveVariableReference", () => {
 		const { resolveVariableReference } = await import(
 			"../src/libraries/variable-binding"
 		);
-		expect(resolveVariableReference("VariableID:999:999")).toBeNull();
+		expect(await resolveVariableReference("VariableID:999:999")).toBeNull();
 	});
 
 	test("handles variables with slashes in name", async () => {
@@ -122,7 +122,7 @@ describe("resolveVariableReference", () => {
 		const { resolveVariableReference } = await import(
 			"../src/libraries/variable-binding"
 		);
-		const result = resolveVariableReference("VariableID:2:1");
+		const result = await resolveVariableReference("VariableID:2:1");
 		expect(result).toBe("{tokens.spacing.padding.lg}");
 	});
 });
@@ -142,7 +142,7 @@ describe("getAllBoundVariables", () => {
 			},
 		};
 
-		const result = getAllBoundVariables(effect, ["color", "radius", "spread"]);
+		const result = await getAllBoundVariables(effect, ["color", "radius", "spread"]);
 		expect(result.color).toBeDefined();
 		expect(result.radius).toBeDefined();
 		expect(result.spread).toBeUndefined();

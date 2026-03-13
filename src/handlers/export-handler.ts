@@ -14,7 +14,7 @@ import {
 import { debug } from "../utils/debug";
 
 // Helper function to convert paint to structured value
-function paintToValue(paint: Paint, colorFormat: string = "oklch"): any {
+async function paintToValue(paint: Paint, colorFormat: string = "oklch"): Promise<any> {
 	if (paint.type === "SOLID") {
 		const solidPaint = paint as SolidPaint;
 		const result: any = {
@@ -47,21 +47,21 @@ function paintToValue(paint: Paint, colorFormat: string = "oklch"): any {
 		);
 
 		// Check if gradient stops have variable bindings
-		const stopsWithBindings = gradientPaint.gradientStops.map((stop, index) => {
+		const stopsWithBindings = await Promise.all(gradientPaint.gradientStops.map(async (stop, index) => {
 			const stopData: any = {
 				position: Math.round(stop.position * 1000) / 1000,
 				color: convertColor(stop.color, colorFormat),
 			};
 
 			// Check if this gradient stop color is bound to a variable
-			const boundVariable = getBoundVariable(stop, "color");
+			const boundVariable = await getBoundVariable(stop, "color");
 			if (boundVariable) {
 				stopData.boundVariable = boundVariable;
 				logBinding(`Gradient stop ${index}`, boundVariable);
 			}
 
 			return stopData;
-		});
+		}));
 
 		return {
 			type: paint.type.toLowerCase().replace("gradient_", ""),
@@ -90,7 +90,7 @@ function paintToValue(paint: Paint, colorFormat: string = "oklch"): any {
 }
 
 // Helper function to convert effect to token value
-function effectToToken(effect: Effect): any {
+async function effectToToken(effect: Effect): Promise<any> {
 	const effectData: any = {};
 
 	if (effect.type === "DROP_SHADOW" || effect.type === "INNER_SHADOW") {
@@ -106,21 +106,21 @@ function effectToToken(effect: Effect): any {
 		effectData.visible = effect.visible;
 
 		// Check for variable bindings on effect properties
-		const radiusBinding = getBoundVariable(effect, "radius");
+		const radiusBinding = await getBoundVariable(effect, "radius");
 		if (radiusBinding) {
 			effectData.radiusBoundVariable = radiusBinding;
 			logBinding("Effect radius", radiusBinding);
 		}
 
 		if (effect.type === "DROP_SHADOW") {
-			const spreadBinding = getBoundVariable(effect, "spread");
+			const spreadBinding = await getBoundVariable(effect, "spread");
 			if (spreadBinding) {
 				effectData.spreadBoundVariable = spreadBinding;
 				logBinding("Effect spread", spreadBinding);
 			}
 		}
 
-		const colorBinding = getBoundVariable(effect, "color");
+		const colorBinding = await getBoundVariable(effect, "color");
 		if (colorBinding) {
 			effectData.colorBoundVariable = colorBinding;
 			logBinding("Effect color", colorBinding);
@@ -135,7 +135,7 @@ function effectToToken(effect: Effect): any {
 		effectData.visible = effect.visible;
 
 		// Check for variable bindings on radius
-		const radiusBinding = getBoundVariable(effect, "radius");
+		const radiusBinding = await getBoundVariable(effect, "radius");
 		if (radiusBinding) {
 			effectData.radiusBoundVariable = radiusBinding;
 			logBinding("Blur radius", radiusBinding);
@@ -148,14 +148,14 @@ function effectToToken(effect: Effect): any {
 }
 
 // Convert Figma variable value to token value
-export function convertVariableValue(
+export async function convertVariableValue(
 	value: any,
 	variable: Variable,
 	colorFormat: string = "oklch",
-): string {
+): Promise<string> {
 	// Check if this is a reference to another variable
 	if (isVariableAlias(value)) {
-		const reference = resolveVariableReference(value.id);
+		const reference = await resolveVariableReference(value.id);
 		return reference ?? "unknown-reference";
 	}
 
@@ -229,11 +229,11 @@ export function figmaTypeToTokenType(
  * Returns null if no styles exist — caller silently skips.
  * This preserves opacity, variable bindings, and effect data that variables alone don't carry.
  */
-function gatherStyles(colorFormat: string): any | null {
-	const paintStyles = figma.getLocalPaintStyles();
-	const textStyles = figma.getLocalTextStyles();
-	const effectStyles = figma.getLocalEffectStyles();
-	const gridStyles = figma.getLocalGridStyles();
+async function gatherStyles(colorFormat: string): Promise<any | null> {
+	const paintStyles = await figma.getLocalPaintStylesAsync();
+	const textStyles = await figma.getLocalTextStylesAsync();
+	const effectStyles = await figma.getLocalEffectStylesAsync();
+	const gridStyles = await figma.getLocalGridStylesAsync();
 
 	const totalStyles =
 		paintStyles.length +
@@ -249,16 +249,20 @@ function gatherStyles(colorFormat: string): any | null {
 	if (paintStyles.length > 0) {
 		styles.paint = {};
 		for (const style of paintStyles) {
+			const fills = await Promise.all(style.paints.map((paint) => paintToValue(paint, colorFormat)));
+			let value: any;
+			if (style.paints.length === 1 && style.paints[0].type === "SOLID") {
+				value = (await paintToValue(style.paints[0], colorFormat)).color;
+			} else {
+				value = await Promise.all(style.paints.map((p) => paintToValue(p, colorFormat)));
+			}
 			setNested(styles.paint, style.name, {
 				id: style.id,
 				key: style.key,
 				type: "color",
-				fills: style.paints.map((paint) => paintToValue(paint, colorFormat)),
+				fills,
 				description: style.description || undefined,
-				value:
-					style.paints.length === 1 && style.paints[0].type === "SOLID"
-						? paintToValue(style.paints[0], colorFormat).color
-						: style.paints.map((p) => paintToValue(p, colorFormat)),
+				value,
 			});
 		}
 	}
@@ -302,9 +306,9 @@ function gatherStyles(colorFormat: string): any | null {
 				try {
 					const bound = (style as any).boundVariables?.[prop];
 					if (bound?.id) {
-						const variable = figma.variables.getVariableById(bound.id);
+						const variable = await figma.variables.getVariableByIdAsync(bound.id);
 						if (variable) {
-							const collection = figma.variables.getVariableCollectionById(
+							const collection = await figma.variables.getVariableCollectionByIdAsync(
 								variable.variableCollectionId,
 							);
 							data[`${prop}BoundVariable`] = {
@@ -332,7 +336,7 @@ function gatherStyles(colorFormat: string): any | null {
 				id: style.id,
 				key: style.key,
 				type: "effect",
-				effects: style.effects.map((effect) => effectToToken(effect)),
+				effects: await Promise.all(style.effects.map((effect) => effectToToken(effect))),
 				description: style.description || undefined,
 			});
 		}
@@ -398,7 +402,7 @@ export async function exportVariablesAsTokens(
 	colorFormat: string = "oklch",
 ) {
 	try {
-		const collections = figma.variables.getLocalVariableCollections();
+		const collections = await figma.variables.getLocalVariableCollectionsAsync();
 		const selectedCollections =
 			collectionIds.length > 0
 				? collections.filter((c) => collectionIds.includes(c.id))
@@ -444,8 +448,8 @@ export async function exportVariablesAsTokens(
 			};
 
 			// Get all variables in this collection
-			const variables = collection.variableIds
-				.map((id) => figma.variables.getVariableById(id))
+			const variables = (await Promise.all(collection.variableIds
+				.map((id) => figma.variables.getVariableByIdAsync(id))))
 				.filter((v) => v !== null) as Variable[];
 
 			// Initialize tokens object for this collection
@@ -479,7 +483,7 @@ export async function exportVariablesAsTokens(
 					const modes: any = {};
 					for (const mode of collection.modes) {
 						const value = variable.valuesByMode[mode.modeId];
-						modes[mode.name] = convertVariableValue(
+						modes[mode.name] = await convertVariableValue(
 							value,
 							variable,
 							colorFormat,
@@ -500,7 +504,7 @@ export async function exportVariablesAsTokens(
 					// Single mode token
 					const mode = collection.modes[0];
 					const value = variable.valuesByMode[mode.modeId];
-					const tokenValue = convertVariableValue(value, variable, colorFormat);
+					const tokenValue = await convertVariableValue(value, variable, colorFormat);
 
 					current[tokenName] = {
 						value: tokenValue,
@@ -517,7 +521,7 @@ export async function exportVariablesAsTokens(
 		}
 
 		// Gather styles (paint, text, effect, grid) — silently skip if none exist
-		const stylesSection = gatherStyles(colorFormat);
+		const stylesSection = await gatherStyles(colorFormat);
 		if (stylesSection) {
 			tokenData.styles = stylesSection;
 		}
@@ -561,10 +565,10 @@ export async function exportStylesAsTokens(
 		);
 
 		// Get all local styles
-		let paintStyles = figma.getLocalPaintStyles();
-		let textStyles = figma.getLocalTextStyles();
-		let effectStyles = figma.getLocalEffectStyles();
-		let gridStyles = figma.getLocalGridStyles();
+		let paintStyles = await figma.getLocalPaintStylesAsync();
+		let textStyles = await figma.getLocalTextStylesAsync();
+		let effectStyles = await figma.getLocalEffectStylesAsync();
+		let gridStyles = await figma.getLocalGridStylesAsync();
 
 		// Filter styles based on selected groups
 		if (selectedGroups.length > 0) {
@@ -646,9 +650,9 @@ export async function exportStylesAsTokens(
 			}
 
 			const paints = style.paints;
-			const paintValues = paints.map((paint) =>
+			const paintValues = await Promise.all(paints.map((paint) =>
 				paintToValue(paint, colorFormat),
-			);
+			));
 
 			current[styleName] = {
 				id: style.id,
@@ -716,11 +720,11 @@ export async function exportStylesAsTokens(
 				try {
 					const styleAny = style as any;
 					if (styleAny.boundVariables?.[prop]?.id) {
-						const variable = figma.variables.getVariableById(
+						const variable = await figma.variables.getVariableByIdAsync(
 							styleAny.boundVariables[prop].id,
 						);
 						if (variable) {
-							const collection = figma.variables.getVariableCollectionById(
+							const collection = await figma.variables.getVariableCollectionByIdAsync(
 								variable.variableCollectionId,
 							);
 							textStyleData[`${prop}BoundVariable`] = {
@@ -764,7 +768,7 @@ export async function exportStylesAsTokens(
 				id: style.id,
 				key: style.key,
 				type: "effect",
-				effects: style.effects.map((effect) => effectToToken(effect)),
+				effects: await Promise.all(style.effects.map((effect) => effectToToken(effect))),
 				description: style.description || undefined,
 			};
 		}

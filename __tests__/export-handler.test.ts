@@ -52,35 +52,35 @@ describe("convertVariableValue", () => {
 
 	const makeVariable = (resolvedType: string) => ({ resolvedType }) as any;
 
-	test("converts COLOR to formatted string", () => {
+	test("converts COLOR to formatted string", async () => {
 		const value = { r: 1, g: 0, b: 0 };
-		const result = convertVariableValue(value, makeVariable("COLOR"), "hex");
+		const result = await convertVariableValue(value, makeVariable("COLOR"), "hex");
 		expect(result).toBe("#ff0000");
 	});
 
-	test("converts COLOR with oklch format", () => {
+	test("converts COLOR with oklch format", async () => {
 		const value = { r: 1, g: 0, b: 0 };
-		const result = convertVariableValue(value, makeVariable("COLOR"), "oklch");
+		const result = await convertVariableValue(value, makeVariable("COLOR"), "oklch");
 		expect(result).toContain("oklch(");
 	});
 
-	test("converts FLOAT to px string", () => {
-		const result = convertVariableValue(16, makeVariable("FLOAT"));
+	test("converts FLOAT to px string", async () => {
+		const result = await convertVariableValue(16, makeVariable("FLOAT"));
 		expect(result).toBe("16px");
 	});
 
-	test("converts STRING directly", () => {
-		const result = convertVariableValue("Inter", makeVariable("STRING"));
+	test("converts STRING directly", async () => {
+		const result = await convertVariableValue("Inter", makeVariable("STRING"));
 		expect(result).toBe("Inter");
 	});
 
-	test("converts BOOLEAN to string", () => {
-		expect(convertVariableValue(true, makeVariable("BOOLEAN"))).toBe("true");
-		expect(convertVariableValue(false, makeVariable("BOOLEAN"))).toBe("false");
+	test("converts BOOLEAN to string", async () => {
+		expect(await convertVariableValue(true, makeVariable("BOOLEAN"))).toBe("true");
+		expect(await convertVariableValue(false, makeVariable("BOOLEAN"))).toBe("false");
 	});
 
-	test("converts zero FLOAT correctly", () => {
-		const result = convertVariableValue(0, makeVariable("FLOAT"));
+	test("converts zero FLOAT correctly", async () => {
+		const result = await convertVariableValue(0, makeVariable("FLOAT"));
 		expect(result).toBe("0px");
 	});
 });

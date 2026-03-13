@@ -192,7 +192,7 @@ const VariableRow = React.memo(function VariableRow({
 	);
 });
 
-type SortField = "name" | "collection";
+type SortField = "name" | "collection" | "value";
 type SortDir = "asc" | "desc";
 type ActionPanel = "rename" | "move" | "edit" | "scale" | null;
 
@@ -500,11 +500,18 @@ export function ManagePage({
 		const naturalCompare = (a: string, b: string) =>
 			a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
 
+		const firstValue = (v: VariableInfo) => {
+			const vals = Object.values(v.valuesByMode);
+			return vals.length > 0 ? vals[0] : "";
+		};
+
 		result.sort((a, b) => {
 			let cmp = 0;
 			if (sortField === "name") cmp = naturalCompare(a.name, b.name);
 			else if (sortField === "collection")
 				cmp = naturalCompare(a.collectionName, b.collectionName);
+			else if (sortField === "value")
+				cmp = naturalCompare(firstValue(a), firstValue(b));
 			return sortDir === "asc" ? cmp : -cmp;
 		});
 
@@ -1513,7 +1520,33 @@ export function ManagePage({
 									<ChevronDown size={12} />
 								))}
 						</div>
-						<div className="manage-col-value">Value</div>
+						<div
+							aria-sort={
+								sortField === "value"
+									? sortDir === "asc"
+										? "ascending"
+										: "descending"
+									: "none"
+							}
+							className="manage-col-value manage-sortable"
+							onClick={() => handleSort("value")}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									handleSort("value");
+								}
+							}}
+							role="columnheader"
+							tabIndex={0}
+						>
+							Value{" "}
+							{sortField === "value" &&
+								(sortDir === "asc" ? (
+									<ChevronUp size={12} />
+								) : (
+									<ChevronDown size={12} />
+								))}
+						</div>
 					</div>
 
 					<ScrollArea className="manage-list-body">

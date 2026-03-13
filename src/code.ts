@@ -29,6 +29,11 @@ figma.showUI(__html__, {
 	themeColors: true,
 });
 
+// With "documentAccess": "dynamic-page" in manifest, the plugin can only
+// see the current page by default. Load all pages so variables, styles,
+// and cross-page nodes are accessible.
+figma.loadAllPagesAsync();
+
 // Group styles by root folder, returning name + count pairs
 function groupStylesByRoot(
 	styles: { name: string }[],
@@ -104,12 +109,13 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 		}
 
 		case "get-collections": {
-			const collections = figma.variables.getLocalVariableCollections();
+			const collections = await figma.variables.getLocalVariableCollectionsAsync();
 			const collectionsData = collections
 				.map((c) => ({
 					id: c.id,
 					name: c.name,
 					variableCount: c.variableIds.length,
+					modes: c.modes.map((m) => m.name),
 				}))
 				.sort((a, b) => a.name.localeCompare(b.name));
 			figma.ui.postMessage({
@@ -146,10 +152,10 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 		}
 
 		case "get-styles": {
-			const paintStyles = figma.getLocalPaintStyles();
-			const textStyles = figma.getLocalTextStyles();
-			const effectStyles = figma.getLocalEffectStyles();
-			const gridStyles = figma.getLocalGridStyles();
+			const paintStyles = await figma.getLocalPaintStylesAsync();
+			const textStyles = await figma.getLocalTextStylesAsync();
+			const effectStyles = await figma.getLocalEffectStylesAsync();
+			const gridStyles = await figma.getLocalGridStylesAsync();
 
 			const stylesByCategory = {
 				paint: groupStylesByRoot(paintStyles),
@@ -179,10 +185,10 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 		}
 
 		case "get-style-details": {
-			const paintStyles = figma.getLocalPaintStyles();
-			const textStyles = figma.getLocalTextStyles();
-			const effectStyles = figma.getLocalEffectStyles();
-			const gridStyles = figma.getLocalGridStyles();
+			const paintStyles = await figma.getLocalPaintStylesAsync();
+			const textStyles = await figma.getLocalTextStylesAsync();
+			const effectStyles = await figma.getLocalEffectStylesAsync();
+			const gridStyles = await figma.getLocalGridStylesAsync();
 
 			// Helper: convert Figma RGB to hex string
 			const rgbToHex = (c: RGB | RGBA) => {
@@ -193,12 +199,12 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			};
 
 			// Helper: resolve a VariableAlias to its variable name
-			const resolveVarName = (
+			const resolveVarName = async (
 				alias: { id: string } | undefined,
-			): string | undefined => {
+			): Promise<string | undefined> => {
 				if (!(alias?.id)) return undefined;
 				try {
-					const v = figma.variables.getVariableById(alias.id);
+					const v = await figma.variables.getVariableByIdAsync(alias.id);
 					return v ? v.name : undefined;
 				} catch (err) {
 					console.warn("[Cipher] resolveVarName error for id:", alias.id, err);
@@ -227,25 +233,25 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							paintType: "SOLID",
 							color: rgbToHex(solid.color),
 							opacity: solid.opacity ?? 1,
-							colorVariable: resolveVarName(bv.color),
-							opacityVariable: resolveVarName(bv.opacity),
+							colorVariable: await resolveVarName(bv.color),
+							opacityVariable: await resolveVarName(bv.opacity),
 						});
 					} else if (paint.type.startsWith("GRADIENT_")) {
 						const grad = paint as GradientPaint;
-						const stops = grad.gradientStops.map((stop) => {
+						const stops = await Promise.all(grad.gradientStops.map(async (stop) => {
 							// Variable bindings are directly on each stop object
 							const stopBv = (stop as any).boundVariables || {};
 							return {
 								color: rgbToHex(stop.color),
 								position: Math.round(stop.position * 100) / 100,
-								variable: resolveVarName(stopBv.color),
+								variable: await resolveVarName(stopBv.color),
 							};
-						});
+						}));
 						paints.push({
 							paintType: paint.type,
 							opacity: grad.opacity ?? 1,
 							stops,
-							opacityVariable: resolveVarName(bv.opacity),
+							opacityVariable: await resolveVarName(bv.opacity),
 						});
 					} else if (paint.type === "IMAGE") {
 						paints.push({
@@ -284,7 +290,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					"fontWeight",
 				]) {
 					if (bv[field]) {
-						const n = resolveVarName(bv[field]);
+						const n = await resolveVarName(bv[field]);
 						if (n) variables[field] = n;
 					}
 				}
@@ -307,7 +313,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			for (const s of effectStyles) {
 				const styleEffectBv = (s as any).boundVariables?.effects || [];
-				const effects = s.effects.map((e, ei) => {
+				const effects = await Promise.all(s.effects.map(async (e, ei) => {
 					// Merge effect-level and style-level bindings
 					const effectBv = (e as any).boundVariables || {};
 					const styleEBv = styleEffectBv[ei] || {};
@@ -318,23 +324,23 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							effectType: e.type,
 							description: `${e.type === "INNER_SHADOW" ? "inset " : ""}${shadow.offset.x}px ${shadow.offset.y}px ${shadow.radius}px${shadow.spread ? ` ${shadow.spread}px` : ""}`,
 							color: rgbToHex(shadow.color),
-							colorVariable: resolveVarName(bv.color),
-							radiusVariable: resolveVarName(bv.radius),
-							spreadVariable: resolveVarName(bv.spread),
+							colorVariable: await resolveVarName(bv.color),
+							radiusVariable: await resolveVarName(bv.radius),
+							spreadVariable: await resolveVarName(bv.spread),
 						};
 					}
 					if (e.type === "LAYER_BLUR" || e.type === "BACKGROUND_BLUR") {
 						return {
 							effectType: e.type,
 							description: `${e.type === "LAYER_BLUR" ? "blur" : "bg blur"} ${(e as BlurEffect).radius}px`,
-							radiusVariable: resolveVarName(bv.radius),
+							radiusVariable: await resolveVarName(bv.radius),
 						};
 					}
 					return {
 						effectType: e.type,
 						description: e.type.toLowerCase().replace(/_/g, " "),
 					};
-				});
+				}));
 				styles.push({
 					id: s.id,
 					name: s.name,
@@ -601,7 +607,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			// --- Build variable lookup maps ---
 
 			// Color variables: keyed by RGBA (including alpha)
-			const colorVars = figma.variables.getLocalVariables("COLOR");
+			const colorVars = await figma.variables.getLocalVariablesAsync("COLOR");
 			const varColorMap: { id: string; name: string; keys: string[] }[] = [];
 
 			const colorKey = (r: number, g: number, b: number, a: number) => {
@@ -618,7 +624,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			};
 
 			for (const v of colorVars) {
-				const collection = figma.variables.getVariableCollectionById(
+				const collection = await figma.variables.getVariableCollectionByIdAsync(
 					v.variableCollectionId,
 				);
 				if (!collection) continue;
@@ -634,9 +640,9 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			}
 
 			// Float variables: keyed by numeric value (for fontSize, lineHeight)
-			const floatVars = figma.variables.getLocalVariables("FLOAT");
+			const floatVars = await figma.variables.getLocalVariablesAsync("FLOAT");
 			const varFloatMap: { id: string; name: string; values: number[] }[] = [];
-			const resolveFloat = (val: any, depth = 0): number | undefined => {
+			const resolveFloat = async (val: any, depth = 0): Promise<number | undefined> => {
 				if (typeof val === "number") return val;
 				if (depth > 3) return undefined;
 				if (
@@ -645,38 +651,38 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					"type" in val &&
 					val.type === "VARIABLE_ALIAS"
 				) {
-					const ref = figma.variables.getVariableById(val.id);
+					const ref = await figma.variables.getVariableByIdAsync(val.id);
 					if (ref) {
-						const refCol = figma.variables.getVariableCollectionById(
+						const refCol = await figma.variables.getVariableCollectionByIdAsync(
 							ref.variableCollectionId,
 						);
 						if (refCol) {
 							const firstMode = refCol.modes[0]?.modeId;
 							if (firstMode)
-								return resolveFloat(ref.valuesByMode[firstMode], depth + 1);
+								return await resolveFloat(ref.valuesByMode[firstMode], depth + 1);
 						}
 					}
 				}
 				return undefined;
 			};
 			for (const v of floatVars) {
-				const collection = figma.variables.getVariableCollectionById(
+				const collection = await figma.variables.getVariableCollectionByIdAsync(
 					v.variableCollectionId,
 				);
 				if (!collection) continue;
 				const values: number[] = [];
 				for (const modeId of collection.modes.map((m) => m.modeId)) {
 					const val = v.valuesByMode[modeId];
-					const resolved = resolveFloat(val);
+					const resolved = await resolveFloat(val);
 					if (resolved != null) values.push(resolved);
 				}
 				varFloatMap.push({ id: v.id, name: v.name, values });
 			}
 
 			// String variables: keyed by string value (for fontFamily, fontWeight)
-			const stringVars = figma.variables.getLocalVariables("STRING");
+			const stringVars = await figma.variables.getLocalVariablesAsync("STRING");
 			const varStringMap: { id: string; name: string; values: string[] }[] = [];
-			const resolveString = (val: any, depth = 0): string | undefined => {
+			const resolveString = async (val: any, depth = 0): Promise<string | undefined> => {
 				if (typeof val === "string") return val;
 				if (depth > 3) return undefined;
 				if (
@@ -685,29 +691,29 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					"type" in val &&
 					val.type === "VARIABLE_ALIAS"
 				) {
-					const ref = figma.variables.getVariableById(val.id);
+					const ref = await figma.variables.getVariableByIdAsync(val.id);
 					if (ref) {
-						const refCol = figma.variables.getVariableCollectionById(
+						const refCol = await figma.variables.getVariableCollectionByIdAsync(
 							ref.variableCollectionId,
 						);
 						if (refCol) {
 							const firstMode = refCol.modes[0]?.modeId;
 							if (firstMode)
-								return resolveString(ref.valuesByMode[firstMode], depth + 1);
+								return await resolveString(ref.valuesByMode[firstMode], depth + 1);
 						}
 					}
 				}
 				return undefined;
 			};
 			for (const v of stringVars) {
-				const collection = figma.variables.getVariableCollectionById(
+				const collection = await figma.variables.getVariableCollectionByIdAsync(
 					v.variableCollectionId,
 				);
 				if (!collection) continue;
 				const values: string[] = [];
 				for (const modeId of collection.modes.map((m) => m.modeId)) {
 					const val = v.valuesByMode[modeId];
-					const resolved = resolveString(val);
+					const resolved = await resolveString(val);
 					if (resolved != null) values.push(resolved);
 				}
 				varStringMap.push({ id: v.id, name: v.name, values });
@@ -1032,7 +1038,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			for (const { styleId, field, variableId } of bindings) {
 				try {
 					const style = figma.getStyleById(styleId);
-					const variable = figma.variables.getVariableById(variableId);
+					const variable = await figma.variables.getVariableByIdAsync(variableId);
 					if (!(style && variable)) {
 						failed++;
 						continue;
@@ -1252,7 +1258,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 		}
 
 		case "get-variables": {
-			const collections = figma.variables.getLocalVariableCollections();
+			const collections = await figma.variables.getLocalVariableCollectionsAsync();
 			const filterIds = msg.data?.collectionIds;
 			const filteredCollections = filterIds
 				? collections.filter((c) => filterIds.includes(c.id))
@@ -1281,7 +1287,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					collection.modes.map((m) => [m.modeId, m.name]),
 				);
 				for (const varId of collection.variableIds) {
-					const variable = figma.variables.getVariableById(varId);
+					const variable = await figma.variables.getVariableByIdAsync(varId);
 					if (!variable) continue;
 
 					const valuesByMode: Record<string, string> = {};
@@ -1293,7 +1299,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							"type" in value &&
 							value.type === "VARIABLE_ALIAS"
 						) {
-							const refVar = figma.variables.getVariableById(
+							const refVar = await figma.variables.getVariableByIdAsync(
 								(value as VariableAlias).id,
 							);
 							valuesByMode[modeName] = refVar
@@ -1343,7 +1349,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			const previousNames: { id: string; oldName: string }[] = [];
 			for (const { id, newName } of renames) {
 				try {
-					const variable = figma.variables.getVariableById(id);
+					const variable = await figma.variables.getVariableByIdAsync(id);
 					if (variable) {
 						previousNames.push({ id, oldName: variable.name });
 						variable.name = newName;
@@ -1378,7 +1384,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			// Initialize entries for each target variable
 			for (const id of variableIds) {
-				const variable = figma.variables.getVariableById(id);
+				const variable = await figma.variables.getVariableByIdAsync(id);
 				if (variable) {
 					dependencies[id] = {
 						name: variable.name,
@@ -1388,10 +1394,10 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			}
 
 			// Scan all variables to find references
-			const allCollections = figma.variables.getLocalVariableCollections();
+			const allCollections = await figma.variables.getLocalVariableCollectionsAsync();
 			for (const collection of allCollections) {
 				for (const varId of collection.variableIds) {
-					const variable = figma.variables.getVariableById(varId);
+					const variable = await figma.variables.getVariableByIdAsync(varId);
 					if (!variable) continue;
 					for (const [, value] of Object.entries(variable.valuesByMode)) {
 						if (
@@ -1441,7 +1447,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			for (const id of variableIds) {
 				try {
-					const variable = figma.variables.getVariableById(id);
+					const variable = await figma.variables.getVariableByIdAsync(id);
 					if (variable) {
 						// Snapshot before deleting for undo
 						const rawValues: Record<string, any> = {};
@@ -1482,7 +1488,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			let failed = 0;
 			for (const snap of snapshots) {
 				try {
-					const collection = figma.variables.getVariableCollectionById(
+					const collection = await figma.variables.getVariableCollectionByIdAsync(
 						snap.collectionId,
 					);
 					if (!collection) {
@@ -1527,7 +1533,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 		case "move-variables": {
 			const { variableIds, targetCollectionId } = msg.data;
 			const targetCollection =
-				figma.variables.getVariableCollectionById(targetCollectionId);
+				await figma.variables.getVariableCollectionByIdAsync(targetCollectionId);
 			if (!targetCollection) {
 				figma.ui.postMessage({
 					type: "variables-moved",
@@ -1556,7 +1562,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			for (const id of variableIds) {
 				try {
-					const variable = figma.variables.getVariableById(id);
+					const variable = await figma.variables.getVariableByIdAsync(id);
 					if (!variable) {
 						failed++;
 						continue;
@@ -1565,7 +1571,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						continue;
 					} // Already there
 
-					const sourceCollection = figma.variables.getVariableCollectionById(
+					const sourceCollection = await figma.variables.getVariableCollectionByIdAsync(
 						variable.variableCollectionId,
 					);
 					if (!sourceCollection) {
@@ -1630,13 +1636,13 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			for (const id of variableIds) {
 				try {
-					const variable = figma.variables.getVariableById(id);
+					const variable = await figma.variables.getVariableByIdAsync(id);
 					if (!variable) {
 						failed++;
 						continue;
 					}
 
-					const collection = figma.variables.getVariableCollectionById(
+					const collection = await figma.variables.getVariableCollectionByIdAsync(
 						variable.variableCollectionId,
 					);
 					if (!collection) {
@@ -1684,13 +1690,13 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			for (const { id, valuesByMode } of updates) {
 				try {
-					const variable = figma.variables.getVariableById(id);
+					const variable = await figma.variables.getVariableByIdAsync(id);
 					if (!variable) {
 						failed++;
 						continue;
 					}
 
-					const collection = figma.variables.getVariableCollectionById(
+					const collection = await figma.variables.getVariableCollectionByIdAsync(
 						variable.variableCollectionId,
 					);
 					if (!collection) {
@@ -1727,7 +1733,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 								rawValue.endsWith("}")
 							) {
 								const refName = rawValue.slice(1, -1);
-								const allVars = figma.variables.getLocalVariables();
+								const allVars = await figma.variables.getLocalVariablesAsync();
 								const refVar = allVars.find((v) => v.name === refName);
 								if (refVar) {
 									value = figma.variables.createVariableAlias(refVar);
@@ -1795,7 +1801,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			let cssToFigmaNameMap: Record<string, string> = {};
 
 			// Find the target collection(s)
-			const allCollections = figma.variables.getLocalVariableCollections();
+			const allCollections = await figma.variables.getLocalVariableCollectionsAsync();
 			const targetCollections = allCollections.filter((c) => {
 				if (selectedCollections && selectedCollections.length > 0) {
 					return selectedCollections.includes(c.name);
@@ -1817,7 +1823,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						collection.modes.map((m) => [m.modeId, m.name]),
 					);
 					for (const varId of collection.variableIds) {
-						const variable = figma.variables.getVariableById(varId);
+						const variable = await figma.variables.getVariableByIdAsync(varId);
 						if (!variable) continue;
 
 						const valuesByMode: Record<string, string> = {};
@@ -1831,7 +1837,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 								"type" in value &&
 								value.type === "VARIABLE_ALIAS"
 							) {
-								const refVar = figma.variables.getVariableById(
+								const refVar = await figma.variables.getVariableByIdAsync(
 									(value as VariableAlias).id,
 								);
 								valuesByMode[modeName] = refVar
@@ -1872,7 +1878,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				// (e.g. typescales from "responsive", blurs from "primitives").
 				for (const collection of allCollections) {
 					for (const varId of collection.variableIds) {
-						const variable = figma.variables.getVariableById(varId);
+						const variable = await figma.variables.getVariableByIdAsync(varId);
 						if (!variable) continue;
 						const cssVar = toVarName(
 							variable.name,
@@ -1993,7 +1999,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			// Restore updated variables to their previous values
 			for (const entry of updates) {
 				try {
-					const variable = figma.variables.getVariableById(entry.variableId);
+					const variable = await figma.variables.getVariableByIdAsync(entry.variableId);
 					if (variable && entry.previousValues) {
 						for (const [modeId, value] of Object.entries(
 							entry.previousValues,
@@ -2019,7 +2025,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			// Delete created variables
 			for (const entry of created) {
 				try {
-					const variable = figma.variables.getVariableById(entry.variableId);
+					const variable = await figma.variables.getVariableByIdAsync(entry.variableId);
 					if (variable) {
 						variable.remove();
 						success++;
@@ -2046,10 +2052,10 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			let success = 0;
 			let failed = 0;
 
-			const allCollections = figma.variables.getLocalVariableCollections();
+			const allCollections = await figma.variables.getLocalVariableCollectionsAsync();
 			for (const collection of allCollections) {
 				for (const varId of collection.variableIds) {
-					const variable = figma.variables.getVariableById(varId);
+					const variable = await figma.variables.getVariableByIdAsync(varId);
 					if (!variable) continue;
 					for (const [modeId, value] of Object.entries(variable.valuesByMode)) {
 						if (
@@ -2060,7 +2066,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							(value as any).id === sourceId
 						) {
 							try {
-								const targetVar = figma.variables.getVariableById(targetId);
+								const targetVar = await figma.variables.getVariableByIdAsync(targetId);
 								if (targetVar) {
 									const alias = figma.variables.createVariableAlias(targetVar);
 									variable.setValueForMode(modeId, alias);
@@ -2097,13 +2103,13 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			for (const id of variableIds) {
 				try {
-					const variable = figma.variables.getVariableById(id);
+					const variable = await figma.variables.getVariableByIdAsync(id);
 					if (!variable || variable.resolvedType !== "FLOAT") {
 						failed++;
 						continue;
 					}
 
-					const collection = figma.variables.getVariableCollectionById(
+					const collection = await figma.variables.getVariableCollectionByIdAsync(
 						variable.variableCollectionId,
 					);
 					if (!collection) {
@@ -2170,7 +2176,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					includeThemeInline,
 					includeColorMix,
 				} = msg.data;
-				const result = generateCSS({
+				const result = await generateCSS({
 					collectionIds,
 					colorFormat: colorFormat || "oklch",
 					includeThemeInline: includeThemeInline ?? false,

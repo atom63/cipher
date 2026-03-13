@@ -16,10 +16,10 @@ import { debug } from "../utils/debug";
  * Finds the paint style whose name matches the variable name and updates
  * the fill opacity to match the color-mix transparency value.
  */
-function updatePaintStyleOpacity(variable: Variable, opacity: number): void {
+async function updatePaintStyleOpacity(variable: Variable, opacity: number): Promise<void> {
 	try {
 		const varNameNorm = variable.name.toLowerCase();
-		const paintStyles = figma.getLocalPaintStyles();
+		const paintStyles = await figma.getLocalPaintStylesAsync();
 
 		for (const style of paintStyles) {
 			// Match style name to variable name (strip collection prefix)
@@ -126,7 +126,7 @@ export async function createVariablesFromTokens(
 
 			// Create or get Figma collection
 			let collection: VariableCollection;
-			const existingCollections = figma.variables.getLocalVariableCollections();
+			const existingCollections = await figma.variables.getLocalVariableCollectionsAsync();
 			const existing = existingCollections.find(
 				(c) => c.name === collectionKey,
 			);
@@ -271,7 +271,7 @@ export async function createVariablesFromTokens(
 						} else {
 							// Variable exists but in a different collection - Figma doesn't allow duplicate names
 							const existingCollection =
-								figma.variables.getVariableCollectionById(
+								await figma.variables.getVariableCollectionByIdAsync(
 									existingVar.variableCollectionId,
 								);
 							results.failed++;
@@ -281,8 +281,8 @@ export async function createVariablesFromTokens(
 							continue;
 						}
 					} else {
-						const existing = figma.variables
-							.getLocalVariables()
+						const existing = (await figma.variables
+							.getLocalVariablesAsync())
 							.find((v) => v.name === token.figmaName);
 						if (existing && existing.variableCollectionId === collection.id) {
 							if (existing.resolvedType === figmaType) {
@@ -298,7 +298,7 @@ export async function createVariablesFromTokens(
 						} else if (existing) {
 							// Variable exists in a different collection - Figma doesn't allow duplicate names
 							const existingCollection =
-								figma.variables.getVariableCollectionById(
+								await figma.variables.getVariableCollectionByIdAsync(
 									existing.variableCollectionId,
 								);
 							results.failed++;
@@ -470,7 +470,7 @@ export async function createVariablesFromTokens(
 						} else {
 							// Variable exists but in a different collection - Figma doesn't allow duplicate names
 							const existingCollection =
-								figma.variables.getVariableCollectionById(
+								await figma.variables.getVariableCollectionByIdAsync(
 									existingVar.variableCollectionId,
 								);
 							results.failed++;
@@ -480,8 +480,8 @@ export async function createVariablesFromTokens(
 							continue;
 						}
 					} else {
-						const existing = figma.variables
-							.getLocalVariables()
+						const existing = (await figma.variables
+							.getLocalVariablesAsync())
 							.find((v) => v.name === token.figmaName);
 						if (existing && existing.variableCollectionId === collection.id) {
 							if (existing.resolvedType === referencedVariable.resolvedType) {
@@ -497,7 +497,7 @@ export async function createVariablesFromTokens(
 						} else if (existing) {
 							// Variable exists in a different collection - Figma doesn't allow duplicate names
 							const existingCollection =
-								figma.variables.getVariableCollectionById(
+								await figma.variables.getVariableCollectionByIdAsync(
 									existing.variableCollectionId,
 								);
 							results.failed++;
@@ -552,7 +552,7 @@ export async function createVariablesFromTokens(
 					// alias with style-level opacity — we need to update the paint style
 					const styleOpacity = (token as any).styleOpacity;
 					if (styleOpacity !== undefined && styleOpacity < 1) {
-						updatePaintStyleOpacity(variable, styleOpacity);
+						await updatePaintStyleOpacity(variable, styleOpacity);
 					}
 
 					// Set description after setting value (for references)
@@ -565,7 +565,7 @@ export async function createVariablesFromTokens(
 					// Track change (for references, we track the referenced variable name)
 					const newRefName = referencedVariable.name;
 					const oldRefVariable = oldRefId
-						? figma.variables.getVariableById(oldRefId as string)
+						? await figma.variables.getVariableByIdAsync(oldRefId as string)
 						: null;
 					const oldRefName = oldRefVariable ? oldRefVariable.name : undefined;
 
@@ -621,7 +621,7 @@ export async function createVariablesFromTokens(
 		// pointing back to the primitives. This ensures CSS → Figma roundtrip
 		// preserves the full typescale system.
 		if (tokensByCollection["primitives"] && !tokensByCollection["responsive"]) {
-			rebuildResponsiveFromPrimitives(variableMap, results, undoEntries);
+			await rebuildResponsiveFromPrimitives(variableMap, results, undoEntries);
 		}
 
 		// Attach undo data
@@ -668,7 +668,7 @@ const MODE_TO_VARIANT: Record<string, string> = {
 /** Pattern: font/typescale/{step}/size/{variant} or font/typescale/{step}/line/height/{variant} */
 const TYPESCALE_RE = /^font\/typescale\/([^/]+)\/(size|line\/height)\/(min|sm|md)$/;
 
-function rebuildResponsiveFromPrimitives(
+async function rebuildResponsiveFromPrimitives(
 	variableMap: Map<string, Variable>,
 	results: ImportResults,
 	undoEntries: ImportUndoEntry[],
@@ -685,7 +685,7 @@ function rebuildResponsiveFromPrimitives(
 	debug(`🔄 Rebuilding responsive collection for ${steps.size} typescale steps`);
 
 	// Get or create responsive collection
-	const existingCollections = figma.variables.getLocalVariableCollections();
+	const existingCollections = await figma.variables.getLocalVariableCollectionsAsync();
 	let collection = existingCollections.find((c) => c.name === "responsive");
 	if (!collection) {
 		collection = figma.variables.createVariableCollection("responsive");
@@ -725,8 +725,8 @@ function rebuildResponsiveFromPrimitives(
 
 			// Get or create the responsive variable
 			let variable: Variable | undefined;
-			const existing = figma.variables
-				.getLocalVariables()
+			const existing = (await figma.variables
+				.getLocalVariablesAsync())
 				.find((v) => v.name === varName && v.variableCollectionId === collection!.id);
 
 			if (existing) {
@@ -788,8 +788,8 @@ function rebuildResponsiveFromPrimitives(
 	);
 
 	if (hasScreenPrimitives) {
-		let screenVar = figma.variables
-			.getLocalVariables()
+		let screenVar = (await figma.variables
+			.getLocalVariablesAsync())
 			.find((v) => v.name === "viewport/screen" && v.variableCollectionId === collection!.id);
 
 		if (!screenVar) {
@@ -914,7 +914,7 @@ export async function importStylesFromTokens(
 		// Import Paint Styles (Color, Gradients, Images)
 		if (paint) {
 			await processStyleGroup(paint, "", "paint", async (name, data) => {
-				const existingStyles = figma.getLocalPaintStyles();
+				const existingStyles = await figma.getLocalPaintStylesAsync();
 				let style = existingStyles.find((s) => s.name === name);
 
 				if (!style) {
@@ -949,15 +949,15 @@ export async function importStylesFromTokens(
 						paint: Paint;
 						variableBinding: any;
 						variableName?: string;
-					}> = data.fills.map((fill: any) => convertFillToPaint(fill, true));
+					}> = await Promise.all(data.fills.map((fill: any) => convertFillToPaint(fill, true)));
 
 					// Clone paints array and bind variables using the correct API
-					const boundPaints = paintsWithBindings.map(
-						({ paint, variableBinding, variableName }: any) => {
+					const boundPaints = await Promise.all(paintsWithBindings.map(
+						async ({ paint, variableBinding, variableName }: any) => {
 							if (variableBinding?.id) {
 								try {
 									// Use figma.variables.setBoundVariableForPaint to bind the variable (solid fills)
-									const variable = figma.variables.getVariableById(
+									const variable = await figma.variables.getVariableByIdAsync(
 										variableBinding.id,
 									);
 									if (variable) {
@@ -977,7 +977,7 @@ export async function importStylesFromTokens(
 
 							return paint;
 						},
-					);
+					));
 
 					style.paints = boundPaints;
 				}
@@ -989,7 +989,7 @@ export async function importStylesFromTokens(
 		// Import Text Styles (Typography)
 		if (text) {
 			await processStyleGroup(text, "", "text", async (name, data) => {
-				const existingStyles = figma.getLocalTextStyles();
+				const existingStyles = await figma.getLocalTextStylesAsync();
 				let style = existingStyles.find((s) => s.name === name);
 
 				if (!style) {
@@ -1021,7 +1021,7 @@ export async function importStylesFromTokens(
 				// Set font properties - check for variable binding first
 				if (data.fontFamilyBoundVariable?.variableName) {
 					const collectionName = data.fontFamilyBoundVariable.collectionName;
-					const variable = findVariableByName(
+					const variable = await findVariableByName(
 						data.fontFamilyBoundVariable.variableName,
 						collectionName,
 					);
@@ -1125,7 +1125,7 @@ export async function importStylesFromTokens(
 				// Set fontSize - check for variable binding first
 				if (data.fontSizeBoundVariable?.variableName) {
 					const collectionName = data.fontSizeBoundVariable.collectionName;
-					const variable = findVariableByName(
+					const variable = await findVariableByName(
 						data.fontSizeBoundVariable.variableName,
 						collectionName,
 					);
@@ -1162,7 +1162,7 @@ export async function importStylesFromTokens(
 				// Set lineHeight - check for variable binding first
 				if (data.lineHeightBoundVariable?.variableName) {
 					const collectionName = data.lineHeightBoundVariable.collectionName;
-					const variable = findVariableByName(
+					const variable = await findVariableByName(
 						data.lineHeightBoundVariable.variableName,
 						collectionName,
 					);
@@ -1239,7 +1239,7 @@ export async function importStylesFromTokens(
 				// Set fontWeight - check for variable binding first
 				if (data.fontWeightBoundVariable?.variableName) {
 					const collectionName = data.fontWeightBoundVariable.collectionName;
-					const variable = findVariableByName(
+					const variable = await findVariableByName(
 						data.fontWeightBoundVariable.variableName,
 						collectionName,
 					);
@@ -1291,7 +1291,7 @@ export async function importStylesFromTokens(
 				// Set letterSpacing - check for variable binding first
 				if (data.letterSpacingBoundVariable?.variableName) {
 					const collectionName = data.letterSpacingBoundVariable.collectionName;
-					const variable = findVariableByName(
+					const variable = await findVariableByName(
 						data.letterSpacingBoundVariable.variableName,
 						collectionName,
 					);
@@ -1362,7 +1362,7 @@ export async function importStylesFromTokens(
 				if (data.paragraphSpacingBoundVariable?.variableName) {
 					const collectionName =
 						data.paragraphSpacingBoundVariable.collectionName;
-					const variable = findVariableByName(
+					const variable = await findVariableByName(
 						data.paragraphSpacingBoundVariable.variableName,
 						collectionName,
 					);
@@ -1402,7 +1402,7 @@ export async function importStylesFromTokens(
 				if (data.paragraphIndentBoundVariable?.variableName) {
 					const collectionName =
 						data.paragraphIndentBoundVariable.collectionName;
-					const variable = findVariableByName(
+					const variable = await findVariableByName(
 						data.paragraphIndentBoundVariable.variableName,
 						collectionName,
 					);
@@ -1451,7 +1451,7 @@ export async function importStylesFromTokens(
 		// Import Effect Styles (Shadows, Blurs)
 		if (effect) {
 			await processStyleGroup(effect, "", "effect", async (name, data) => {
-				const existingStyles = figma.getLocalEffectStyles();
+				const existingStyles = await figma.getLocalEffectStylesAsync();
 				let style = existingStyles.find((s) => s.name === name);
 
 				if (!style) {
@@ -1489,7 +1489,7 @@ export async function importStylesFromTokens(
 
 					// After setting effects, bind variables if present
 					// We need to reconstruct the effects array with bound variables
-					const newEffects = style.effects.map((effect, index) => {
+					const newEffects = await Promise.all(style.effects.map(async (effect, index) => {
 						const effectData = data.effects[index];
 						if (!effectData) return effect;
 
@@ -1501,7 +1501,7 @@ export async function importStylesFromTokens(
 							if (effectData.radiusBoundVariable?.variableName) {
 								const collectionName =
 									effectData.radiusBoundVariable.collectionName;
-								const variable = findVariableByName(
+								const variable = await findVariableByName(
 									effectData.radiusBoundVariable.variableName,
 									collectionName,
 								);
@@ -1534,7 +1534,7 @@ export async function importStylesFromTokens(
 							if (effectData.spreadBoundVariable?.variableName) {
 								const collectionName =
 									effectData.spreadBoundVariable.collectionName;
-								const variable = findVariableByName(
+								const variable = await findVariableByName(
 									effectData.spreadBoundVariable.variableName,
 									collectionName,
 								);
@@ -1567,7 +1567,7 @@ export async function importStylesFromTokens(
 							if (effectData.colorBoundVariable?.variableName) {
 								const collectionName =
 									effectData.colorBoundVariable.collectionName;
-								const variable = findVariableByName(
+								const variable = await findVariableByName(
 									effectData.colorBoundVariable.variableName,
 									collectionName,
 								);
@@ -1603,7 +1603,7 @@ export async function importStylesFromTokens(
 						}
 
 						return effect;
-					});
+					}));
 
 					// Update the style with the newly bound effects
 					style.effects = newEffects;
@@ -1616,7 +1616,7 @@ export async function importStylesFromTokens(
 		// Import Grid Styles
 		if (grid) {
 			await processStyleGroup(grid, "", "grid", async (name, data) => {
-				const existingStyles = figma.getLocalGridStyles();
+				const existingStyles = await figma.getLocalGridStylesAsync();
 				let style = existingStyles.find((s) => s.name === name);
 
 				if (!style) {
@@ -1668,11 +1668,11 @@ export async function importStylesFromTokens(
 }
 
 // Helper: Find variable by name (since IDs change on import)
-function findVariableByName(
+async function findVariableByName(
 	variableName: string,
 	collectionName?: string,
-): Variable | null {
-	const collections = figma.variables.getLocalVariableCollections();
+): Promise<Variable | null> {
+	const collections = await figma.variables.getLocalVariableCollectionsAsync();
 
 	for (const collection of collections) {
 		// If collection name is specified, only search in that collection
@@ -1681,7 +1681,7 @@ function findVariableByName(
 		}
 
 		for (const variableId of collection.variableIds) {
-			const variable = figma.variables.getVariableById(variableId);
+			const variable = await figma.variables.getVariableByIdAsync(variableId);
 			if (!variable) continue;
 
 			// Try exact match first
@@ -1724,7 +1724,7 @@ function findVariableByName(
 
 // Helper: Convert fill data to Figma Paint object
 // Returns both the paint and variable binding info (for styles, bindings must be set separately)
-function convertFillToPaint(fill: any, returnBindingInfo = false): any {
+async function convertFillToPaint(fill: any, returnBindingInfo = false): Promise<any> {
 	if (fill.type === "solid") {
 		const color = parseColorToRGBA(fill.color);
 		const paint: SolidPaint = {
@@ -1739,7 +1739,7 @@ function convertFillToPaint(fill: any, returnBindingInfo = false): any {
 		if (fill.boundVariable?.variableName) {
 			variableName = fill.boundVariable.variableName;
 			const collectionName = fill.boundVariable.collectionName;
-			const variable = findVariableByName(variableName, collectionName);
+			const variable = await findVariableByName(variableName, collectionName);
 			if (variable) {
 				variableBinding = { type: "VARIABLE_ALIAS" as const, id: variable.id };
 			} else {
@@ -1766,7 +1766,7 @@ function convertFillToPaint(fill: any, returnBindingInfo = false): any {
 			| "GRADIENT_DIAMOND";
 
 		// Create gradient stops with variable bindings attached
-		const gradientStops = fill.gradientStops.map((stop: any) => {
+		const gradientStops = await Promise.all(fill.gradientStops.map(async (stop: any) => {
 			const color = parseColorToRGBA(stop.color);
 			const gradStop: any = {
 				position: stop.position,
@@ -1776,7 +1776,7 @@ function convertFillToPaint(fill: any, returnBindingInfo = false): any {
 			// Attach variable binding directly to the gradient stop if present
 			if (stop.boundVariable?.variableName) {
 				const collectionName = stop.boundVariable.collectionName;
-				const variable = findVariableByName(
+				const variable = await findVariableByName(
 					stop.boundVariable.variableName,
 					collectionName,
 				);
@@ -1799,7 +1799,7 @@ function convertFillToPaint(fill: any, returnBindingInfo = false): any {
 			}
 
 			return gradStop;
-		});
+		}));
 
 		const paint: GradientPaint = {
 			type: gradientType,
