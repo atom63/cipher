@@ -31,7 +31,7 @@ function RootComponent() {
 
   return (
     <ThemeProvider>
-      <PasswordGate>
+      <PasswordGate enabled={false}>
         <GridProvider>
           <TooltipProvider>
             <motion.div

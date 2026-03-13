@@ -1,9 +1,10 @@
 import { socialsByName } from "./socials";
 
 export const siteConfig = {
-  name: "New Project",
-  description: "A sandbox playground for experimenting with ideas.",
-  url: "http://localhost:5173",
+  name: "Cipher",
+  description:
+    "Design tokens from Figma to production CSS in one click. Generate, preview, and export a complete token system — colors, typography, spacing, and more.",
+  url: "https://cipher.design",
   ogImage: "/og.jpg",
   favicon: "/favicons/favicon.ico",
   author: {
@@ -11,7 +12,16 @@ export const siteConfig = {
     email: socialsByName.email?.url.replace("mailto:", "") ?? "",
     twitter: socialsByName.twitter?.handle ?? "",
   },
-  keywords: ["sandbox", "playground", "experiments"],
+  keywords: [
+    "design tokens",
+    "figma plugin",
+    "css variables",
+    "design system",
+    "color palette",
+    "typography scale",
+    "tailwind css",
+    "design to code",
+  ],
   links: {
     twitter: socialsByName.twitter?.url ?? "",
     github: socialsByName.github?.url ?? "https://github.com/youzhang",

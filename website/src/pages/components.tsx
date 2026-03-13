@@ -1,7 +1,7 @@
 import { FileText } from "lucide-react";
 import Container from "@/components/common/layout/container";
 import Section from "@/components/common/layout/section";
-import { ContentList } from "@/components/mdx/content/content-list";
+import { ContentList } from "@/components/common/mdx/content/content-list";
 import { EmptyState } from "@/components/ui/empty-state";
 import { posts } from "@/content/utils/posts";
 

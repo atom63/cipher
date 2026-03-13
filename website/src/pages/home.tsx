@@ -8,10 +8,10 @@ export default function Home() {
       <Container>
         <Section className="flex min-h-[60vh] flex-col items-center justify-center text-center">
           <h1 className="font-bold text-4xl tracking-tight sm:text-5xl">
-            New Project
+            Cipher
           </h1>
           <p className="mt-3 max-w-md text-lg text-muted-foreground">
-            A sandbox playground for experimenting with ideas.
+            Design tokens from Figma to production CSS in one click.
           </p>
         </Section>
       </Container>

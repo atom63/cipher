@@ -3,7 +3,7 @@ import { FileQuestion } from "lucide-react";
 import Container from "@/components/common/layout/container";
 import Section from "@/components/common/layout/section";
 import { SectionHeader } from "@/components/common/layout/section-header";
-import { MDXContentProvider } from "@/components/mdx/mdx-provider";
+import { MDXContentProvider } from "@/components/common/mdx/mdx-provider";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getPostBySlug } from "@/content/utils/posts";

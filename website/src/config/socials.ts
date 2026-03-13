@@ -1,41 +1,55 @@
-/**
- * Social media links and contact information
- */
-
 export interface SocialLink {
-  handle?: string;
-  name: string;
-  url: string;
+  handle?: string
+  iconify: string
+  name: string
+  url: string
 }
 
 export const socials: SocialLink[] = [
   {
-    name: "Twitter",
-    handle: "",
-    url: "",
+    name: 'Email',
+    url: 'mailto:hello.youzhang@gmail.com',
+    iconify: 'mdi:email',
+    handle: 'hello.youzhang@gmail.com',
   },
   {
-    name: "GitHub",
-    handle: "youzhang",
-    url: "https://github.com/youzhang",
+    name: 'Behance',
+    url: 'https://www.behance.net/youzhang',
+    iconify: 'mdi:behance',
+    handle: 'youzhang',
   },
   {
-    name: "LinkedIn",
-    handle: "",
-    url: "",
+    name: 'Instagram',
+    url: 'https://www.instagram.com/atom63_/',
+    iconify: 'mdi:instagram',
+    handle: '@atom63_',
   },
   {
-    name: "Email",
-    url: "",
+    name: 'LinkedIn',
+    url: 'https://www.linkedin.com/in/you-zhang/',
+    iconify: 'mdi:linkedin',
+    handle: 'you-zhang',
   },
-];
+  {
+    name: 'Twitter',
+    url: 'https://twitter.com/yz_atom63',
+    iconify: 'mdi:twitter',
+    handle: '@yz_atom63',
+  },
+  {
+    name: 'GitHub',
+    url: 'https://github.com/atom63',
+    iconify: 'mdi:github',
+    handle: 'atom63',
+  },
+]
 
-/**
- * Socials lookup by name for easy access
- */
-export const socialsByName = {
-  twitter: socials[0],
-  github: socials[1],
-  linkedin: socials[2],
-  email: socials[3],
-} as const;
+export const socialsByName = socials.reduce(
+  (acc, social) => {
+    acc[social.name.toLowerCase()] = social
+    return acc
+  },
+  {} as Record<string, SocialLink>
+)
+
+export const primarySocials = socials
