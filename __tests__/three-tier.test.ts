@@ -593,6 +593,50 @@ describe("responsive", () => {
 		);
 	});
 
+	test.each([
+		{ base: 16, ratio: "major-third", stepsUp: 10, stepsDown: 2, lineHeightHeading: 125, lineHeightBody: 150 },
+		{ base: 14, ratio: "major-second", stepsUp: 10, stepsDown: 2, lineHeightHeading: 120, lineHeightBody: 150 },
+		{ base: 14, ratio: "major-second", stepsUp: 10, stepsDown: 2, lineHeightHeading: 125, lineHeightBody: 150 },
+		{ base: 16, ratio: "minor-third", stepsUp: 6, stepsDown: 2, lineHeightHeading: 120, lineHeightBody: 150 },
+	])("line-height = round(size × lhPct) for base=$base ratio=$ratio lhH=$lineHeightHeading", (tsConfig) => {
+		// Regression: derived ratio from rounded values caused 1px drift
+		const config: BrandConfig = {
+			primary: "#3B82F6",
+			typescale: tsConfig,
+		};
+		const result = generateDesignSystem(config);
+
+		// Collect all primitive typescale line-height and size tokens
+		const primitives = result.tokens.filter(
+			(t) => t.category === "primitives" && t.figmaName.startsWith("font/typescale/"),
+		);
+
+		// Group by step + variant
+		const sizeMap = new Map<string, number>();
+		const lhMap = new Map<string, number>();
+		for (const t of primitives) {
+			const m = t.figmaName.match(/^font\/typescale\/(.+?)\/(size|line\/height)\/(min|sm|md)$/);
+			if (!m) continue;
+			const key = `${m[1]}/${m[3]}`;
+			if (m[2] === "size") sizeMap.set(key, t.value as number);
+			else lhMap.set(key, t.value as number);
+		}
+
+		const headingPct = tsConfig.lineHeightHeading / 100;
+		const bodyPct = tsConfig.lineHeightBody / 100;
+
+		// Every line-height must equal round(size × lhPct) using the config percentage
+		for (const [key, lh] of lhMap) {
+			const size = sizeMap.get(key);
+			expect(size).toBeDefined();
+			// Determine if heading or body — steps above base use heading, base and below use body
+			const isHeading = (size as number) > tsConfig.base;
+			const pct = isHeading ? headingPct : bodyPct;
+			const expected = Math.round((size as number) * pct);
+			expect(lh, `${key}: size=${size}, lh=${lh}, expected=${expected}`).toBe(expected);
+		}
+	});
+
 	test("includes viewport/screen responsive token", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const viewport = result.tokens.filter(

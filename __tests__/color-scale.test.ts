@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
+	adjustSaturation,
 	generateColorScale,
+	generateNeutralScale,
 	hexToRgb,
 	oklchToRgb,
 	rgbToHex,
@@ -110,5 +112,62 @@ describe("generateColorScale", () => {
 		for (const step of SHADE_STEPS) {
 			expect(scale.hexValues[step]).toMatch(/^#[0-9a-f]{6}$/);
 		}
+	});
+});
+
+describe("adjustSaturation", () => {
+	test("multiplier=1 returns original colors", () => {
+		const colors = ["#fcfcfd", "#f1f3f5", "#8b8d98"];
+		expect(adjustSaturation(colors, 1)).toEqual(colors);
+	});
+
+	test("multiplier=0 produces near-gray colors", () => {
+		const colors = ["#f1f3f5", "#dce0e5"];
+		const desaturated = adjustSaturation(colors, 0);
+		for (const hex of desaturated) {
+			const rgb = hexToRgb(hex);
+			const oklch = rgbToOklch(rgb.r, rgb.g, rgb.b);
+			expect(oklch.c).toBeLessThan(0.002);
+		}
+	});
+
+	test("multiplier=2 increases chroma", () => {
+		const colors = ["#f1f3f5"];
+		const rgb1 = hexToRgb(colors[0]);
+		const oklch1 = rgbToOklch(rgb1.r, rgb1.g, rgb1.b);
+
+		const boosted = adjustSaturation(colors, 2);
+		const rgb2 = hexToRgb(boosted[0]);
+		const oklch2 = rgbToOklch(rgb2.r, rgb2.g, rgb2.b);
+
+		expect(oklch2.c).toBeGreaterThan(oklch1.c);
+	});
+});
+
+describe("generateNeutralScale", () => {
+	test("returns 12 steps for light and dark", () => {
+		const scale = generateNeutralScale("#3B82F6");
+		expect(scale.light).toHaveLength(12);
+		expect(scale.dark).toHaveLength(12);
+	});
+
+	test("saturation=0 produces near-gray neutrals", () => {
+		const scale = generateNeutralScale("#3B82F6", 0);
+		for (const hex of scale.light) {
+			const rgb = hexToRgb(hex);
+			const oklch = rgbToOklch(rgb.r, rgb.g, rgb.b);
+			expect(oklch.c).toBeLessThan(0.002);
+		}
+	});
+
+	test("saturation=2 produces more saturated neutrals", () => {
+		const normal = generateNeutralScale("#3B82F6", 1);
+		const boosted = generateNeutralScale("#3B82F6", 2);
+		// Compare mid-range step (step 8) which has most visible chroma
+		const normalRgb = hexToRgb(normal.light[7]);
+		const boostedRgb = hexToRgb(boosted.light[7]);
+		const normalOklch = rgbToOklch(normalRgb.r, normalRgb.g, normalRgb.b);
+		const boostedOklch = rgbToOklch(boostedRgb.r, boostedRgb.g, boostedRgb.b);
+		expect(boostedOklch.c).toBeGreaterThan(normalOklch.c);
 	});
 });

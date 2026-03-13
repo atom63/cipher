@@ -309,6 +309,7 @@ export function GeneratePage() {
 		mono: "Geist Mono",
 	});
 	const [statusColors, setStatusColors] = useState<StatusColorOverrides>({});
+	const [surfaceSaturation, setSurfaceSaturation] = useState(100);
 
 	// Result state
 	const [result, setResult] = useState<ImportResults | null>(null);
@@ -444,6 +445,7 @@ export function GeneratePage() {
 			typescale,
 			fonts,
 			statusColors: hasStatusOverrides ? statusColors : undefined,
+			surfaceSaturation: surfaceSaturation !== 100 ? surfaceSaturation : undefined,
 		};
 	}, [
 		primaryColor,
@@ -457,6 +459,7 @@ export function GeneratePage() {
 		typescale,
 		fonts,
 		statusColors,
+		surfaceSaturation,
 	]);
 
 	// Generate preview
@@ -901,6 +904,28 @@ export function GeneratePage() {
 						<Frame>
 							<FrameHeader><h3 className={styles.sectionTitle}>Surface Colors</h3></FrameHeader>
 							<FramePanel className={styles.sectionContent}>
+								<div className={styles.fieldGroup}>
+									<label>Saturation</label>
+									<div className={styles.sliderRow}>
+										<input
+											aria-label="Surface color saturation"
+											className={styles.rangeSlider}
+											max={200}
+											min={0}
+											onChange={(e) => setSurfaceSaturation(Number(e.target.value))}
+											step={5}
+											type="range"
+											value={surfaceSaturation}
+										/>
+										<span className={styles.sliderValue}>{surfaceSaturation}%</span>
+									</div>
+									{surfaceSaturation !== 100 && (
+										<span className={styles.hint}>
+											{surfaceSaturation < 100 ? "Less" : "More"} saturated than default
+										</span>
+									)}
+								</div>
+								<Separator />
 								<SurfaceToneSelector
 									customHex={grayLightHex}
 									generated={generated}
@@ -1309,12 +1334,14 @@ function SurfaceToneSelector({
 }) {
 	const isCustom = /^#[0-9a-fA-F]{6}$/.test(customHex);
 
-	// Preview colors: custom generated scale or Radix preset
-	const previewColors = isCustom && generated
+	// Preview colors: use generated neutral scale when available
+	// (custom hex always, or Radix presets when saturation is adjusted)
+	const generatedColors = generated
 		? (mode === "light"
 			? generated.neutralScaleLight?.light
 			: generated.neutralScaleDark?.dark)
 		: undefined;
+	const previewColors = (isCustom || generatedColors) ? generatedColors : undefined;
 
 	return (
 		<div className={styles.fieldGroup}>

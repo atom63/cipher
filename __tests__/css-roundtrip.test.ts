@@ -342,3 +342,84 @@ describe("value changes survive round-trip", () => {
 		expect(r2.tokens[0].value).toBe(18);
 	});
 });
+
+describe("typescales.css reverse-mapping", () => {
+	test("maps --typography-* to font/typescale/* primitives per variant", () => {
+		const css = bundle({
+			"typescales.css": `
+:root {
+  --typography-base-font-size: calc(14px * var(--typography-scale, 1));
+  --typography-base-line-height: calc(21px * var(--typography-scale, 1));
+  --typography-xl-font-size: calc(17px * var(--typography-scale, 1));
+  --typography-xl-line-height: calc(20px * var(--typography-scale, 1));
+}
+@media (min-width: 40rem) {
+  :root {
+    --typography-xl-font-size: calc(18px * var(--typography-scale, 1));
+    --typography-xl-line-height: calc(22px * var(--typography-scale, 1));
+  }
+}
+@media (min-width: 48rem) {
+  :root {
+    --typography-xl-font-size: calc(20px * var(--typography-scale, 1));
+    --typography-xl-line-height: calc(24px * var(--typography-scale, 1));
+  }
+}
+[data-window-size="xs"] {
+  --typography-base-font-size: calc(14px * var(--typography-scale, 1));
+}
+			`,
+		});
+
+		const result = parseCSS(css);
+
+		// Should have: base size/lh × min, xl size/lh × min/sm/md = 8 tokens
+		// data-window-size blocks should be skipped
+		const tokens = result.tokens;
+
+		// base :root → min variant
+		const baseSizeMin = tokens.find((t) => t.figmaName === "font/typescale/base/size/min");
+		expect(baseSizeMin).toBeDefined();
+		expect(baseSizeMin?.value).toBe(14);
+		expect(baseSizeMin?.category).toBe("primitives");
+
+		const baseLhMin = tokens.find((t) => t.figmaName === "font/typescale/base/line/height/min");
+		expect(baseLhMin).toBeDefined();
+		expect(baseLhMin?.value).toBe(21);
+
+		// xl :root → min
+		const xlSizeMin = tokens.find((t) => t.figmaName === "font/typescale/xl/size/min");
+		expect(xlSizeMin?.value).toBe(17);
+
+		// xl @media 40rem → sm
+		const xlSizeSm = tokens.find((t) => t.figmaName === "font/typescale/xl/size/sm");
+		expect(xlSizeSm?.value).toBe(18);
+
+		// xl @media 48rem → md
+		const xlSizeMd = tokens.find((t) => t.figmaName === "font/typescale/xl/size/md");
+		expect(xlSizeMd?.value).toBe(20);
+
+		const xlLhMd = tokens.find((t) => t.figmaName === "font/typescale/xl/line/height/md");
+		expect(xlLhMd?.value).toBe(24);
+
+		// data-window-size blocks should NOT produce tokens
+		const allFigmaNames = tokens.map((t) => t.figmaName);
+		expect(allFigmaNames.filter((n) => n === "font/typescale/base/size/min").length).toBe(1);
+	});
+
+	test("works alongside primitives in a full bundle", () => {
+		const css = bundle({
+			"primitives.css": ":root { --spacing-4: 16px; --color-brand-500: rgba(0, 98, 255, 1); }",
+			"typescales.css": ":root { --typography-lg-font-size: calc(16px * var(--typography-scale, 1)); }",
+		});
+
+		const result = parseCSS(css);
+		const spacing = result.tokens.find((t) => t.figmaName === "spacing/4");
+		const lgSize = result.tokens.find((t) => t.figmaName === "font/typescale/lg/size/min");
+
+		expect(spacing).toBeDefined();
+		expect(lgSize).toBeDefined();
+		expect(lgSize?.value).toBe(16);
+		expect(lgSize?.category).toBe("primitives");
+	});
+});

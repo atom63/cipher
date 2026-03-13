@@ -4,6 +4,7 @@
 
 import type { ColorValue, DesignToken } from "../types/tokens";
 import {
+	adjustSaturation,
 	type ColorScale,
 	generateColorScale,
 	generateNeutralScale,
@@ -58,6 +59,8 @@ export interface BrandConfig {
 	secondary?: string;
 	/** Status color overrides (hex). Defaults: danger=#EF4444, success=#10B981, warning=#F59E0B, info=#3B82F6 */
 	statusColors?: StatusColorOverrides;
+	/** Surface color saturation multiplier (0–200, where 100 = default). Controls chroma of surface/gray palette. */
+	surfaceSaturation?: number;
 	/** Typescale configuration (base, ratio, line-height, steps) */
 	typescale?: TypescaleConfig;
 }
@@ -196,13 +199,18 @@ function generatePrimitives(config: BrandConfig): {
 
 	// --- Surface colors (color/gray/light/1-12 + color/gray/dark/1-12) ---
 	// Each mode can use a Radix preset OR a custom hex to generate a tinted neutral scale
+	// surfaceSaturation: 0–200 → 0–2 multiplier (100 = default/unchanged)
+	const satMul = (config.surfaceSaturation ?? 100) / 100;
 	const radixGrayLight = config.grayLightHex ? null : (getRadixGray(grayLightName) ?? RADIX_GRAYS[0]);
 	const radixGrayDark = config.grayDarkHex ? null : (getRadixGray(grayDarkName) ?? (radixGrayLight ?? RADIX_GRAYS[0]));
-	const neutralScaleLight = config.grayLightHex ? generateNeutralScale(config.grayLightHex) : null;
-	const neutralScaleDark = config.grayDarkHex ? generateNeutralScale(config.grayDarkHex) : null;
+	const neutralScaleLight = config.grayLightHex ? generateNeutralScale(config.grayLightHex, satMul) : null;
+	const neutralScaleDark = config.grayDarkHex ? generateNeutralScale(config.grayDarkHex, satMul) : null;
 
-	const lightColors = neutralScaleLight?.light ?? radixGrayLight?.light ?? RADIX_GRAYS[0].light;
-	const darkColors = neutralScaleDark?.dark ?? radixGrayDark?.dark ?? RADIX_GRAYS[0].dark;
+	// Apply saturation adjustment to Radix presets too (when not using custom hex)
+	const lightColors = neutralScaleLight?.light
+		?? adjustSaturation(radixGrayLight?.light ?? RADIX_GRAYS[0].light, satMul);
+	const darkColors = neutralScaleDark?.dark
+		?? adjustSaturation(radixGrayDark?.dark ?? RADIX_GRAYS[0].dark, satMul);
 	const lightLabel = config.grayLightHex ? `Custom (${config.grayLightHex})` : (radixGrayLight?.label ?? "Gray");
 	const darkLabel = config.grayDarkHex ? `Custom (${config.grayDarkHex})` : (radixGrayDark?.label ?? "Gray");
 
@@ -323,6 +331,8 @@ function generatePrimitives(config: BrandConfig): {
 	// --- Typescale with responsive variants (min, sm, md) ---
 	const typeSteps = computeTypescale(config.typescale);
 	const baseSize = config.typescale?.base ?? 16;
+	const headingLhPct = (config.typescale?.lineHeightHeading ?? 125) / 100;
+	const bodyLhPct = (config.typescale?.lineHeightBody ?? 150) / 100;
 	const SM_FACTOR = 0.85;
 	const MIN_FACTOR = 0.7;
 	const round = (v: number) => Math.round(v);
@@ -335,10 +345,12 @@ function generatePrimitives(config: BrandConfig): {
 		const sizeSm = isAboveBase ? round(baseSize + delta * SM_FACTOR) : step.size;
 		const sizeMin = isAboveBase ? round(baseSize + delta * MIN_FACTOR) : step.size;
 
-		const lhRatio = step.lineHeight / step.size;
-		const lhMd = step.lineHeight;
-		const lhSm = round(sizeSm * lhRatio);
-		const lhMin = round(sizeMin * lhRatio);
+		// Use the original line-height percentage from config, not the ratio
+		// derived from rounded values, to avoid 1px rounding drift
+		const lhPct = isAboveBase ? headingLhPct : bodyLhPct;
+		const lhMd = round(sizeMd * lhPct);
+		const lhSm = round(sizeSm * lhPct);
+		const lhMin = round(sizeMin * lhPct);
 
 		const sizes = { md: sizeMd, sm: sizeSm, min: sizeMin };
 		const lineHeights = { md: lhMd, sm: lhSm, min: lhMin };
@@ -510,7 +522,15 @@ function generatePrimitives(config: BrandConfig): {
 		);
 	}
 
-	return { tokens, scales, radixGrayLight, radixGrayDark, neutralScaleLight, neutralScaleDark };
+	// When saturation is adjusted on Radix presets, wrap the adjusted colors
+	// as a NeutralScale so the preview UI can display them
+	const effectiveNeutralLight = neutralScaleLight
+		?? (satMul !== 1 ? { light: lightColors, dark: darkColors } : null);
+	const effectiveNeutralDark = neutralScaleDark
+		?? (satMul !== 1 ? { light: lightColors, dark: darkColors } : null);
+
+	return { tokens, scales, radixGrayLight, radixGrayDark,
+		neutralScaleLight: effectiveNeutralLight, neutralScaleDark: effectiveNeutralDark };
 }
 
 // =========================================================================

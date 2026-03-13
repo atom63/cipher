@@ -1251,6 +1251,15 @@ export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExpo
 	// radius.css is a computed Tailwind helper file (--radius-* with calc()),
 	// not a round-trippable export of the rounded variables.
 
+	// Check if typescales will be generated — if so, exclude raw typescale
+	// primitives (--font-typescale-*) since typescales.css resolves them into
+	// the responsive --typography-* variables actually used in CSS.
+	// The import parser handles typescales.css → font/typescale/* reconstruction.
+	const typescaleFile = await generateTypescalesCSS();
+	if (typescaleFile) {
+		primitivesExclude.push("--font-typescale-");
+	}
+
 	// Excluded from :root only (still appear in @theme inline with literal values):
 	// Breakpoints only need @theme inline — Tailwind compiles them into @media
 	// conditions which require literal values, not var() references.
@@ -1291,7 +1300,6 @@ export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExpo
 		totalVariables += effectsFile.variableCount;
 	}
 
-	const typescaleFile = await generateTypescalesCSS();
 	if (typescaleFile) {
 		files.push(typescaleFile);
 		totalVariables += typescaleFile.variableCount;

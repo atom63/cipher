@@ -217,8 +217,9 @@ const NEUTRAL_C_DARK = [0.004, 0.004, 0.006, 0.007, 0.008, 0.010, 0.012, 0.016, 
 /**
  * Generate a Radix-style 12-step neutral scale from a tint color.
  * Extracts the hue from the input and applies it at very low chroma.
+ * @param saturation — multiplier for chroma (0 = pure gray, 1 = default, 2 = double saturation)
  */
-export function generateNeutralScale(tintHex: string): NeutralScale {
+export function generateNeutralScale(tintHex: string, saturation = 1): NeutralScale {
 	const rgb = hexToRgb(tintHex);
 	const oklch = rgbToOklch(rgb.r, rgb.g, rgb.b);
 	const hue = oklch.h;
@@ -227,9 +228,23 @@ export function generateNeutralScale(tintHex: string): NeutralScale {
 	const dark: string[] = [];
 
 	for (let i = 0; i < 12; i++) {
-		light.push(rgbToHex(oklchToRgb({ l: NEUTRAL_L_LIGHT[i], c: NEUTRAL_C_LIGHT[i], h: hue })));
-		dark.push(rgbToHex(oklchToRgb({ l: NEUTRAL_L_DARK[i], c: NEUTRAL_C_DARK[i], h: hue })));
+		light.push(rgbToHex(oklchToRgb({ l: NEUTRAL_L_LIGHT[i], c: NEUTRAL_C_LIGHT[i] * saturation, h: hue })));
+		dark.push(rgbToHex(oklchToRgb({ l: NEUTRAL_L_DARK[i], c: NEUTRAL_C_DARK[i] * saturation, h: hue })));
 	}
 
 	return { light, dark };
+}
+
+/**
+ * Adjust the chroma (saturation) of an array of hex colors by a multiplier.
+ * Converts each hex to OKLCH, scales chroma, converts back.
+ * @param multiplier — 0 = pure gray, 1 = unchanged, 2 = double saturation
+ */
+export function adjustSaturation(hexColors: string[], multiplier: number): string[] {
+	if (multiplier === 1) return hexColors;
+	return hexColors.map((hex) => {
+		const rgb = hexToRgb(hex);
+		const oklch = rgbToOklch(rgb.r, rgb.g, rgb.b);
+		return rgbToHex(oklchToRgb({ l: oklch.l, c: oklch.c * multiplier, h: oklch.h }));
+	});
 }

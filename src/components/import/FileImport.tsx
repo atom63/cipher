@@ -18,11 +18,12 @@ interface FileImportProps {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-/** Files to skip on CSS import — computed/non-roundtrippable outputs */
+/** Files to skip on CSS import — computed/non-roundtrippable outputs.
+ * typescales.css is NOT skipped — the parser reverse-maps --typography-*
+ * back to font/typescale/* primitives for Figma roundtrip. */
 const SKIP_CSS_FILES = [
 	"index.css",
 	"radius.css",
-	"typescales.css",
 	"effects.css",
 ];
 

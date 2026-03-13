@@ -41,6 +41,55 @@
 	color: var(--muted-foreground);
 }
 
+/* Saturation slider */
+.sliderRow {
+	display: flex;
+	gap: var(--spacing-md);
+	align-items: center;
+}
+
+.rangeSlider {
+	flex: 1;
+	height: 4px;
+	appearance: none;
+	cursor: pointer;
+	outline: none;
+	background: var(--border);
+	border-radius: 2px;
+}
+
+.rangeSlider::-webkit-slider-thumb {
+	width: 14px;
+	height: 14px;
+	appearance: none;
+	cursor: grab;
+	background: var(--foreground);
+	border: 2px solid var(--background);
+	border-radius: 50%;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+	transition: background-color var(--transition), box-shadow var(--transition);
+}
+
+.rangeSlider::-webkit-slider-thumb:hover {
+	background: var(--primary);
+}
+
+.rangeSlider:focus-visible::-webkit-slider-thumb {
+	box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+}
+
+.rangeSlider:active::-webkit-slider-thumb {
+	cursor: grabbing;
+}
+
+.sliderValue {
+	min-width: 32px;
+	font-size: var(--text-xs);
+	font-variant-numeric: tabular-nums;
+	color: var(--muted-foreground);
+	text-align: right;
+}
+
 .colorInputRow {
 	display: flex;
 	gap: var(--spacing-md);

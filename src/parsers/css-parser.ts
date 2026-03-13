@@ -28,11 +28,14 @@ export interface CSSParseResult {
 
 /** Known Cipher export file names → category.
  * Only includes files that can round-trip (actual variable values).
- * Computed files (radius.css, typescales.css) are skipped by FileImport. */
+ * Computed files (radius.css) are skipped by FileImport.
+ * typescales.css is mapped specially — its --typography-* vars are reverse-mapped
+ * to font/typescale/* primitives for Figma roundtrip. */
 const FILE_CATEGORY_MAP: Record<string, TokenCategory> = {
 	"primitives.css": "primitives",
 	"aliases.css": "aliases",
 	"semantics.css": "semantics",
+	"typescales.css": "primitives",
 };
 
 /** Fallback: selector-to-category when no file section is active */
@@ -70,6 +73,18 @@ const COLOR_MIX_VAR_RE =
 /** Numeric value with optional unit */
 const NUMERIC_RE =
 	/^-?[0-9]*\.?[0-9]+(px|rem|em|%|vw|vh|vmin|vmax|ch|ex|pt|pc|in|cm|mm|deg|rad|turn|s|ms)?$/;
+
+/** calc(Npx * var(--typography-scale, 1)) — extract the numeric px value */
+const CALC_TYPESCALE_RE = /^calc\(\s*(-?[0-9]+(?:\.[0-9]+)?)px\s*\*\s*var\(/;
+
+/** Typescale variable name pattern: --typography-{step}-font-size or --typography-{step}-line-height */
+const TYPOGRAPHY_VAR_RE = /^typography-([\w]+)-(font-size|line-height)$/;
+
+/** Media query → responsive variant */
+const MEDIA_VARIANT_MAP: Record<string, string> = {
+	"40rem": "sm",
+	"48rem": "md",
+};
 
 /** Name segments that strongly suggest a color token */
 const COLOR_NAME_HINTS = [
@@ -359,6 +374,27 @@ export function parseCSS(cssText: string): CSSParseResult {
 		// Skip @theme inline blocks
 		if (category === ("__skip__" as TokenCategory)) continue;
 
+		// typescales.css handling: determine responsive variant from selector
+		const isTypescaleFile = sectionFile === "typescales.css";
+		let typescaleVariant: string | null = null;
+		if (isTypescaleFile) {
+			const trimmedSel = selector.trim();
+			// Skip [data-window-size] blocks — duplicates of @media blocks
+			if (trimmedSel.includes("data-window-size")) continue;
+			// :root = min (mobile-first default)
+			if (trimmedSel.includes(":root") && !trimmedSel.includes("@media")) {
+				typescaleVariant = "min";
+			} else {
+				// @media (min-width: 40rem) = sm, 48rem = md
+				const mediaMatch = trimmedSel.match(/min-width:\s*([\d.]+rem)/);
+				if (mediaMatch) {
+					typescaleVariant = MEDIA_VARIANT_MAP[mediaMatch[1]] ?? null;
+				}
+			}
+			// Skip blocks we can't map to a variant
+			if (!typescaleVariant) continue;
+		}
+
 		// Detect mode for semantic tokens
 		const modeName = modeFromSelector(selector, fileCategory);
 
@@ -366,8 +402,8 @@ export function parseCSS(cssText: string): CSSParseResult {
 		for (const declMatch of blockBody.matchAll(DECLARATION_RE)) {
 			totalDeclarations++;
 
-			const varName = declMatch[1];
-			const rawValue = declMatch[2].trim();
+			let varName = declMatch[1];
+			let rawValue = declMatch[2].trim();
 			const declOffset = blockStartOffset + declMatch.index;
 			const line = lineNumberAt(stripped, declOffset);
 
@@ -375,6 +411,25 @@ export function parseCSS(cssText: string): CSSParseResult {
 				skipped++;
 				errors.push({ line, message: `Empty value for --${varName}` });
 				continue;
+			}
+
+			// typescales.css: reverse-map --typography-{step}-{prop} to
+			// font/typescale/{step}/{prop}/{variant} primitives
+			if (isTypescaleFile && typescaleVariant) {
+				const typoMatch = varName.match(TYPOGRAPHY_VAR_RE);
+				if (!typoMatch) {
+					skipped++;
+					continue;
+				}
+				const [, step, prop] = typoMatch;
+				// Remap prop: "font-size" → "size", "line-height" → "line/height"
+				const primitiveProp = prop === "font-size" ? "size" : "line/height";
+				varName = `font-typescale-${step}-${primitiveProp.replace("/", "-")}-${typescaleVariant}`;
+				// Extract numeric value from calc(Npx * var(...))
+				const calcMatch = rawValue.match(CALC_TYPESCALE_RE);
+				if (calcMatch) {
+					rawValue = `${calcMatch[1]}px`;
+				}
 			}
 
 			const type = inferType(varName, rawValue);
