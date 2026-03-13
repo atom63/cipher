@@ -1,0 +1,211 @@
+---
+title: "Logo (Cipher)"
+date: "2026-03-08"
+type: "component"
+description: "Cipher brand logo component with symbol, wordmark, combined layout variants, and an animated split-symbol."
+tags: ["logo", "brand", "icon", "cipher", "animation"]
+---
+
+import {
+  AppLogo,
+  AnimatedSymbol,
+  AnimatedLogo,
+} from "@/components/common/icon/cipher/app-logo";
+
+The Cipher brand logo as a React component. Supports horizontal, vertical, symbol-only, and wordmark-only layouts. Includes `AnimatedSymbol` and `AnimatedLogo` components with a split-symbol hover animation.
+
+## Usage
+
+```tsx
+import { AppLogo, AnimatedSymbol } from "@/components/common/icon/cipher/app-logo";
+
+<AppLogo />
+<AnimatedSymbol />
+```
+
+## Examples
+
+### Horizontal
+
+The default layout with symbol and wordmark side by side.
+
+<ExampleContainer>
+  <AppLogo variant="horizontal" height={16} />
+</ExampleContainer>
+
+```tsx
+<AppLogo variant="horizontal" height={16} />
+```
+
+### Vertical
+
+Stacked layout with symbol above the wordmark.
+
+<ExampleContainer>
+  <AppLogo variant="vertical" height={48} />
+</ExampleContainer>
+
+```tsx
+<AppLogo variant="vertical" height={48} />
+```
+
+### Symbol
+
+The symbol mark on its own.
+
+<ExampleContainer>
+  <AppLogo variant="symbol" height={48} />
+</ExampleContainer>
+
+```tsx
+<AppLogo variant="symbol" height={48} />
+```
+
+### Wordmark
+
+The wordmark on its own.
+
+<ExampleContainer>
+  <AppLogo variant="wordmark" height={32} />
+</ExampleContainer>
+
+```tsx
+<AppLogo variant="wordmark" height={32} />
+```
+
+### Colored
+
+Apply the theme's `--primary` color to the symbol mark with the `colored` prop.
+
+<ExampleContainer>
+  <div className="flex items-center gap-8">
+    <AppLogo variant="horizontal" height={16} colored />
+    <AppLogo variant="symbol" height={48} colored />
+  </div>
+</ExampleContainer>
+
+```tsx
+<AppLogo variant="horizontal" height={16} colored />
+<AppLogo variant="symbol" height={48} colored />
+```
+
+### Sizes
+
+Control the logo size with the `height` prop (in pixels).
+
+<ExampleContainer>
+  <div className="flex items-center gap-6">
+    <AppLogo variant="symbol" height={24} />
+    <AppLogo variant="symbol" height={32} />
+    <AppLogo variant="symbol" height={48} />
+    <AppLogo variant="symbol" height={64} />
+  </div>
+</ExampleContainer>
+
+```tsx
+<AppLogo variant="symbol" height={24} />
+<AppLogo variant="symbol" height={32} />
+<AppLogo variant="symbol" height={48} />
+<AppLogo variant="symbol" height={64} />
+```
+
+### On Dark Background
+
+<ExampleContainer>
+  <div className="flex items-center gap-8 rounded-lg bg-foreground p-6 text-background">
+    <AppLogo variant="horizontal" height={16} />
+    <AppLogo variant="symbol" height={48} colored />
+  </div>
+</ExampleContainer>
+
+```tsx
+<div className="bg-foreground text-background">
+  <AppLogo variant="horizontal" height={16} />
+  <AppLogo variant="symbol" height={48} colored />
+</div>
+```
+
+### Animated Symbol
+
+The `AnimatedSymbol` component renders the left and right halves of the symbol as separate elements, allowing them to be animated independently via `leftClassName` and `rightClassName`.
+
+<ExampleContainer>
+  <div className="flex items-center gap-8">
+    <AnimatedSymbol height={64} />
+    <AnimatedSymbol height={64} colored />
+  </div>
+</ExampleContainer>
+
+```tsx
+<AnimatedSymbol height={64} />
+<AnimatedSymbol height={64} colored />
+```
+
+### Animated Symbol with Hover
+
+On hover, the halves swap positions, then the whole symbol rotates while the halves translate back.
+
+<ExampleContainer>
+  <AnimatedSymbol height={80} colored />
+</ExampleContainer>
+
+```tsx
+<AnimatedSymbol height={80} colored />
+```
+
+### Animated Logo (Horizontal)
+
+Horizontal logo with the animated symbol alongside the wordmark. Hover anywhere on the logo to trigger the animation.
+
+<ExampleContainer>
+  <AnimatedLogo height={16} colored />
+</ExampleContainer>
+
+```tsx
+<AnimatedLogo height={16} colored />
+```
+
+<ExampleContainer>
+  <div className="flex items-center gap-8 rounded-lg bg-foreground p-6 text-background">
+    <AnimatedLogo height={16} />
+  </div>
+</ExampleContainer>
+
+```tsx
+<div className="bg-foreground text-background">
+  <AnimatedLogo height={16} />
+</div>
+```
+
+## Components
+
+### AppLogo
+
+Renders the Cipher brand logo in one of four layout variants.
+
+| Prop        | Type                                                   | Default        | Description                            |
+| ----------- | ------------------------------------------------------ | -------------- | -------------------------------------- |
+| `variant`   | `"horizontal" \| "vertical" \| "symbol" \| "wordmark"` | `"horizontal"` | Layout variant                         |
+| `height`    | `number`                                               | `32`           | Height in pixels                       |
+| `colored`   | `boolean`                                              | `false`        | Apply primary color to the symbol mark |
+| `className` | `string`                                               | —              | Additional CSS classes                 |
+
+### AnimatedSymbol
+
+Renders the symbol as two independently animatable halves (left and right). The gap between halves scales proportionally — 4px at height 80.
+
+| Prop        | Type      | Default | Description                             |
+| ----------- | --------- | ------- | --------------------------------------- |
+| `height`    | `number`  | `80`    | Height in pixels                        |
+| `colored`   | `boolean` | `false` | Apply primary color to the symbol       |
+| `className` | `string`  | —       | Additional CSS classes on the container |
+
+### AnimatedLogo
+
+Horizontal layout combining the animated split-symbol with the wordmark. Hover triggers the symbol animation.
+
+| Prop        | Type      | Default | Description                             |
+| ----------- | --------- | ------- | --------------------------------------- |
+| `height`    | `number`  | `32`    | Height in pixels                        |
+| `colored`   | `boolean` | `false` | Apply primary color to the symbol       |
+| `className` | `string`  | —       | Additional CSS classes on the container |

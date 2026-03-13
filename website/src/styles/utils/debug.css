@@ -1,0 +1,458 @@
+/**
+ * Debug Mode Styles - Enhanced Visual Debugger
+ * Highlights interactive elements globally when debug mode is enabled
+ * Toggle with: Ctrl+D (or Cmd+D on Mac)
+ *
+ * Color Legend:
+ * - RED: Buttons and primary actions
+ * - BLUE: Links and navigation
+ * - ORANGE: Form inputs
+ * - MAGENTA: Interactive elements (click handlers)
+ * - GREEN: Content blocks (code, figures)
+ * - CYAN: Semantic sections
+ * - PURPLE: Headers/footers
+ * - YELLOW: Navigation and structural
+ * - PINK: Media elements
+ */
+
+/* Only apply when debug-mode class is on body */
+.debug-mode {
+  /* === INTERACTIVE ELEMENTS (High Contrast - Most Important) === */
+
+  /* Buttons - Red (Primary Actions) */
+  button {
+    outline: 2px solid rgb(239 68 68 / 80%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Links - Blue (Navigation) */
+  a {
+    outline: 2px solid rgb(59 130 246 / 75%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Form Inputs - Orange */
+  input,
+  textarea,
+  select {
+    outline: 2px solid rgb(249 115 22 / 80%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Interactive ARIA roles - Magenta */
+  [onclick],
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="link"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="switch"] {
+    outline: 2px dashed rgb(236 72 153 / 70%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Dialogs and Modals - Bright Magenta (Important) */
+  dialog,
+  [role="dialog"],
+  [role="alertdialog"],
+  [class*="modal"],
+  [class*="dialog"] {
+    outline: 3px solid rgb(219 39 119 / 85%) !important;
+    outline-offset: -3px;
+    box-shadow: 0 0 0 4px rgb(219 39 119 / 20%) !important;
+  }
+
+  /* Menus and Dropdowns - Violet */
+  [role="menu"],
+  [role="menubar"],
+  [role="listbox"],
+  [class*="dropdown"],
+  [class*="menu"] {
+    outline: 2px solid rgb(139 92 246 / 70%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Tooltips and Popovers - Sky Blue */
+  [role="tooltip"],
+  [class*="tooltip"],
+  [class*="popover"] {
+    outline: 2px solid rgb(14 165 233 / 75%) !important;
+    outline-offset: -2px;
+  }
+
+  /* === CONTENT ELEMENTS (Medium Contrast) === */
+
+  /* Code blocks - Green */
+  pre {
+    outline: 2px solid rgb(34 197 94 / 65%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Inline code - Lime */
+  code {
+    outline: 1px solid rgb(132 204 22 / 60%) !important;
+    outline-offset: -1px;
+  }
+
+  /* Figures and Media - Pink */
+  figure {
+    outline: 2px dashed rgb(236 72 153 / 60%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Images - Hot Pink */
+  img,
+  picture,
+  svg {
+    outline: 2px solid rgb(244 114 182 / 65%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Video and Audio - Rose */
+  video,
+  audio {
+    outline: 2px solid rgb(251 113 133 / 70%) !important;
+    outline-offset: -2px;
+  }
+
+  /* === SEMANTIC STRUCTURE (Medium Contrast) === */
+
+  /* Main content - Purple */
+  main {
+    outline: 2px dashed rgb(168 85 247 / 55%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Header and Footer - Indigo */
+  header,
+  footer,
+  aside {
+    outline: 2px solid rgb(129 140 248 / 58%) !important;
+    outline-offset: -2px;
+    background-color: rgb(129 140 248 / 20%) !important;
+  }
+
+  /* Navigation - Yellow */
+  nav {
+    outline: 2px solid rgb(234 179 8 / 65%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Sections - Cyan */
+  section {
+    outline: 2px dashed rgb(6 182 212 / 50%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Articles - Teal */
+  article {
+    outline: 2px dashed rgb(20 184 166 / 53%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Aside - Emerald */
+  aside {
+    outline: 2px dashed rgb(16 185 129 / 55%) !important;
+    outline-offset: -2px;
+  }
+
+  /* === LAYOUT CONTAINERS (Low-Medium Contrast) === */
+
+  /* Grid containers - Amber */
+  [class*="grid"],
+  [style*="display: grid"],
+  [style*="display:grid"] {
+    outline: 1px solid rgb(245 158 11 / 58%) !important;
+    outline-offset: -1px;
+  }
+
+  /* Flex containers - Sky */
+  [class*="flex"],
+  [style*="display: flex"],
+  [style*="display:flex"] {
+    outline: 1px solid rgb(56 189 248 / 58%) !important;
+    outline-offset: -1px;
+  }
+
+  /* Common wrappers - Gray */
+  div[class*="container"],
+  div[class*="wrapper"],
+  div[class*="content"] {
+    outline: 1px dotted rgb(156 163 175 / 48%) !important;
+    outline-offset: -1px;
+  }
+
+  /* === COMPONENT PATTERNS (Medium Contrast) === */
+
+  /* Cards and Panels - Orange */
+  [class*="card"],
+  [class*="panel"],
+  [class*="box"] {
+    outline: 2px dashed rgb(251 146 60 / 55%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Window components - Lime */
+  [class*="window"],
+  [class*="pane"] {
+    outline: 2px solid rgb(163 230 53 / 63%) !important;
+    outline-offset: -2px;
+  }
+
+  /* === INTERACTIVE UI (High Contrast) === */
+
+  /* Resize handles - Bright Green */
+  [class*="cursor-resize"],
+  [class*="cursor-nw"],
+  [class*="cursor-ne"],
+  [class*="cursor-sw"],
+  [class*="cursor-se"],
+  [class*="cursor-n"],
+  [class*="cursor-s"],
+  [class*="cursor-e"],
+  [class*="cursor-w"],
+  [class*="resize-handle"] {
+    outline: 2px solid rgb(34 197 94 / 75%) !important;
+  }
+
+  /* Draggable elements - Purple */
+  [draggable="true"],
+  [class*="cursor-grab"],
+  [class*="cursor-grabbing"],
+  [class*="draggable"] {
+    outline: 2px dashed rgb(147 51 234 / 75%) !important;
+    outline-offset: -2px;
+  }
+
+  /* === FORMS (Medium Contrast) === */
+
+  /* Form containers - Green */
+  form {
+    outline: 2px solid rgb(74 222 128 / 63%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Labels - Slate */
+  label {
+    outline: 1px dotted rgb(148 163 184 / 55%) !important;
+    outline-offset: -1px;
+  }
+
+  /* === DATA DISPLAY (Medium Contrast) === */
+
+  /* Tables - Yellow */
+  table {
+    outline: 2px solid rgb(250 204 21 / 70%) !important;
+    outline-offset: -2px;
+  }
+
+  /* Lists with special roles - Cyan */
+  [role="list"],
+  [role="listitem"],
+  ul[class],
+  ol[class] {
+    outline: 1px dotted rgb(34 211 238 / 53%) !important;
+    outline-offset: -1px;
+  }
+
+  /* === ACCESSIBILITY WARNINGS (High Contrast - Critical) === */
+
+  /* Missing alt text - Red warning */
+  img:not([alt]),
+  img[alt=""] {
+    outline: 3px solid rgb(239 68 68 / 95%) !important;
+    outline-offset: -3px;
+    box-shadow: inset 0 0 0 3px rgb(239 68 68 / 25%) !important;
+  }
+
+  /* Unlabeled inputs - Orange warning */
+  input:not([aria-label]):not([aria-labelledby]):not([id]),
+  textarea:not([aria-label]):not([aria-labelledby]):not([id]) {
+    outline: 3px solid rgb(249 115 22 / 90%) !important;
+    box-shadow: inset 0 0 0 2px rgb(249 115 22 / 30%) !important;
+  }
+
+  /* === MDX CONTENT (Prose Elements) === */
+
+  /* MDX container - Slate border */
+  .mdx {
+    outline: 2px dashed rgb(100 116 139 / 50%) !important;
+    outline-offset: -2px;
+  }
+
+  /* MDX headings - Violet */
+  .mdx > h1,
+  .mdx > h2,
+  .mdx > h3,
+  .mdx > h4,
+  .mdx > h5,
+  .mdx > h6 {
+    outline: 2px solid rgb(139 92 246 / 60%) !important;
+    outline-offset: -2px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  small,
+  span {
+    outline: 2px solid rgb(139 92 246 / 60%) !important;
+    outline-offset: -2px;
+  }
+
+  /* MDX paragraphs - Blue */
+  .mdx > p {
+    outline: 2px solid rgb(96 165 250 / 55%) !important;
+    outline-offset: -2px;
+  }
+
+  /* MDX lists - Teal */
+  .mdx > ul,
+  .mdx > ol {
+    outline: 2px dashed rgb(45 212 191 / 55%) !important;
+    outline-offset: -2px;
+  }
+
+  /* MDX blockquotes - Amber */
+  .mdx > blockquote {
+    outline: 2px solid rgb(251 191 36 / 60%) !important;
+    outline-offset: -2px;
+  }
+
+  /* MDX figures/media - Pink */
+  .mdx > figure,
+  .mdx > .container {
+    outline: 2px solid rgb(244 114 182 / 65%) !important;
+    outline-offset: -2px;
+  }
+
+  /* === CAROUSEL CURSOR INDICATOR ZONES === */
+
+  /* Visualize left/right hover regions for cursor indicator */
+  .carousel-cursor-indicator {
+    position: relative;
+  }
+
+  .carousel-cursor-indicator::before,
+  .carousel-cursor-indicator::after {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 40;
+    width: 50%;
+    pointer-events: none;
+    content: "";
+    opacity: 0.15;
+  }
+
+  /* Left half - prev zone */
+  .carousel-cursor-indicator::before {
+    left: 0;
+    background: linear-gradient(
+      90deg,
+      rgb(239 68 68 / 60%),
+      rgb(239 68 68 / 20%) 80%,
+      transparent
+    );
+    border-right: 2px dashed rgb(239 68 68 / 80%);
+  }
+
+  /* Right half - next zone */
+  .carousel-cursor-indicator::after {
+    right: 0;
+    background: linear-gradient(
+      -90deg,
+      rgb(59 130 246 / 60%),
+      rgb(59 130 246 / 20%) 80%,
+      transparent
+    );
+    border-left: 2px dashed rgb(59 130 246 / 80%);
+  }
+
+  /* Zone labels */
+  .carousel-cursor-indicator [data-slot="carousel-content"]::before {
+    position: absolute;
+    top: 50%;
+    left: 1rem;
+    z-index: 45;
+    padding: 0.25rem 0.5rem;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    pointer-events: none;
+    content: "← PREV";
+    background: rgb(239 68 68 / 90%);
+    border-radius: 4px;
+    transform: translateY(-50%);
+  }
+
+  .carousel-cursor-indicator [data-slot="carousel-content"]::after {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    z-index: 45;
+    padding: 0.25rem 0.5rem;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    pointer-events: none;
+    content: "NEXT →";
+    background: rgb(59 130 246 / 90%);
+    border-radius: 4px;
+    transform: translateY(-50%);
+  }
+
+  /* === PEEK TRIGGER ZONE === */
+
+  .peek-trigger-debug {
+    background: linear-gradient(180deg, rgb(16 185 129 / 15%), transparent);
+    border-bottom: 2px dashed rgb(16 185 129 / 60%);
+  }
+
+  .peek-trigger-debug::after {
+    position: absolute;
+    bottom: 0.25rem;
+    left: 0.5rem;
+    padding: 0.15rem 0.4rem;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    pointer-events: none;
+    content: "PEEK TRIGGER";
+    background: rgb(16 185 129 / 90%);
+    border-radius: 4px;
+  }
+
+  /* === DEBUG INFO BADGE === */
+
+  &::before {
+    position: fixed;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    z-index: 99999;
+    padding: 0.4rem 0.6rem;
+    font-family: ui-monospace, monospace;
+    font-size: 8px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    content: "DEBUG MODE - Ctrl+SHIFT+D";
+    background: linear-gradient(
+      135deg,
+      rgb(239 68 68 / 95%),
+      rgb(220 38 38 / 95%)
+    );
+  }
+}
+
+/* Debug toggle keyboard shortcut: Ctrl+D (or Cmd+D on Mac) */

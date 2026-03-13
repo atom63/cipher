@@ -1,0 +1,120 @@
+---
+title: "Radius"
+date: "2026-03-03"
+type: "foundation"
+description: "Border radius scale built around a single design anchor with a dynamic multiplier."
+tags: ["radius", "border-radius", "tokens", "foundations"]
+---
+
+import { RadiusScale } from "@/components/mdx/blocks/radius-scale";
+
+A border radius scale derived from a single anchor value (`--corner-radius`) and a global multiplier (`--radius-multiplier`). Every step is calculated relative to the anchor, ensuring consistent nesting relationships across the UI.
+
+## Design Anchor
+
+The system is built around `--radius-lg` as the anchor — set to `--corner-radius` (default `10px`). All other steps offset from this value, and the multiplier scales the entire system uniformly.
+
+| Variable              | Default | Role                                  |
+| --------------------- | ------- | ------------------------------------- |
+| `--corner-radius`     | `10px`  | Design anchor — the base radius value |
+| `--radius-multiplier` | `1`     | Global scale: 0 = square, 1 = default |
+
+```css
+:root {
+  --corner-radius: 10px;
+  --radius-multiplier: 1;
+}
+```
+
+## Scale
+
+Each radius token is computed as `(anchor ± offset) × multiplier`. The lower scale is optimized for tight nesting (p-1, p-2 padding), and the upper scale for larger container nesting.
+
+<ExampleContainer wide>
+  <RadiusScale />
+</ExampleContainer>
+
+### Lower Scale
+
+Optimized for elements nested inside `rounded-lg` containers with small padding.
+
+| Token          | Formula                       | Default | Use Case                        |
+| -------------- | ----------------------------- | ------- | ------------------------------- |
+| `--radius-2xs` | `(anchor - 8px) × multiplier` | `2px`   | Tiny elements, tags, badges     |
+| `--radius-xs`  | `(anchor - 6px) × multiplier` | `4px`   | Small inputs, chips             |
+| `--radius-sm`  | `(anchor - 4px) × multiplier` | `6px`   | Buttons, small cards            |
+| `--radius-md`  | `(anchor - 2px) × multiplier` | `8px`   | Cards nested with `p-2` padding |
+
+### Anchor
+
+| Token         | Formula               | Default | Use Case                         |
+| ------------- | --------------------- | ------- | -------------------------------- |
+| `--radius-lg` | `anchor × multiplier` | `10px`  | Primary cards, dialogs, popovers |
+
+### Upper Scale
+
+Optimized for larger containers that nest `rounded-lg` cards inside them.
+
+| Token           | Formula                        | Default  | Use Case                     |
+| --------------- | ------------------------------ | -------- | ---------------------------- |
+| `--radius-xl`   | `(anchor + 4px) × multiplier`  | `14px`   | Section containers           |
+| `--radius-2xl`  | `(anchor + 8px) × multiplier`  | `18px`   | Page-level panels            |
+| `--radius-3xl`  | `(anchor + 12px) × multiplier` | `22px`   | Hero cards, feature sections |
+| `--radius-4xl`  | `(anchor + 16px) × multiplier` | `26px`   | Full-bleed containers        |
+| `--radius-full` | `9999px × multiplier`          | `9999px` | Pills, avatars, circles      |
+
+### Base Radius
+
+| Token      | Value | Use Case                   |
+| ---------- | ----- | -------------------------- |
+| `--radius` | `4px` | Tailwind default `rounded` |
+
+## Multiplier
+
+The `--radius-multiplier` variable scales every radius in the system at once, giving you theme-level control over corner sharpness.
+
+| Multiplier | Effect       | Example `--radius-lg` |
+| ---------- | ------------ | --------------------- |
+| `0`        | Fully square | `0px`                 |
+| `0.5`      | Subtle       | `5px`                 |
+| `1`        | Default      | `10px`                |
+| `1.5`      | Extra round  | `15px`                |
+
+## Nesting
+
+The offset-based scale ensures proper visual nesting. When a child element sits inside a parent with padding, subtracting that padding from the radius keeps corners aligned.
+
+```
+┌─── radius-xl (14px) ─── outer container ───┐
+│  padding: 4px                              │
+│  ┌─── radius-lg (10px) ─── inner card ──┐  │
+│  │                                      │  │
+│  └──────────────────────────────────────┘  │
+└────────────────────────────────────────────┘
+```
+
+The math: `14px outer - 4px padding = 10px inner` — corners stay visually concentric.
+
+## Usage
+
+Use the Tailwind utility classes directly:
+
+```tsx
+<div className="rounded-lg">Primary card</div>
+<div className="rounded-xl">Outer container with nested card</div>
+<div className="rounded-full">Avatar or pill</div>
+```
+
+Override the anchor and multiplier for themed sections:
+
+```css
+.compact-theme {
+  --corner-radius: 6px;
+  --radius-multiplier: 0.8;
+}
+
+.playful-theme {
+  --corner-radius: 16px;
+  --radius-multiplier: 1.2;
+}
+```

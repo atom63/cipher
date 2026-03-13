@@ -1,0 +1,245 @@
+---
+title: "Alert"
+date: "2026-03-03"
+type: "component"
+description: "Alert component for displaying contextual feedback messages with variant styles."
+tags: ["alert", "ui", "feedback"]
+---
+
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  AlertAction,
+} from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Info, CircleAlert, TriangleAlert, CircleCheck } from "lucide-react";
+
+Displays a callout message to draw attention to important information. Supports semantic variants, optional icons, and action slots.
+
+## Usage
+
+```tsx
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  AlertAction,
+} from "@/components/ui/alert";
+
+<Alert>
+  <AlertTitle>Heads up!</AlertTitle>
+  <AlertDescription>
+    This is a default alert with a title and description.
+  </AlertDescription>
+</Alert>;
+```
+
+## Examples
+
+### Default
+
+A neutral alert for general information.
+
+<ExampleContainer>
+  <Alert className="w-full max-w-md">
+    <AlertTitle>Heads up!</AlertTitle>
+    <AlertDescription>
+      You can add components to your app using the CLI.
+    </AlertDescription>
+  </Alert>
+</ExampleContainer>
+
+```tsx
+<Alert>
+  <AlertTitle>Heads up!</AlertTitle>
+  <AlertDescription>
+    You can add components to your app using the CLI.
+  </AlertDescription>
+</Alert>
+```
+
+### With Icon
+
+Pass an SVG icon as a direct child before the title. The grid layout automatically accommodates it.
+
+<ExampleContainer>
+  <div className="flex w-full max-w-md flex-col gap-3">
+    <Alert>
+      <Info />
+      <AlertTitle>Default</AlertTitle>
+      <AlertDescription>A neutral message with an icon.</AlertDescription>
+    </Alert>
+    <Alert variant="info">
+      <Info />
+      <AlertTitle>Info</AlertTitle>
+      <AlertDescription>
+        Your session will expire in 5 minutes.
+      </AlertDescription>
+    </Alert>
+  </div>
+</ExampleContainer>
+
+```tsx
+<Alert variant="info">
+  <Info />
+  <AlertTitle>Info</AlertTitle>
+  <AlertDescription>
+    Your session will expire in 5 minutes.
+  </AlertDescription>
+</Alert>
+```
+
+### Variants
+
+Semantic color variants for different alert contexts.
+
+<ExampleContainer>
+  <div className="flex w-full max-w-md flex-col gap-3">
+    <Alert variant="error">
+      <CircleAlert />
+      <AlertTitle>Error</AlertTitle>
+      <AlertDescription>
+        Something went wrong. Please try again.
+      </AlertDescription>
+    </Alert>
+    <Alert variant="warning">
+      <TriangleAlert />
+      <AlertTitle>Warning</AlertTitle>
+      <AlertDescription>
+        Your storage is almost full. Consider upgrading your plan.
+      </AlertDescription>
+    </Alert>
+    <Alert variant="success">
+      <CircleCheck />
+      <AlertTitle>Success</AlertTitle>
+      <AlertDescription>
+        Your changes have been saved successfully.
+      </AlertDescription>
+    </Alert>
+    <Alert variant="info">
+      <Info />
+      <AlertTitle>Info</AlertTitle>
+      <AlertDescription>
+        A new version is available. Refresh to update.
+      </AlertDescription>
+    </Alert>
+  </div>
+</ExampleContainer>
+
+```tsx
+<Alert variant="error">
+  <CircleAlert />
+  <AlertTitle>Error</AlertTitle>
+  <AlertDescription>Something went wrong.</AlertDescription>
+</Alert>
+
+<Alert variant="warning">
+  <TriangleAlert />
+  <AlertTitle>Warning</AlertTitle>
+  <AlertDescription>Your storage is almost full.</AlertDescription>
+</Alert>
+
+<Alert variant="success">
+  <CircleCheck />
+  <AlertTitle>Success</AlertTitle>
+  <AlertDescription>Changes saved successfully.</AlertDescription>
+</Alert>
+
+<Alert variant="info">
+  <Info />
+  <AlertTitle>Info</AlertTitle>
+  <AlertDescription>A new version is available.</AlertDescription>
+</Alert>
+```
+
+### With Action
+
+Use `AlertAction` to add buttons or links alongside the alert content.
+
+<ExampleContainer>
+  <Alert variant="info" className="w-full max-w-md">
+    <Info />
+    <AlertTitle>Update available</AlertTitle>
+    <AlertDescription>
+      A new version of the app is ready to install.
+    </AlertDescription>
+    <AlertAction>
+      <Button size="sm" variant="outline">
+        Update
+      </Button>
+    </AlertAction>
+  </Alert>
+</ExampleContainer>
+
+```tsx
+<Alert variant="info">
+  <Info />
+  <AlertTitle>Update available</AlertTitle>
+  <AlertDescription>
+    A new version of the app is ready to install.
+  </AlertDescription>
+  <AlertAction>
+    <Button size="sm" variant="outline">Update</Button>
+  </AlertAction>
+</Alert>
+```
+
+### Description Only
+
+Alerts work without a title for simpler messages.
+
+<ExampleContainer>
+  <Alert variant="warning" className="w-full max-w-md">
+    <TriangleAlert />
+    <AlertDescription>
+      This action cannot be undone.
+    </AlertDescription>
+  </Alert>
+</ExampleContainer>
+
+```tsx
+<Alert variant="warning">
+  <TriangleAlert />
+  <AlertDescription>This action cannot be undone.</AlertDescription>
+</Alert>
+```
+
+## Components
+
+### Alert
+
+The root container. Renders a `div` with `role="alert"`.
+
+| Prop        | Type                                                         | Default     | Description              |
+| ----------- | ------------------------------------------------------------ | ----------- | ------------------------ |
+| `variant`   | `"default" \| "error" \| "info" \| "success" \| "warning"` | `"default"` | Semantic color variant   |
+| `className` | `string`                                                     | —           | Additional CSS classes   |
+| `children`  | `ReactNode`                                                  | —           | Icon, title, description |
+
+### AlertTitle
+
+The heading text of the alert.
+
+| Prop        | Type        | Default | Description            |
+| ----------- | ----------- | ------- | ---------------------- |
+| `children`  | `ReactNode` | —       | Title content          |
+| `className` | `string`    | —       | Additional CSS classes |
+
+### AlertDescription
+
+The body text of the alert.
+
+| Prop        | Type        | Default | Description            |
+| ----------- | ----------- | ------- | ---------------------- |
+| `children`  | `ReactNode` | —       | Description content    |
+| `className` | `string`    | —       | Additional CSS classes |
+
+### AlertAction
+
+An optional slot for action buttons, positioned to the right on larger screens.
+
+| Prop        | Type        | Default | Description            |
+| ----------- | ----------- | ------- | ---------------------- |
+| `children`  | `ReactNode` | —       | Action content         |
+| `className` | `string`    | —       | Additional CSS classes |

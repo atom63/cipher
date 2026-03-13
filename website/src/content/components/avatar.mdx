@@ -1,0 +1,167 @@
+---
+title: "Avatar"
+date: "2026-03-03"
+type: "component"
+description: "Avatar component for displaying user images with a text fallback."
+tags: ["avatar", "ui", "image"]
+---
+
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
+A circular image element for representing users or entities, with an automatic text fallback when the image is unavailable. Built on [Base UI Avatar](https://base-ui.com/react/components/avatar).
+
+## Usage
+
+```tsx
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
+<Avatar>
+  <AvatarImage src="/avatar.jpg" alt="User" />
+  <AvatarFallback>JD</AvatarFallback>
+</Avatar>;
+```
+
+## Examples
+
+### With Image
+
+Displays the user's profile image.
+
+<ExampleContainer>
+  <Avatar>
+    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+    <AvatarFallback>CN</AvatarFallback>
+  </Avatar>
+</ExampleContainer>
+
+```tsx
+<Avatar>
+  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+  <AvatarFallback>CN</AvatarFallback>
+</Avatar>
+```
+
+### Fallback
+
+When no image is provided or the image fails to load, the fallback content is shown.
+
+<ExampleContainer>
+  <Avatar>
+    <AvatarFallback>JD</AvatarFallback>
+  </Avatar>
+</ExampleContainer>
+
+```tsx
+<Avatar>
+  <AvatarFallback>JD</AvatarFallback>
+</Avatar>
+```
+
+### Sizes
+
+Control the size with Tailwind utility classes on the root.
+
+<ExampleContainer>
+  <div className="flex items-center gap-4">
+    <Avatar className="size-6 text-[10px]">
+      <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+      <AvatarFallback>CN</AvatarFallback>
+    </Avatar>
+    <Avatar className="size-8">
+      <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+      <AvatarFallback>CN</AvatarFallback>
+    </Avatar>
+    <Avatar className="size-10 text-sm">
+      <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+      <AvatarFallback>CN</AvatarFallback>
+    </Avatar>
+    <Avatar className="size-14 text-base">
+      <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+      <AvatarFallback>CN</AvatarFallback>
+    </Avatar>
+  </div>
+</ExampleContainer>
+
+```tsx
+<Avatar className="size-6 text-[10px]">
+  <AvatarImage src="/avatar.jpg" alt="User" />
+  <AvatarFallback>CN</AvatarFallback>
+</Avatar>
+
+<Avatar className="size-10 text-sm">
+  <AvatarImage src="/avatar.jpg" alt="User" />
+  <AvatarFallback>CN</AvatarFallback>
+</Avatar>
+
+<Avatar className="size-14 text-base">
+  <AvatarImage src="/avatar.jpg" alt="User" />
+  <AvatarFallback>CN</AvatarFallback>
+</Avatar>
+```
+
+### Group
+
+Stack avatars together with negative margin for a compact group.
+
+<ExampleContainer>
+  <div className="flex -space-x-2">
+    <Avatar className="ring-2 ring-background">
+      <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+      <AvatarFallback>CN</AvatarFallback>
+    </Avatar>
+    <Avatar className="ring-2 ring-background">
+      <AvatarFallback>AB</AvatarFallback>
+    </Avatar>
+    <Avatar className="ring-2 ring-background">
+      <AvatarFallback>CD</AvatarFallback>
+    </Avatar>
+    <Avatar className="ring-2 ring-background">
+      <AvatarFallback>+3</AvatarFallback>
+    </Avatar>
+  </div>
+</ExampleContainer>
+
+```tsx
+<div className="flex -space-x-2">
+  <Avatar className="ring-2 ring-background">
+    <AvatarImage src="/avatar.jpg" alt="User" />
+    <AvatarFallback>CN</AvatarFallback>
+  </Avatar>
+  <Avatar className="ring-2 ring-background">
+    <AvatarFallback>AB</AvatarFallback>
+  </Avatar>
+  <Avatar className="ring-2 ring-background">
+    <AvatarFallback>+3</AvatarFallback>
+  </Avatar>
+</div>
+```
+
+## Components
+
+### Avatar
+
+The root container. Renders a circular wrapper with overflow hidden.
+
+| Prop        | Type        | Default | Description            |
+| ----------- | ----------- | ------- | ---------------------- |
+| `children`  | `ReactNode` | —       | Image and fallback     |
+| `className` | `string`    | —       | Additional CSS classes |
+
+### AvatarImage
+
+The user image. Automatically hidden if the `src` fails to load.
+
+| Prop        | Type     | Default | Description            |
+| ----------- | -------- | ------- | ---------------------- |
+| `src`       | `string` | —       | Image URL              |
+| `alt`       | `string` | —       | Accessible alt text    |
+| `className` | `string` | —       | Additional CSS classes |
+
+### AvatarFallback
+
+Displayed when no image is available or while the image is loading. Typically shows initials.
+
+| Prop        | Type        | Default | Description            |
+| ----------- | ----------- | ------- | ---------------------- |
+| `children`  | `ReactNode` | —       | Fallback content       |
+| `className` | `string`    | —       | Additional CSS classes |

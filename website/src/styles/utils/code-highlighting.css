@@ -1,0 +1,21 @@
+/**
+ * Syntax Highlighting Styles
+ *
+ * Styles for rehype-pretty-code powered by Shiki
+ * Used for code blocks in MDX content
+ */
+
+/* Shiki syntax highlighting - colors only, no background */
+pre[data-theme*=" "] span,
+pre[data-theme*=" "] code span {
+  color: var(--shiki-light);
+}
+.dark pre[data-theme*=" "] span,
+.dark pre[data-theme*=" "] code span {
+  color: var(--shiki-dark);
+}
+
+/* Code block display */
+pre > code {
+  display: block;
+}

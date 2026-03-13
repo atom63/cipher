@@ -1,0 +1,169 @@
+---
+title: "Empty State"
+date: "2026-03-03"
+type: "component"
+description: "Empty state pattern for when there is no data or content to display."
+tags: ["empty-state", "ui", "pattern"]
+---
+
+import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import { FileText, Inbox, Search, ImageOff, Plus } from "lucide-react";
+
+A placeholder component shown when a list, page, or section has no content. Provides visual context with an optional icon, title, description, and action.
+
+## Usage
+
+```tsx
+import { EmptyState } from "@/components/ui/empty-state";
+import { Inbox } from "lucide-react";
+
+<EmptyState
+  icon={<Inbox />}
+  title="No messages"
+  description="You're all caught up."
+/>;
+```
+
+## Examples
+
+### Default
+
+A simple empty state with icon, title, and description.
+
+<ExampleContainer>
+  <EmptyState
+    icon={<Inbox />}
+    title="No messages"
+    description="You're all caught up. New messages will appear here."
+  />
+</ExampleContainer>
+
+```tsx
+<EmptyState
+  icon={<Inbox />}
+  title="No messages"
+  description="You're all caught up. New messages will appear here."
+/>
+```
+
+### With Action
+
+Add a button or link to guide the user toward a next step.
+
+<ExampleContainer>
+  <EmptyState
+    icon={<FileText />}
+    title="No documents"
+    description="Get started by creating your first document."
+    action={
+      <Button size="sm" variant="primary">
+        <Plus />
+        New document
+      </Button>
+    }
+  />
+</ExampleContainer>
+
+```tsx
+<EmptyState
+  icon={<FileText />}
+  title="No documents"
+  description="Get started by creating your first document."
+  action={
+    <Button size="sm" variant="primary">
+      <Plus />
+      New document
+    </Button>
+  }
+/>
+```
+
+### Search Results
+
+Use when a search or filter returns no matches.
+
+<ExampleContainer>
+  <EmptyState
+    icon={<Search />}
+    title="No results found"
+    description="Try adjusting your search or filters to find what you're looking for."
+  />
+</ExampleContainer>
+
+```tsx
+<EmptyState
+  icon={<Search />}
+  title="No results found"
+  description="Try adjusting your search or filters to find what you're looking for."
+/>
+```
+
+### Minimal
+
+Title and description only, without an icon.
+
+<ExampleContainer>
+  <EmptyState
+    title="Nothing here"
+    description="This section is empty."
+  />
+</ExampleContainer>
+
+```tsx
+<EmptyState
+  title="Nothing here"
+  description="This section is empty."
+/>
+```
+
+### Icon Only
+
+Just an icon and title for compact contexts.
+
+<ExampleContainer>
+  <EmptyState
+    icon={<ImageOff />}
+    title="No images"
+  />
+</ExampleContainer>
+
+```tsx
+<EmptyState
+  icon={<ImageOff />}
+  title="No images"
+/>
+```
+
+### Custom Children
+
+Use the `children` prop for fully custom content.
+
+<ExampleContainer>
+  <EmptyState icon={<Inbox />} title="Your inbox is empty">
+    <p className="text-xs text-muted-foreground">Check back later for updates.</p>
+  </EmptyState>
+</ExampleContainer>
+
+```tsx
+<EmptyState icon={<Inbox />} title="Your inbox is empty">
+  <p className="text-xs text-muted-foreground">
+    Check back later for updates.
+  </p>
+</EmptyState>
+```
+
+## Components
+
+### EmptyState
+
+The root container. Centers content with a dashed border.
+
+| Prop          | Type        | Default | Description                                  |
+| ------------- | ----------- | ------- | -------------------------------------------- |
+| `icon`        | `ReactNode` | —       | Icon displayed in a muted container          |
+| `title`       | `string`    | —       | Heading text                                 |
+| `description` | `string`    | —       | Secondary text, max-width constrained        |
+| `action`      | `ReactNode` | —       | Action slot for buttons or links             |
+| `children`    | `ReactNode` | —       | Custom content below description and action  |
+| `className`   | `string`    | —       | Additional CSS classes                       |
