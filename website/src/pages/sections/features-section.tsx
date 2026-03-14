@@ -35,10 +35,15 @@ const CARDS = [
 
 export function FeaturesSection() {
   return (
-    <Section id="features" gap={false} removeTopSpacing={false} spacing="generous">
+    <Section
+      gap={false}
+      id="features"
+      removeTopSpacing={false}
+      spacing="generous"
+    >
       <Container maxWidth="narrow" padding="all">
-        <FadeUp>
-          <h2 className="max-w-lg font-bold text-4xl leading-tight tracking-tight">
+        <FadeUp className="text-center">
+          <h2 className="text-balance font-bold text-4xl leading-tight tracking-tight">
             From raw variables to a usable system
           </h2>
         </FadeUp>
@@ -46,13 +51,18 @@ export function FeaturesSection() {
         <div className="mt-10 grid gap-5 sm:mt-14 md:grid-cols-2 md:gap-6">
           {CARDS.map((card, i) => (
             <FadeUp delay={i * 0.08} key={card.title}>
-              <div className="flex h-full flex-col overflow-hidden rounded-xl extrude-1 bg-card">
-                <div className="aspect-video bg-linear-to-b from-primary/10 to-background/0" aria-hidden="true">
+              <div className="extrude-1 flex h-full flex-col overflow-hidden rounded-xl bg-card">
+                <div
+                  aria-hidden="true"
+                  className="aspect-video bg-linear-to-b from-primary/10 to-background/0"
+                >
                   <card.Visual />
                 </div>
                 <div className="mt-auto p-4">
-                  <h3 className="text-lg font-bold text-foreground">{card.title}</h3>
-                  <p className="mt-1 text-base leading-relaxed text-muted-foreground">
+                  <h3 className="font-bold text-foreground text-lg">
+                    {card.title}
+                  </h3>
+                  <p className="mt-1 text-base text-muted-foreground leading-relaxed">
                     {card.description}
                   </p>
                 </div>

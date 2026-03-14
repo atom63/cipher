@@ -8,7 +8,7 @@ export interface SocialLink {
 export const socials: SocialLink[] = [
   {
     name: "Email",
-    url: "mailto:hello.youzhang@gmail.com",
+    url: "mailto:yz.atom63@gmail.com",
     iconify: "mdi:email",
     handle: "hello.youzhang@gmail.com",
   },

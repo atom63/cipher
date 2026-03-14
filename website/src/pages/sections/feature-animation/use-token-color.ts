@@ -1,18 +1,22 @@
 import { useMemo } from "react";
 
+const RGBA_RE = /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/;
+const VAR_RE = /^var\((.+)\)$/;
+
 /**
  * Converts an rgba() string to a short hex (#RRGGBB) string.
  * Falls through if the input isn't rgba().
  */
 function rgbaToHex(rgba: string): string {
-  const m = rgba.match(
-    /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/,
-  );
-  if (!m) return rgba;
+  const m = rgba.match(RGBA_RE);
+  if (!m) {
+    return rgba;
+  }
   const r = Math.round(Number(m[1]));
   const g = Math.round(Number(m[2]));
   const b = Math.round(Number(m[3]));
-  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1).toUpperCase()}`;
+  const hex = (r * 65_536 + g * 256 + b).toString(16).padStart(6, "0");
+  return `#${hex.toUpperCase()}`;
 }
 
 /**
@@ -25,22 +29,23 @@ function rgbaToHex(rgba: string): string {
  * animated text displays clean short values like #EB8700 instead of
  * rgba(235, 135, 0, 1).
  */
-export function useTokenColors<T extends Record<string, string>>(
-  vars: T,
-): T {
+export function useTokenColors<T extends Record<string, string>>(vars: T): T {
   return useMemo(() => {
-    if (typeof window === "undefined") return vars;
+    if (typeof window === "undefined") {
+      return vars;
+    }
     const style = getComputedStyle(document.documentElement);
     const resolved = {} as Record<string, string>;
     for (const [key, cssVar] of Object.entries(vars)) {
-      const match = cssVar.match(/^var\((.+)\)$/);
+      const match = cssVar.match(VAR_RE);
       if (match) {
-        const val = style.getPropertyValue(match[1]!).trim();
+        const varName = match[1];
+        const val = (varName ? style.getPropertyValue(varName) : "").trim();
         resolved[key] = val ? rgbaToHex(val) : cssVar;
       } else {
         resolved[key] = cssVar;
       }
     }
     return resolved as T;
-  }, []); // Resolve once on mount
+  }, [vars]);
 }

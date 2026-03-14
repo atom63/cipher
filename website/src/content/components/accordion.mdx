@@ -10,7 +10,7 @@ import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
-  AccordionPanel,
+  AccordionContent,
 } from "@/components/ui/accordion";
 
 A vertically stacked set of interactive headings that reveal or hide associated content. Built on [Base UI Accordion](https://base-ui.com/react/components/accordion).
@@ -22,15 +22,15 @@ import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
-  AccordionPanel,
+  AccordionContent,
 } from "@/components/ui/accordion";
 
 <Accordion>
   <AccordionItem>
     <AccordionTrigger>Is it accessible?</AccordionTrigger>
-    <AccordionPanel>
+    <AccordionContent>
       Yes. It adheres to the WAI-ARIA Accordion pattern.
-    </AccordionPanel>
+    </AccordionContent>
   </AccordionItem>
 </Accordion>;
 ```
@@ -45,23 +45,23 @@ Only one item can be open at a time.
   <Accordion className="w-full max-w-md">
     <AccordionItem value="item-1">
       <AccordionTrigger>Is it accessible?</AccordionTrigger>
-      <AccordionPanel>
+      <AccordionContent>
         Yes. It adheres to the WAI-ARIA Accordion pattern and supports full
         keyboard navigation.
-      </AccordionPanel>
+      </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-2">
       <AccordionTrigger>Is it styled?</AccordionTrigger>
-      <AccordionPanel>
+      <AccordionContent>
         Yes. It ships with default styles that match the rest of the design
         system.
-      </AccordionPanel>
+      </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-3">
       <AccordionTrigger>Is it animated?</AccordionTrigger>
-      <AccordionPanel>
+      <AccordionContent>
         Yes. The panel height animates smoothly on open and close.
-      </AccordionPanel>
+      </AccordionContent>
     </AccordionItem>
   </Accordion>
 </ExampleContainer>
@@ -70,23 +70,23 @@ Only one item can be open at a time.
 <Accordion>
   <AccordionItem value="item-1">
     <AccordionTrigger>Is it accessible?</AccordionTrigger>
-    <AccordionPanel>
+    <AccordionContent>
       Yes. It adheres to the WAI-ARIA Accordion pattern and supports full
       keyboard navigation.
-    </AccordionPanel>
+    </AccordionContent>
   </AccordionItem>
   <AccordionItem value="item-2">
     <AccordionTrigger>Is it styled?</AccordionTrigger>
-    <AccordionPanel>
+    <AccordionContent>
       Yes. It ships with default styles that match the rest of the design
       system.
-    </AccordionPanel>
+    </AccordionContent>
   </AccordionItem>
   <AccordionItem value="item-3">
     <AccordionTrigger>Is it animated?</AccordionTrigger>
-    <AccordionPanel>
+    <AccordionContent>
       Yes. The panel height animates smoothly on open and close.
-    </AccordionPanel>
+    </AccordionContent>
   </AccordionItem>
 </Accordion>
 ```
@@ -99,17 +99,17 @@ Set `openMultiple` on the root to allow multiple items to be expanded simultaneo
   <Accordion openMultiple className="w-full max-w-md">
     <AccordionItem value="item-1">
       <AccordionTrigger>First section</AccordionTrigger>
-      <AccordionPanel>
+      <AccordionContent>
         This panel can stay open while others are expanded.
-      </AccordionPanel>
+      </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-2">
       <AccordionTrigger>Second section</AccordionTrigger>
-      <AccordionPanel>Try opening both at the same time.</AccordionPanel>
+      <AccordionContent>Try opening both at the same time.</AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-3">
       <AccordionTrigger>Third section</AccordionTrigger>
-      <AccordionPanel>All three can be open together.</AccordionPanel>
+      <AccordionContent>All three can be open together.</AccordionContent>
     </AccordionItem>
   </Accordion>
 </ExampleContainer>
@@ -118,11 +118,11 @@ Set `openMultiple` on the root to allow multiple items to be expanded simultaneo
 <Accordion openMultiple>
   <AccordionItem value="item-1">
     <AccordionTrigger>First section</AccordionTrigger>
-    <AccordionPanel>Content</AccordionPanel>
+    <AccordionContent>Content</AccordionContent>
   </AccordionItem>
   <AccordionItem value="item-2">
     <AccordionTrigger>Second section</AccordionTrigger>
-    <AccordionPanel>Content</AccordionPanel>
+    <AccordionContent>Content</AccordionContent>
   </AccordionItem>
 </Accordion>
 ```
@@ -135,14 +135,14 @@ Use `defaultValue` to specify which items are open initially.
   <Accordion defaultValue={[1]} className="w-full max-w-md">
     <AccordionItem value={0}>
       <AccordionTrigger>Collapsed by default</AccordionTrigger>
-      <AccordionPanel>This item starts closed.</AccordionPanel>
+      <AccordionContent>This item starts closed.</AccordionContent>
     </AccordionItem>
     <AccordionItem value={1}>
       <AccordionTrigger>Open by default</AccordionTrigger>
-      <AccordionPanel>
+      <AccordionContent>
         This item starts expanded because its value is in the defaultValue
         array.
-      </AccordionPanel>
+      </AccordionContent>
     </AccordionItem>
   </Accordion>
 </ExampleContainer>
@@ -151,11 +151,11 @@ Use `defaultValue` to specify which items are open initially.
 <Accordion defaultValue={[1]}>
   <AccordionItem value={0}>
     <AccordionTrigger>Collapsed by default</AccordionTrigger>
-    <AccordionPanel>This item starts closed.</AccordionPanel>
+    <AccordionContent>This item starts closed.</AccordionContent>
   </AccordionItem>
   <AccordionItem value={1}>
     <AccordionTrigger>Open by default</AccordionTrigger>
-    <AccordionPanel>This item starts expanded.</AccordionPanel>
+    <AccordionContent>This item starts expanded.</AccordionContent>
   </AccordionItem>
 </Accordion>
 ```
@@ -168,15 +168,15 @@ Disable individual items to prevent interaction.
   <Accordion className="w-full max-w-md">
     <AccordionItem value="item-1">
       <AccordionTrigger>Enabled item</AccordionTrigger>
-      <AccordionPanel>This item works normally.</AccordionPanel>
+      <AccordionContent>This item works normally.</AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-2" disabled>
       <AccordionTrigger>Disabled item</AccordionTrigger>
-      <AccordionPanel>You cannot see this content.</AccordionPanel>
+      <AccordionContent>You cannot see this content.</AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-3">
       <AccordionTrigger>Another enabled item</AccordionTrigger>
-      <AccordionPanel>This item also works normally.</AccordionPanel>
+      <AccordionContent>This item also works normally.</AccordionContent>
     </AccordionItem>
   </Accordion>
 </ExampleContainer>
@@ -185,11 +185,11 @@ Disable individual items to prevent interaction.
 <Accordion>
   <AccordionItem value="item-1">
     <AccordionTrigger>Enabled item</AccordionTrigger>
-    <AccordionPanel>This item works normally.</AccordionPanel>
+    <AccordionContent>This item works normally.</AccordionContent>
   </AccordionItem>
   <AccordionItem value="item-2" disabled>
     <AccordionTrigger>Disabled item</AccordionTrigger>
-    <AccordionPanel>You cannot see this content.</AccordionPanel>
+    <AccordionContent>You cannot see this content.</AccordionContent>
   </AccordionItem>
 </Accordion>
 ```
@@ -227,9 +227,9 @@ The clickable heading that toggles the panel. Renders a chevron indicator that r
 | `children`  | `ReactNode` | —       | Trigger label content  |
 | `className` | `string`    | —       | Additional CSS classes |
 
-### AccordionPanel
+### AccordionContent
 
-The collapsible content area. Aliased as `AccordionContent`.
+The collapsible content area.
 
 | Prop        | Type        | Default | Description            |
 | ----------- | ----------- | ------- | ---------------------- |

@@ -242,13 +242,13 @@ const ImageCarouselBlockComponent = ({
           setApi={setApi}
         >
           <CarouselContent className={getCarouselContentGap(slidesPerView)}>
-            {images.map((image, index) => (
+            {images.map((image) => (
               <CarouselItem
                 className={cn(
                   SLIDE_BASIS_CLASSES[slidesPerView],
                   slidesPerView > 1 && "px-0"
                 )}
-                key={`${image.src}-${index}`}
+                key={`${image.src}-${image.alt}`}
               >
                 <div className="relative">
                   <Image
@@ -285,7 +285,7 @@ const ImageCarouselBlockComponent = ({
                       ? "scale-125 bg-white"
                       : "bg-white/50 hover:bg-white/70"
                   )}
-                  key={`dot-page-${index}-${images.length}`}
+                  key={`dot-page-${index}`}
                   onClick={() => handlePageSelect(index)}
                   type="button"
                 />
@@ -297,17 +297,17 @@ const ImageCarouselBlockComponent = ({
 
       {shouldShowThumbnails && (
         <div className="mt-4 grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
-          {images.map((image, index) => (
+          {images.map((image, thumbIndex) => (
             <button
-              aria-label={`View image ${index + 1}: ${image.alt}`}
+              aria-label={`View image ${thumbIndex + 1}: ${image.alt}`}
               className={cn(
                 "relative aspect-square overflow-hidden rounded border-2 transition-all duration-200",
-                current === index + 1
+                current === thumbIndex + 1
                   ? "scale-105 border-primary"
                   : "border-muted hover:border-muted-foreground/50"
               )}
-              key={`thumb-${image.src}-${index}`}
-              onClick={() => handleThumbnailClick(index)}
+              key={`${image.src}-${image.alt}`}
+              onClick={() => handleThumbnailClick(thumbIndex)}
               type="button"
             >
               <Image

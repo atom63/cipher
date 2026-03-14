@@ -102,9 +102,7 @@ export function ExportPage() {
 				totalCollections: msg.data.totalCollections,
 			});
 			setView("css-preview");
-			if (msg.data.files.length > 0) {
-				setExpandedCssFile(msg.data.files[0].name);
-			}
+			setExpandedCssFile(null);
 		}
 
 		if (msg.type === "export-error") {

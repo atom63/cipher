@@ -3,8 +3,6 @@ import { createContext, useContext, useEffect, useState } from "react";
 type Theme = "light" | "dark" | "system";
 
 interface ThemeContextType {
-  disableTransitions: () => void;
-  isChanging: boolean;
   isDark: boolean;
   isLight: boolean;
   isSystem: boolean;
@@ -16,49 +14,41 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") {
-      return "dark";
-    }
+    if (typeof window === "undefined") return "dark";
     return (localStorage.getItem("theme") as Theme) || "dark";
   });
 
-  const [isDark, setIsDark] = useState(true);
-  const [isChanging, setIsChanging] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const t = (localStorage.getItem("theme") as Theme) || "dark";
+    return (
+      t === "dark" ||
+      (t === "system" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches)
+    );
+  });
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
-
+    const root = document.documentElement;
     const computedIsDark =
       theme === "dark" ||
       (theme === "system" &&
         window.matchMedia("(prefers-color-scheme: dark)").matches);
 
     setIsDark(computedIsDark);
-
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
-    }
+    root.classList.remove("light", "dark");
+    root.classList.add(computedIsDark ? "dark" : "light");
   }, [theme]);
 
   // Listen for system theme changes
   useEffect(() => {
-    if (theme !== "system") {
-      return;
-    }
+    if (theme !== "system") return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
       const computedIsDark = mediaQuery.matches;
       setIsDark(computedIsDark);
-
-      const root = window.document.documentElement;
+      const root = document.documentElement;
       root.classList.remove("light", "dark");
       root.classList.add(computedIsDark ? "dark" : "light");
     };
@@ -67,27 +57,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
-  const disableTransitions = () => {
-    setIsChanging(true);
-    // Re-enable transitions after a short delay
-    setTimeout(() => setIsChanging(false), 100);
-  };
-
   const setAndStoreTheme = (newTheme: Theme) => {
-    if (newTheme === theme) {
-      return;
-    }
-
+    if (newTheme === theme) return;
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
-
-    // Disable CSS transitions during theme change
-    setIsChanging(true);
-
-    // Re-enable transitions after a short delay
-    setTimeout(() => {
-      setIsChanging(false);
-    }, 100);
   };
 
   return (
@@ -98,8 +71,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         isDark,
         isLight: !isDark,
         isSystem: theme === "system",
-        isChanging,
-        disableTransitions,
       }}
     >
       {children}

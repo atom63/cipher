@@ -2,9 +2,9 @@ import Container from "@/components/common/layout/container";
 import Section from "@/components/common/layout/section";
 import {
   Accordion,
+  AccordionContent,
   AccordionItem,
   AccordionTrigger,
-  AccordionPanel,
 } from "@/components/ui/accordion";
 import { FadeUp } from "./animation";
 
@@ -37,21 +37,21 @@ const FAQ_ITEMS = [
 
 export function FaqSection() {
   return (
-    <Section id="faq" gap={false} removeTopSpacing={false} spacing="generous">
-      <Container maxWidth="narrow" padding="all">
+    <Section gap={false} id="faq" removeTopSpacing={false} spacing="generous">
+      <Container maxWidth="narrowest" padding="all">
         <FadeUp>
-          <h2 className="mb-6 font-bold text-4xl leading-tight tracking-tight">
-            FAQ
+          <h2 className="mb-6 text-center font-bold text-4xl leading-tight tracking-tight">
+            Questions you might have
           </h2>
-          <Accordion defaultValue={[0]}>
+          <Accordion type="single" defaultValue="0">
             {FAQ_ITEMS.map((item, i) => (
-              <AccordionItem key={i} value={i}>
-                <AccordionTrigger className="text-base">
+              <AccordionItem key={item.q} value={String(i)}>
+                <AccordionTrigger className="text-lg">
                   {item.q}
                 </AccordionTrigger>
-                <AccordionPanel className="text-sm leading-relaxed">
+                <AccordionContent className="text-base leading-relaxed">
                   {item.a}
-                </AccordionPanel>
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>

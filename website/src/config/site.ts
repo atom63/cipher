@@ -4,7 +4,7 @@ export const siteConfig = {
   name: "Cipher",
   description:
     "Design tokens from Figma to production CSS in one click. Generate, preview, and export a complete token system — colors, typography, spacing, and more.",
-  url: "https://cipher.design",
+  url: "https://usecipher.dev",
   ogImage: "/og.jpg",
   favicon: "/favicons/favicon.ico",
   author: {

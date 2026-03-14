@@ -88,7 +88,7 @@
   --card-foreground: var(--surface-dark-12);
   --popover: var(--surface-dark-4);
   --popover-foreground: var(--surface-dark-12);
-  --primary: var(--color-brand-primary-500);
+  --primary: var(--color-brand-secondary-500);
   --primary-foreground: var(--surface-dark-12);
   --secondary: var(--surface-dark-3);
   --secondary-foreground: var(--surface-dark-11);

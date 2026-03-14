@@ -1,14 +1,20 @@
-import { useState } from "react";
 import { motion } from "motion/react";
+import { useState } from "react";
 import Container from "@/components/common/layout/container";
 import Section from "@/components/common/layout/section";
-import { FadeUp, ease } from "./animation";
+import { ease, FadeUp } from "./animation";
 
 // ---------------------------------------------------------------------------
 // Token snippets
 // ---------------------------------------------------------------------------
 
-const TOKEN_SNIPPETS: { id: string; label: string; file: string; vars: number; code: string }[] = [
+const TOKEN_SNIPPETS: {
+  id: string;
+  label: string;
+  file: string;
+  vars: number;
+  code: string;
+}[] = [
   {
     id: "primitives",
     label: "Primitives",
@@ -160,17 +166,17 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
 
   return (
     <Section
-      id="system-in-code"
       gap={false}
+      id="system-in-code"
       removeTopSpacing={false}
       spacing="generous"
     >
       <Container maxWidth="narrow" padding="all">
-        <FadeUp>
-          <h2 className="font-bold text-4xl leading-tight tracking-tight">
+        <FadeUp className="text-center">
+          <h2 className="text-balance font-bold text-4xl leading-tight tracking-tight">
             See the system in code
           </h2>
-          <p className="mt-3 max-w-lg text-muted-foreground">
+          <p className="mx-auto mt-3 max-w-lg text-balance text-muted-foreground">
             Inspect the token structure Cipher generates — primitives, aliases,
             semantics, type scales, and effects.
           </p>
@@ -179,10 +185,10 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
         <FadeUp delay={0.1}>
           <div className="mt-8 overflow-hidden rounded-xl border border-border/60 shadow-5">
             {/* Interactive file tabs */}
-            <div className="flex items-center gap-0 overflow-x-auto border-b border-border/50 bg-card/80">
+            <div className="flex items-center gap-0 overflow-x-auto border-border/50 border-b bg-card/80">
               {TOKEN_SNIPPETS.map((snippet) => (
                 <button
-                  className={`shrink-0 border-r border-border/30 px-3.5 py-2 font-mono text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
+                  className={`shrink-0 border-border/30 border-r px-3.5 py-2 font-mono text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
                     snippet.id === activeFile
                       ? "bg-background/80 text-foreground"
                       : "text-muted-foreground/50 hover:text-muted-foreground"
@@ -195,7 +201,7 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
                 </button>
               ))}
               <div className="flex-1" />
-              <span className="mr-3 shrink-0 font-mono text-xs text-muted-foreground/40">
+              <span className="mx-3 shrink-0 font-mono text-muted-foreground/40 text-xs">
                 {active.vars} vars
               </span>
             </div>
@@ -204,10 +210,10 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
             <div className="relative bg-card/40">
               <div className="h-[340px] overflow-hidden p-4 sm:p-5">
                 <motion.pre
-                  key={activeFile}
+                  animate={{ opacity: 1 }}
                   className="overflow-x-auto font-mono text-sm leading-relaxed"
                   initial={reduced ? false : { opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  key={activeFile}
                   transition={{ duration: 0.3, ease }}
                 >
                   <code>
@@ -218,8 +224,12 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
 
                       if (trimmed.startsWith("/*") || trimmed.startsWith("*")) {
                         return (
-                          <div key={`${activeFile}-${i}`} className="text-muted-foreground/50">
-                            {spaces}{trimmed}
+                          <div
+                            className="text-muted-foreground/50"
+                            key={`${activeFile}-${i}`}
+                          >
+                            {spaces}
+                            {trimmed}
                           </div>
                         );
                       }
@@ -236,23 +246,39 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
                           <div key={`${activeFile}-${i}`}>
                             {spaces}
                             <span className="text-primary/80">{prop}</span>
-                            <span className="text-foreground/30">{val.slice(0, 2)}</span>
-                            <span className="text-foreground/60">{val.slice(2)}</span>
+                            <span className="text-foreground/30">
+                              {val.slice(0, 2)}
+                            </span>
+                            <span className="text-foreground/60">
+                              {val.slice(2)}
+                            </span>
                           </div>
                         );
                       }
 
-                      if (trimmed.startsWith("@") || trimmed.startsWith(":root") || trimmed.startsWith(".dark")) {
+                      if (
+                        trimmed.startsWith("@") ||
+                        trimmed.startsWith(":root") ||
+                        trimmed.startsWith(".dark")
+                      ) {
                         return (
-                          <div key={`${activeFile}-${i}`} className="text-foreground/70">
-                            {spaces}{trimmed}
+                          <div
+                            className="text-foreground/70"
+                            key={`${activeFile}-${i}`}
+                          >
+                            {spaces}
+                            {trimmed}
                           </div>
                         );
                       }
 
                       return (
-                        <div key={`${activeFile}-${i}`} className="text-foreground/50">
-                          {spaces}{trimmed}
+                        <div
+                          className="text-foreground/50"
+                          key={`${activeFile}-${i}`}
+                        >
+                          {spaces}
+                          {trimmed}
                         </div>
                       );
                     })}
@@ -261,28 +287,6 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
               </div>
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-card/90 to-transparent" />
             </div>
-          </div>
-        </FadeUp>
-
-        {/* Boilerplate CTA */}
-        <FadeUp delay={0.2}>
-          <div className="mt-10 flex flex-col gap-4 border-t border-border/40 pt-8 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-base font-semibold">
-                Open-source starter included
-              </h3>
-              <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                A reference repo that applies the full token structure in code.
-              </p>
-            </div>
-            <a
-              className="shrink-0 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              href="https://github.com/atom63/cipher"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              View on GitHub &rarr;
-            </a>
           </div>
         </FadeUp>
       </Container>

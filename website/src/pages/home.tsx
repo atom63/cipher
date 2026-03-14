@@ -1,11 +1,12 @@
 import DefaultLayout from "@/components/common/layout/default-layout";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { HeroSection } from "./sections/hero-section";
-import { FeaturesSection } from "./sections/features-section";
+import { BoilerplateSection } from "./sections/boilerplate-section";
 import { CodeSection } from "./sections/code-section";
-import { FaqSection } from "./sections/faq-section";
 import { CtaSection } from "./sections/cta-section";
+import { FaqSection } from "./sections/faq-section";
+import { FeaturesSection } from "./sections/features-section";
+import { HeroSection } from "./sections/hero-section";
 
 export default function Home() {
   const reduced = useReducedMotion();

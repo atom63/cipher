@@ -218,10 +218,15 @@ function generatePrimitives(config: BrandConfig): {
 
 	// When secondaryAsDarkPrimary is set, dark surfaces tint toward the secondary hue
 	const useDarkSecondary = config.secondaryAsDarkPrimary && config.secondary;
-	const darkBrandHue = useDarkSecondary
-		? rgbToOklch(...(() => { const c = hexToRgb(config.secondary!); return [c.r, c.g, c.b] as const; })())
-			.h
-		: primaryHue;
+	const darkBrandHue =
+		useDarkSecondary && config.secondary
+			? rgbToOklch(
+					...((): [number, number, number] => {
+						const c = hexToRgb(config.secondary as string);
+						return [c.r, c.g, c.b];
+					})(),
+				).h
+			: primaryHue;
 
 	const lightSurfaceOpts = { saturation: satMul, hueShift, primaryBlend, primaryHue, brightness };
 	const darkSurfaceOpts = { saturation: satMul, hueShift, primaryBlend, primaryHue: darkBrandHue, brightness };
@@ -373,8 +378,9 @@ function generatePrimitives(config: BrandConfig): {
 		const sizeMin = isAboveBase ? round(baseSize + delta * MIN_FACTOR) : step.size;
 
 		// Use the original line-height percentage from config, not the ratio
-		// derived from rounded values, to avoid 1px rounding drift
-		const lhPct = isAboveBase ? headingLhPct : bodyLhPct;
+		// derived from rounded values, to avoid 1px rounding drift.
+		// lg is large body text, not a heading — use body line-height
+		const lhPct = isAboveBase && step.name !== "lg" ? headingLhPct : bodyLhPct;
 		const lhMd = round(sizeMd * lhPct);
 		const lhSm = round(sizeSm * lhPct);
 		const lhMin = round(sizeMin * lhPct);

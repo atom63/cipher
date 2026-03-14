@@ -1,7 +1,11 @@
 import { Moon, Sun } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useTheme } from "@/contexts/theme-context";
 
 interface ThemeToggleProps {
@@ -23,13 +27,15 @@ export function ThemeToggle({ size = "icon" }: ThemeToggleProps) {
 
   return (
     <Tooltip>
-      <TooltipTrigger
-        className="relative"
-        onClick={toggleTheme}
-        render={<Button size={size} variant="ghost" />}
-      >
-        {/* Sun icon - visible in dark mode */}
-        <motion.span
+      <TooltipTrigger asChild>
+        <Button
+          className="relative"
+          size={size}
+          variant="ghost"
+          onClick={toggleTheme}
+        >
+          {/* Sun icon - visible in dark mode */}
+          <motion.span
           animate={{
             opacity: isDark ? 1 : 0,
             scale: isDark ? 1 : 0.5,
@@ -55,10 +61,11 @@ export function ThemeToggle({ size = "icon" }: ThemeToggleProps) {
         >
           <Moon className="size-4" />
         </motion.span>
+        </Button>
       </TooltipTrigger>
-      <TooltipPopup side="right">
+      <TooltipContent side="right">
         {isDark ? "Light mode" : "Dark mode"}
-      </TooltipPopup>
+      </TooltipContent>
     </Tooltip>
   );
 }

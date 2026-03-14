@@ -567,6 +567,9 @@ body {
 .manage-tabs-header {
   flex-shrink: 0;
   padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-xl);
+  gap: var(--spacing-lg);
+  flex-direction: column;
+  display: flex;
 
   /* Remove default SectionHeader bottom margin/padding — tabs sit right below */
   > [class*="header"] {

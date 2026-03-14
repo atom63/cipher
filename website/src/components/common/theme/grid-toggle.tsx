@@ -1,6 +1,10 @@
 import { Grid3x3 } from "lucide-react";
 import { Toggle, ToggleHighlight, ToggleItem } from "@/components/ui/toggle";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useGrid } from "@/contexts/grid-context";
 
 interface GridToggleProps {
@@ -31,9 +35,9 @@ export function GridToggle({ size = 16 }: GridToggleProps) {
           />
         </ToggleItem>
       </TooltipTrigger>
-      <TooltipPopup side="right">
+      <TooltipContent side="right">
         {showGrid ? "Hide grid" : "Show grid"}
-      </TooltipPopup>
+      </TooltipContent>
     </Tooltip>
   );
 }

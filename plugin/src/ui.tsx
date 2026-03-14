@@ -28,7 +28,7 @@ import type { PluginSettings } from "./types/messages";
 import { applyTheme } from "./utils/theme";
 
 function App() {
-	const [activePage, setActivePage] = useState<PageId>("manage");
+	const [activePage, setActivePage] = useState<PageId>("generate");
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [viewMode, setViewMode] = useState<ViewMode>("default");
 	const [isDark, setIsDark] = useState(false);

@@ -35,12 +35,12 @@ export default function WebHeader({ className }: WebHeaderProps) {
       className={cn(
         "sticky top-0 z-50 backdrop-blur-xl transition-[background-color,border-color] duration-300 ease-out",
         scrolled
-          ? "border-b border-border/40 bg-background/80"
-          : "border-b border-transparent bg-transparent",
-        className,
+          ? "border-border/40 border-b bg-background/80"
+          : "border-transparent border-b bg-transparent",
+        className
       )}
     >
-      <Container maxWidth="narrow" padding="all">
+      <Container maxWidth="narrower" padding="all">
         <div className="flex h-8 items-center justify-between">
           <Link
             className="rounded-sm text-foreground no-underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -55,14 +55,14 @@ export default function WebHeader({ className }: WebHeaderProps) {
               className={navLinkClass}
               to="/"
             >
-              Home
+              Plugin
             </Link>
             <Link
               activeProps={{ className: "text-foreground" }}
               className={navLinkClass}
-              to="/components"
+              to="/preview"
             >
-              Design System
+              Preview UI
             </Link>
             <ThemeToggle size="icon-sm" />
           </nav>

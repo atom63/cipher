@@ -629,8 +629,10 @@ describe("responsive", () => {
 		for (const [key, lh] of lhMap) {
 			const size = sizeMap.get(key);
 			expect(size).toBeDefined();
-			// Determine if heading or body — steps above base use heading, base and below use body
-			const isHeading = (size as number) > tsConfig.base;
+			// Determine if heading or body — lg is large body text (uses body lh),
+			// other steps above base use heading, base and below use body
+			const stepName = key.split("/")[0];
+			const isHeading = (size as number) > tsConfig.base && stepName !== "lg";
 			const pct = isHeading ? headingPct : bodyPct;
 			const expected = Math.round((size as number) * pct);
 			expect(lh, `${key}: size=${size}, lh=${lh}, expected=${expected}`).toBe(expected);

@@ -4,19 +4,19 @@
 
 .spinner {
   position: relative;
-  border-radius: var(--radius-full);
   border: 3px solid transparent;
+  border-radius: var(--radius-full);
 }
 
 .spinner::before,
 .spinner::after {
-  content: "";
   position: absolute;
   inset: -3px;
-  border-radius: inherit;
-  border-style: solid;
+  content: "";
   border-color: transparent;
+  border-style: solid;
   border-width: inherit;
+  border-radius: inherit;
 }
 
 /* Primary arc — bold sweep */
@@ -94,8 +94,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: spinner-enter 0.4s cubic-bezier(0, 0, 0.2, 1) both;
   filter: drop-shadow(0 0 8px color-mix(in oklch, var(--primary) 30%, transparent));
+  animation: spinner-enter 0.4s cubic-bezier(0, 0, 0.2, 1) both;
 }
 
 .message {
@@ -147,8 +147,8 @@
   }
 
   .spinnerSlot {
-    animation: none;
     filter: none;
+    animation: none;
   }
 
   .message,

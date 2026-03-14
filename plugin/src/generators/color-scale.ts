@@ -229,7 +229,7 @@ export interface NeutralScaleOptions {
 
 /** Interpolate hue on the shorter arc of the hue circle */
 function lerpHue(a: number, b: number, t: number): number {
-	let diff = ((b - a + 540) % 360) - 180; // shortest arc
+	const diff = ((b - a + 540) % 360) - 180; // shortest arc
 	return ((a + diff * t) % 360 + 360) % 360;
 }
 

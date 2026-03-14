@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import { socialsByName } from "@/config/socials";
+import { cn } from "@/lib/utils";
 import Container from "./container";
 
 interface FooterProps {
@@ -15,9 +15,9 @@ export function WebFooter({ className }: FooterProps) {
   const email = socialsByName.email;
 
   return (
-    <footer className={cn("border-t border-border/40", className)}>
-      <Container maxWidth="narrow" padding="all">
-        <div className="flex flex-wrap items-center justify-between gap-4 py-2 text-xs text-muted-foreground/50">
+    <footer className={cn("border-border/40 border-t", className)}>
+      <Container maxWidth="narrower" padding="all">
+        <div className="flex flex-wrap items-center justify-between gap-4 py-2 text-muted-foreground/50 text-xs">
           <span>
             © {currentYear} Cipher · Made by{" "}
             <a

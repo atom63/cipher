@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PreviewRouteImport } from './routes/preview'
 import { Route as ComponentsRouteImport } from './routes/components'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ComponentsIndexRouteImport } from './routes/components.index'
 import { Route as ComponentsSlugRouteImport } from './routes/components.$slug'
 
+const PreviewRoute = PreviewRouteImport.update({
+  id: '/preview',
+  path: '/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ComponentsRoute = ComponentsRouteImport.update({
   id: '/components',
   path: '/components',
@@ -38,11 +44,13 @@ const ComponentsSlugRoute = ComponentsSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/components': typeof ComponentsRouteWithChildren
+  '/preview': typeof PreviewRoute
   '/components/$slug': typeof ComponentsSlugRoute
   '/components/': typeof ComponentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/preview': typeof PreviewRoute
   '/components/$slug': typeof ComponentsSlugRoute
   '/components': typeof ComponentsIndexRoute
 }
@@ -50,24 +58,44 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/components': typeof ComponentsRouteWithChildren
+  '/preview': typeof PreviewRoute
   '/components/$slug': typeof ComponentsSlugRoute
   '/components/': typeof ComponentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/components' | '/components/$slug' | '/components/'
+  fullPaths:
+    | '/'
+    | '/components'
+    | '/preview'
+    | '/components/$slug'
+    | '/components/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/components/$slug' | '/components'
-  id: '__root__' | '/' | '/components' | '/components/$slug' | '/components/'
+  to: '/' | '/preview' | '/components/$slug' | '/components'
+  id:
+    | '__root__'
+    | '/'
+    | '/components'
+    | '/preview'
+    | '/components/$slug'
+    | '/components/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ComponentsRoute: typeof ComponentsRouteWithChildren
+  PreviewRoute: typeof PreviewRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/preview': {
+      id: '/preview'
+      path: '/preview'
+      fullPath: '/preview'
+      preLoaderRoute: typeof PreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/components': {
       id: '/components'
       path: '/components'
@@ -116,6 +144,7 @@ const ComponentsRouteWithChildren = ComponentsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ComponentsRoute: ComponentsRouteWithChildren,
+  PreviewRoute: PreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

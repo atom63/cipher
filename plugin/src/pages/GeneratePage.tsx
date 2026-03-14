@@ -260,9 +260,9 @@ function extractBrandConfig(
 			return bestPct;
 		};
 
-		// Collect body step pairs (base + downscales)
+		// Collect body step pairs (base + lg + downscales) — lg is large body text
 		const bodyPairs: { size: number; lh: number }[] = [];
-		for (const stepName of ["base", ...downNames.slice(0, stepsDown)]) {
+		for (const stepName of ["base", "lg", ...downNames.slice(0, stepsDown)]) {
 			const sVar = find("primitives", `font/typescale/${stepName}/size/md`);
 			const lhVar = find("primitives", `font/typescale/${stepName}/line/height/md`);
 			if (sVar && lhVar) {
@@ -277,9 +277,9 @@ function extractBrandConfig(
 		}
 		const lineHeightBody = bestFitPct(bodyPairs, 150);
 
-		// Collect heading step pairs (all upscales)
+		// Collect heading step pairs (upscales except lg, which is body)
 		const headingPairs: { size: number; lh: number }[] = [];
-		for (const stepName of upNames.slice(0, stepsUp)) {
+		for (const stepName of upNames.slice(1, stepsUp)) {
 			const sVar = find("primitives", `font/typescale/${stepName}/size/md`);
 			const lhVar = find("primitives", `font/typescale/${stepName}/line/height/md`);
 			if (sVar && lhVar) {

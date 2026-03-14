@@ -151,6 +151,33 @@ describe("computeTypescale", () => {
 		expect(largeXl?.size).toBeGreaterThan(smallXl?.size as number);
 	});
 
+	test("lg step uses body line-height, not heading line-height", () => {
+		const steps = computeTypescale({
+			...DEFAULT_TYPESCALE,
+			base: 16,
+			ratio: "major-third",
+			lineHeightBody: 150,
+			lineHeightHeading: 120,
+		});
+		const lg = steps.find((s) => s.name === "lg");
+		const xl = steps.find((s) => s.name === "xl");
+		const base = steps.find((s) => s.name === "base");
+		expect(lg).toBeDefined();
+		expect(xl).toBeDefined();
+		expect(base).toBeDefined();
+		if (!((lg && base ) && xl)) return;
+
+		// lg should use body lh (150%) — same ratio as base
+		const lgRatio = lg.lineHeight / lg.size;
+		const baseRatio = base.lineHeight / base.size;
+		const xlRatio = xl.lineHeight / xl.size;
+
+		// lg and base should have similar line-height ratios (body)
+		expect(Math.abs(lgRatio - baseRatio)).toBeLessThan(0.05);
+		// xl should use heading line-height (120%), noticeably different from body (150%)
+		expect(Math.abs(xlRatio - baseRatio)).toBeGreaterThan(0.1);
+	});
+
 	test("custom stepsUp/stepsDown adjust step count", () => {
 		const steps = computeTypescale({
 			...DEFAULT_TYPESCALE,

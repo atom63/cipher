@@ -234,14 +234,15 @@ export function computeTypescale(config?: TypescaleConfig): TypeStep[] {
 
 	const steps: TypeStep[] = [];
 
-	// Upscales — heading line-height (largest first), capped at maxSize
+	// Upscales — lg uses body line-height (large body text), rest use heading
 	const maxSize = c.maxSize ?? 128;
 	for (let i = stepsUp; i >= 1; i--) {
 		const size = Math.min(maxSize, round(c.base * ratio ** i));
+		const lh = i === 1 ? bodyLh : headingLh; // lg (i=1) is large body, not a heading
 		steps.push({
 			name: STEP_NAMES_UP[i - 1],
 			size,
-			lineHeight: round(size * headingLh),
+			lineHeight: round(size * lh),
 		});
 	}
 

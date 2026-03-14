@@ -11,11 +11,13 @@ export function useVisible<T extends HTMLElement = HTMLDivElement>() {
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => setVisible(entry?.isIntersecting ?? false),
-      { threshold: 0 },
+      { threshold: 0 }
     );
     observer.observe(el);
     return () => observer.disconnect();

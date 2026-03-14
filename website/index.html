@@ -18,6 +18,15 @@
       rel="stylesheet"
     >
 
+    <!-- Prevent FOUC: apply theme class before first paint -->
+    <script>
+      (function() {
+        var t = localStorage.getItem('theme') || 'dark';
+        var d = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.add(d ? 'dark' : 'light');
+      })();
+    </script>
+
     <!-- Base Title (will be updated by usePageMeta) -->
     <title>Cipher</title>
 
