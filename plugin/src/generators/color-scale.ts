@@ -210,41 +210,117 @@ export interface NeutralScale {
 const NEUTRAL_L_LIGHT = [0.991, 0.983, 0.956, 0.932, 0.910, 0.887, 0.853, 0.794, 0.645, 0.611, 0.503, 0.241];
 const NEUTRAL_L_DARK = [0.179, 0.213, 0.252, 0.283, 0.312, 0.347, 0.399, 0.489, 0.537, 0.583, 0.769, 0.949];
 
-// Chroma per step — very low for neutrals, peaks at mid-range
-const NEUTRAL_C_LIGHT = [0.002, 0.003, 0.004, 0.006, 0.007, 0.010, 0.011, 0.016, 0.017, 0.016, 0.014, 0.010];
-const NEUTRAL_C_DARK = [0.004, 0.004, 0.006, 0.007, 0.008, 0.010, 0.012, 0.016, 0.015, 0.015, 0.010, 0.003];
+// Chroma per step — light steps have a higher floor so saturation slider affects them visibly
+const NEUTRAL_C_LIGHT = [0.008, 0.009, 0.011, 0.013, 0.015, 0.018, 0.021, 0.028, 0.030, 0.028, 0.024, 0.017];
+const NEUTRAL_C_DARK = [0.010, 0.010, 0.013, 0.015, 0.017, 0.019, 0.023, 0.028, 0.026, 0.026, 0.017, 0.005];
+
+export interface NeutralScaleOptions {
+	/** Lightness offset (-0.1 to +0.1). Positive = brighter, negative = darker. Default 0. */
+	brightness?: number;
+	/** Hue shift across lightness in degrees. Positive = warm darks / cool highlights. Default 0. */
+	hueShift?: number;
+	/** Blend toward a primary hue (0–1). 0 = tint only, 1 = fully primary. Default 0. */
+	primaryBlend?: number;
+	/** Hue of the primary brand color (OKLCH degrees). Required when primaryBlend > 0. */
+	primaryHue?: number;
+	/** Chroma multiplier (0 = pure gray, 1 = default, 3 = triple). Default 1. */
+	saturation?: number;
+}
+
+/** Interpolate hue on the shorter arc of the hue circle */
+function lerpHue(a: number, b: number, t: number): number {
+	let diff = ((b - a + 540) % 360) - 180; // shortest arc
+	return ((a + diff * t) % 360 + 360) % 360;
+}
+
+/**
+ * Compute per-step chroma with a mid-tone emphasis curve.
+ * The base chroma array defines the shape; the curve exponent controls
+ * how much extra chroma the mid-tones get relative to extremes.
+ * Curve = 1 is linear (original behavior). Higher = more mid-tone push.
+ */
+function applyCurveTo(baseChroma: number[], lightness: number[], sat: number): number[] {
+	return baseChroma.map((c, i) => {
+		// Mid-tone emphasis: peak at L=0.5, falls off toward 0 and 1
+		const midFactor = 1 + 0.5 * Math.sin(lightness[i] * Math.PI);
+		return c * sat * midFactor;
+	});
+}
 
 /**
  * Generate a Radix-style 12-step neutral scale from a tint color.
- * Extracts the hue from the input and applies it at very low chroma.
- * @param saturation — multiplier for chroma (0 = pure gray, 1 = default, 2 = double saturation)
+ * Supports saturation, primary hue blending, hue rotation, and non-linear chroma.
  */
-export function generateNeutralScale(tintHex: string, saturation = 1): NeutralScale {
+export function generateNeutralScale(tintHex: string, saturationOrOpts: number | NeutralScaleOptions = 1): NeutralScale {
+	const opts: NeutralScaleOptions = typeof saturationOrOpts === "number"
+		? { saturation: saturationOrOpts }
+		: saturationOrOpts;
+	const sat = opts.saturation ?? 1;
+	const hueShift = opts.hueShift ?? 0;
+	const primaryBlend = opts.primaryBlend ?? 0;
+	const primaryHue = opts.primaryHue ?? 0;
+	const brightness = opts.brightness ?? 0;
+
 	const rgb = hexToRgb(tintHex);
 	const oklch = rgbToOklch(rgb.r, rgb.g, rgb.b);
-	const hue = oklch.h;
+	const baseHue = primaryBlend > 0
+		? lerpHue(oklch.h, primaryHue, primaryBlend)
+		: oklch.h;
+
+	const lightChroma = applyCurveTo(NEUTRAL_C_LIGHT, NEUTRAL_L_LIGHT, sat);
+	const darkChroma = applyCurveTo(NEUTRAL_C_DARK, NEUTRAL_L_DARK, sat);
 
 	const light: string[] = [];
 	const dark: string[] = [];
 
 	for (let i = 0; i < 12; i++) {
-		light.push(rgbToHex(oklchToRgb({ l: NEUTRAL_L_LIGHT[i], c: NEUTRAL_C_LIGHT[i] * saturation, h: hue })));
-		dark.push(rgbToHex(oklchToRgb({ l: NEUTRAL_L_DARK[i], c: NEUTRAL_C_DARK[i] * saturation, h: hue })));
+		const t = i / 11;
+		const hueL = baseHue + hueShift * (1 - t * 2);
+		const hueD = baseHue + hueShift * (1 - t * 2);
+
+		const lL = Math.max(0, Math.min(1, NEUTRAL_L_LIGHT[i] + brightness));
+		const lD = Math.max(0, Math.min(1, NEUTRAL_L_DARK[i] + brightness));
+
+		light.push(rgbToHex(oklchToRgb({ l: lL, c: lightChroma[i], h: hueL })));
+		dark.push(rgbToHex(oklchToRgb({ l: lD, c: darkChroma[i], h: hueD })));
 	}
 
 	return { light, dark };
 }
 
 /**
- * Adjust the chroma (saturation) of an array of hex colors by a multiplier.
- * Converts each hex to OKLCH, scales chroma, converts back.
- * @param multiplier — 0 = pure gray, 1 = unchanged, 2 = double saturation
+ * Adjust the chroma, hue blend, and hue shift of an array of hex colors.
+ * Used to apply surface controls to Radix preset palettes.
  */
-export function adjustSaturation(hexColors: string[], multiplier: number): string[] {
-	if (multiplier === 1) return hexColors;
-	return hexColors.map((hex) => {
+export function adjustSaturation(
+	hexColors: string[],
+	multiplier: number,
+	opts?: { brightness?: number; hueShift?: number; primaryBlend?: number; primaryHue?: number },
+): string[] {
+	if (multiplier === 1 && !opts?.hueShift && !opts?.primaryBlend && !opts?.brightness) return hexColors;
+	const hueShift = opts?.hueShift ?? 0;
+	const primaryBlend = opts?.primaryBlend ?? 0;
+	const primaryHue = opts?.primaryHue ?? 0;
+	const brightness = opts?.brightness ?? 0;
+
+	return hexColors.map((hex, i) => {
 		const rgb = hexToRgb(hex);
 		const oklch = rgbToOklch(rgb.r, rgb.g, rgb.b);
-		return rgbToHex(oklchToRgb({ l: oklch.l, c: oklch.c * multiplier, h: oklch.h }));
+
+		// Mid-tone chroma emphasis
+		const midFactor = 1 + 0.5 * Math.sin(oklch.l * Math.PI);
+		const c = oklch.c * multiplier * midFactor;
+
+		// Lightness offset
+		const l = Math.max(0, Math.min(1, oklch.l + brightness));
+
+		// Hue blending and rotation
+		let h = primaryBlend > 0 ? lerpHue(oklch.h, primaryHue, primaryBlend) : oklch.h;
+		if (hueShift !== 0) {
+			const t = i / (hexColors.length - 1);
+			h += hueShift * (1 - t * 2);
+		}
+
+		return rgbToHex(oklchToRgb({ l, c, h }));
 	});
 }

@@ -8,8 +8,10 @@ import {
 	type ColorScale,
 	generateColorScale,
 	generateNeutralScale,
+	hexToRgb,
 	type NeutralScale,
 	rgbToHex,
+	rgbToOklch,
 	SHADE_STEPS,
 } from "./color-scale";
 import { getRadixGray, RADIX_GRAYS, type RadixGrayScale } from "./radix-grays";
@@ -57,9 +59,17 @@ export interface BrandConfig {
 	radius?: number;
 	/** Secondary/accent brand color (hex, optional) */
 	secondary?: string;
+	/** Use brand secondary as semantic --primary in dark mode (default: false) */
+	secondaryAsDarkPrimary?: boolean;
 	/** Status color overrides (hex). Defaults: danger=#EF4444, success=#10B981, warning=#F59E0B, info=#3B82F6 */
 	statusColors?: StatusColorOverrides;
-	/** Surface color saturation multiplier (0–200, where 100 = default). Controls chroma of surface/gray palette. */
+	/** Surface brightness offset (-50 to +50, default 0). Shifts lightness of surface palette. */
+	surfaceBrightness?: number;
+	/** Blend brand primary hue into surfaces (0–100, default 0). Higher = more brand-tinted neutrals. */
+	surfaceHueBlend?: number;
+	/** Hue rotation across lightness range in degrees (-60 to +60, default 0). Positive = warm darks/cool highlights. */
+	surfaceHueShift?: number;
+	/** Surface color saturation multiplier (0–500, where 100 = default). Controls chroma of surface/gray palette. */
 	surfaceSaturation?: number;
 	/** Typescale configuration (base, ratio, line-height, steps) */
 	typescale?: TypescaleConfig;
@@ -199,18 +209,35 @@ function generatePrimitives(config: BrandConfig): {
 
 	// --- Surface colors (color/gray/light/1-12 + color/gray/dark/1-12) ---
 	// Each mode can use a Radix preset OR a custom hex to generate a tinted neutral scale
-	// surfaceSaturation: 0–200 → 0–2 multiplier (100 = default/unchanged)
 	const satMul = (config.surfaceSaturation ?? 100) / 100;
+	const hueShift = config.surfaceHueShift ?? 0;
+	const primaryBlend = (config.surfaceHueBlend ?? 0) / 100;
+	const brightness = (config.surfaceBrightness ?? 0) / 100;
+	const primaryRgb = hexToRgb(config.primary);
+	const primaryHue = rgbToOklch(primaryRgb.r, primaryRgb.g, primaryRgb.b).h;
+
+	// When secondaryAsDarkPrimary is set, dark surfaces tint toward the secondary hue
+	const useDarkSecondary = config.secondaryAsDarkPrimary && config.secondary;
+	const darkBrandHue = useDarkSecondary
+		? rgbToOklch(...(() => { const c = hexToRgb(config.secondary!); return [c.r, c.g, c.b] as const; })())
+			.h
+		: primaryHue;
+
+	const lightSurfaceOpts = { saturation: satMul, hueShift, primaryBlend, primaryHue, brightness };
+	const darkSurfaceOpts = { saturation: satMul, hueShift, primaryBlend, primaryHue: darkBrandHue, brightness };
+	const lightAdjustOpts = { hueShift, primaryBlend, primaryHue, brightness };
+	const darkAdjustOpts = { hueShift, primaryBlend, primaryHue: darkBrandHue, brightness };
+
 	const radixGrayLight = config.grayLightHex ? null : (getRadixGray(grayLightName) ?? RADIX_GRAYS[0]);
 	const radixGrayDark = config.grayDarkHex ? null : (getRadixGray(grayDarkName) ?? (radixGrayLight ?? RADIX_GRAYS[0]));
-	const neutralScaleLight = config.grayLightHex ? generateNeutralScale(config.grayLightHex, satMul) : null;
-	const neutralScaleDark = config.grayDarkHex ? generateNeutralScale(config.grayDarkHex, satMul) : null;
+	const neutralScaleLight = config.grayLightHex ? generateNeutralScale(config.grayLightHex, lightSurfaceOpts) : null;
+	const neutralScaleDark = config.grayDarkHex ? generateNeutralScale(config.grayDarkHex, darkSurfaceOpts) : null;
 
-	// Apply saturation adjustment to Radix presets too (when not using custom hex)
+	// Apply adjustments to Radix presets too (when not using custom hex)
 	const lightColors = neutralScaleLight?.light
-		?? adjustSaturation(radixGrayLight?.light ?? RADIX_GRAYS[0].light, satMul);
+		?? adjustSaturation(radixGrayLight?.light ?? RADIX_GRAYS[0].light, satMul, lightAdjustOpts);
 	const darkColors = neutralScaleDark?.dark
-		?? adjustSaturation(radixGrayDark?.dark ?? RADIX_GRAYS[0].dark, satMul);
+		?? adjustSaturation(radixGrayDark?.dark ?? RADIX_GRAYS[0].dark, satMul, darkAdjustOpts);
 	const lightLabel = config.grayLightHex ? `Custom (${config.grayLightHex})` : (radixGrayLight?.label ?? "Gray");
 	const darkLabel = config.grayDarkHex ? `Custom (${config.grayDarkHex})` : (radixGrayDark?.label ?? "Gray");
 
@@ -633,10 +660,13 @@ interface SemanticDef {
 	type?: string;
 }
 
-function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
+function buildSemanticDefs(hasSecondary: boolean, useSecondaryAsDarkPrimary = false): SemanticDef[] {
 	const surfL = (step: number) => `{aliases.surface.light.${step}}`;
 	const surfD = (step: number) => `{aliases.surface.dark.${step}}`;
 	const primary = "{primitives.color.brand.primary.500}";
+	const darkPrimary = (hasSecondary && useSecondaryAsDarkPrimary)
+		? "{primitives.color.brand.secondary.500}"
+		: primary;
 	const danger = "{primitives.color.danger.500}";
 	const success = "{primitives.color.success.500}";
 	const warning = "{primitives.color.warning.500}";
@@ -683,7 +713,7 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 		{
 			name: "primary",
 			light: primary,
-			dark: primary,
+			dark: darkPrimary,
 			description: "Primary color",
 		},
 		{
@@ -884,7 +914,7 @@ function buildSemanticDefs(hasSecondary: boolean): SemanticDef[] {
 }
 
 function generateSemantics(config: BrandConfig): DesignToken[] {
-	const defs = buildSemanticDefs(!!config.secondary);
+	const defs = buildSemanticDefs(!!config.secondary, config.secondaryAsDarkPrimary);
 	const tokens: DesignToken[] = [];
 
 	for (const def of defs) {
@@ -1061,7 +1091,7 @@ export function generateCss(config: BrandConfig): string {
 	}
 
 	// Semantic color registrations for Tailwind
-	const defs = buildSemanticDefs(!!config.secondary);
+	const defs = buildSemanticDefs(!!config.secondary, config.secondaryAsDarkPrimary);
 	for (const def of defs) {
 		lines.push(`  --color-${def.name}: var(--${def.name});`);
 	}
@@ -1161,7 +1191,7 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 	// Skip brand-secondary — it's a pass-through to the brand secondary primitive
 	// and should not generate a separate paint style
 	const semanticPaint: Record<string, any> = {};
-	const semanticDefs = buildSemanticDefs(!!config.secondary);
+	const semanticDefs = buildSemanticDefs(!!config.secondary, config.secondaryAsDarkPrimary);
 	for (const def of semanticDefs) {
 		if (def.name === "brand-secondary") continue;
 		const styleName = def.name;

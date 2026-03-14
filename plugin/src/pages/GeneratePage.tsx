@@ -18,7 +18,7 @@ import { CopyButton } from "../components/ui/CopyButton";
 import { Dialog, DialogActions } from "../components/ui/Dialog";
 import { Input } from "../components/ui/Input";
 import { NumberField } from "../components/ui/NumberField";
-import { oklchToRgb, rgbToHex, SHADE_STEPS } from "../generators/color-scale";
+import { adjustSaturation, hexToRgb, oklchToRgb, rgbToHex, rgbToOklch, SHADE_STEPS } from "../generators/color-scale";
 import { RADIX_GRAYS } from "../generators/radix-grays";
 import {
 	type BrandConfig,
@@ -234,30 +234,65 @@ function extractBrandConfig(
 			}
 		}
 
-		// Derive line heights
-		const baseLhVar = find("primitives", "font/typescale/base/line/height/md");
-		let lineHeightBody = 150;
-		if (baseLhVar && base > 0) {
-			const lhMode = Object.keys(baseLhVar.valuesByMode)[0];
-			if (lhMode) {
-				const lh = Number.parseFloat(baseLhVar.valuesByMode[lhMode]);
-				lineHeightBody = Math.round((lh / base) * 100);
-			}
-		}
+		// Derive line heights using best-fit across all steps.
+		// Reading from a single step (e.g. lg) causes rounding drift:
+		// round(size * pct) → extract pct from one step → re-apply → 1px offsets.
+		// Instead, try each integer pct 100–200 and pick the one that reproduces
+		// existing line-height values with minimum total error.
 
-		let lineHeightHeading = 125;
-		if (lgSizeVar) {
-			const lgLhVar = find("primitives", "font/typescale/lg/line/height/md");
-			if (lgLhVar) {
-				const lgMode = Object.keys(lgSizeVar.valuesByMode)[0];
-				const lhMode = Object.keys(lgLhVar.valuesByMode)[0];
-				if (lgMode && lhMode) {
-					const lgSize = Number.parseFloat(lgSizeVar.valuesByMode[lgMode]);
-					const lgLh = Number.parseFloat(lgLhVar.valuesByMode[lhMode]);
-					if (lgSize > 0) lineHeightHeading = Math.round((lgLh / lgSize) * 100);
+		const bestFitPct = (
+			pairs: { size: number; lh: number }[],
+			fallback: number,
+		): number => {
+			if (pairs.length === 0) return fallback;
+			let bestPct = fallback;
+			let bestError = Number.POSITIVE_INFINITY;
+			for (let pct = 100; pct <= 200; pct++) {
+				let totalError = 0;
+				for (const { size, lh } of pairs) {
+					totalError += Math.abs(Math.round(size * (pct / 100)) - lh);
+				}
+				if (totalError < bestError) {
+					bestError = totalError;
+					bestPct = pct;
+				}
+			}
+			return bestPct;
+		};
+
+		// Collect body step pairs (base + downscales)
+		const bodyPairs: { size: number; lh: number }[] = [];
+		for (const stepName of ["base", ...downNames.slice(0, stepsDown)]) {
+			const sVar = find("primitives", `font/typescale/${stepName}/size/md`);
+			const lhVar = find("primitives", `font/typescale/${stepName}/line/height/md`);
+			if (sVar && lhVar) {
+				const sm = Object.keys(sVar.valuesByMode)[0];
+				const lm = Object.keys(lhVar.valuesByMode)[0];
+				if (sm && lm) {
+					const s = Number.parseFloat(sVar.valuesByMode[sm]);
+					const l = Number.parseFloat(lhVar.valuesByMode[lm]);
+					if (s > 0 && l > 0) bodyPairs.push({ size: s, lh: l });
 				}
 			}
 		}
+		const lineHeightBody = bestFitPct(bodyPairs, 150);
+
+		// Collect heading step pairs (all upscales)
+		const headingPairs: { size: number; lh: number }[] = [];
+		for (const stepName of upNames.slice(0, stepsUp)) {
+			const sVar = find("primitives", `font/typescale/${stepName}/size/md`);
+			const lhVar = find("primitives", `font/typescale/${stepName}/line/height/md`);
+			if (sVar && lhVar) {
+				const sm = Object.keys(sVar.valuesByMode)[0];
+				const lm = Object.keys(lhVar.valuesByMode)[0];
+				if (sm && lm) {
+					const s = Number.parseFloat(sVar.valuesByMode[sm]);
+					const l = Number.parseFloat(lhVar.valuesByMode[lm]);
+					if (s > 0 && l > 0) headingPairs.push({ size: s, lh: l });
+				}
+			}
+		}
+		const lineHeightHeading = bestFitPct(headingPairs, 125);
 
 		typescale = {
 			base: Number.isNaN(base) ? 16 : base,
@@ -295,6 +330,7 @@ export function GeneratePage() {
 	const [primaryColor, setPrimaryColor] = useState("#3B82F6");
 	const [secondaryColor, setSecondaryColor] = useState("#10B981");
 	const [hasSecondary, setHasSecondary] = useState(false);
+	const [secondaryAsDarkPrimary, setSecondaryAsDarkPrimary] = useState(false);
 	const [grayLight, setGrayLight] = useState("slate");
 	const [grayDark, setGrayDark] = useState("slate");
 	const [grayLightHex, setGrayLightHex] = useState("");
@@ -310,6 +346,9 @@ export function GeneratePage() {
 	});
 	const [statusColors, setStatusColors] = useState<StatusColorOverrides>({});
 	const [surfaceSaturation, setSurfaceSaturation] = useState(100);
+	const [surfaceHueBlend, setSurfaceHueBlend] = useState(0);
+	const [surfaceHueShift, setSurfaceHueShift] = useState(0);
+	const [surfaceBrightness, setSurfaceBrightness] = useState(0);
 
 	// Result state
 	const [result, setResult] = useState<ImportResults | null>(null);
@@ -446,11 +485,16 @@ export function GeneratePage() {
 			fonts,
 			statusColors: hasStatusOverrides ? statusColors : undefined,
 			surfaceSaturation: surfaceSaturation !== 100 ? surfaceSaturation : undefined,
+			surfaceHueBlend: surfaceHueBlend !== 0 ? surfaceHueBlend : undefined,
+			surfaceHueShift: surfaceHueShift !== 0 ? surfaceHueShift : undefined,
+			surfaceBrightness: surfaceBrightness !== 0 ? surfaceBrightness : undefined,
+			secondaryAsDarkPrimary: hasSecondary && secondaryAsDarkPrimary ? true : undefined,
 		};
 	}, [
 		primaryColor,
 		secondaryColor,
 		hasSecondary,
+		secondaryAsDarkPrimary,
 		grayLight,
 		grayDark,
 		grayLightHex,
@@ -460,6 +504,9 @@ export function GeneratePage() {
 		fonts,
 		statusColors,
 		surfaceSaturation,
+		surfaceHueBlend,
+		surfaceBrightness,
+		surfaceHueShift,
 	]);
 
 	// Generate preview
@@ -682,7 +729,6 @@ export function GeneratePage() {
 					errors={result.errors}
 					failed={result.failed}
 					onClose={handleReset}
-					onImportMore={handleReset}
 					success={result.success}
 				/>
 			</PageLayout>
@@ -817,7 +863,7 @@ export function GeneratePage() {
 							<FrameHeader><h3 className={styles.sectionTitle}>Brand Colors</h3></FrameHeader>
 							<FramePanel className={styles.sectionContent}>
 								<div className={styles.fieldGroup}>
-									<label>Primary color</label>
+									<label>Brand primary</label>
 									<div className={styles.colorInputRow}>
 										<input
 											aria-label="Primary color picker"
@@ -857,7 +903,7 @@ export function GeneratePage() {
 									<CheckboxWithLabel
 										checked={hasSecondary}
 										id="has-secondary"
-										label="Include secondary color"
+										label="Include brand secondary"
 										onChange={setHasSecondary}
 									/>
 									{hasSecondary && (
@@ -893,6 +939,17 @@ export function GeneratePage() {
 													)}
 												/>
 											)}
+											<CheckboxWithLabel
+												checked={secondaryAsDarkPrimary}
+												id="secondary-dark-primary"
+												label="Use as primary in dark mode"
+												onChange={setSecondaryAsDarkPrimary}
+											/>
+											{secondaryAsDarkPrimary && (
+												<span className={styles.hint}>
+													Semantic --primary will reference brand secondary in dark mode
+												</span>
+											)}
 										</>
 									)}
 								</div>
@@ -902,49 +959,110 @@ export function GeneratePage() {
 
 						{/* ── Surface Colors ── */}
 						<Frame>
-							<FrameHeader><h3 className={styles.sectionTitle}>Surface Colors</h3></FrameHeader>
+							<FrameHeader className={styles.sectionTitleFrame}>
+								<h3 className={styles.sectionTitle}>Surface Colors</h3>
+								{(surfaceSaturation !== 100 || surfaceHueBlend !== 0 || surfaceHueShift !== 0 || surfaceBrightness !== 0) && (
+									<Button
+										onClick={() => {
+											setSurfaceSaturation(100);
+											setSurfaceHueBlend(0);
+											setSurfaceHueShift(0);
+											setSurfaceBrightness(0);
+										}}
+										size="sm"
+										variant="secondary"
+									>
+										<RefreshCw size={12} />
+										Reset
+									</Button>
+								)}
+							</FrameHeader>
 							<FramePanel className={styles.sectionContent}>
-								<div className={styles.fieldGroup}>
-									<label>Saturation</label>
-									<div className={styles.sliderRow}>
+								<div className={styles.surfaceSliderGrid}>
+									<div className={styles.fieldGroup}>
+										<label>Saturation <span className={styles.sliderValue}>{surfaceSaturation}%</span></label>
 										<input
 											aria-label="Surface color saturation"
 											className={styles.rangeSlider}
-											max={200}
+											max={500}
 											min={0}
 											onChange={(e) => setSurfaceSaturation(Number(e.target.value))}
 											step={5}
 											type="range"
 											value={surfaceSaturation}
 										/>
-										<span className={styles.sliderValue}>{surfaceSaturation}%</span>
 									</div>
-									{surfaceSaturation !== 100 && (
-										<span className={styles.hint}>
-											{surfaceSaturation < 100 ? "Less" : "More"} saturated than default
-										</span>
-									)}
+									<div className={styles.fieldGroup}>
+										<label>Brightness <span className={styles.sliderValue}>{surfaceBrightness > 0 ? "+" : ""}{surfaceBrightness}</span></label>
+										<input
+											aria-label="Surface brightness offset"
+											className={styles.rangeSlider}
+											max={50}
+											min={-50}
+											onChange={(e) => setSurfaceBrightness(Number(e.target.value))}
+											step={5}
+											type="range"
+											value={surfaceBrightness}
+										/>
+									</div>
+									<div className={styles.fieldGroup}>
+										<label>Brand tint <span className={styles.sliderValue}>{surfaceHueBlend}%</span></label>
+										<input
+											aria-label="Blend brand primary hue into surfaces"
+											className={styles.rangeSlider}
+											max={100}
+											min={0}
+											onChange={(e) => setSurfaceHueBlend(Number(e.target.value))}
+											step={5}
+											type="range"
+											value={surfaceHueBlend}
+										/>
+									</div>
+									<div className={styles.fieldGroup}>
+										<label>Hue shift <span className={styles.sliderValue}>{surfaceHueShift > 0 ? "+" : ""}{surfaceHueShift}°</span></label>
+										<input
+											aria-label="Surface hue rotation across lightness"
+											className={styles.rangeSlider}
+											max={60}
+											min={-60}
+											onChange={(e) => setSurfaceHueShift(Number(e.target.value))}
+											step={5}
+											type="range"
+											value={surfaceHueShift}
+										/>
+									</div>
 								</div>
 								<Separator />
-								<SurfaceToneSelector
-									customHex={grayLightHex}
-									generated={generated}
-									label="Light mode"
-									mode="light"
-									onChangeHex={setGrayLightHex}
-									onChangePreset={setGrayLight}
-									preset={grayLight}
-								/>
-								<Separator />
-								<SurfaceToneSelector
-									customHex={grayDarkHex}
-									generated={generated}
-									label="Dark mode"
-									mode="dark"
-									onChangeHex={setGrayDarkHex}
-									onChangePreset={setGrayDark}
-									preset={grayDark}
-								/>
+								<div className={styles.surfaceToneColumns}>
+									<SurfaceToneSelector
+										brightness={surfaceBrightness}
+										customHex={grayLightHex}
+										generated={generated}
+										hueBlend={surfaceHueBlend}
+										hueShift={surfaceHueShift}
+										label="Light"
+										mode="light"
+										onChangeHex={setGrayLightHex}
+										onChangePreset={setGrayLight}
+										preset={grayLight}
+										primaryColor={primaryColor}
+										saturation={surfaceSaturation}
+									/>
+									<SurfaceToneSelector
+										brightness={surfaceBrightness}
+										customHex={grayDarkHex}
+										generated={generated}
+										hueBlend={surfaceHueBlend}
+										hueShift={surfaceHueShift}
+										label="Dark"
+										mode="dark"
+										onChangeHex={setGrayDarkHex}
+										onChangePreset={setGrayDark}
+										preset={grayDark}
+										primaryColor={hasSecondary && secondaryAsDarkPrimary ? secondaryColor : primaryColor}
+										saturation={surfaceSaturation}
+									/>
+								</div>
 							</FramePanel>
 						</Frame>
 
@@ -1323,6 +1441,11 @@ function SurfaceToneSelector({
 	generated,
 	onChangePreset,
 	onChangeHex,
+	saturation = 100,
+	brightness = 0,
+	hueBlend = 0,
+	hueShift = 0,
+	primaryColor,
 }: {
 	label: string;
 	mode: "light" | "dark";
@@ -1331,7 +1454,16 @@ function SurfaceToneSelector({
 	generated: GeneratedSystem | null;
 	onChangePreset: (name: string) => void;
 	onChangeHex: (hex: string) => void;
+	saturation?: number;
+	brightness?: number;
+	hueBlend?: number;
+	hueShift?: number;
+	primaryColor?: string;
 }) {
+	const satMul = saturation / 100;
+	const primaryRgb = primaryColor ? hexToRgb(primaryColor) : null;
+	const primaryHue = primaryRgb ? rgbToOklch(primaryRgb.r, primaryRgb.g, primaryRgb.b).h : 0;
+	const adjustOpts = { hueShift, primaryBlend: hueBlend / 100, primaryHue, brightness: brightness / 100 };
 	const isCustom = /^#[0-9a-fA-F]{6}$/.test(customHex);
 
 	// Preview colors: use generated neutral scale when available
@@ -1383,7 +1515,7 @@ function SurfaceToneSelector({
 					Your color's hue will be used to tint a neutral surface ramp
 				</span>
 			)}
-			{previewColors && (
+			{isCustom && previewColors && (
 				<div className={styles.grayPreview}>
 					{previewColors.map((hex, i) => (
 						<div
@@ -1395,33 +1527,34 @@ function SurfaceToneSelector({
 					))}
 				</div>
 			)}
-			{!isCustom && (
-				<div className={styles.graySelector}>
-					{RADIX_GRAYS.map((g) => (
-						<button
-							aria-label={`${g.label} surface tone`}
-							aria-pressed={preset === g.name}
-							className={styles.grayOption}
-							data-selected={preset === g.name}
-							key={g.name}
-							onClick={() => onChangePreset(g.name)}
-							title={g.label}
-							type="button"
-						>
-							<div className={styles.grayPreview}>
-								{(mode === "light" ? g.light : g.dark).map((hex, i) => (
-									<div
-										className={styles.grayStep}
-										key={i}
-										style={{ backgroundColor: hex }}
-									/>
-								))}
-							</div>
-							<span className={styles.grayName}>{g.name}</span>
-						</button>
-					))}
-				</div>
-			)}
+			<div className={styles.graySelector}>
+				{RADIX_GRAYS.map((g) => (
+					<button
+						aria-label={`${g.label} surface tone`}
+						aria-pressed={!isCustom && preset === g.name}
+						className={styles.grayOption}
+						data-selected={!isCustom && preset === g.name}
+						key={g.name}
+						onClick={() => {
+							onChangeHex("");
+							onChangePreset(g.name);
+						}}
+						title={g.label}
+						type="button"
+					>
+						<div className={styles.grayPreview}>
+							{adjustSaturation(mode === "light" ? g.light : g.dark, satMul, adjustOpts).map((hex, i) => (
+								<div
+									className={styles.grayStep}
+									key={i}
+									style={{ backgroundColor: hex }}
+								/>
+							))}
+						</div>
+						<span className={styles.grayName}>{g.name}</span>
+					</button>
+				))}
+			</div>
 		</div>
 	);
 }

@@ -11,6 +11,29 @@ import type {
 import { parseColorToRGBA } from "../parsers/color-parsers";
 import { debug } from "../utils/debug";
 
+/** Serialize a Figma variable value to a readable string for change tracking */
+function serializeValue(value: unknown): string {
+	if (value === undefined || value === null) return "none";
+	if (typeof value === "number") return String(value);
+	if (typeof value === "string") return value;
+	if (typeof value === "boolean") return String(value);
+	if (typeof value === "object") {
+		const v = value as Record<string, unknown>;
+		// VariableAlias
+		if (v.type === "VARIABLE_ALIAS" && v.id) return `alias:${v.id}`;
+		// RGBA color
+		if ("r" in v && "g" in v && "b" in v) {
+			const r = Math.round((v.r as number) * 255);
+			const g = Math.round((v.g as number) * 255);
+			const b = Math.round((v.b as number) * 255);
+			const a = v.a as number ?? 1;
+			const hex = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase();
+			return a < 1 ? `${hex} ${Math.round(a * 100)}%` : hex;
+		}
+	}
+	return JSON.stringify(value);
+}
+
 /**
  * Update the paint style opacity for a variable that uses color-mix().
  * Finds the paint style whose name matches the variable name and updates
@@ -326,8 +349,8 @@ export async function createVariablesFromTokens(
 						? variable.valuesByMode[modeId]
 						: undefined;
 					const oldValueStr =
-						oldValue !== undefined ? String(oldValue) : undefined;
-					const newValueStr = String(processedValue);
+						oldValue !== undefined ? serializeValue(oldValue) : undefined;
+					const newValueStr = serializeValue(processedValue);
 
 					// Snapshot all mode values before mutation (for undo)
 					const preUpdateSnapshot =

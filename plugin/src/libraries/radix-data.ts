@@ -3,7 +3,6 @@
  * Generates token data from @radix-ui/colors
  */
 
-// @ts-expect-error - @radix-ui/colors is an optional peer dependency
 import * as RadixColors from "@radix-ui/colors";
 import type { DesignToken } from "../types/tokens";
 

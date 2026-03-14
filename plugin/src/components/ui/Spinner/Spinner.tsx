@@ -38,7 +38,9 @@ export function LoadingState({
 }: LoadingStateProps) {
 	return (
 		<div className={styles.loadingState}>
-			{children || <Spinner size={size} />}
+			<div className={styles.spinnerSlot}>
+				{children || <Spinner size={size} />}
+			</div>
 			{message && <p className={styles.message}>{message}</p>}
 			{hint && <p className={styles.hint}>{hint}</p>}
 		</div>

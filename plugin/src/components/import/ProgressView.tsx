@@ -41,7 +41,7 @@ interface SuccessViewProps {
 	failed: number;
 	importMode?: "import" | "override";
 	onClose: () => void;
-	onImportMore: () => void;
+	onImportMore?: () => void;
 	onUndo?: () => void;
 	success: number;
 	undoData?: ImportUndoEntry[];
@@ -72,6 +72,7 @@ export function SuccessView({
 	const createdTokens = changes.filter((c) => c.action === "created");
 	const unchangedTokens = changes.filter((c) => c.action === "unchanged");
 	const hasChanges = changedTokens.length > 0;
+	const hasCreated = createdTokens.length > 0;
 
 	const statusIcon = allFailed ? (
 		<X size={24} />
@@ -110,7 +111,7 @@ export function SuccessView({
 				{success > 0 && (
 					<div className={styles.successStat}>
 						<span className={styles.successStatLabel}>
-							{isOverrideMode ? "Overridden" : "Imported"}
+							{actionLabel ? `${actionVerbPast[0].toUpperCase()}${actionVerbPast.slice(1)}` : isOverrideMode ? "Overridden" : "Imported"}
 						</span>
 						<strong className={styles.successStatValue}>{success}</strong>
 					</div>
@@ -178,6 +179,33 @@ export function SuccessView({
 				</details>
 			)}
 
+			{/* Created Detail */}
+			{hasCreated && (
+				<details className={styles.changesDetails} open={!hasChanges}>
+					<summary>
+						{createdTokens.length} token{createdTokens.length !== 1 ? "s" : ""}{" "}
+						created
+					</summary>
+					<ScrollArea className={styles.changesScroll}>
+						<ul className={styles.changesList}>
+							{createdTokens.slice(0, 30).map((change, i) => (
+								<li className={styles.changeRow} key={i}>
+									<code className={styles.changeName}>{change.name}</code>
+									<span className={styles.changeValues}>
+										<span className={styles.newValue}>{change.newValue}</span>
+									</span>
+								</li>
+							))}
+							{createdTokens.length > 30 && (
+								<li className={styles.changeMore}>
+									…and {createdTokens.length - 30} more
+								</li>
+							)}
+						</ul>
+					</ScrollArea>
+				</details>
+			)}
+
 			{/* Error Details */}
 			{hasErrors && (
 				<details className={styles.errorDetails} open={allFailed}>
@@ -212,14 +240,16 @@ export function SuccessView({
 						Undo
 					</Button>
 				)}
-				<Button onClick={onClose} variant="ghost">
+				<Button onClick={onClose} variant={onImportMore ? "ghost" : "default"}>
 					<FileDown size={14} />
 					{actionVerb} Again
 				</Button>
-				<Button onClick={onImportMore} variant="default">
-					<Plus size={14} />
-					{actionVerb} More
-				</Button>
+				{onImportMore && (
+					<Button onClick={onImportMore} variant="default">
+						<Plus size={14} />
+						{actionVerb} More
+					</Button>
+				)}
 			</div>
 		</div>
 	);
