@@ -43,7 +43,17 @@ export function HeroSection() {
             </p>
           </FadeUp>
 
-          <FadeUp delay={0.15}>
+           <FadeUp delay={0.2}>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-muted-foreground/60 text-xs uppercase tracking-wide">
+              <span>Local-only</span>
+              <span className="text-border">·</span>
+              <span>No telemetry</span>
+              <span className="text-border">·</span>
+              <span>Modern CSS ready</span>
+            </div>
+          </FadeUp>
+
+          <FadeUp delay={0.2}>
             <div className="mt-8 sm:mt-10">
               <RichButton size="lg">
                 Install plugin
@@ -52,15 +62,7 @@ export function HeroSection() {
             </div>
           </FadeUp>
 
-          <FadeIn delay={0.3}>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-muted-foreground/60 text-xs uppercase tracking-wide">
-              <span>Local-only</span>
-              <span className="text-border">·</span>
-              <span>No telemetry</span>
-              <span className="text-border">·</span>
-              <span>Modern CSS ready</span>
-            </div>
-          </FadeIn>
+         
         </div>
       </Container>
     </Section>

@@ -14,7 +14,6 @@ import {
 } from "../components/ui";
 import { Button } from "../components/ui/Button";
 import { Checkbox, CheckboxWithLabel } from "../components/ui/Checkbox";
-import { CopyButton } from "../components/ui/CopyButton";
 import { Dialog, DialogActions } from "../components/ui/Dialog";
 import { Input } from "../components/ui/Input";
 import { NumberField } from "../components/ui/NumberField";
@@ -23,7 +22,6 @@ import { RADIX_GRAYS } from "../generators/radix-grays";
 import {
 	type BrandConfig,
 	type GeneratedSystem,
-	generateCss,
 	generateDesignSystem,
 	type StatusColorOverrides,
 } from "../generators/three-tier";
@@ -650,11 +648,6 @@ export function GeneratePage() {
 		setView("progress");
 		proceedWithImport();
 	}, [generated, proceedWithImport]);
-
-	const getCssText = useCallback(() => {
-		if (!brandConfig) return "";
-		return generateCss(brandConfig);
-	}, [brandConfig]);
 
 	const handleRefresh = useCallback(() => {
 		setView("loading");
@@ -1330,10 +1323,7 @@ export function GeneratePage() {
 						<Dices size={14} />
 						Shuffle Colors
 					</Button>
-					<CopyButton disabled={!generated} label="CSS" text={getCssText}>
-						Copy CSS
-					</CopyButton>
-					<Button disabled={!generated} onClick={handleSubmit} variant="primary">
+<Button disabled={!generated} onClick={handleSubmit} variant="primary">
 						<Wand2 size={14} />
 						{isUpdate ? "Update in Figma" : "Create in Figma"}
 					</Button>

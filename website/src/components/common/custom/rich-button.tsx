@@ -2,6 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
+import { ShineBorder } from "@/components/ui/shine-border";
 
 const richButtonVariants = cva(
   [
@@ -54,7 +55,7 @@ const RichButton = forwardRef<HTMLButtonElement, RichButtonProps>(
     // Inset lighting tuned for primary color
     const insetShadow = [
       "color-mix(in srgb, var(--color-white) 18%, transparent) 0px 1px 0.5px -0.5px inset",
-      "color-mix(in srgb, var(--primary) 24%, transparent) 0px -2px 8px 2px inset",
+      "color-mix(in srgb, var(--primary) 40%, transparent) 0px -2px 8px 2px inset",
       "color-mix(in srgb, var(--color-white) 48%, transparent) 0px -2px 8px 2px inset",
     ].join(", ");
 
@@ -100,11 +101,11 @@ const RichButton = forwardRef<HTMLButtonElement, RichButtonProps>(
           style={{
             background: `
               linear-gradient(
-                135deg,
+                180deg,
                 rgba(255,255,255,0.18) 0%,
                 rgba(255,255,255,0.06) 40%,
                 transparent 60%,
-                rgba(0,0,0,0.12) 100%
+                rgba(0,0,0,0.16) 100%
               )
             `,
           }}
@@ -112,39 +113,19 @@ const RichButton = forwardRef<HTMLButtonElement, RichButtonProps>(
 
         {/* Top-left highlight spot — intensifies on hover */}
         <div
-          className="pointer-events-none absolute inset-0 rounded-[inherit] transition-opacity duration-300 ease-out group-hover/rich-button:opacity-100"
+          className="pointer-events-none absolute inset-0 rounded-[inherit] transition-opacity duration-300 ease-out group-hover/rich-button:opacity-100 opacity-50"
           style={{
-            opacity: 0.6,
             background:
-              "radial-gradient(ellipse 60% 60% at 20% 20%, rgba(255,255,255,0.25), transparent 70%)",
+              "radial-gradient(ellipse 80% 100% at 50% 00%, rgba(255,255,255,1), transparent 70%)",
           }}
         />
 
-        {/* Border ring — brighter on top-left, fades on bottom-right */}
-        <div
-          className="pointer-events-none absolute inset-0 rounded-[inherit] border-0 p-[2px]"
-          style={{
-            backgroundImage: `
-              linear-gradient(
-                135deg,
-                color-mix(in srgb, var(--color-white) 35%, transparent),
-                color-mix(in srgb, var(--color-white) 12%, transparent) 50%,
-                transparent 100%
-              )
-            `,
-            mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-            maskComposite: "exclude",
-          }}
-        />
-
-        {/* Shine effect */}
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-0 rotate-45 scale-x-50 scale-y-200 rounded-[inherit] blur-md",
-            "bg-linear-to-r from-transparent via-white/40 to-transparent dark:via-white/20",
-            "-translate-x-full opacity-0 transition-all duration-700 ease-out",
-            "group-hover/rich-button:translate-x-full group-hover/rich-button:opacity-100"
-          )}
+        {/* Shine border — replaces static border ring */}
+        <ShineBorder
+          className="z-20"
+          borderWidth={2}
+          duration={8}
+          shineColor={["rgba(255,255,255,0.5)", "rgba(255,255,255,0.15)", "transparent"]}
         />
 
         {/* Content */}
