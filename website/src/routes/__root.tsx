@@ -55,9 +55,9 @@ function RootInner({ location }: { location: ReturnType<typeof useLocation> }) {
       <GridProvider>
         <TooltipProvider>
           <motion.div
-            animate={{ opacity: 1, filter: "blur(0px)" }}
+            animate={{ opacity: 1 }}
             className="min-h-screen"
-            initial={{ opacity: 0, filter: "blur(4px)" }}
+            initial={{ opacity: 0 }}
             key={location.pathname}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >

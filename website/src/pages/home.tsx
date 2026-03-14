@@ -1,11 +1,11 @@
+import { useState } from "react";
 import {
   ArrowRight,
-  Code,
+  BookOpen,
+  Github,
   Layers,
   Lock,
   Palette,
-  RefreshCw,
-  Sliders,
   Type,
   Upload,
   Zap,
@@ -17,6 +17,12 @@ import Section from "@/components/common/layout/section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RichButton } from "@/components/common/custom/rich-button";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionPanel,
+} from "@/components/ui/accordion";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
@@ -90,11 +96,11 @@ function GenerateVisual() {
     <div className="space-y-3 p-4">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-[10px] text-foreground/70 uppercase tracking-wider">
+          <span className="font-semibold text-xs text-foreground/70 uppercase tracking-wider">
             Brand Color
           </span>
-          <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] text-primary">
-            #F76B15
+          <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-xs text-primary">
+            #867DFF
           </span>
         </div>
         <div className="flex gap-1">
@@ -112,10 +118,10 @@ function GenerateVisual() {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-[10px] text-foreground/70 uppercase tracking-wider">
+          <span className="font-semibold text-xs text-foreground/70 uppercase tracking-wider">
             Surface Tone
           </span>
-          <span className="text-[9px] text-muted-foreground">Sand</span>
+          <span className="text-xs text-muted-foreground">Neutral</span>
         </div>
         <div className="flex gap-1">
           {graySteps.map((color) => (
@@ -130,12 +136,12 @@ function GenerateVisual() {
 
       <div className="flex items-center gap-2 rounded-md border border-border/40 bg-background/50 px-2.5 py-1.5">
         <Type className="size-3 text-muted-foreground/60" />
-        <span className="text-[11px] text-foreground/80">
+        <span className="text-xs text-foreground/80">
           Major Third — 1.250
         </span>
       </div>
 
-      <div className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-[11px] text-primary-foreground">
+      <div className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-xs text-primary-foreground">
         <Zap className="size-3" />
         Generate Token System
       </div>
@@ -143,62 +149,55 @@ function GenerateVisual() {
   );
 }
 
-function ExportVisual() {
-  const files = [
-    { name: "primitives.css", vars: 142 },
-    { name: "aliases.css", vars: 30 },
-    { name: "semantics.css", vars: 37 },
-    { name: "typescales.css", vars: 18 },
-    { name: "effects.css", vars: 6 },
+function ManageVisual() {
+  const actions = [
+    { name: "Rename", count: 12 },
+    { name: "Move", count: 8 },
+    { name: "Delete", count: 3 },
   ];
 
   return (
     <div className="p-4">
-      <div className="mb-3 flex gap-1 rounded-md border border-border/40 p-0.5">
-        {["OKLCH", "HEX", "RGBA"].map((fmt, i) => (
-          <div
-            className={`flex-1 rounded py-1 text-center font-medium text-[10px] ${
-              i === 0
-                ? "bg-foreground text-background"
-                : "text-muted-foreground"
-            }`}
-            key={fmt}
-          >
-            {fmt}
-          </div>
-        ))}
+      <div className="mb-3 flex items-center justify-between">
+        <span className="font-semibold text-xs text-foreground/70 uppercase tracking-wider">
+          Batch Actions
+        </span>
+        <span className="text-xs text-muted-foreground">23 selected</span>
       </div>
 
       <div className="space-y-1">
-        {files.map((file) => (
+        {actions.map((action) => (
           <div
             className="flex items-center justify-between rounded-md border border-border/30 bg-background/30 px-2.5 py-1.5"
-            key={file.name}
+            key={action.name}
           >
-            <span className="font-mono text-[10px] text-foreground/70">
-              {file.name}
+            <span className="font-mono text-xs text-foreground/70">
+              {action.name}
             </span>
-            <span className="text-[9px] text-muted-foreground">
-              {file.vars} vars
+            <span className="text-xs text-muted-foreground">
+              {action.count} vars
             </span>
           </div>
         ))}
       </div>
 
-      <div className="mt-3 flex gap-2">
-        <div className="flex flex-1 items-center justify-center gap-1 rounded-md border border-border/40 bg-background/50 py-1.5 text-[10px] text-muted-foreground">
-          <Code className="size-3" />
-          Copy All
-        </div>
-        <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-primary py-1.5 font-medium text-[10px] text-primary-foreground">
-          Download ZIP
-        </div>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {["Rename", "Edit", "Move", "Duplicate", "Delete", "Batch"].map(
+          (action) => (
+            <span
+              className="rounded-sm bg-foreground/5 px-2 py-0.5 font-mono text-xs text-foreground/50"
+              key={action}
+            >
+              {action}
+            </span>
+          ),
+        )}
       </div>
     </div>
   );
 }
 
-function ImportVisual() {
+function RoundTripVisual() {
   const tokens = [
     { name: "--background", status: "new" },
     { name: "--foreground", status: "new" },
@@ -210,10 +209,10 @@ function ImportVisual() {
   return (
     <div className="p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="font-semibold text-[10px] text-foreground/70 uppercase tracking-wider">
-          Review Tokens
+        <span className="font-semibold text-xs text-foreground/70 uppercase tracking-wider">
+          Import Review
         </span>
-        <span className="text-[9px] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           5 from semantics.css
         </span>
       </div>
@@ -224,11 +223,11 @@ function ImportVisual() {
             className="flex items-center justify-between rounded-md border border-border/30 bg-background/30 px-2.5 py-1.5"
             key={token.name}
           >
-            <span className="font-mono text-[10px] text-primary/80">
+            <span className="font-mono text-xs text-primary/80">
               {token.name}
             </span>
             <span
-              className={`rounded px-1.5 py-0.5 font-semibold text-[8px] uppercase tracking-wider ${
+              className={`rounded px-1.5 py-0.5 font-semibold text-xs uppercase tracking-wider ${
                 token.status === "new"
                   ? "bg-success/10 text-success"
                   : token.status === "conflict"
@@ -243,12 +242,12 @@ function ImportVisual() {
       </div>
 
       <div className="mt-3 flex gap-2">
-        <div className="flex flex-1 items-center justify-center rounded-md border border-border/40 bg-background/50 py-1.5 text-[10px] text-muted-foreground">
+        <div className="flex flex-1 items-center justify-center rounded-md border border-border/40 bg-background/50 py-1.5 text-xs text-muted-foreground">
           Cancel
         </div>
-        <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-primary py-1.5 font-medium text-[10px] text-primary-foreground">
+        <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-primary py-1.5 font-medium text-xs text-primary-foreground">
           <Upload className="size-3" />
-          Import 4 Tokens
+          Import 4
         </div>
       </div>
     </div>
@@ -256,38 +255,315 @@ function ImportVisual() {
 }
 
 // ---------------------------------------------------------------------------
-// Code showcase
+// Code showcase — real snippets from token files
 // ---------------------------------------------------------------------------
 
-const CSS_FILES = [
-  { active: false, name: "primitives.css" },
-  { active: false, name: "aliases.css" },
-  { active: true, name: "semantics.css" },
-  { active: false, name: "typescales.css" },
-  { active: false, name: "effects.css" },
+const TOKEN_SNIPPETS: { id: string; label: string; file: string; vars: number; code: string }[] = [
+  {
+    id: "primitives",
+    label: "Primitives",
+    file: "primitives.css",
+    vars: 232,
+    code: `/* primitives.css — 232 variables */
+
+:root {
+  --color-brand-primary-50:  rgba(249, 250, 255, 1);
+  --color-brand-primary-100: rgba(240, 242, 255, 1);
+  --color-brand-primary-200: rgba(225, 227, 255, 1);
+  --color-brand-primary-300: rgba(207, 208, 255, 1);
+  --color-brand-primary-400: rgba(186, 183, 255, 1);
+  --color-brand-primary-500: rgba(134, 125, 255, 1);
+  --color-brand-primary-600: rgba(101, 90, 209, 1);
+  --color-brand-primary-700: rgba(67, 53, 155, 1);
+  --color-brand-primary-800: rgba(41, 25, 108, 1);
+  --color-brand-primary-900: rgba(17, 2, 61, 1);
+  --color-brand-primary-950: rgba(4, 0, 27, 1);
+
+  --color-brand-secondary-500: rgba(241, 114, 0, 1);
+
+  --spacing-4: 16px;
+  --spacing-8: 32px;
+  --spacing-16: 64px;
+
+  --font-family-sans: "Inter", ui-sans-serif, system-ui;
+  --font-family-mono: "Geist Mono", ui-monospace;
+
+  --duration-167: 167ms;
+  --duration-250: 250ms;
+  --ease-fast: cubic-bezier(0, 0, 0, 1);
+}`,
+  },
+  {
+    id: "aliases",
+    label: "Aliases",
+    file: "aliases.css",
+    vars: 32,
+    code: `/* aliases.css — 32 variables */
+
+:root {
+  --surface-light-1:  var(--color-gray-light-1);
+  --surface-light-2:  var(--color-gray-light-2);
+  --surface-light-3:  var(--color-gray-light-3);
+  --surface-light-12: var(--color-gray-light-12);
+
+  --surface-dark-1:  var(--color-gray-dark-1);
+  --surface-dark-2:  var(--color-gray-dark-2);
+  --surface-dark-3:  var(--color-gray-dark-3);
+  --surface-dark-12: var(--color-gray-dark-12);
+
+  --duration-fast:   var(--duration-150);
+  --duration-normal: var(--duration-250);
+  --duration-slow:   var(--duration-500);
+
+  --font-family-primary:   var(--font-family-sans);
+  --font-family-secondary: var(--font-family-serif);
+  --font-family-tertiary:  var(--font-family-mono);
+}`,
+  },
+  {
+    id: "semantics",
+    label: "Semantics",
+    file: "semantics.css",
+    vars: 37,
+    code: `/* semantics.css — 37 variables */
+
+:root {
+  --background:       var(--surface-light-2);
+  --foreground:       var(--surface-light-12);
+  --primary:          var(--color-brand-primary-500);
+  --primary-foreground: var(--surface-light-1);
+  --muted:            var(--surface-light-3);
+  --muted-foreground: var(--surface-light-11);
+  --border:           var(--surface-light-4);
+  --destructive:      var(--color-danger-500);
+  --success:          var(--color-success-500);
+}
+
+.dark {
+  --background:       var(--surface-dark-1);
+  --foreground:       var(--surface-dark-12);
+  --primary:          var(--color-brand-secondary-500);
+  --primary-foreground: var(--surface-dark-12);
+  --border:           var(--surface-dark-6);
+}`,
+  },
+  {
+    id: "typescales",
+    label: "Type Scale",
+    file: "typescales.css",
+    vars: 18,
+    code: `/* typescales.css — responsive typography */
+
+:root {
+  --typography-base-font-size: calc(14px * var(--scale, 1));
+  --typography-lg-font-size:   calc(16px * var(--scale, 1));
+  --typography-xl-font-size:   calc(18px * var(--scale, 1));
+  --typography-2xl-font-size:  calc(21px * var(--scale, 1));
+  --typography-3xl-font-size:  calc(25px * var(--scale, 1));
+  --typography-4xl-font-size:  calc(29px * var(--scale, 1));
+  --typography-5xl-font-size:  calc(34px * var(--scale, 1));
+}
+
+/* 768px+ — tablet landscape */
+@media (min-width: 48rem) {
+  :root {
+    --typography-3xl-font-size: calc(29px * var(--scale, 1));
+    --typography-5xl-font-size: calc(42px * var(--scale, 1));
+    --typography-7xl-font-size: calc(60px * var(--scale, 1));
+    --typography-9xl-font-size: calc(87px * var(--scale, 1));
+  }
+}`,
+  },
+  {
+    id: "effects",
+    label: "Effects",
+    file: "effects.css",
+    vars: 14,
+    code: `/* effects.css — shadows & blurs */
+
+:root {
+  --shadow-0: 0px 0px 0px 0px rgba(0, 0, 0, 0);
+  --shadow-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.05),
+              0px 1px 3px 0px rgba(0, 0, 0, 0.1);
+  --shadow-3: 0px 4px 6px -2px rgba(0, 0, 0, 0.05),
+              0px 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-5: 0px 10px 15px -3px rgba(0, 0, 0, 0.04),
+              0px 25px 50px -12px rgba(0, 0, 0, 0.1);
+
+  --blur-sm: 8px;
+  --blur-md: 12px;
+  --blur-lg: 16px;
+  --blur-xl: 24px;
+  --blur-2xl: 40px;
+}`,
+  },
 ];
 
-const CODE_LINES: (
-  | { dim: boolean; indent: number; text: string }
-  | { dim: boolean; indent: number; token: string; value: string }
-)[] = [
-  { indent: 0, text: "@theme inline {", dim: true },
-  { indent: 1, token: "--color-background", value: "var(--background)", dim: true },
-  { indent: 1, token: "--color-primary", value: "var(--primary)", dim: true },
-  { indent: 0, text: "}", dim: true },
-  { indent: 0, text: "", dim: true },
-  { indent: 0, text: ":root {", dim: false },
-  { indent: 1, token: "--background", value: "var(--surface-light-2)", dim: false },
-  { indent: 1, token: "--foreground", value: "var(--surface-light-12)", dim: false },
-  { indent: 1, token: "--primary", value: "var(--color-brand-primary-500)", dim: false },
-  { indent: 1, token: "--border", value: "var(--surface-light-6)", dim: true },
-  { indent: 0, text: "}", dim: false },
-  { indent: 0, text: "", dim: true },
-  { indent: 0, text: ".dark {", dim: false },
-  { indent: 1, token: "--background", value: "var(--surface-dark-1)", dim: false },
-  { indent: 1, token: "--primary", value: "var(--color-brand-primary-400)", dim: false },
-  { indent: 0, text: "}", dim: false },
-];
+// ---------------------------------------------------------------------------
+// Code showcase section (interactive)
+// ---------------------------------------------------------------------------
+
+function CodeShowcase({ reduced }: { reduced: boolean }) {
+  const [activeFile, setActiveFile] = useState("primitives");
+  // biome-ignore lint: activeFile always matches a snippet
+  const active = TOKEN_SNIPPETS.find((s) => s.id === activeFile)!;
+
+  return (
+    <Section
+      id="system-in-code"
+      className="border-y border-border/40 bg-card/30"
+      gap={false}
+      removeTopSpacing={false}
+      spacing="generous"
+    >
+      <Container maxWidth="narrow" padding="all">
+        <FadeUp>
+          <p className="font-semibold text-sm uppercase tracking-widest text-primary">
+            Output
+          </p>
+          <h2 className="mt-3 font-bold text-4xl leading-tight tracking-tight">
+            See the system in code
+          </h2>
+          <p className="mt-4 max-w-xl text-muted-foreground">
+            Preview how Cipher tokens map into a real codebase. Inspect token
+            structure, explore output, and use the open-source website starter
+            as a reference or boilerplate for faster builds.
+          </p>
+        </FadeUp>
+
+        <FadeUp delay={0.1}>
+          <div className="mt-8 overflow-hidden rounded-xl border border-border/60 shadow-5">
+            {/* Interactive file tabs */}
+            <div className="flex items-center gap-0 overflow-x-auto border-b border-border/50 bg-card/80">
+              {TOKEN_SNIPPETS.map((snippet) => (
+                <button
+                  className={`shrink-0 border-r border-border/30 px-3.5 py-2 font-mono text-xs transition-colors ${
+                    snippet.id === activeFile
+                      ? "bg-background/80 text-foreground"
+                      : "text-muted-foreground/50 hover:text-muted-foreground"
+                  }`}
+                  key={snippet.id}
+                  onClick={() => setActiveFile(snippet.id)}
+                  type="button"
+                >
+                  {snippet.file}
+                </button>
+              ))}
+              <div className="flex-1" />
+              <span className="mr-3 shrink-0 font-mono text-xs text-muted-foreground/40">
+                {active.vars} vars
+              </span>
+            </div>
+
+            {/* Code content — fixed height with bottom fade */}
+            <div className="relative bg-card/40">
+              <div className="h-[340px] overflow-hidden p-4 sm:p-5">
+                <motion.pre
+                  key={activeFile}
+                  className="overflow-x-auto font-mono text-sm leading-relaxed"
+                  initial={reduced ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, ease }}
+                >
+                  <code>
+                    {active.code.split("\n").map((line, i) => {
+                    const trimmed = line.trimStart();
+                    const indent = line.length - trimmed.length;
+                    const spaces = " ".repeat(indent);
+
+                    // Comment lines
+                    if (trimmed.startsWith("/*") || trimmed.startsWith("*")) {
+                      return (
+                        <div key={`${activeFile}-${i}`} className="text-muted-foreground/50">
+                          {spaces}{trimmed}
+                        </div>
+                      );
+                    }
+
+                    // Empty lines
+                    if (!trimmed) {
+                      return <div key={`${activeFile}-${i}`}>{"\u00A0"}</div>;
+                    }
+
+                    // CSS property lines (contains : and ;)
+                    if (trimmed.includes(":") && trimmed.includes(";")) {
+                      const colonIdx = trimmed.indexOf(":");
+                      const prop = trimmed.slice(0, colonIdx);
+                      const val = trimmed.slice(colonIdx);
+                      return (
+                        <div key={`${activeFile}-${i}`}>
+                          {spaces}
+                          <span className="text-primary/80">{prop}</span>
+                          <span className="text-foreground/30">{val.slice(0, 2)}</span>
+                          <span className="text-foreground/60">{val.slice(2)}</span>
+                        </div>
+                      );
+                    }
+
+                    // Selectors, @rules, brackets
+                    if (trimmed.startsWith("@") || trimmed.startsWith(":root") || trimmed.startsWith(".dark")) {
+                      return (
+                        <div key={`${activeFile}-${i}`} className="text-foreground/70">
+                          {spaces}{trimmed}
+                        </div>
+                      );
+                    }
+
+                    // Everything else (closing brackets, etc)
+                    return (
+                      <div key={`${activeFile}-${i}`} className="text-foreground/50">
+                        {spaces}{trimmed}
+                      </div>
+                    );
+                  })}
+                  </code>
+                </motion.pre>
+              </div>
+              {/* Bottom fade gradient */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-card/90 to-transparent" />
+            </div>
+          </div>
+        </FadeUp>
+
+        {/* Boilerplate CTA */}
+        <FadeUp delay={0.2}>
+          <div className="relative mt-12 overflow-hidden rounded-xl border border-primary/20 bg-primary/3 p-8 sm:p-10">
+            {/* Ambient glow */}
+            <div className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-primary/8 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-16 size-48 rounded-full bg-brand-secondary/6 blur-3xl" />
+
+            <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+                  Open Source
+                </p>
+                <h3 className="text-2xl font-bold tracking-tight">
+                  Start building with Cipher tokens
+                </h3>
+                <p className="max-w-md text-base leading-relaxed text-muted-foreground">
+                  A public website starter that applies the full token structure
+                  in code — use it as a reference implementation or boilerplate
+                  for product sites, prototypes, and vibe-coded experiments.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col gap-2.5 sm:items-end">
+                <a href="https://github.com/atom63/cipher" rel="noopener noreferrer" target="_blank">
+                  <RichButton size="lg">
+                    <Github className="size-4" />
+                    View on GitHub
+                  </RichButton>
+                </a>
+                <span className="text-xs text-muted-foreground/50">
+                  MIT Licensed
+                </span>
+              </div>
+            </div>
+          </div>
+        </FadeUp>
+      </Container>
+    </Section>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Data
@@ -295,80 +571,87 @@ const CODE_LINES: (
 
 const WORKFLOW = [
   {
-    title: "Generate",
+    title: "Generate + Update",
     description:
-      "Pick a brand color, surface tone, type scale, and radius. Cipher builds a full three-tier token system in your Figma file.",
+      "Generate an opinionated token structure from a small set of brand and UI decisions, then come back anytime to preview, update, and regenerate.",
     Visual: GenerateVisual,
   },
   {
-    title: "Export",
+    title: "Manage",
     description:
-      "Production CSS in seven files with Tailwind v4 @theme blocks. OKLCH, HEX, RGBA, or HSL. Download as ZIP.",
-    Visual: ExportVisual,
+      "Maintain your token system with comprehensive CRUD controls and batch actions for variables and styles at scale.",
+    Visual: ManageVisual,
   },
   {
-    title: "Import",
+    title: "Round-trip",
     description:
-      "Edit in code, sync back to Figma. Auto-detects Cipher exports. Per-token conflict resolution. Full undo.",
-    Visual: ImportVisual,
+      "Export structured token files for code workflows, make changes outside Figma, then import them back to keep everything aligned.",
+    Visual: RoundTripVisual,
   },
 ];
 
 const FEATURES = [
   {
     icon: Palette,
-    title: "OKLCH Color Science",
+    title: "Ready for modern CSS workflows",
     description:
-      "Perceptually uniform lightness steps, not hue-shifting heuristics.",
-  },
-  {
-    icon: Type,
-    title: "Responsive Typography",
-    description:
-      "Breakpoint-aware font-size and line-height with @media queries.",
-  },
-  {
-    icon: Zap,
-    title: "Tailwind v4 Native",
-    description:
-      "@theme inline blocks in every file. Drop in, no config gymnastics.",
-  },
-  {
-    icon: Sliders,
-    title: "Surface Saturation",
-    description:
-      "Adjust chroma of your entire gray palette with one slider.",
+      "Token structure designed to plug into Tailwind CSS v4 and shadcn/ui-style setups.",
   },
   {
     icon: Layers,
-    title: "Batch Operations",
+    title: "Built with a point of view",
     description:
-      "Rename, move, scale, or delete across collections with dependency checking.",
+      "Not trying to support every workflow equally. A clearer structure that favors readability and consistency.",
   },
   {
-    icon: RefreshCw,
-    title: "Auto-Detection",
+    icon: Lock,
+    title: "Free during beta, local by default",
     description:
-      "Re-open on an existing file and Cipher pre-fills your config.",
+      "Runs locally inside Figma without external servers or telemetry. Currently free to use.",
   },
 ];
 
-const FIGMA_VARS = [
-  { path: "color/brand/primary/500", value: "#F76B15", swatch: "var(--primary)" },
-  { path: "color/gray/light/2", value: "#FDF8F6", swatch: "var(--surface-light-2)" },
-  { path: "surface/light/12", value: "#271D16", swatch: "var(--surface-light-12)" },
-  { path: "font/family/sans", value: "Inter", swatch: null },
-  { path: "spacing/4", value: "16px", swatch: null },
-];
-
-const CSS_OUTPUT = [
-  ":root {",
-  "  --primary: var(--color-brand-primary-500);",
-  "  --background: var(--surface-light-2);",
-  "  --foreground: var(--surface-light-12);",
-  "  --border: var(--surface-light-4);",
-  "  --muted-foreground: var(--surface-light-11);",
-  "}",
+const FAQ_ITEMS = [
+  {
+    q: 'What does "opinionated" mean?',
+    a: "Cipher is built around a clear token structure and workflow philosophy. Instead of supporting every possible setup equally, it prioritizes readability, consistency, and maintainability.",
+  },
+  {
+    q: "Is Cipher free to use?",
+    a: "Yes. Cipher is currently free to use during beta.",
+  },
+  {
+    q: "Why is Cipher in beta?",
+    a: "Cipher is already usable today, but the workflow, docs, and feature set are still evolving. The beta label helps set expectations clearly while the product continues to improve.",
+  },
+  {
+    q: "What can Cipher generate?",
+    a: "Cipher can generate a structured token system from configurable inputs such as brand colors, surface colors, status colors, radius ramps, and type scale ramps.",
+  },
+  {
+    q: "Can I update an existing Cipher-generated system?",
+    a: "Yes. You can reopen the generation workflow, preview the current setup, change core values, and regenerate the system in Figma.",
+  },
+  {
+    q: "What can Cipher manage?",
+    a: "Cipher supports CRUD and batch actions for variables and styles, including rename, edit, move, duplicate, and delete.",
+  },
+  {
+    q: "Can I export tokens for code and import them back?",
+    a: "Yes. Cipher supports round-trip workflows by exporting structured token files and importing changes back into Figma.",
+  },
+  {
+    q: "Does Cipher use cloud sync or external servers?",
+    a: "No. Cipher is local-only and does not use external servers or telemetry.",
+  },
+  {
+    q: "Who is Cipher for?",
+    a: "Cipher is for designers and developers who care about readable token systems and stronger alignment between design and code.",
+  },
+  {
+    q: "What is the open-source website starter?",
+    a: "It is a public starter repo that applies Cipher's token structure in code, so you can explore the workflow or build on top of it outside the plugin UI.",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -379,87 +662,92 @@ export default function Home() {
   const reduced = useReducedMotion();
 
   usePageMeta({
-    title: "Design Tokens That Actually Ship",
+    title: "A token system that aligns design and code",
     description:
-      "Cipher generates a production-ready token system inside Figma — primitives, aliases, semantics — and exports CSS your codebase can use today. Free & open source.",
-    ogTitle: "Cipher — Design Tokens That Actually Ship",
+      "Cipher is a local-first Figma plugin for generating, updating, managing, and round-tripping structured design tokens across design and implementation workflows.",
+    ogTitle: "Cipher — A token system that aligns design and code",
     ogDescription:
-      "Generate, export, and import a complete design token system between Figma and code. OKLCH colors, responsive typography, Tailwind v4 ready.",
+      "Generate, update, manage, and round-trip structured tokens through an opinionated workflow. Free during beta, local-only, ready for modern CSS workflows.",
     keywords: [
       "design tokens",
       "figma plugin",
       "css variables",
       "design system",
-      "OKLCH",
       "tailwind css v4",
       "design to code",
       "token export",
+      "shadcn ui",
     ],
   });
 
   return (
-    <DefaultLayout noPadding showFooter={false}>
+    <DefaultLayout noPadding>
       {/* =============================================================== */}
-      {/* HERO                                                            */}
+      {/* 1. HERO                                                         */}
       {/* =============================================================== */}
       <Section
+        id="hero"
         className="relative overflow-hidden"
         gap={false}
         removeTopSpacing={false}
         spacing="spacious"
       >
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-[-20%] left-1/2 h-[700px] w-[1000px] -translate-x-1/2 rounded-full bg-primary/6 blur-[180px]" />
-        </div>
-
-        <Container padding="x">
+        <Container maxWidth="narrow" padding="x">
           <div className="relative flex flex-col items-center text-center">
             <FadeUp>
-              <Badge size="default" variant="primaryMuted">
-                Figma Plugin — Free & Open Source
-              </Badge>
+              <div className="flex items-center justify-center gap-2.5">
+                <Badge size="default" variant="primaryMuted">Beta</Badge>
+                <span className="text-sm text-muted-foreground/60">·</span>
+                <span className="text-sm text-muted-foreground/80">Free to use</span>
+              </div>
             </FadeUp>
 
             <FadeUp delay={0.05}>
-              <h1 className="mt-6 max-w-4xl font-extrabold text-9xl leading-none tracking-tight">
-                Design tokens that{" "}
-                <span className="text-primary">actually ship.</span>
+              <h1 className="mt-6 max-w-4xl font-extrabold text-8xl leading-none tracking-tight text-balance">
+                A token system that aligns{" "}
+                <span className="text-primary">design</span> and code
               </h1>
             </FadeUp>
 
             <FadeUp delay={0.1}>
-              <p className="mt-6 max-w-xl text-xl leading-relaxed text-muted-foreground sm:text-2xl">
-                Figma gives you variables — not a design system. Cipher
-                generates the structure your code needs and exports production
-                CSS out of the box.
+              <p className="mx-auto mt-6 max-w-lg text-xl leading-relaxed text-muted-foreground">
+                Cipher helps you generate, update, manage, and round-trip
+                structured tokens through an opinionated workflow built to
+                keep design decisions and code implementation aligned.
               </p>
             </FadeUp>
 
             <FadeUp delay={0.15}>
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:mt-12">
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10">
                 <RichButton size="lg">
-                  Install from Figma
+                  Install plugin
                   <ArrowRight className="size-4" />
                 </RichButton>
+                <Button asChild size="lg" variant="outline">
+                  <a href="/docs">
+                    <BookOpen className="size-4" />
+                    View docs
+                  </a>
+                </Button>
                 <Button asChild size="lg" variant="ghost">
                   <a
                     href="https://github.com/atom63/cipher"
                     rel="noopener noreferrer"
                     target="_blank"
                   >
-                    View Source
+                    View boilerplate
                   </a>
                 </Button>
               </div>
             </FadeUp>
 
             <FadeIn delay={0.3}>
-              <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-sm tracking-wide text-muted-foreground/60 sm:mt-14">
-                <span>230+ tokens</span>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs tracking-wide text-muted-foreground/60 uppercase">
+                <span>Local-only</span>
                 <span className="text-border">·</span>
-                <span>7 CSS files</span>
+                <span>No telemetry</span>
                 <span className="text-border">·</span>
-                <span>Tailwind v4 ready</span>
+                <span>Ready for modern CSS workflows</span>
               </div>
             </FadeIn>
           </div>
@@ -467,110 +755,44 @@ export default function Home() {
       </Section>
 
       {/* =============================================================== */}
-      {/* CODE SHOWCASE                                                   */}
+      {/* 2. FEATURES                                                     */}
       {/* =============================================================== */}
-      <Section gap={false} removeTopSpacing spacing="default">
-        <Container maxWidth="narrow" padding="x">
-          <FadeUp>
-            <div className="overflow-hidden rounded-xl border border-border/60 shadow-5">
-              {/* File tabs */}
-              <div className="flex items-center gap-0 overflow-x-auto border-b border-border/50 bg-card/80">
-                {CSS_FILES.map((file) => (
-                  <div
-                    className={`shrink-0 border-r border-border/30 px-3.5 py-2 font-mono text-[11px] ${
-                      file.active
-                        ? "bg-background/80 text-foreground"
-                        : "text-muted-foreground/50"
-                    }`}
-                    key={file.name}
-                  >
-                    {file.name}
-                  </div>
-                ))}
-                <div className="flex-1" />
-                <Badge className="mr-3 shrink-0" size="sm" variant="orange">
-                  Cipher
-                </Badge>
-              </div>
-
-              {/* Code lines */}
-              <div className="bg-card/40 p-4 sm:p-5">
-                {CODE_LINES.map((line, i) => (
-                  <motion.div
-                    className={`font-mono text-[12px] leading-6 sm:text-[13px] sm:leading-7 ${line.dim ? "opacity-40" : ""}`}
-                    initial={reduced ? false : { opacity: 0, x: -8 }}
-                    key={"text" in line ? `t-${i}` : `v-${line.token}`}
-                    transition={{
-                      duration: 0.4,
-                      delay: 0.3 + i * 0.035,
-                      ease,
-                    }}
-                    viewport={{ once: true }}
-                    whileInView={{ opacity: line.dim ? 0.4 : 1, x: 0 }}
-                  >
-                    {"text" in line ? (
-                      <span className="text-foreground/70">
-                        {"  ".repeat(line.indent)}
-                        {line.text}
-                      </span>
-                    ) : (
-                      <span>
-                        {"  ".repeat(line.indent)}
-                        <span className="text-primary/80">{line.token}</span>
-                        <span className="text-foreground/30">: </span>
-                        <span className="text-foreground/60">{line.value}</span>
-                        <span className="text-foreground/30">;</span>
-                      </span>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </FadeUp>
-        </Container>
-      </Section>
-
-      {/* =============================================================== */}
-      {/* WORKFLOW                                                        */}
-      {/* =============================================================== */}
-      <Section gap={false} removeTopSpacing={false} spacing="generous">
-        <Container maxWidth="default" padding="all">
+      <Section id="features" gap={false} removeTopSpacing={false} spacing="generous">
+        <Container maxWidth="narrow"  padding="all">
           <FadeUp>
             <p className="font-semibold text-sm uppercase tracking-widest text-primary">
-              How it works
+              Workflow
             </p>
-            <h2 className="mt-3 max-w-md font-bold text-3xl leading-tight sm:text-4xl tracking-tight">
-              Three steps. Zero config files.
+            <h2 className="mt-3 max-w-lg font-bold text-4xl leading-tight tracking-tight">
+              From raw variables to a usable system
             </h2>
+            <p className="mt-4 max-w-xl text-muted-foreground">
+              Cipher helps you generate a structured token foundation, evolve it
+              over time, manage variables and styles at scale, and keep design
+              and code aligned through round-trip workflows.
+            </p>
           </FadeUp>
 
           <div className="mt-10 grid gap-5 sm:mt-14 md:grid-cols-3 md:gap-6">
             {WORKFLOW.map((step, i) => (
               <FadeUp delay={i * 0.08} key={step.title}>
                 <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/50 bg-card/40">
-                  {/* Card title bar */}
                   <div className="flex items-center gap-2 border-b border-border/40 px-3 py-2">
                     <div className="flex items-center gap-1.5">
                       <div className="size-2 rounded-full bg-border/80" />
                       <div className="size-2 rounded-full bg-border/80" />
                       <div className="size-2 rounded-full bg-border/80" />
                     </div>
-                    <span className="ml-1 font-mono text-[10px] text-muted-foreground/50">
+                    <span className="ml-1 font-mono text-xs text-muted-foreground/50">
                       Cipher — {step.title}
                     </span>
                   </div>
-
-                  {/* Visual */}
                   <div aria-hidden="true">
                     <step.Visual />
                   </div>
-
-                  {/* Description */}
                   <div className="mt-auto border-t border-border/30 p-4">
-                    <h3 className="text-base font-bold text-foreground">
-                      {step.title}
-                    </h3>
-                    <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+                    <h3 className="text-base font-bold text-foreground">{step.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                       {step.description}
                     </p>
                   </div>
@@ -578,37 +800,14 @@ export default function Home() {
               </FadeUp>
             ))}
           </div>
-        </Container>
-      </Section>
 
-      {/* =============================================================== */}
-      {/* FEATURES                                                        */}
-      {/* =============================================================== */}
-      <Section
-        className="border-y border-border/40 bg-card/30"
-        gap={false}
-        removeTopSpacing={false}
-        spacing="generous"
-      >
-        <Container maxWidth="default" padding="all">
-          <FadeUp>
-            <p className="font-semibold text-sm uppercase tracking-widest text-primary">
-              Why Cipher
-            </p>
-            <h2 className="mt-3 max-w-sm font-bold text-3xl leading-tight sm:text-4xl tracking-tight">
-              Not another variable exporter.
-            </h2>
-          </FadeUp>
-
-          <div className="mt-10 grid gap-x-10 gap-y-8 sm:mt-14 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-14">
+          <div className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-14">
             {FEATURES.map((f, i) => (
               <FadeUp delay={i * 0.04} key={f.title}>
                 <div className="flex gap-3.5">
                   <f.icon className="mt-0.5 size-5 shrink-0 text-primary/70" />
                   <div>
-                    <h3 className="text-base font-semibold text-foreground">
-                      {f.title}
-                    </h3>
+                    <h3 className="text-base font-semibold text-foreground">{f.title}</h3>
                     <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                       {f.description}
                     </p>
@@ -621,107 +820,41 @@ export default function Home() {
       </Section>
 
       {/* =============================================================== */}
-      {/* OUTPUT PREVIEW                                                  */}
+      {/* 3. SEE THE SYSTEM IN CODE                                       */}
       {/* =============================================================== */}
-      <Section gap={false} removeTopSpacing={false} spacing="generous">
-        <Container maxWidth="default" padding="all">
-          <FadeUp>
-            <p className="font-semibold text-sm uppercase tracking-widest text-primary">
-              Output
-            </p>
-            <h2 className="mt-3 font-bold text-3xl leading-tight sm:text-4xl tracking-tight">
-              Figma variables in. Production CSS out.
-            </h2>
-          </FadeUp>
+      <CodeShowcase reduced={reduced} />
 
-          <FadeUp delay={0.1}>
-            <div className="mt-6 grid gap-px overflow-hidden rounded-xl border border-border/50 bg-border/30 shadow-3 sm:mt-8 md:grid-cols-2">
-              {/* Left — Figma variables */}
-              <div className="bg-card/60 p-4 sm:p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="flex size-5 items-center justify-center rounded bg-foreground/10">
-                    <Layers className="size-3 text-foreground/60" />
-                  </div>
-                  <span className="font-mono font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">
-                    Figma Variables
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  {FIGMA_VARS.map((v, i) => (
-                    <motion.div
-                      className="flex items-center justify-between rounded-md border border-border/20 bg-background/40 px-2.5 py-1.5"
-                      initial={reduced ? false : { opacity: 0, x: -6 }}
-                      key={v.path}
-                      transition={{
-                        duration: 0.4,
-                        delay: 0.25 + i * 0.04,
-                        ease,
-                      }}
-                      viewport={{ once: true }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                    >
-                      <span className="font-mono text-[11px] text-foreground/70">
-                        {v.path}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        {v.swatch && (
-                          <span
-                            className="size-2.5 rounded-full"
-                            style={{ backgroundColor: v.swatch }}
-                          />
-                        )}
-                        <span className="font-mono text-[10px] text-muted-foreground">
-                          {v.value}
-                        </span>
-                      </span>
-                    </motion.div>
-                  ))}
-                </div>
+      {/* =============================================================== */}
+      {/* 4. FAQ                                                          */}
+      {/* =============================================================== */}
+      <Section id="faq" gap={false} removeTopSpacing={false} spacing="generous">
+        <Container maxWidth="narrow" padding="all">
+          <FadeUp>
+            <div className="overflow-hidden rounded-xl border border-border/60 extrude-1">
+              {/* Header */}
+              <div className="border-b border-border/40 bg-card/80 px-6 py-5 sm:px-8 sm:py-6">
+                <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+                  Questions
+                </p>
+                <h2 className="mt-2 font-bold text-3xl leading-tight tracking-tight">
+                  FAQ
+                </h2>
               </div>
 
-              {/* Right — CSS output */}
-              <div className="bg-card/40 p-4 sm:p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="flex size-5 items-center justify-center rounded bg-primary/10">
-                    <Code className="size-3 text-primary/70" />
-                  </div>
-                  <span className="font-mono font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">
-                    semantics.css
-                  </span>
-                </div>
-                <div className="rounded-md border border-border/20 bg-background/40 p-3">
-                  {CSS_OUTPUT.map((line, i) => (
-                    <motion.div
-                      className="font-mono text-[11px] leading-5 sm:text-[12px] sm:leading-6"
-                      initial={reduced ? false : { opacity: 0, x: -6 }}
-                      key={`css-${i}`}
-                      transition={{
-                        duration: 0.4,
-                        delay: 0.3 + i * 0.04,
-                        ease,
-                      }}
-                      viewport={{ once: true }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                    >
-                      {line.startsWith("  ") ? (
-                        <span>
-                          <span className="text-muted-foreground/60">
-                            {"  "}
-                          </span>
-                          <span className="text-primary/80">
-                            {line.trim().split(":")[0]}
-                          </span>
-                          <span className="text-foreground/30">: </span>
-                          <span className="text-foreground/60">
-                            {line.trim().split(": ").slice(1).join(": ")}
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="text-foreground/50">{line}</span>
-                      )}
-                    </motion.div>
+              {/* Accordion inset */}
+              <div className="mx-4 my-4 rounded-lg bg-background/60 px-4 sm:mx-6 sm:my-5 sm:px-6 intrude-1">
+                <Accordion defaultValue={[0]}>
+                  {FAQ_ITEMS.map((item, i) => (
+                    <AccordionItem key={i} value={i}>
+                      <AccordionTrigger className="text-base">
+                        {item.q}
+                      </AccordionTrigger>
+                      <AccordionPanel className="text-sm leading-relaxed">
+                        {item.a}
+                      </AccordionPanel>
+                    </AccordionItem>
                   ))}
-                </div>
+                </Accordion>
               </div>
             </div>
           </FadeUp>
@@ -729,63 +862,52 @@ export default function Home() {
       </Section>
 
       {/* =============================================================== */}
-      {/* CLOSE — trust + CTA                                             */}
+      {/* 5. FOOTER CTA                                                   */}
       {/* =============================================================== */}
       <Section
+        id="footer-cta"
         className="flex flex-col items-center border-t border-border/40 bg-card/30 text-center"
         removeTopSpacing={false}
         spacing="spacious"
       >
-        <Container maxWidth="default" padding="all" >
+        <Container maxWidth="narrow"  padding="all">
           <FadeUp className="flex flex-col items-center">
-            <Lock className="size-6 text-primary/70" />
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Runs entirely inside Figma — no servers, no analytics, no data
-              leaves your file. MIT licensed, open source, every operation is
-              undoable.
-            </p>
-          </FadeUp>
-
-          <FadeUp delay={0.06} className="flex flex-col items-center">
-            <h2 className="mt-10 max-w-xl font-extrabold text-4xl leading-tight sm:text-5xl md:text-6xl tracking-tight text-balance sm:mt-14">
-              Stop hand-wiring tokens.{" "}
-              <span className="text-primary">Start shipping.</span>
+            <h2 className="max-w-xl font-extrabold text-6xl leading-tight tracking-tight text-balance">
+              Bring more structure to your design and code workflow
             </h2>
           </FadeUp>
 
+          <FadeUp delay={0.06} className="flex flex-col items-center">
+            <p className="mt-6 max-w-md text-lg text-muted-foreground">
+              Generate, update, manage, and round-trip tokens through a workflow
+              built for readability, consistency, and real product use.
+            </p>
+          </FadeUp>
+
           <FadeUp delay={0.1}>
-            <div className="mt-8 sm:mt-10">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10">
               <RichButton size="lg">
-                Install Cipher from Figma
+                Install plugin
                 <ArrowRight className="size-4" />
               </RichButton>
+              <Button asChild size="lg" variant="outline">
+                <a href="/docs">
+                  <BookOpen className="size-4" />
+                  View docs
+                </a>
+              </Button>
+              <Button asChild size="lg" variant="ghost">
+                <a href="https://github.com/atom63/cipher" rel="noopener noreferrer" target="_blank">
+                  View boilerplate
+                </a>
+              </Button>
             </div>
           </FadeUp>
 
           <FadeIn delay={0.2}>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              <a
-                className="relative rounded-sm px-2 py-2 transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                href="https://github.com/atom63/cipher"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                GitHub
-              </a>
-              <span aria-hidden="true" className="text-border">
-                ·
-              </span>
-              <span className="px-2 py-2">MIT License</span>
-              <span aria-hidden="true" className="text-border">
-                ·
-              </span>
-              <a
-                className="relative rounded-sm px-2 py-2 transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                href="mailto:hello@atom63.com"
-              >
-                Contact
-              </a>
-            </div>
+            <p className="mt-6 text-xs tracking-wide text-muted-foreground/50 uppercase">
+              Free during beta
+            </p>
           </FadeIn>
         </Container>
       </Section>

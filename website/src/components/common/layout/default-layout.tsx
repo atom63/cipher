@@ -21,7 +21,7 @@ export default function DefaultLayout({
   return (
     <div className="relative flex min-h-screen flex-col">
       <WebHeader />
-      <Page className={cn("flex-1", className)} noPadding={noPadding}>
+      <Page className={cn("isolate flex-1", className)} noPadding={noPadding}>
         {children}
       </Page>
       {showFooter && <WebFooter />}
