@@ -1,8 +1,7 @@
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Container from "@/components/common/layout/container";
 import Section from "@/components/common/layout/section";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { RichButton } from "@/components/common/custom/rich-button";
 import { FadeUp, FadeIn } from "./animation";
 
@@ -27,7 +26,7 @@ export function HeroSection() {
           <FadeUp delay={0.05}>
             <h1 className="mt-6 max-w-4xl font-extrabold text-8xl leading-none tracking-tight text-balance">
               A token system that aligns{" "}
-              <span className="text-primary">design</span> and {" "}
+              <span className="text-primary">design</span> and{" "}
               <span className="text-primary">code</span>
             </h1>
           </FadeUp>
@@ -35,13 +34,13 @@ export function HeroSection() {
           <FadeUp delay={0.1}>
             <p className="mx-auto mt-6 max-w-lg text-xl leading-relaxed text-muted-foreground">
               Cipher helps you generate, update, manage, and round-trip
-              structured tokens through an opinionated workflow built to
-              keep design decisions and code implementation aligned.
+              structured tokens through an opinionated workflow built to keep
+              design decisions and code implementation aligned.
             </p>
           </FadeUp>
 
           <FadeUp delay={0.15}>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10">
+            <div className="mt-8 sm:mt-10">
               <RichButton size="lg">
                 Install plugin
                 <ArrowRight className="size-4" />
@@ -50,12 +49,12 @@ export function HeroSection() {
           </FadeUp>
 
           <FadeIn delay={0.3}>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs tracking-wide text-muted-foreground/60 uppercase">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs tracking-wide text-muted-foreground/60 uppercase">
               <span>Local-only</span>
               <span className="text-border">·</span>
               <span>No telemetry</span>
               <span className="text-border">·</span>
-              <span>Ready for modern CSS workflows</span>
+              <span>Modern CSS ready</span>
             </div>
           </FadeIn>
         </div>

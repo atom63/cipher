@@ -1,10 +1,7 @@
 import { useState } from "react";
-import { Github } from "lucide-react";
 import { motion } from "motion/react";
 import Container from "@/components/common/layout/container";
 import Section from "@/components/common/layout/section";
-import { Badge } from "@/components/ui/badge";
-import { RichButton } from "@/components/common/custom/rich-button";
 import { FadeUp, ease } from "./animation";
 
 // ---------------------------------------------------------------------------
@@ -170,16 +167,12 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
     >
       <Container maxWidth="narrow" padding="all">
         <FadeUp>
-          <p className="font-semibold text-sm uppercase tracking-widest text-primary">
-            Output
-          </p>
-          <h2 className="mt-3 font-bold text-4xl leading-tight tracking-tight">
+          <h2 className="font-bold text-4xl leading-tight tracking-tight">
             See the system in code
           </h2>
-          <p className="mt-4 max-w-xl text-muted-foreground">
-            Preview how Cipher tokens map into a real codebase. Inspect token
-            structure, explore output, and use the open-source website starter
-            as a reference or boilerplate for faster builds.
+          <p className="mt-3 max-w-lg text-muted-foreground">
+            Inspect the token structure Cipher generates — primitives, aliases,
+            semantics, type scales, and effects.
           </p>
         </FadeUp>
 
@@ -189,7 +182,7 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
             <div className="flex items-center gap-0 overflow-x-auto border-b border-border/50 bg-card/80">
               {TOKEN_SNIPPETS.map((snippet) => (
                 <button
-                  className={`shrink-0 border-r border-border/30 px-3.5 py-2 font-mono text-xs transition-colors ${
+                  className={`shrink-0 border-r border-border/30 px-3.5 py-2 font-mono text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
                     snippet.id === activeFile
                       ? "bg-background/80 text-foreground"
                       : "text-muted-foreground/50 hover:text-muted-foreground"
@@ -273,36 +266,23 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
 
         {/* Boilerplate CTA */}
         <FadeUp delay={0.2}>
-          <div className="relative mt-12 overflow-hidden rounded-xl border border-primary/20 bg-primary/3 p-8 sm:p-10">
-            <div className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-primary/8 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-16 size-48 rounded-full bg-brand-secondary/6 blur-3xl" />
-
-            <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-                  Open Source
-                </p>
-                <h3 className="text-2xl font-bold tracking-tight">
-                  Start building with Cipher tokens
-                </h3>
-                <p className="max-w-md text-base leading-relaxed text-muted-foreground">
-                  A public website starter that applies the full token structure
-                  in code — use it as a reference implementation or boilerplate
-                  for product sites, prototypes, and vibe-coded experiments.
-                </p>
-              </div>
-              <div className="flex shrink-0 flex-col gap-2.5 sm:items-end">
-                <a href="https://github.com/atom63/cipher" rel="noopener noreferrer" target="_blank">
-                  <RichButton size="lg">
-                    <Github className="size-4" />
-                    View on GitHub
-                  </RichButton>
-                </a>
-                <span className="text-xs text-muted-foreground/50">
-                  MIT Licensed
-                </span>
-              </div>
+          <div className="mt-10 flex flex-col gap-4 border-t border-border/40 pt-8 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-base font-semibold">
+                Open-source starter included
+              </h3>
+              <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                A reference repo that applies the full token structure in code.
+              </p>
             </div>
+            <a
+              className="shrink-0 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              href="https://github.com/atom63/cipher"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              View on GitHub &rarr;
+            </a>
           </div>
         </FadeUp>
       </Container>
