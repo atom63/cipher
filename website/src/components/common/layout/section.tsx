@@ -5,6 +5,7 @@ interface SectionProps {
   children: ReactNode;
   className?: string;
   gap?: boolean;
+  id?: string;
   removeTopSpacing?: boolean;
   spacing?: "tight" | "default" | "loose" | "generous" | "spacious";
 }
@@ -12,6 +13,7 @@ interface SectionProps {
 function Section({
   children,
   className,
+  id,
   spacing = "default",
   removeTopSpacing = true,
   gap = true,
@@ -40,6 +42,7 @@ function Section({
         removeTopSpacing && "pt-0 md:pt-0",
         className
       )}
+      id={id}
     >
       {children}
     </div>

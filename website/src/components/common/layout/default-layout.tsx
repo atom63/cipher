@@ -16,6 +16,7 @@ export default function DefaultLayout({
   children,
   className,
   noPadding = false,
+  showFooter = true,
 }: DefaultLayoutProps) {
   return (
     <div className="relative flex min-h-screen flex-col">
@@ -23,7 +24,7 @@ export default function DefaultLayout({
       <Page className={cn("flex-1", className)} noPadding={noPadding}>
         {children}
       </Page>
-      <WebFooter />
+      {showFooter && <WebFooter />}
     </div>
   );
 }
