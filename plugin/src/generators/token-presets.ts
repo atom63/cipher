@@ -399,11 +399,17 @@ export const FONT_WEIGHT_VARIABLE: Record<string, number> = {
 export const ZLAYER_SCALE: Record<string, number> = {
 	default: 0,
 	base: 10,
+	sticky: 20,
 	header: 50,
 	dropdown: 100,
+	popover: 200,
+	window: 300,
+	flyout: 400,
 	smoke: 500,
-	modal: 900,
-	toast: 999,
+	modal: 600,
+	toast: 800,
+	dock: 900,
+	system: 999,
 };
 
 // =========================================================================

@@ -33,7 +33,7 @@ describe("naming convention round-trip", () => {
 		"font/typescale/body/font/size",
 		"font/typescale/body/line/height",
 		"font/family/sans",
-		"z/layer/base",
+		"z-layer/base",
 		"surface/light/4",
 		"surface/dark/12",
 	];
@@ -154,6 +154,17 @@ describe("aliases round-trip", () => {
 		for (const token of result.tokens) {
 			expect(token.category).toBe("aliases");
 		}
+	});
+
+	test("var() reference to z-layer preserves hyphenated segment", () => {
+		const css = bundle({
+			"aliases.css": `:root { --some-alias: var(--z-layer-modal); }`,
+		});
+		const result = parseCSS(css);
+		const token = result.tokens.find((t) => t.figmaName === "some/alias");
+		expect(token).toBeDefined();
+		expect(token?.type).toBe("reference");
+		expect(token?.value).toBe("{z-layer.modal}");
 	});
 });
 

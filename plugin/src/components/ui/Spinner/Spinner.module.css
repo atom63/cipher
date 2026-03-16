@@ -1,36 +1,12 @@
 /* ============================================
-   SPINNER — Dual-arc design
+   SPINNER — Single arc
    ============================================ */
 
 .spinner {
-  position: relative;
-  border: 3px solid transparent;
+  border: 2px solid color-mix(in oklch, var(--foreground) 12%, transparent);
+  border-top-color: var(--foreground);
   border-radius: var(--radius-full);
-}
-
-.spinner::before,
-.spinner::after {
-  position: absolute;
-  inset: -3px;
-  content: "";
-  border-color: transparent;
-  border-style: solid;
-  border-width: inherit;
-  border-radius: inherit;
-}
-
-/* Primary arc — bold sweep */
-.spinner::before {
-  border-top-color: var(--primary);
-  border-right-color: var(--primary);
-  animation: spin 0.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-/* Secondary arc — lighter, offset rotation */
-.spinner::after {
-  border-bottom-color: color-mix(in oklch, var(--primary) 25%, transparent);
-  animation: spin 0.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  animation-delay: -0.35s;
+  animation: spin 0.6s linear infinite;
 }
 
 @keyframes spin {
@@ -41,99 +17,59 @@
 
 /* Size variants */
 .sm {
-  width: 16px;
-  height: 16px;
-  border-width: 2px;
-}
-
-.sm::before,
-.sm::after {
-  inset: -2px;
+  width: 14px;
+  height: 14px;
+  border-width: 1.5px;
 }
 
 .md {
-  width: 24px;
-  height: 24px;
-  border-width: 2px;
-}
-
-.md::before,
-.md::after {
-  inset: -2px;
+  width: 20px;
+  height: 20px;
 }
 
 .lg {
-  width: 32px;
-  height: 32px;
-  border-width: 3px;
+  width: 28px;
+  height: 28px;
+  border-width: 2.5px;
 }
 
 .xl {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-width: 3px;
 }
 
 /* ============================================
-   LOADING STATE — Choreographed entrance
+   LOADING STATE
    ============================================ */
 
 .loadingState {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
   align-items: center;
   justify-content: center;
   padding: var(--spacing-2xl) var(--spacing-xl);
   text-align: center;
 }
 
-/* Ambient glow on the spinner element */
 .spinnerSlot {
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 0 8px color-mix(in oklch, var(--primary) 30%, transparent));
-  animation: spinner-enter 0.4s cubic-bezier(0, 0, 0.2, 1) both;
 }
 
 .message {
   margin: 0;
   font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--foreground);
-  letter-spacing: -0.01em;
-  animation: text-enter 0.35s cubic-bezier(0, 0, 0.2, 1) 0.1s both;
+  color: var(--muted-foreground);
 }
 
 .hint {
   margin: calc(-1 * var(--spacing-xs)) 0 0;
   font-size: var(--text-xs);
   color: var(--muted-foreground);
-  animation: text-enter 0.35s cubic-bezier(0, 0, 0.2, 1) 0.2s both;
-}
-
-@keyframes spinner-enter {
-  from {
-    opacity: 0;
-    transform: scale(0.7);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes text-enter {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* ============================================
@@ -141,18 +77,7 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
-  .spinner::before,
-  .spinner::after {
+  .spinner {
     animation-duration: 1.5s;
-  }
-
-  .spinnerSlot {
-    filter: none;
-    animation: none;
-  }
-
-  .message,
-  .hint {
-    animation: none;
   }
 }

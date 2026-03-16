@@ -508,7 +508,7 @@ function generatePrimitives(config: BrandConfig): {
 	// --- Z-layer scale ---
 	for (const [name, value] of Object.entries(ZLAYER_SCALE)) {
 		tokens.push(
-			makeToken(`z/layer/${name}`, value, "primitives", {
+			makeToken(`z-layer/${name}`, value, "primitives", {
 				type: "number",
 				originalValue: `${value}`,
 				description: `Z-index layer ${name}`,

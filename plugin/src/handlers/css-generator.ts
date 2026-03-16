@@ -157,7 +157,7 @@ function normalizeName(name: string): string {
  * Examples:
  *   color/brand/primary/500  → --color-brand-primary-500
  *   spacing/4                → --spacing-4
- *   z/layer/base             → --z-layer-base
+ *   z-layer/base             → --z-layer-base
  *   background (semantics)   → --background
  */
 function toVarName(
@@ -288,6 +288,7 @@ async function valueToCSS(
 			}
 			// Unitless values: z-index, font weights
 			if (
+				firstSeg === "z-layer" ||
 				firstSeg === "z" ||
 				firstSeg === "zlayer" ||
 				firstSeg === "z-index" ||

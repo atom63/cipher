@@ -35,8 +35,8 @@ describe("toVarName", () => {
 	});
 
 	test("handles restructured paths that produce correct CSS", () => {
-		expect(toVarName("z/layer/base", "FLOAT")).toBe("--z-layer-base");
-		expect(toVarName("z/layer/modal", "FLOAT")).toBe("--z-layer-modal");
+		expect(toVarName("z-layer/base", "FLOAT")).toBe("--z-layer-base");
+		expect(toVarName("z-layer/modal", "FLOAT")).toBe("--z-layer-modal");
 		expect(toVarName("duration/250", "FLOAT")).toBe("--duration-250");
 		expect(toVarName("ease/linear", "FLOAT")).toBe("--ease-linear");
 		expect(toVarName("breakpoint/sm", "FLOAT")).toBe("--breakpoint-sm");

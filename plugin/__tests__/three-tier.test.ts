@@ -422,8 +422,8 @@ describe("aliases", () => {
 		const names = result.tokens
 			.filter((t) => t.category === "primitives")
 			.map((t) => t.figmaName);
-		expect(names).toContain("z/layer/default");
-		expect(names).toContain("z/layer/modal");
+		expect(names).toContain("z-layer/default");
+		expect(names).toContain("z-layer/modal");
 	});
 
 	test("includes font family aliasaliases (primary/secondary/tertiary)", () => {

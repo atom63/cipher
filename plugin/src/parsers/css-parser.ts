@@ -246,8 +246,44 @@ function inferType(name: string, value: string): TokenType {
 /**
  * Convert a CSS variable name (without `--`) to a Figma slash-separated path.
  */
+/** Compound segments that should stay hyphenated in Figma variable paths */
+const HYPHENATED_SEGMENTS = ["z-layer"];
+
 function toFigmaName(name: string): string {
-	return name.replace(/-/g, "/");
+	let result = name;
+	// Temporarily protect known hyphenated segments
+	const placeholders: [string, string][] = [];
+	for (const seg of HYPHENATED_SEGMENTS) {
+		if (result.includes(seg)) {
+			const ph = `__PH${placeholders.length}__`;
+			placeholders.push([ph, seg]);
+			result = result.replace(seg, ph);
+		}
+	}
+	result = result.replace(/-/g, "/");
+	// Restore hyphenated segments
+	for (const [ph, seg] of placeholders) {
+		result = result.replace(ph, seg);
+	}
+	return result;
+}
+
+/** Convert a CSS name (dashes) to dot-separated reference, preserving hyphenated segments */
+function toDotPath(name: string): string {
+	let result = name;
+	const placeholders: [string, string][] = [];
+	for (const seg of HYPHENATED_SEGMENTS) {
+		if (result.includes(seg)) {
+			const ph = `__PH${placeholders.length}__`;
+			placeholders.push([ph, seg]);
+			result = result.replace(seg, ph);
+		}
+	}
+	result = result.replace(/-/g, ".");
+	for (const [ph, seg] of placeholders) {
+		result = result.replace(ph, seg);
+	}
+	return result;
 }
 
 /**
@@ -258,13 +294,13 @@ function convertVarReference(value: string): string {
 	const mixMatch = value.match(COLOR_MIX_VAR_RE);
 	if (mixMatch) {
 		const refName = mixMatch[1];
-		return `{${refName.replace(/-/g, ".")}}`;
+		return `{${toDotPath(refName)}}`;
 	}
 
 	const match = value.match(VAR_REF_RE);
 	if (!match) return value;
 	const refName = match[1];
-	return `{${refName.replace(/-/g, ".")}}`;
+	return `{${toDotPath(refName)}}`;
 }
 
 /**
