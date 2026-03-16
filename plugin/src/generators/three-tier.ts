@@ -468,6 +468,15 @@ function generatePrimitives(config: BrandConfig): {
 			}),
 		);
 	}
+	// Bare `rounded` class in Tailwind uses --radius, mapped to md value
+	const radiusDefault = radiusScale.md ?? 8;
+	tokens.push(
+		makeToken("rounded/DEFAULT", radiusDefault, "primitives", {
+			type: "borderRadius",
+			originalValue: `${radiusDefault}px`,
+			description: `Border radius default (bare \`rounded\` class, matches md)`,
+		}),
+	);
 
 	// ── Effects ───────────────────────────────────────────────────────────
 

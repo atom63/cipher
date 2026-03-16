@@ -225,22 +225,23 @@ describe("TYPESCALE_ORDER", () => {
 // =========================================================================
 
 describe("TAILWIND_THEME_PREFIXES", () => {
-	test("includes all Tailwind v4 theme namespaces", () => {
-		expect(TAILWIND_THEME_PREFIXES).toContain("--spacing-");
+	test("includes Tailwind v4 theme namespaces that need registration", () => {
 		expect(TAILWIND_THEME_PREFIXES).toContain("--color-");
 		expect(TAILWIND_THEME_PREFIXES).toContain("--shadow-");
 		expect(TAILWIND_THEME_PREFIXES).toContain("--blur-");
 		expect(TAILWIND_THEME_PREFIXES).toContain("--breakpoint-");
-		expect(TAILWIND_THEME_PREFIXES).toContain("--container-");
 		expect(TAILWIND_THEME_PREFIXES).toContain("--ease-");
 		expect(TAILWIND_THEME_PREFIXES).toContain("--duration-");
 	});
 
-	test("does not include non-Tailwind namespaces", () => {
-		expect(TAILWIND_THEME_PREFIXES).not.toContain("--font-weight-");
-		expect(TAILWIND_THEME_PREFIXES).not.toContain("--size-");
-		expect(TAILWIND_THEME_PREFIXES).not.toContain("--z-");
+	test("does not include namespaces with Tailwind built-in defaults", () => {
+		// These have built-in Tailwind defaults — re-registering causes overrides
+		expect(TAILWIND_THEME_PREFIXES).not.toContain("--spacing-");
+		expect(TAILWIND_THEME_PREFIXES).not.toContain("--container-");
 		expect(TAILWIND_THEME_PREFIXES).not.toContain("--rounded-");
+		expect(TAILWIND_THEME_PREFIXES).not.toContain("--size-");
+		expect(TAILWIND_THEME_PREFIXES).not.toContain("--font-weight-");
+		expect(TAILWIND_THEME_PREFIXES).not.toContain("--z-");
 		expect(TAILWIND_THEME_PREFIXES).not.toContain("--screen-");
 	});
 });

@@ -223,6 +223,7 @@ describe("non-color tokens", () => {
 		expect(names).toContain("rounded/sm");
 		expect(names).toContain("rounded/lg");
 		expect(names).toContain("rounded/full");
+		expect(names).toContain("rounded/DEFAULT");
 		// All radius tokens are in primitives
 		const categories = new Set(radiusTokens.map((t) => t.category));
 		expect(categories).toEqual(new Set(["primitives"]));
@@ -237,6 +238,41 @@ describe("non-color tokens", () => {
 			(t) => t.figmaName === "rounded/lg",
 		);
 		expect(lgRadius?.value).toBe(8);
+	});
+
+	test("rounded/DEFAULT equals md value (anchor - 2)", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			radius: 10,
+		});
+		const defaultToken = result.tokens.find(
+			(t) => t.figmaName === "rounded/DEFAULT",
+		);
+		const mdToken = result.tokens.find(
+			(t) => t.figmaName === "rounded/md",
+		);
+		expect(defaultToken).toBeDefined();
+		expect(mdToken).toBeDefined();
+		expect(defaultToken?.value).toBe(mdToken?.value);
+	});
+
+	test("rounded/DEFAULT tracks md across different anchors", () => {
+		for (const anchor of [6, 8, 10, 12, 16]) {
+			const result = generateDesignSystem({
+				primary: "#3B82F6",
+				radius: anchor,
+			});
+			const defaultToken = result.tokens.find(
+				(t) => t.figmaName === "rounded/DEFAULT",
+			);
+			const mdToken = result.tokens.find(
+				(t) => t.figmaName === "rounded/md",
+			);
+			expect(
+				defaultToken?.value,
+				`anchor=${anchor}: DEFAULT should equal md`,
+			).toBe(mdToken?.value);
+		}
 	});
 
 	test("generates typescale tokens in primitives with responsive variants", () => {

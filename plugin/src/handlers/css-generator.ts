@@ -288,6 +288,7 @@ async function valueToCSS(
 			}
 			// Unitless values: z-index, font weights
 			if (
+				firstSeg === "z" ||
 				firstSeg === "zlayer" ||
 				firstSeg === "z-index" ||
 				firstSeg === "zindex" ||
@@ -518,14 +519,16 @@ function modeToSelector(modeName: string): string {
  * all variables (aliases) or map to --color-* (semantics).
  */
 const TAILWIND_THEME_PREFIXES = [
-	"--spacing-",
 	"--color-",
 	"--shadow-",
 	"--blur-",
 	"--breakpoint-",
-	"--container-",
 	"--ease-",
 	"--duration-",
+	// Note: --spacing-*, --size-*, --container-*, --rounded-* are intentionally
+	// omitted — Tailwind v4 has built-in defaults for these namespaces and
+	// re-registering them in @theme inline can cause overriding complications.
+	// They remain available as plain CSS vars in :root for reference.
 ];
 
 /**
@@ -1127,8 +1130,8 @@ async function generateRadiusCSS(): Promise<CSSFile | null> {
 		const lines: string[] = [];
 
 		lines.push("@theme inline {");
-		lines.push("  /* Tailwind default: `rounded` class */");
-		lines.push("  --radius: calc(4px * var(--radius-multiplier));");
+		lines.push("  /* Tailwind default: `rounded` class (matches md) */");
+		lines.push(`  --radius: calc((var(--corner-radius) - 2px) * var(--radius-multiplier));`);
 		lines.push("");
 		lines.push("  /* Lower Scale */");
 		lines.push(
@@ -1247,9 +1250,8 @@ export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExpo
 		primitivesExclude.push("--shadow-");
 		primitivesExclude.push("--blur-");
 	}
-	// Note: --rounded-* stays in primitives.css (actual variable values).
-	// radius.css is a computed Tailwind helper file (--radius-* with calc()),
-	// not a round-trippable export of the rounded variables.
+	// Note: --rounded-* stays in primitives :root as reference CSS vars.
+	// radius.css provides the dynamic --radius-* calc() versions for Tailwind.
 
 	// Check if typescales will be generated — if so, exclude raw typescale
 	// primitives (--font-typescale-*) since typescales.css resolves them into
