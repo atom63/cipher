@@ -1,6 +1,6 @@
 @theme inline {
-  /* Tailwind default: `rounded` class */
-  --radius: calc(4px * var(--radius-multiplier));
+  /* Tailwind default: `rounded` class (matches md) */
+  --radius: calc((var(--corner-radius) - 2px) * var(--radius-multiplier));
 
   /* Lower Scale */
   --radius-2xs: calc((var(--corner-radius) - 8px) * var(--radius-multiplier));
