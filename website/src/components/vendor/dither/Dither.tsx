@@ -1,5 +1,6 @@
-import { useRef, useEffect, forwardRef } from 'react';
+import { useRef, useEffect, forwardRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { motion, useMotionValue, useSpring } from 'motion/react';
 import { EffectComposer, wrapEffect } from '@react-three/postprocessing';
 import { Effect } from 'postprocessing';
 import * as THREE from 'three';
@@ -297,6 +298,10 @@ interface DitherProps {
   disableAnimation?: boolean;
   enableMouseInteraction?: boolean;
   mouseRadius?: number;
+  /** Target opacity (0–1). Fades in on mount to avoid flash. */
+  opacity?: number;
+  /** Fade-in duration in ms. @default 1000 */
+  fadeDuration?: number;
 }
 
 export default function Dither({
@@ -308,26 +313,48 @@ export default function Dither({
   pixelSize = 2,
   disableAnimation = false,
   enableMouseInteraction = true,
-  mouseRadius = 1
+  mouseRadius = 1,
+  opacity = 1,
+  fadeDuration = 1000,
 }: DitherProps) {
+  const [ready, setReady] = useState(false);
+  const motionOpacity = useSpring(0, {
+    stiffness: 20,
+    damping: 30,
+    mass: 1,
+  });
+
+  useEffect(() => {
+    if (ready) {
+      // Small delay to let the first frame paint before fading in
+      const timer = setTimeout(() => motionOpacity.set(opacity), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [ready, opacity, motionOpacity]);
+
   return (
-    <Canvas
+    <motion.div
       className="dither-container"
-      camera={{ position: [0, 0, 6] }}
-      dpr={1}
-      gl={{ antialias: true, preserveDrawingBuffer: true }}
+      style={{ opacity: motionOpacity }}
     >
-      <DitheredWaves
-        waveSpeed={waveSpeed}
-        waveFrequency={waveFrequency}
-        waveAmplitude={waveAmplitude}
-        waveColor={waveColor}
-        colorNum={colorNum}
-        pixelSize={pixelSize}
-        disableAnimation={disableAnimation}
-        enableMouseInteraction={enableMouseInteraction}
-        mouseRadius={mouseRadius}
-      />
-    </Canvas>
+      <Canvas
+        camera={{ position: [0, 0, 6] }}
+        dpr={1}
+        gl={{ antialias: true, preserveDrawingBuffer: true }}
+        onCreated={() => setReady(true)}
+      >
+        <DitheredWaves
+          waveSpeed={waveSpeed}
+          waveFrequency={waveFrequency}
+          waveAmplitude={waveAmplitude}
+          waveColor={waveColor}
+          colorNum={colorNum}
+          pixelSize={pixelSize}
+          disableAnimation={disableAnimation}
+          enableMouseInteraction={enableMouseInteraction}
+          mouseRadius={mouseRadius}
+        />
+      </Canvas>
+    </motion.div>
   );
 }

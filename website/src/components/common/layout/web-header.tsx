@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/common/theme/theme-toggle";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AnimatedLogo } from "../icon/cipher/app-logo";
 import Container from "./container";
@@ -9,7 +8,6 @@ import Container from "./container";
 interface WebHeaderProps {
   className?: string;
 }
-
 
 export default function WebHeader({ className }: WebHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
@@ -34,9 +32,9 @@ export default function WebHeader({ className }: WebHeaderProps) {
       className={cn(
         "sticky top-0 z-50 transition-[border-color] duration-300 ease-out",
         scrolled
-          ? "border-border/40 border-b"
-          : "border-transparent border-b",
-        className
+          ? "border-b border-border/40"
+          : "border-b border-transparent",
+        className,
       )}
     >
       <Container maxWidth="narrower" padding="all">
@@ -48,15 +46,7 @@ export default function WebHeader({ className }: WebHeaderProps) {
             <AnimatedLogo colored height={24} />
           </Link>
 
-          <nav className="flex items-center gap-1">
-            <Button asChild variant="ghost" size="sm" withMotion={false}>
-              <Link to="/">Plugin</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" withMotion={false}>
-              <Link to="/preview">Preview UI</Link>
-            </Button>
-            <ThemeToggle size="icon-sm" />
-          </nav>
+          <ThemeToggle size="icon-sm" />
         </div>
       </Container>
     </header>
