@@ -43,7 +43,7 @@ export function HeroSection() {
             </p>
           </FadeUp>
 
-           <FadeUp delay={0.2}>
+          <FadeUp delay={0.2}>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-muted-foreground/60 text-xs uppercase tracking-wide">
               <span>Local-only</span>
               <span className="text-border">·</span>
@@ -55,14 +55,14 @@ export function HeroSection() {
 
           <FadeUp delay={0.2}>
             <div className="mt-8 sm:mt-10">
-              <RichButton size="lg">
-                Install plugin
-                <ArrowRight className="size-4" />
-              </RichButton>
+              <a href="https://www.figma.com/community/plugin/1613643367110247078" rel="noopener noreferrer" target="_blank">
+                <RichButton size="lg">
+                  Install plugin
+                  <ArrowRight className="size-4" />
+                </RichButton>
+              </a>
             </div>
           </FadeUp>
-
-         
         </div>
       </Container>
     </Section>

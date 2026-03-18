@@ -24,10 +24,12 @@ export function CtaSection() {
 
           <FadeUp delay={0.1}>
             <div className="mt-8 sm:mt-10">
-              <RichButton size="lg">
-                Install plugin
-                <ArrowRight className="size-4" />
-              </RichButton>
+              <a href="https://www.figma.com/community/plugin/1613643367110247078" rel="noopener noreferrer" target="_blank">
+                <RichButton size="lg">
+                  Install plugin
+                  <ArrowRight className="size-4" />
+                </RichButton>
+              </a>
             </div>
           </FadeUp>
 

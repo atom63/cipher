@@ -15,7 +15,7 @@ export function WebFooter({ className }: FooterProps) {
   const email = socialsByName.email;
 
   return (
-    <footer className={cn("border-border/40 border-t", className)}>
+    <footer className={cn("", className)}>
       <Container maxWidth="narrower" padding="all">
         <div className="flex flex-wrap items-center justify-between gap-4 py-2 text-muted-foreground/50 text-xs">
           <span>

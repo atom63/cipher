@@ -27,42 +27,43 @@ export function ThemeToggle({ size = "icon" }: ThemeToggleProps) {
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          className="relative"
-          size={size}
-          variant="ghost"
-          onClick={toggleTheme}
-        >
-          {/* Sun icon - visible in dark mode */}
-          <motion.span
-          animate={{
-            opacity: isDark ? 1 : 0,
-            scale: isDark ? 1 : 0.5,
-            rotate: isDark ? 0 : -90,
-          }}
-          className="absolute"
-          initial={false}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-        >
-          <Sun className="size-4" />
-        </motion.span>
-
-        {/* Moon icon - visible in light mode */}
-        <motion.span
-          animate={{
-            opacity: isDark ? 0 : 1,
-            scale: isDark ? 0.5 : 1,
-            rotate: isDark ? 90 : 0,
-          }}
-          className="absolute"
-          initial={false}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-        >
-          <Moon className="size-4" />
-        </motion.span>
-        </Button>
-      </TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <Button
+            className="relative"
+            size={size}
+            variant="ghost"
+            onClick={toggleTheme}
+          >
+            {/* Sun icon - visible in dark mode */}
+            <motion.span
+              animate={{
+                opacity: isDark ? 1 : 0,
+                scale: isDark ? 1 : 0.5,
+                rotate: isDark ? 0 : -90,
+              }}
+              className="absolute"
+              initial={false}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <Sun className="size-4" />
+            </motion.span>
+            {/* Moon icon - visible in light mode */}
+            <motion.span
+              animate={{
+                opacity: isDark ? 0 : 1,
+                scale: isDark ? 0.5 : 1,
+                rotate: isDark ? 90 : 0,
+              }}
+              className="absolute"
+              initial={false}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <Moon className="size-4" />
+            </motion.span>
+          </Button>
+        }
+      />
       <TooltipContent side="right">
         {isDark ? "Light mode" : "Dark mode"}
       </TooltipContent>

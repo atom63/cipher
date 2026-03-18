@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/common/theme/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AnimatedLogo } from "../icon/cipher/app-logo";
 import Container from "./container";
@@ -9,8 +10,6 @@ interface WebHeaderProps {
   className?: string;
 }
 
-const navLinkClass =
-  "rounded-sm px-1 py-0.5 text-sm text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export default function WebHeader({ className }: WebHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
@@ -33,10 +32,10 @@ export default function WebHeader({ className }: WebHeaderProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 backdrop-blur-xl transition-[background-color,border-color] duration-300 ease-out",
+        "sticky top-0 z-50 transition-[border-color] duration-300 ease-out",
         scrolled
-          ? "border-border/40 border-b bg-background/80"
-          : "border-transparent border-b bg-transparent",
+          ? "border-border/40 border-b"
+          : "border-transparent border-b",
         className
       )}
     >
@@ -49,21 +48,13 @@ export default function WebHeader({ className }: WebHeaderProps) {
             <AnimatedLogo colored height={24} />
           </Link>
 
-          <nav className="flex items-center gap-4">
-            <Link
-              activeProps={{ className: "text-foreground" }}
-              className={navLinkClass}
-              to="/"
-            >
-              Plugin
-            </Link>
-            <Link
-              activeProps={{ className: "text-foreground" }}
-              className={navLinkClass}
-              to="/preview"
-            >
-              Preview UI
-            </Link>
+          <nav className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm" withMotion={false}>
+              <Link to="/">Plugin</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" withMotion={false}>
+              <Link to="/preview">Preview UI</Link>
+            </Button>
             <ThemeToggle size="icon-sm" />
           </nav>
         </div>
