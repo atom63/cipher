@@ -3,7 +3,7 @@
   "extends": ["ultracite/biome/core", "ultracite/biome/react"],
   "files": {
     "ignoreUnknown": false,
-    "includes": ["!scripts", "!src/components/ui"]
+    "includes": ["!scripts", "!src/components/ui", "!src/components/vendor"]
   },
   "overrides": [
     {
