@@ -151,7 +151,7 @@ tokens/
   primitives.css      — Raw values (colors, spacing, typography, radius)
   aliases.css         — Semantic mappings with @theme inline
   semantics.css       — Context-aware tokens (Light/Dark modes)
-  typescales.css      — Responsive typography with breakpoints
+  typography.css      — Font families, weights, and responsive typescales
   shadow-tokens.css   — Shadow elevation tokens
   radius.css          — Border radius tokens
   index.css           — Imports all token files

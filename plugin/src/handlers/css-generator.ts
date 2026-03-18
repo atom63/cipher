@@ -586,7 +586,6 @@ async function generateThemeInline(
 	lines.push("@theme inline {");
 
 	const entries: string[] = [];
-	const fontEntries: string[] = [];
 
 	for (const variable of variables) {
 		const varName = toVarName(variable.name, variable.resolvedType, colName);
@@ -632,14 +631,6 @@ async function generateThemeInline(
 			// Other collections (aliases, etc.): register all
 			entries.push(`  ${varName}: var(${varName});`);
 		}
-
-		// Detect font family variables and add --font-sans/serif/mono mappings
-		if (isFontFamilyVariable(variable.name)) {
-			const twKey = inferTailwindFontKey(variable.name);
-			if (twKey) {
-				fontEntries.push(`  --font-${twKey}: var(${varName});`);
-			}
-		}
 	}
 
 	// Sort alphabetically by variable name for consistent output
@@ -651,14 +642,6 @@ async function generateThemeInline(
 
 	for (const entry of entries) {
 		lines.push(entry);
-	}
-
-	// Font family utilities (--font-sans, --font-serif, --font-mono)
-	if (fontEntries.length > 0) {
-		lines.push("");
-		for (const entry of fontEntries) {
-			lines.push(entry);
-		}
 	}
 
 	lines.push("}");
@@ -798,7 +781,7 @@ async function generateEffectsCSS(
 }
 
 // ============================================================================
-// TYPESCALES FROM RESPONSIVE TYPOGRAPHY VARIABLES
+// TYPOGRAPHY: TYPESCALES + FONT FAMILY + FONT WEIGHT
 // ============================================================================
 
 /**
@@ -845,29 +828,162 @@ const TYPESCALE_ORDER = [
 ];
 
 /**
- * Generate typescales.css from the responsive collection's typography variables.
- * Resolves variable references to get actual px values, wraps in calc() with
- * --typography-scale multiplier, and generates:
- *   1. @theme inline mapping --text-* → --typography-* for Tailwind v4
- *   2. Responsive :root + @media blocks (deltas only)
- *   3. [data-window-size] selectors for Figma plugin context
+ * Map typescale names → HTML elements for @layer base.
+ * Sorts scales by resolved font-size (largest → h1, smallest → small),
+ * detects "body"/"base" for p/h6, and "callout" for blockquote.
  */
-async function generateTypescalesCSS(): Promise<CSSFile | null> {
+function generateBaseTypographyStyles(
+	scaleNames: string[],
+	baseValues: Map<string, string>,
+): string[] {
+	if (scaleNames.length < 3) return [];
+
+	// Extract px sizes from calc(Npx * var(...)) for sorting
+	const scaleWithSize: { name: string; px: number }[] = [];
+	for (const name of scaleNames) {
+		const val = baseValues.get(`--typography-${name}-font-size`);
+		if (!val) continue;
+		const pxMatch = val.match(/calc\((\d+(?:\.\d+)?)px/);
+		if (pxMatch) {
+			scaleWithSize.push({ name, px: Number.parseFloat(pxMatch[1]) });
+		}
+	}
+	scaleWithSize.sort((a, b) => b.px - a.px);
+
+	if (scaleWithSize.length < 3) return [];
+
+	// Find body/base scale — prefer named match, fall back to median
+	const bodyIndex = scaleWithSize.findIndex(
+		(s) => s.name === "body" || s.name === "base",
+	);
+	const bodyScale =
+		bodyIndex >= 0
+			? scaleWithSize[bodyIndex]
+			: scaleWithSize[Math.floor(scaleWithSize.length * 0.6)];
+	const bodyName = bodyScale.name;
+	const bodyPx = bodyScale.px;
+
+	// Heading scales: everything larger than body, capped at 5
+	const headingScales = scaleWithSize
+		.filter((s) => s.px > bodyPx)
+		.slice(0, 5);
+
+	// Small scale: smallest that's below body
+	const smallScale = scaleWithSize
+		.filter((s) => s.px < bodyPx)
+		.pop();
+
+	// Callout: look for a named "callout" scale, or the scale just below body
+	const calloutScale =
+		scaleWithSize.find((s) => s.name.includes("callout")) ??
+		scaleWithSize.find((s) => s.px < bodyPx && s !== smallScale) ??
+		null;
+
+	const el = (tag: string, scaleName: string, extra?: string) => {
+		const out = [
+			`  ${tag} {`,
+			`    font-size: var(--typography-${scaleName}-font-size);`,
+		];
+		if (extra) out.push(`    ${extra}`);
+		out.push(`    line-height: var(--typography-${scaleName}-line-height);`);
+		out.push("  }");
+		return out;
+	};
+
+	const lines: string[] = [];
+	lines.push("/* Base Typography Styles */");
+	lines.push("@layer base {");
+
+	for (let i = 0; i < headingScales.length; i++) {
+		lines.push(...el(`h${i + 1}`, headingScales[i].name));
+	}
+
+	// h6 — body size with bold weight
+	lines.push(...el("h6", bodyName, "font-weight: 600;"));
+
+	lines.push(...el("p", bodyName));
+
+	if (smallScale) {
+		lines.push(...el("small", smallScale.name));
+	}
+
+	if (calloutScale) {
+		lines.push(...el("blockquote", calloutScale.name));
+	}
+
+	lines.push("");
+	lines.push("  /* Typography Scale Classes — set --typography-scale per subtree */");
+	lines.push("  .text-scale-sm { --typography-scale: 0.8; }");
+	lines.push("  .text-scale-normal { --typography-scale: 1; }");
+	lines.push("  .text-scale-lg { --typography-scale: 1.2; }");
+	lines.push("  .text-scale-xl { --typography-scale: 1.4; }");
+
+	lines.push("}");
+	lines.push("");
+
+	return lines;
+}
+
+/**
+ * Generate typography.css — the single home for all type-related tokens:
+ *   - Font families (with CSS font stack fallbacks)
+ *   - Font weights
+ *   - Responsive typescales (font-size, line-height per breakpoint)
+ *
+ * Pulls font-family and font-weight variables from primitives, and
+ * responsive typescale variables from the responsive collection.
+ * Generates:
+ *   1. @theme inline mapping --font-*, --text-* for Tailwind v4
+ *   2. :root block with font families and weights
+ *   3. Responsive :root + @media blocks for typescales (deltas only)
+ *   4. [data-window-size] selectors for Figma plugin context
+ */
+async function generateTypographyCSS(
+	colorFormat: ColorFormat,
+	opacityMap: Map<string, number>,
+): Promise<CSSFile | null> {
 	try {
 		const collections = await figma.variables.getLocalVariableCollectionsAsync();
+
+		// --- Font family + font weight from primitives ---
+		const primitives = collections.find(
+			(c) => c.name.toLowerCase() === "primitives",
+		);
+		const fontFamilyVars: Variable[] = [];
+		const fontWeightVars: Variable[] = [];
+
+		if (primitives) {
+			const primVars = (await Promise.all(primitives.variableIds
+				.map((id) => figma.variables.getVariableByIdAsync(id))))
+				.filter((v): v is Variable => v !== null);
+
+			for (const v of primVars) {
+				if (isFontFamilyVariable(v.name)) {
+					fontFamilyVars.push(v);
+				} else if (v.name.toLowerCase().startsWith("font/weight/") || v.name.toLowerCase().startsWith("font-weight/")) {
+					fontWeightVars.push(v);
+				}
+			}
+		}
+
+		// --- Responsive typescales ---
 		const responsive = collections.find(
 			(c) => c.name.toLowerCase() === "responsive",
 		);
-		if (!responsive) return null;
 
-		const variables = (await Promise.all(responsive.variableIds
-			.map((id) => figma.variables.getVariableByIdAsync(id))))
-			.filter((v): v is Variable => v !== null);
+		let typoVars: Variable[] = [];
+		if (responsive) {
+			const variables = (await Promise.all(responsive.variableIds
+				.map((id) => figma.variables.getVariableByIdAsync(id))))
+				.filter((v): v is Variable => v !== null);
 
-		const typoVars = variables.filter((v) =>
-			v.name.toLowerCase().startsWith("typography/"),
-		);
-		if (typoVars.length === 0) return null;
+			typoVars = variables.filter((v) =>
+				v.name.toLowerCase().startsWith("typography/"),
+			);
+		}
+
+		// Need at least something to generate
+		if (fontFamilyVars.length === 0 && fontWeightVars.length === 0 && typoVars.length === 0) return null;
 
 		// Group by scale: { "base": { "font-size": Variable, "line-height": Variable }, ... }
 		const scales: Record<string, Record<string, Variable>> = {};
@@ -885,11 +1001,14 @@ async function generateTypescalesCSS(): Promise<CSSFile | null> {
 			const bi = TYPESCALE_ORDER.indexOf(b);
 			return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
 		});
-		if (scaleNames.length === 0) return null;
+
+		const hasTypescales = scaleNames.length > 0;
 
 		const modeIdMap: Record<string, string> = {};
-		for (const m of responsive.modes) {
-			modeIdMap[m.name] = m.modeId;
+		if (responsive) {
+			for (const m of responsive.modes) {
+				modeIdMap[m.name] = m.modeId;
+			}
 		}
 
 		const resolveToPixels = async (
@@ -962,101 +1081,175 @@ async function generateTypescalesCSS(): Promise<CSSFile | null> {
 				.sort()
 				.join("|");
 
-		// Resolve values for every breakpoint
-		const resolved = await Promise.all(TYPESCALE_BREAKPOINTS.map(async (bp) => ({
-			...bp,
-			values: await resolveMode(bp.mode),
-		})));
+		// Resolve typescale values for every breakpoint
+		const resolved = hasTypescales
+			? await Promise.all(TYPESCALE_BREAKPOINTS.map(async (bp) => ({
+					...bp,
+					values: await resolveMode(bp.mode),
+				})))
+			: [];
 
 		const lines: string[] = [];
+		let variableCount = 0;
 		lines.push(
-			"/* Responsive Typography — extracted from Figma responsive collection */",
-		);
-		lines.push(
-			"/* Supports viewport-based (@media) and window-based ([data-window-size]) */",
+			"/* Typography — font families, weights, and responsive typescales */",
 		);
 		lines.push("");
 
-		// @theme inline — register --text-* with Tailwind v4 so text-base, text-lg, etc. work
-		lines.push("@theme inline {");
-		for (const scale of scaleNames) {
-			if (scales[scale]["font-size"]) {
-				lines.push(
-					`  --text-${scale}: var(--typography-${scale}-font-size);`,
-				);
-			}
-			if (scales[scale]["line-height"]) {
-				lines.push(
-					`  --text-${scale}--line-height: var(--typography-${scale}-line-height);`,
-				);
+		// --- @theme inline for Tailwind v4 ---
+		const themeEntries: string[] = [];
+
+		// Global typography scale multiplier
+		if (hasTypescales) {
+			themeEntries.push("  --typography-scale: 1;");
+		}
+
+		// Font family → --font-sans, --font-serif, --font-mono
+		for (const v of fontFamilyVars) {
+			const varName = toVarName(v.name, v.resolvedType, "primitives");
+			const twKey = inferTailwindFontKey(v.name);
+			if (twKey) {
+				themeEntries.push(`  --font-${twKey}: var(${varName});`);
 			}
 		}
-		lines.push("}");
-		lines.push("");
 
-		// :root — base mobile values
-		lines.push(":root {");
-		emitMap("  ", resolved[0].values);
-		lines.push("}");
-		lines.push("");
+		// Typescale → --text-* mappings
+		if (hasTypescales) {
+			for (const scale of scaleNames) {
+				if (scales[scale]["font-size"]) {
+					themeEntries.push(
+						`  --text-${scale}: var(--typography-${scale}-font-size);`,
+					);
+				}
+				if (scales[scale]["line-height"]) {
+					themeEntries.push(
+						`  --text-${scale}--line-height: var(--typography-${scale}-line-height);`,
+					);
+				}
+			}
+		}
 
-		// @media queries — emit only values that changed from previous breakpoint
-		let previousMedia = resolved[0].values;
-		for (const bp of resolved.slice(1)) {
-			if (!bp.minWidth) continue;
-			const delta = getDelta(bp.values, previousMedia);
-			if (delta.size === 0) continue;
+		if (themeEntries.length > 0) {
+			lines.push("@theme inline {");
+			for (const entry of themeEntries) lines.push(entry);
+			lines.push("}");
+			lines.push("");
+		}
 
-			lines.push(`/* ${bp.description} */`);
-			lines.push(`@media (min-width: ${bp.minWidth}) {`);
-			lines.push("  :root {");
-			emitMap("    ", delta);
-			lines.push("  }");
+		// --- :root — font families and weights ---
+		const fontRootLines: string[] = [];
+		const primModeId = primitives?.modes[0]?.modeId;
+
+		if (primModeId !== undefined) {
+			for (const v of fontFamilyVars) {
+				const varName = toVarName(v.name, v.resolvedType, "primitives");
+				const cssValue = await valueToCSS(
+					v.valuesByMode[primModeId],
+					v,
+					colorFormat,
+					false,
+					opacityMap,
+					"primitives",
+				);
+				fontRootLines.push(`  ${varName}: ${cssValue};`);
+				variableCount++;
+			}
+			for (const v of fontWeightVars) {
+				const varName = toVarName(v.name, v.resolvedType, "primitives");
+				const cssValue = await valueToCSS(
+					v.valuesByMode[primModeId],
+					v,
+					colorFormat,
+					false,
+					opacityMap,
+					"primitives",
+				);
+				fontRootLines.push(`  ${varName}: ${cssValue};`);
+				variableCount++;
+			}
+		}
+
+		if (fontRootLines.length > 0) {
+			lines.push(":root {");
+			for (const line of fontRootLines) lines.push(line);
+			lines.push("}");
+			lines.push("");
+		}
+
+		// --- Responsive typescales ---
+		if (hasTypescales && resolved.length > 0) {
+			variableCount += typoVars.length;
+
+			// :root — base mobile values
+			lines.push(":root {");
+			emitMap("  ", resolved[0].values);
 			lines.push("}");
 			lines.push("");
 
-			previousMedia = bp.values;
-		}
+			// @media queries — emit only values that changed from previous breakpoint
+			let previousMedia = resolved[0].values;
+			for (const bp of resolved.slice(1)) {
+				if (!bp.minWidth) continue;
+				const delta = getDelta(bp.values, previousMedia);
+				if (delta.size === 0) continue;
 
-		// [data-window-size] — full override selectors for Figma plugin context.
-		// Group breakpoints that resolve to identical values into combined selectors.
-		const windowGroups: {
-			selectors: string[];
-			values: Map<string, string>;
-			descriptions: string[];
-		}[] = [];
+				lines.push(`/* ${bp.description} */`);
+				lines.push(`@media (min-width: ${bp.minWidth}) {`);
+				lines.push("  :root {");
+				emitMap("    ", delta);
+				lines.push("  }");
+				lines.push("}");
+				lines.push("");
 
-		for (const bp of resolved) {
-			const serialized = serializeMap(bp.values);
-			const existing = windowGroups.find(
-				(g) => serializeMap(g.values) === serialized,
-			);
-			if (existing) {
-				existing.selectors.push(`[data-window-size="${bp.name}"]`);
-				existing.descriptions.push(bp.description);
-			} else {
-				windowGroups.push({
-					selectors: [`[data-window-size="${bp.name}"]`],
-					values: bp.values,
-					descriptions: [bp.description],
-				});
+				previousMedia = bp.values;
 			}
-		}
 
-		for (const group of windowGroups) {
-			lines.push(
-				`/* Window-responsive: ${group.descriptions.join(" / ")} */`,
-			);
-			lines.push(`${group.selectors.join(",\n")} {`);
-			emitMap("  ", group.values);
-			lines.push("}");
-			lines.push("");
+			// [data-window-size] — full override selectors for Figma plugin context.
+			// Group breakpoints that resolve to identical values into combined selectors.
+			const windowGroups: {
+				selectors: string[];
+				values: Map<string, string>;
+				descriptions: string[];
+			}[] = [];
+
+			for (const bp of resolved) {
+				const serialized = serializeMap(bp.values);
+				const existing = windowGroups.find(
+					(g) => serializeMap(g.values) === serialized,
+				);
+				if (existing) {
+					existing.selectors.push(`[data-window-size="${bp.name}"]`);
+					existing.descriptions.push(bp.description);
+				} else {
+					windowGroups.push({
+						selectors: [`[data-window-size="${bp.name}"]`],
+						values: bp.values,
+						descriptions: [bp.description],
+					});
+				}
+			}
+
+			for (const group of windowGroups) {
+				lines.push(
+					`/* Window-responsive: ${group.descriptions.join(" / ")} */`,
+				);
+				lines.push(`${group.selectors.join(",\n")} {`);
+				emitMap("  ", group.values);
+				lines.push("}");
+				lines.push("");
+			}
+
+			// --- @layer base: element mappings + scale utilities ---
+			const baseLines = generateBaseTypographyStyles(scaleNames, resolved[0].values);
+			if (baseLines.length > 0) {
+				for (const line of baseLines) lines.push(line);
+			}
 		}
 
 		return {
-			name: "typescales.css",
+			name: "typography.css",
 			content: lines.join("\n"),
-			variableCount: typoVars.length,
+			variableCount,
 		};
 	} catch (_e) {
 		return null;
@@ -1203,6 +1396,7 @@ export {
 	toFontStack,
 	isFontFamilyVariable,
 	inferTailwindFontKey,
+	generateBaseTypographyStyles,
 };
 
 export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExportResult> {
@@ -1246,7 +1440,7 @@ export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExpo
 	const radiusFile = await generateRadiusCSS();
 
 	// Excluded from primitives entirely (both @theme inline and :root):
-	const primitivesExclude: string[] = ["--font-weight-"];
+	const primitivesExclude: string[] = [];
 	if (effectsFile) {
 		primitivesExclude.push("--shadow-");
 		primitivesExclude.push("--blur-");
@@ -1254,12 +1448,19 @@ export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExpo
 	// Note: --rounded-* stays in primitives :root as reference CSS vars.
 	// radius.css provides the dynamic --radius-* calc() versions for Tailwind.
 
-	// Check if typescales will be generated — if so, exclude raw typescale
-	// primitives (--font-typescale-*) since typescales.css resolves them into
-	// the responsive --typography-* variables actually used in CSS.
-	// The import parser handles typescales.css → font/typescale/* reconstruction.
-	const typescaleFile = await generateTypescalesCSS();
-	if (typescaleFile) {
+	// Generate typography.css — consolidates font families, weights, and
+	// responsive typescales into a single file. Exclude all font-related
+	// prefixes from ALL collections to avoid duplication.
+	const typographyFile = await generateTypographyCSS(options.colorFormat, opacityMap);
+
+	// Font-related prefixes excluded from every collection when typography.css
+	// handles them — prevents font aliases in aliases.css duplicating typography.css.
+	const typographyExclude: string[] = [];
+	if (typographyFile) {
+		typographyExclude.push("--font-family-");
+		typographyExclude.push("--font-weight-");
+		primitivesExclude.push("--font-family-");
+		primitivesExclude.push("--font-weight-");
 		primitivesExclude.push("--font-typescale-");
 	}
 
@@ -1271,7 +1472,7 @@ export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExpo
 	for (const collection of sorted) {
 		const colLower = collection.name.toLowerCase();
 		// Skip the "responsive" collection — its typography variables are
-		// consumed by generateTypescalesCSS() which resolves aliases to px,
+		// consumed by generateTypographyCSS() which resolves aliases to px,
 		// adds @media queries, [data-window-size] selectors, and utility classes.
 		// Emitting it as a raw collection would duplicate data as var() aliases.
 		if (colLower === "responsive") continue;
@@ -1282,13 +1483,21 @@ export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExpo
 			continue;
 
 		const isPrimitives = colLower === "primitives";
+
+		// Build per-collection exclude list:
+		// - Primitives get full primitivesExclude (shadows, blurs, font-*)
+		// - All other collections get typographyExclude (font-family, font-weight)
+		const collectionExclude = isPrimitives
+			? primitivesExclude
+			: typographyExclude;
+
 		const file = await generateCollectionCSS(
 			collection,
 			options.colorFormat,
 			{
 				includeThemeInline: options.includeThemeInline,
 				includeColorMix: options.includeColorMix,
-				excludePrefixes: isPrimitives && primitivesExclude.length > 0 ? primitivesExclude : undefined,
+				excludePrefixes: collectionExclude.length > 0 ? collectionExclude : undefined,
 				rootExcludePrefixes: isPrimitives ? primitivesRootExclude : undefined,
 			},
 			opacityMap,
@@ -1303,9 +1512,9 @@ export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExpo
 		totalVariables += effectsFile.variableCount;
 	}
 
-	if (typescaleFile) {
-		files.push(typescaleFile);
-		totalVariables += typescaleFile.variableCount;
+	if (typographyFile) {
+		files.push(typographyFile);
+		totalVariables += typographyFile.variableCount;
 	}
 
 	if (radiusFile) {

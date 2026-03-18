@@ -426,32 +426,14 @@ describe("aliases", () => {
 		expect(names).toContain("z-layer/modal");
 	});
 
-	test("includes font family aliasaliases (primary/secondary/tertiary)", () => {
+	test("does not include font family aliases (typography.css owns fonts directly)", () => {
 		const result = generateDesignSystem(defaultConfig);
-		const absNames = result.tokens
+		const aliasNames = result.tokens
 			.filter((t) => t.category === "aliases")
 			.map((t) => t.figmaName);
-		expect(absNames).toContain("font/family/primary");
-		expect(absNames).toContain("font/family/secondary");
-		expect(absNames).toContain("font/family/tertiary");
-	});
-
-	test("font family aliases reference primitives", () => {
-		const result = generateDesignSystem(defaultConfig);
-		const primary = result.tokens.find(
-			(t) => t.category === "aliases" && t.figmaName === "font/family/primary",
-		);
-		expect(primary?.originalValue).toBe("{primitives.font.family.sans}");
-
-		const secondary = result.tokens.find(
-			(t) => t.category === "aliases" && t.figmaName === "font/family/secondary",
-		);
-		expect(secondary?.originalValue).toBe("{primitives.font.family.serif}");
-
-		const tertiary = result.tokens.find(
-			(t) => t.category === "aliases" && t.figmaName === "font/family/tertiary",
-		);
-		expect(tertiary?.originalValue).toBe("{primitives.font.family.mono}");
+		expect(aliasNames).not.toContain("font/family/primary");
+		expect(aliasNames).not.toContain("font/family/secondary");
+		expect(aliasNames).not.toContain("font/family/tertiary");
 	});
 
 	test("does not include font weight aliases (handled by Tailwind natively)", () => {

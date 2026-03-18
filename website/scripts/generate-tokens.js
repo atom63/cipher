@@ -1067,7 +1067,7 @@ for (const collectionName of collectionNames) {
   if (collectionName === "responsive") {
     const typographyCSS = generateResponsiveTypographyCSS();
     if (typographyCSS) {
-      const filename = "typescales.css";
+      const filename = "typography.css";
       const filepath = join(themePath, filename);
       writeFileSync(filepath, typographyCSS, "utf-8");
 
@@ -1135,7 +1135,7 @@ for (const collectionName of collectionNames) {
 // Warn about missing optional collections
 if (!collections.responsive || !tokens.tokens?.responsive?.typography) {
   console.warn(
-    'ℹ️  No "responsive" collection with typography tokens found in tokens.json — typescales.css was not generated.'
+    'ℹ️  No "responsive" collection with typography tokens found in tokens.json — typography.css was not generated.'
   );
   console.warn(
     "   Add a responsive collection with typography modes (mobile/tablet/desktop) to generate it."

@@ -622,44 +622,6 @@ function generateAliases(_config: BrandConfig): DesignToken[] {
 		);
 	}
 
-	// --- Font family aliases ---
-	tokens.push(
-		makeToken(
-			"font/family/primary",
-			"{primitives.font.family.sans}",
-			"aliases",
-			{
-				type: "string",
-				originalValue: "{primitives.font.family.sans}",
-				description: "Primary font family",
-			},
-		),
-	);
-	tokens.push(
-		makeToken(
-			"font/family/secondary",
-			"{primitives.font.family.serif}",
-			"aliases",
-			{
-				type: "string",
-				originalValue: "{primitives.font.family.serif}",
-				description: "Secondary font family",
-			},
-		),
-	);
-	tokens.push(
-		makeToken(
-			"font/family/tertiary",
-			"{primitives.font.family.mono}",
-			"aliases",
-			{
-				type: "string",
-				originalValue: "{primitives.font.family.mono}",
-				description: "Tertiary font family",
-			},
-		),
-	);
-
 	return tokens;
 }
 
@@ -1261,12 +1223,12 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 	}
 	styles.paint = { semantics: semanticPaint };
 
-	// --- Text styles: primary, secondary, tertiary (each font family) ---
+	// --- Text styles: sans, serif, mono (each font family) ---
 	// Each family gets regular + strong variants for every typescale step
 	const fontFamilies = [
-		{ key: "primary", fontName: fontNames.sans, familyVar: "font/family/primary", collection: "aliases" },
-		{ key: "secondary", fontName: fontNames.serif, familyVar: "font/family/secondary", collection: "aliases" },
-		{ key: "tertiary", fontName: fontNames.mono, familyVar: "font/family/tertiary", collection: "aliases" },
+		{ key: "sans", fontName: fontNames.sans, familyVar: "font/family/sans", collection: "primitives" },
+		{ key: "serif", fontName: fontNames.serif, familyVar: "font/family/serif", collection: "primitives" },
+		{ key: "mono", fontName: fontNames.mono, familyVar: "font/family/mono", collection: "primitives" },
 	];
 
 	const textStyles: Record<string, Record<string, any>> = {};

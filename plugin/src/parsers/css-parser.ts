@@ -29,13 +29,13 @@ export interface CSSParseResult {
 /** Known Cipher export file names → category.
  * Only includes files that can round-trip (actual variable values).
  * Computed files (radius.css) are skipped by FileImport.
- * typescales.css is mapped specially — its --typography-* vars are reverse-mapped
+ * typography.css is mapped specially — its --typography-* vars are reverse-mapped
  * to font/typescale/* primitives for Figma roundtrip. */
 const FILE_CATEGORY_MAP: Record<string, TokenCategory> = {
 	"primitives.css": "primitives",
 	"aliases.css": "aliases",
 	"semantics.css": "semantics",
-	"typescales.css": "primitives",
+	"typography.css": "primitives",
 };
 
 /** Fallback: selector-to-category when no file section is active */
@@ -49,7 +49,7 @@ const SELECTOR_CATEGORY_MAP: Record<string, TokenCategory> = {
 const SECTION_HEADER_RE = /\/\*\s*===\s*(.+?\.css)\s*===\s*\*\//g;
 
 /** Comment pattern: / * category — N variables * / */
-const CATEGORY_COMMENT_RE = /\/\*\s*(primitives|aliases|semantics|effects|typescales|radius)\b/;
+const CATEGORY_COMMENT_RE = /\/\*\s*(primitives|aliases|semantics|effects|typography|typescales|radius)\b/;
 
 /** Regex that finds selector blocks: selector { ... } */
 const BLOCK_RE = /([^{}]+)\{([^}]*)\}/g;
@@ -410,8 +410,8 @@ export function parseCSS(cssText: string): CSSParseResult {
 		// Skip @theme inline blocks
 		if (category === ("__skip__" as TokenCategory)) continue;
 
-		// typescales.css handling: determine responsive variant from selector
-		const isTypescaleFile = sectionFile === "typescales.css";
+		// typography.css handling: determine responsive variant from selector
+		const isTypescaleFile = sectionFile === "typography.css";
 		let typescaleVariant: string | null = null;
 		if (isTypescaleFile) {
 			const trimmedSel = selector.trim();
@@ -449,7 +449,7 @@ export function parseCSS(cssText: string): CSSParseResult {
 				continue;
 			}
 
-			// typescales.css: reverse-map --typography-{step}-{prop} to
+			// typography.css: reverse-map --typography-{step}-{prop} to
 			// font/typescale/{step}/{prop}/{variant} primitives
 			if (isTypescaleFile && typescaleVariant) {
 				const typoMatch = varName.match(TYPOGRAPHY_VAR_RE);
@@ -504,7 +504,7 @@ export function parseCSS(cssText: string): CSSParseResult {
 
 	// Deduplicate tokens with the same category + figmaName + modeName.
 	// This handles two cases:
-	// 1. Responsive CSS files (typescales.css) that repeat the same variables
+	// 1. Responsive CSS files (typography.css) that repeat the same variables
 	//    in multiple @media / [data-window-size] blocks — keep the base :root value
 	// 2. Semantic tokens keep both Light and Dark (different modeName = different key)
 	const seen = new Set<string>();

@@ -354,10 +354,10 @@ describe("value changes survive round-trip", () => {
 	});
 });
 
-describe("typescales.css reverse-mapping", () => {
+describe("typography.css reverse-mapping", () => {
 	test("maps --typography-* to font/typescale/* primitives per variant", () => {
 		const css = bundle({
-			"typescales.css": `
+			"typography.css": `
 :root {
   --typography-base-font-size: calc(14px * var(--typography-scale, 1));
   --typography-base-line-height: calc(21px * var(--typography-scale, 1));
@@ -421,7 +421,7 @@ describe("typescales.css reverse-mapping", () => {
 	test("works alongside primitives in a full bundle", () => {
 		const css = bundle({
 			"primitives.css": ":root { --spacing-4: 16px; --color-brand-500: rgba(0, 98, 255, 1); }",
-			"typescales.css": ":root { --typography-lg-font-size: calc(16px * var(--typography-scale, 1)); }",
+			"typography.css": ":root { --typography-lg-font-size: calc(16px * var(--typography-scale, 1)); }",
 		});
 
 		const result = parseCSS(css);

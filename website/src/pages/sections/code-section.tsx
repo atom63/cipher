@@ -104,11 +104,11 @@ const TOKEN_SNIPPETS: {
 }`,
   },
   {
-    id: "typescales",
-    label: "Type Scale",
-    file: "typescales.css",
+    id: "typography",
+    label: "Typography",
+    file: "typography.css",
     vars: 18,
-    code: `/* typescales.css — responsive typography */
+    code: `/* typography.css — font families, weights, and responsive typescales */
 
 :root {
   --typography-base-font-size: calc(14px * var(--scale, 1));

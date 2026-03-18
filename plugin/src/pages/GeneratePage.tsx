@@ -564,8 +564,8 @@ export function GeneratePage() {
 		const generatedStyleNames = collectGeneratedStyleNames(generated.styles);
 
 		// Only check styles whose names match generator patterns (group/key format)
-		// Generator creates: semantics/*, primary/*, secondary/*, tertiary/*, shadow/*, blur/*, backdrop-blur/*
-		const MANAGED_PREFIXES = ["semantics/", "primary/", "secondary/", "tertiary/", "shadow/", "blur/", "backdrop-blur/"];
+		// Generator creates: semantics/*, sans/*, serif/*, mono/*, shadow/*, blur/*, backdrop-blur/*
+		const MANAGED_PREFIXES = ["semantics/", "sans/", "serif/", "mono/", "shadow/", "blur/", "backdrop-blur/"];
 
 		return existingStyles.filter((s) => {
 			const isManaged = MANAGED_PREFIXES.some((p) => s.name.startsWith(p));

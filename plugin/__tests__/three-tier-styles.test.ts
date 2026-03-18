@@ -193,11 +193,11 @@ describe("generateStyles — paint", () => {
 // =========================================================================
 
 describe("generateStyles — text", () => {
-	test("text styles are nested under primary, secondary, tertiary", () => {
+	test("text styles are nested under sans, serif, mono", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
-		expect(styles.text).toHaveProperty("primary");
-		expect(styles.text).toHaveProperty("secondary");
-		expect(styles.text).toHaveProperty("tertiary");
+		expect(styles.text).toHaveProperty("sans");
+		expect(styles.text).toHaveProperty("serif");
+		expect(styles.text).toHaveProperty("mono");
 	});
 
 	test("text leaves have type 'text' and required font properties", () => {
@@ -219,7 +219,7 @@ describe("generateStyles — text", () => {
 
 		// 9 steps × 1 variant × 3 families = 27
 		const expectedSteps = ["5xl", "4xl", "3xl", "2xl", "xl", "lg", "base", "sm", "xs"];
-		for (const family of ["primary", "secondary", "tertiary"]) {
+		for (const family of ["sans", "serif", "mono"]) {
 			for (const step of expectedSteps) {
 				expect(names).toContain(`${family}/${step}`);
 			}
@@ -260,12 +260,12 @@ describe("generateStyles — text", () => {
 		}
 	});
 
-	test("each font family binds to its corresponding alias variable", () => {
+	test("each font family binds to its corresponding primitives variable", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
 		const familyMap: Record<string, string> = {
-			primary: "font/family/primary",
-			secondary: "font/family/secondary",
-			tertiary: "font/family/tertiary",
+			sans: "font/family/sans",
+			serif: "font/family/serif",
+			mono: "font/family/mono",
 		};
 
 		for (const [familyKey, varName] of Object.entries(familyMap)) {
@@ -274,7 +274,7 @@ describe("generateStyles — text", () => {
 			for (const leaf of leaves) {
 				expect(leaf.data.fontFamilyBoundVariable).toBeDefined();
 				expect(leaf.data.fontFamilyBoundVariable.variableName).toBe(varName);
-				expect(leaf.data.fontFamilyBoundVariable.collectionName).toBe("aliases");
+				expect(leaf.data.fontFamilyBoundVariable.collectionName).toBe("primitives");
 			}
 		}
 	});
@@ -287,13 +287,13 @@ describe("generateStyles — text", () => {
 		}
 	});
 
-	test("respects custom font family for primary", () => {
+	test("respects custom font family for sans", () => {
 		const config: BrandConfig = {
 			primary: "#3B82F6",
 			fonts: { sans: "Geist" },
 		};
 		const { styles } = generateDesignSystem(config);
-		const leaves = collectStyleLeaves(styles.text.primary);
+		const leaves = collectStyleLeaves(styles.text.sans);
 		for (const leaf of leaves) {
 			expect(leaf.data.fontFamily).toBe("Geist");
 		}

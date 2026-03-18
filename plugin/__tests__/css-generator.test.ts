@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
 	detectFontCategory,
+	generateBaseTypographyStyles,
 	inferTailwindFontKey,
 	isFontFamilyVariable,
 	isResponsiveMode,
@@ -360,5 +361,132 @@ describe("toFontStack", () => {
 		const stack = toFontStack("CustomFont", "font/family/custom");
 		expect(stack).toContain('"CustomFont"');
 		expect(stack).toContain("sans-serif");
+	});
+});
+
+// =========================================================================
+// generateBaseTypographyStyles — @layer base element mappings
+// =========================================================================
+
+describe("generateBaseTypographyStyles", () => {
+	/** Helper: build a baseValues map from scale → px entries */
+	function makeBaseValues(entries: Record<string, number>): Map<string, string> {
+		const map = new Map<string, string>();
+		for (const [scale, px] of Object.entries(entries)) {
+			map.set(`--typography-${scale}-font-size`, `calc(${px}px * var(--typography-scale, 1))`);
+			map.set(`--typography-${scale}-line-height`, `calc(${Math.round(px * 1.5)}px * var(--typography-scale, 1))`);
+		}
+		return map;
+	}
+
+	test("returns empty for fewer than 3 scales", () => {
+		const values = makeBaseValues({ base: 16, lg: 18 });
+		expect(generateBaseTypographyStyles(["base", "lg"], values)).toEqual([]);
+	});
+
+	test("generates @layer base with h1-h5, h6, p, small for t-shirt sizes", () => {
+		const values = makeBaseValues({
+			xs: 12, sm: 14, base: 16, lg: 18, xl: 20,
+			"2xl": 24, "3xl": 30, "4xl": 36, "5xl": 48,
+		});
+		const scaleNames = ["xs", "sm", "base", "lg", "xl", "2xl", "3xl", "4xl", "5xl"];
+		const lines = generateBaseTypographyStyles(scaleNames, values);
+		const output = lines.join("\n");
+
+		// Should have @layer base wrapper
+		expect(output).toContain("@layer base {");
+
+		// h1 should use the largest scale (5xl)
+		expect(output).toContain("h1 {");
+		expect(output).toContain("var(--typography-5xl-font-size)");
+
+		// h2 → 4xl
+		expect(output).toContain("h2 {");
+		expect(output).toContain("var(--typography-4xl-font-size)");
+
+		// p and h6 should use "base" (named match)
+		expect(output).toContain("p {");
+		expect(output).toContain("h6 {");
+		expect(output).toMatch(/h6\s*\{[^}]*var\(--typography-base-font-size\)/);
+		expect(output).toMatch(/h6\s*\{[^}]*font-weight: 600/);
+		expect(output).toMatch(/p\s*\{[^}]*var\(--typography-base-font-size\)/);
+
+		// small should use the smallest scale (xs)
+		expect(output).toContain("small {");
+		expect(output).toContain("var(--typography-xs-font-size)");
+
+		// Scale utility classes
+		expect(output).toContain(".text-scale-sm { --typography-scale: 0.8; }");
+		expect(output).toContain(".text-scale-normal { --typography-scale: 1; }");
+		expect(output).toContain(".text-scale-lg { --typography-scale: 1.2; }");
+		expect(output).toContain(".text-scale-xl { --typography-scale: 1.4; }");
+	});
+
+	test("maps Apple HIG names correctly by size order", () => {
+		const values = makeBaseValues({
+			"caption-2": 11,
+			"caption-1": 12,
+			callout: 14,
+			body: 16,
+			headline: 18,
+			"title-3": 20,
+			"title-2": 24,
+			"title-1": 28,
+			"large-title": 34,
+		});
+		const scaleNames = [
+			"caption-2", "caption-1", "callout", "body", "headline",
+			"title-3", "title-2", "title-1", "large-title",
+		];
+		const lines = generateBaseTypographyStyles(scaleNames, values);
+		const output = lines.join("\n");
+
+		// h1 → large-title (largest)
+		expect(output).toMatch(/h1\s*\{[^}]*var\(--typography-large-title-font-size\)/);
+
+		// p → body (named match)
+		expect(output).toMatch(/p\s*\{[^}]*var\(--typography-body-font-size\)/);
+
+		// h6 → body with font-weight: 600
+		expect(output).toMatch(/h6\s*\{[^}]*var\(--typography-body-font-size\)/);
+
+		// small → caption-2 (smallest)
+		expect(output).toMatch(/small\s*\{[^}]*var\(--typography-caption-2-font-size\)/);
+
+		// blockquote → callout (named match)
+		expect(output).toMatch(/blockquote\s*\{[^}]*var\(--typography-callout-font-size\)/);
+	});
+
+	test("handles exactly 3 scales gracefully", () => {
+		const values = makeBaseValues({ sm: 14, base: 16, lg: 20 });
+		const scaleNames = ["sm", "base", "lg"];
+		const lines = generateBaseTypographyStyles(scaleNames, values);
+		const output = lines.join("\n");
+
+		// Only 1 heading scale above base
+		expect(output).toContain("h1 {");
+		expect(output).toContain("var(--typography-lg-font-size)");
+
+		// p uses base
+		expect(output).toContain("p {");
+		expect(output).toMatch(/p\s*\{[^}]*var\(--typography-base-font-size\)/);
+
+		// small uses sm
+		expect(output).toContain("small {");
+		expect(output).toContain("var(--typography-sm-font-size)");
+	});
+
+	test("skips scales without resolved font-size values", () => {
+		const values = new Map<string, string>();
+		values.set("--typography-base-font-size", "calc(16px * var(--typography-scale, 1))");
+		values.set("--typography-base-line-height", "calc(24px * var(--typography-scale, 1))");
+		values.set("--typography-lg-font-size", "calc(20px * var(--typography-scale, 1))");
+		values.set("--typography-lg-line-height", "calc(30px * var(--typography-scale, 1))");
+		// "sm" has no font-size entry
+		values.set("--typography-sm-line-height", "calc(21px * var(--typography-scale, 1))");
+
+		// Only 2 resolvable scales → too few
+		const lines = generateBaseTypographyStyles(["sm", "base", "lg"], values);
+		expect(lines).toEqual([]);
 	});
 });

@@ -377,12 +377,6 @@ describe("edge cases", () => {
 			(t) => t.category === "primitives" && t.figmaName === "font/family/sans",
 		);
 		expect(sansPrim?.value).toBe("Geist");
-
-		// Aliases should reference primitives
-		const primaryAbs = result.tokens.find(
-			(t) => t.category === "aliases" && t.figmaName === "font/family/primary",
-		);
-		expect(primaryAbs?.originalValue).toBe("{primitives.font.family.sans}");
 	});
 
 	test("status colors generate full ramps (not single values)", () => {

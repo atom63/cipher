@@ -89,7 +89,7 @@ Cipher exports variables as:
 
 CSS export includes:
 
-- split files (`primitives.css`, `aliases.css`, `semantics.css`, `typescales.css`, `effects.css`, `radius.css`, `index.css`),
+- split files (`primitives.css`, `aliases.css`, `semantics.css`, `typography.css`, `effects.css`, `radius.css`, `index.css`),
 - selectable color formats (`oklch`, `hex`, `rgba`, `hsl`),
 - Tailwind v4 `@theme inline` blocks,
 - ZIP download and per-file copy/download.

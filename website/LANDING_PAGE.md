@@ -51,7 +51,7 @@ Download production-ready CSS organized into logical files — or copy individua
 - **primitives.css** — base colors, alphas, breakpoints
 - **aliases.css** — surface scales (light/dark 1–12), duration aliases, font families
 - **semantics.css** — UI tokens (--background, --foreground, --primary, etc.) with :root and .dark selectors
-- **typescales.css** — responsive font-size and line-height with @media queries
+- **typography.css** — font families, weights, and responsive typescales with @media queries
 - **effects.css** — layered shadow elevations and blur scale
 - **radius.css** — anchor-based radius with calc() multiplier
 - Tailwind CSS v4 `@theme inline` blocks included in every file
