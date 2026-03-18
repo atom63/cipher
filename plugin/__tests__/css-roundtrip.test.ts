@@ -158,7 +158,7 @@ describe("aliases round-trip", () => {
 
 	test("var() reference to z-layer preserves hyphenated segment", () => {
 		const css = bundle({
-			"aliases.css": `:root { --some-alias: var(--z-layer-modal); }`,
+			"aliases.css": ":root { --some-alias: var(--z-layer-modal); }",
 		});
 		const result = parseCSS(css);
 		const token = result.tokens.find((t) => t.figmaName === "some/alias");

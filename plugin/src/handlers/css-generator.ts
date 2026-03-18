@@ -1132,7 +1132,7 @@ async function generateRadiusCSS(): Promise<CSSFile | null> {
 
 		lines.push("@theme inline {");
 		lines.push("  /* Tailwind default: `rounded` class (matches md) */");
-		lines.push(`  --radius: calc((var(--corner-radius) - 2px) * var(--radius-multiplier));`);
+		lines.push("  --radius: calc((var(--corner-radius) - 2px) * var(--radius-multiplier));");
 		lines.push("");
 		lines.push("  /* Lower Scale */");
 		lines.push(

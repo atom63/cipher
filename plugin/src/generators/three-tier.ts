@@ -474,7 +474,7 @@ function generatePrimitives(config: BrandConfig): {
 		makeToken("rounded/DEFAULT", radiusDefault, "primitives", {
 			type: "borderRadius",
 			originalValue: `${radiusDefault}px`,
-			description: `Border radius default (bare \`rounded\` class, matches md)`,
+			description: "Border radius default (bare `rounded` class, matches md)",
 		}),
 	);
 
