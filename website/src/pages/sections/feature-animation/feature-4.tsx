@@ -73,7 +73,7 @@ export function ModernCssAnimation() {
         }}
       />
 
-      <svg className="relative z-10 size-full" viewBox="0 0 400 240">
+      <svg className="relative z-10 h-auto w-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 400 240">
         {/* LEFT: Design Tokens */}
         <rect
           fill="var(--card)"

@@ -132,7 +132,7 @@ export function GenerateAnimation() {
         }}
       />
 
-      <svg className="relative z-10 size-full" viewBox="0 0 400 240">
+      <svg className="relative z-10 h-auto w-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 400 240">
         {[...PATHS_IN, ...PATHS_OUT].map((d, i) => (
           <path
             d={d}
