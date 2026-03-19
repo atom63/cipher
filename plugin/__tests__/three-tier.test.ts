@@ -357,11 +357,11 @@ describe("aliases", () => {
 		const brandTokens = result.tokens.filter(
 			(t) =>
 				t.category === "primitives" &&
-				t.figmaName.startsWith("color/brand/primary/"),
+				t.figmaName.startsWith("color/brand-primary/"),
 		);
 		// 11 shades: 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950
 		expect(brandTokens.length).toBe(11);
-		expect(brandTokens.find((t) => t.figmaName === "color/brand/primary/500")).toBeDefined();
+		expect(brandTokens.find((t) => t.figmaName === "color/brand-primary/500")).toBeDefined();
 	});
 
 	test("includes status color primitives", () => {
@@ -403,16 +403,16 @@ describe("aliases", () => {
 			secondary: "#10B981",
 		});
 		const secondaryTokens = result.tokens.filter(
-			(t) => t.category === "primitives" && t.figmaName.startsWith("color/brand/secondary/"),
+			(t) => t.category === "primitives" && t.figmaName.startsWith("color/brand-secondary/"),
 		);
 		expect(secondaryTokens.length).toBe(11);
-		expect(secondaryTokens.find((t) => t.figmaName === "color/brand/secondary/500")).toBeDefined();
+		expect(secondaryTokens.find((t) => t.figmaName === "color/brand-secondary/500")).toBeDefined();
 	});
 
 	test("no secondary ramp without secondary color", () => {
 		const result = generateDesignSystem(defaultConfig);
 		const secondaryTokens = result.tokens.filter(
-			(t) => t.category === "primitives" && t.figmaName.startsWith("color/brand/secondary/"),
+			(t) => t.category === "primitives" && t.figmaName.startsWith("color/brand-secondary/"),
 		);
 		expect(secondaryTokens.length).toBe(0);
 	});
@@ -540,14 +540,15 @@ describe("semantics", () => {
 		}
 	});
 
-	test("includes brand-secondary when secondary provided", () => {
+	test("includes brand-secondary semantic when secondary provided", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
 			secondary: "#10B981",
 		});
 		const semantics = result.tokens.filter((t) => t.category === "semantics");
 		const names = semantics.map((t) => t.figmaName);
-		expect(names).toContain("brand-secondary");
+		// Legacy secondary → brand name "brand-secondary" → semantic "brand-brand-secondary"
+		expect(names.some((n) => n.includes("brand-secondary"))).toBe(true);
 	});
 
 	test("light and dark for forced-mode contexts", () => {
@@ -755,5 +756,185 @@ describe("token compatibility", () => {
 			expect(token.category).toBeTruthy();
 			expect(token.action).toBe("import");
 		}
+	});
+});
+
+// =========================================================================
+// Multi-palette: brandColors, surfaces, mapping
+// =========================================================================
+
+describe("multi-palette", () => {
+	const multiConfig: BrandConfig = {
+		primary: "#3B82F6",
+		brandColors: [
+			{ name: "blue", hex: "#3B82F6" },
+			{ name: "green", hex: "#10B981" },
+			{ name: "purple", hex: "#8B5CF6" },
+		],
+		surfaces: [
+			{ name: "slate", preset: "slate" },
+			{ name: "sand", preset: "sand" },
+		],
+		mapping: {
+			primaryBrand: "blue",
+			darkPrimaryBrand: "purple",
+			activeSurface: "slate",
+		},
+	};
+
+	test("generates ramps for all brand colors", () => {
+		const result = generateDesignSystem(multiConfig);
+		const primNames = result.tokens
+			.filter((t) => t.category === "primitives")
+			.map((t) => t.figmaName);
+
+		expect(primNames).toContain("color/blue/500");
+		expect(primNames).toContain("color/green/500");
+		expect(primNames).toContain("color/purple/500");
+
+		// Each brand should have 11 steps
+		const blueSteps = primNames.filter((n) => n.startsWith("color/blue/"));
+		expect(blueSteps.length).toBe(11);
+	});
+
+	test("generates surface ramps for all surfaces", () => {
+		const result = generateDesignSystem(multiConfig);
+		const primNames = result.tokens
+			.filter((t) => t.category === "primitives")
+			.map((t) => t.figmaName);
+
+		// Each surface should have light/dark 1-12
+		expect(primNames).toContain("color/slate/light/1");
+		expect(primNames).toContain("color/slate/dark/12");
+		expect(primNames).toContain("color/sand/light/1");
+		expect(primNames).toContain("color/sand/dark/12");
+
+		const slateSteps = primNames.filter((n) => n.startsWith("color/slate/"));
+		expect(slateSteps.length).toBe(24); // 12 light + 12 dark
+	});
+
+	test("aliases point to active surface", () => {
+		const result = generateDesignSystem(multiConfig);
+		const surfaceLight1 = result.tokens.find(
+			(t) => t.category === "aliases" && t.figmaName === "surface/light/1",
+		);
+		expect(surfaceLight1?.originalValue).toBe("{primitives.color.slate.light.1}");
+	});
+
+	test("semantic primary uses mapped brand", () => {
+		const result = generateDesignSystem(multiConfig);
+		const primaryLight = result.tokens.find(
+			(t) =>
+				t.category === "semantics" &&
+				t.figmaName === "primary" &&
+				(t as any).modeName === "Light",
+		);
+		expect(primaryLight?.originalValue).toBe("{primitives.color.blue.500}");
+	});
+
+	test("semantic primary dark uses darkPrimaryBrand", () => {
+		const result = generateDesignSystem(multiConfig);
+		const primaryDark = result.tokens.find(
+			(t) =>
+				t.category === "semantics" &&
+				t.figmaName === "primary" &&
+				(t as any).modeName === "Dark",
+		);
+		expect(primaryDark?.originalValue).toBe("{primitives.color.purple.500}");
+	});
+
+	test("chart colors distribute across brand palette", () => {
+		const result = generateDesignSystem(multiConfig);
+		const charts = result.tokens.filter(
+			(t) =>
+				t.category === "semantics" &&
+				t.figmaName.startsWith("chart-") &&
+				(t as any).modeName === "Light",
+		);
+		expect(charts.length).toBe(5);
+
+		const refs = charts.map((t) => t.originalValue);
+		expect(refs).toContain("{primitives.color.blue.500}");
+		expect(refs).toContain("{primitives.color.green.500}");
+		expect(refs).toContain("{primitives.color.purple.500}");
+	});
+
+	test("emits brand-* semantic tokens for non-primary brands", () => {
+		const result = generateDesignSystem(multiConfig);
+		const semanticNames = result.tokens
+			.filter((t) => t.category === "semantics")
+			.map((t) => t.figmaName);
+
+		// blue is primary, so no brand-blue
+		expect(semanticNames).not.toContain("brand-blue");
+		// green and purple get brand-* semantics
+		expect(semanticNames).toContain("brand-green");
+		expect(semanticNames).toContain("brand-purple");
+	});
+
+	test("backward compat: legacy config still works", () => {
+		const legacy: BrandConfig = {
+			primary: "#3B82F6",
+			secondary: "#10B981",
+			grayLight: "slate",
+			grayDark: "sand",
+		};
+		const result = generateDesignSystem(legacy);
+		const primNames = result.tokens
+			.filter((t) => t.category === "primitives")
+			.map((t) => t.figmaName);
+
+		expect(primNames).toContain("color/brand-primary/500");
+		expect(primNames).toContain("color/brand-secondary/500");
+		expect(primNames).toContain("color/gray/light/1");
+		expect(primNames).toContain("color/gray/dark/1");
+	});
+});
+
+// =========================================================================
+// CSS export: multi-palette
+// =========================================================================
+
+describe("generateCss — multi-palette", () => {
+	const multiConfig: BrandConfig = {
+		primary: "#3B82F6",
+		brandColors: [
+			{ name: "blue", hex: "#3B82F6" },
+			{ name: "green", hex: "#10B981" },
+		],
+		surfaces: [{ name: "slate", preset: "slate" }],
+		mapping: {
+			primaryBrand: "blue",
+			activeSurface: "slate",
+		},
+	};
+
+	test("CSS includes all brand ramps in @theme inline", () => {
+		const css = generateCss(multiConfig);
+		expect(css).toContain("--color-blue-500:");
+		expect(css).toContain("--color-green-500:");
+	});
+
+	test("CSS :root uses active surface name", () => {
+		const css = generateCss(multiConfig);
+		expect(css).toContain("--color-slate-1:");
+		expect(css).toContain("--color-slate-12:");
+	});
+
+	test("CSS .dark uses active surface name", () => {
+		const css = generateCss(multiConfig);
+		const darkBlock = css.split(".dark {")[1];
+		expect(darkBlock).toContain("--color-slate-");
+	});
+
+	test("CSS semantic --primary references mapped brand", () => {
+		const css = generateCss(multiConfig);
+		expect(css).toContain("--primary: var(--color-blue-500)");
+	});
+
+	test("backward compat: legacy config CSS uses brand-primary", () => {
+		const css = generateCss({ primary: "#3B82F6" });
+		expect(css).toContain("--color-brand-primary-500:");
+		expect(css).toContain("--color-gray-");
 	});
 });

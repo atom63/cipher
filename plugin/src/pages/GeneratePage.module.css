@@ -150,6 +150,22 @@
 	flex: 1;
 }
 
+.colorNameInput {
+	flex: 1;
+	min-width: 60px;
+}
+
+.mappingSelect {
+	width: 100%;
+	padding: var(--spacing-xs) var(--spacing-sm);
+	font-size: var(--text-sm);
+	color: var(--foreground);
+	background: var(--secondary);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	outline: none;
+}
+
 .optionGroup {
 	display: flex;
 	flex: 1;

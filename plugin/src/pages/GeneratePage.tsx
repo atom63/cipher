@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Dices, RefreshCw, Wand2 } from "lucide-react";
+import { Check, ChevronDown, Dices, RefreshCw, Wand2, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
@@ -13,15 +13,18 @@ import {
 	useToast,
 } from "../components/ui";
 import { Button } from "../components/ui/Button";
-import { Checkbox, CheckboxWithLabel } from "../components/ui/Checkbox";
+import { Checkbox } from "../components/ui/Checkbox";
 import { Dialog, DialogActions } from "../components/ui/Dialog";
 import { Input } from "../components/ui/Input";
 import { NumberField } from "../components/ui/NumberField";
-import { adjustSaturation, hexToRgb, oklchToRgb, rgbToHex, rgbToOklch, SHADE_STEPS } from "../generators/color-scale";
+import { adjustSaturation, generateNeutralScale, hexToRgb, oklchToRgb, rgbToHex, rgbToOklch, SHADE_STEPS } from "../generators/color-scale";
 import { RADIX_GRAYS } from "../generators/radix-grays";
 import {
 	type BrandConfig,
 	type GeneratedSystem,
+	type NamedBrandColor,
+	type NamedSurface,
+	type PaletteMapping,
 	generateDesignSystem,
 	type StatusColorOverrides,
 } from "../generators/three-tier";
@@ -44,13 +47,12 @@ type ViewState = "loading" | "config" | "progress" | "success";
 // ---------------------------------------------------------------------------
 
 interface ExtractedConfig {
+	brandColors: NamedBrandColor[];
 	fonts: FontOverrides;
-	grayDark: string;
-	grayLight: string;
-	primaryColor: string;
+	mapping: PaletteMapping;
 	radiusAnchor: number;
-	secondaryColor: string | null;
 	statusColors: StatusColorOverrides;
+	surfaces: NamedSurface[];
 	typescale: TypescaleConfig | null;
 }
 
@@ -90,57 +92,103 @@ function extractBrandConfig(
 				v.name === name,
 		);
 
-	// Try renamed paths first, fall back to legacy names
-	const primaryVar =
-		find("primitives", "color/brand/primary/500") ?? find("primitives", "color/brand-primary/500");
-	let primaryColor = "#3B82F6";
-	// Prefer original base hex from description to avoid OKLCH round-trip drift
-	const primaryBase = extractBaseHex(primaryVar);
-	if (primaryBase) {
-		primaryColor = primaryBase;
-	} else if (primaryVar) {
-		const firstMode = Object.keys(primaryVar.valuesByMode)[0];
-		if (firstMode) {
-			const hex = parseColorValue(primaryVar.valuesByMode[firstMode]);
-			if (hex) primaryColor = hex;
-		}
-	}
+	const primitives = variables.filter((v) =>
+		v.collectionName.toLowerCase().startsWith("primitives"),
+	);
 
-	const secondaryVar =
-		find("primitives", "color/brand/secondary/500") ?? find("primitives", "color/brand-secondary/500");
-	let secondaryColor: string | null = null;
-	const secondaryBase = extractBaseHex(secondaryVar);
-	if (secondaryBase) {
-		secondaryColor = secondaryBase;
-	} else if (secondaryVar) {
-		const firstMode = Object.keys(secondaryVar.valuesByMode)[0];
-		if (firstMode) {
-			secondaryColor = parseColorValue(secondaryVar.valuesByMode[firstMode]);
-		}
-	}
+	// --- Discover brand colors ---
+	// Look for color/{name}/{step} patterns where step is in SHADE_STEPS
+	const SHADE_STEPS_SET = new Set(["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"]);
+	const RESERVED_NAMES = new Set(["white", "black", "danger", "success", "warning", "info"]);
+	const brandMap = new Map<string, string>(); // name → base hex
 
-	// Detect light/dark surface tones from variable descriptions
-	let grayLight = "slate";
-	let grayDark = "slate";
-	const grayLightVar = find("primitives", "color/gray/light/1");
-	const grayDarkVar = find("primitives", "color/gray/dark/1");
-	if (grayLightVar?.description) {
-		for (const gray of RADIX_GRAYS) {
-			if (grayLightVar.description.toLowerCase().startsWith(gray.label.toLowerCase())) {
-				grayLight = gray.name;
-				break;
-			}
-		}
-	}
-	if (grayDarkVar?.description) {
-		for (const gray of RADIX_GRAYS) {
-			if (grayDarkVar.description.toLowerCase().startsWith(gray.label.toLowerCase())) {
-				grayDark = gray.name;
-				break;
+	for (const v of primitives) {
+		const match = v.name.match(/^color\/([^/]+)\/(\d+)$/);
+		if (!match) continue;
+		const [, name, step] = match;
+		if (!SHADE_STEPS_SET.has(step) || RESERVED_NAMES.has(name)) continue;
+		// Skip surface ramps (they have light/dark in the path)
+		if (v.name.includes("/light/") || v.name.includes("/dark/")) continue;
+		if (step === "500" && !brandMap.has(name)) {
+			const base = extractBaseHex(v);
+			if (base) {
+				brandMap.set(name, base);
+			} else {
+				const firstMode = Object.keys(v.valuesByMode)[0];
+				if (firstMode) {
+					const hex = parseColorValue(v.valuesByMode[firstMode]);
+					if (hex) brandMap.set(name, hex);
+				}
 			}
 		}
 	}
 
+	// Legacy fallback: check old paths
+	if (brandMap.size === 0) {
+		const legacyPrimary = find("primitives", "color/brand/primary/500");
+		if (legacyPrimary) {
+			const hex = extractBaseHex(legacyPrimary) ?? parseColorValue(Object.values(legacyPrimary.valuesByMode)[0] ?? "");
+			if (hex) brandMap.set("brand-primary", hex);
+		}
+		const legacySecondary = find("primitives", "color/brand/secondary/500");
+		if (legacySecondary) {
+			const hex = extractBaseHex(legacySecondary) ?? parseColorValue(Object.values(legacySecondary.valuesByMode)[0] ?? "");
+			if (hex) brandMap.set("brand-secondary", hex);
+		}
+	}
+
+	const brandColors: NamedBrandColor[] = [...brandMap.entries()].map(([name, hex]) => ({ name, hex }));
+	if (brandColors.length === 0) {
+		brandColors.push({ name: "brand-primary", hex: "#3B82F6" });
+	}
+
+	// --- Discover surfaces ---
+	// Look for color/{name}/light/{step} patterns
+	const surfaceNames = new Set<string>();
+	for (const v of primitives) {
+		const match = v.name.match(/^color\/([^/]+)\/light\/\d+$/);
+		if (match) surfaceNames.add(match[1]);
+	}
+
+	const surfaces: NamedSurface[] = [];
+	for (const name of surfaceNames) {
+		const step1 = find("primitives", `color/${name}/light/1`);
+		let preset: string | undefined;
+		if (step1?.description) {
+			for (const gray of RADIX_GRAYS) {
+				if (step1.description.toLowerCase().startsWith(gray.label.toLowerCase())) {
+					preset = gray.name;
+					break;
+				}
+			}
+		}
+		surfaces.push({ name, preset: preset ?? "slate" });
+	}
+	if (surfaces.length === 0) {
+		surfaces.push({ name: "gray", preset: "slate" });
+	}
+
+	// --- Mapping: detect which brand is primary from semantics ---
+	const semantics = variables.filter((v) =>
+		v.collectionName.toLowerCase().startsWith("semantics"),
+	);
+	const primarySemantic = semantics.find((v) => v.name === "primary");
+	let primaryBrand = brandColors[0].name;
+	if (primarySemantic) {
+		const ref = Object.values(primarySemantic.valuesByMode)[0] ?? "";
+		// Reference like {primitives.color.blue.500} or {color.blue.500}
+		const refMatch = ref.match(/color[./]([^./]+)[./]500/);
+		if (refMatch && brandMap.has(refMatch[1])) {
+			primaryBrand = refMatch[1];
+		}
+	}
+
+	const mapping: PaletteMapping = {
+		primaryBrand,
+		activeSurface: surfaces[0].name,
+	};
+
+	// --- Radius ---
 	let radiusAnchor = 10;
 	const radiusVar = find("primitives", "rounded/lg");
 	if (radiusVar) {
@@ -151,6 +199,7 @@ function extractBrandConfig(
 		}
 	}
 
+	// --- Fonts ---
 	const fonts: FontOverrides = {};
 	const sansVar = find("primitives", "font/family/sans");
 	const serifVar = find("primitives", "font/family/serif");
@@ -303,10 +352,9 @@ function extractBrandConfig(
 	}
 
 	return {
-		primaryColor,
-		secondaryColor,
-		grayLight,
-		grayDark,
+		brandColors,
+		surfaces,
+		mapping,
 		radiusAnchor,
 		fonts,
 		statusColors,
@@ -324,15 +372,19 @@ export function GeneratePage() {
 	const postMessage = usePostMessage();
 	const { showError } = useToast();
 
-	// Config state
-	const [primaryColor, setPrimaryColor] = useState("#3B82F6");
-	const [secondaryColor, setSecondaryColor] = useState("#10B981");
-	const [hasSecondary, setHasSecondary] = useState(false);
-	const [secondaryAsDarkPrimary, setSecondaryAsDarkPrimary] = useState(false);
-	const [grayLight, setGrayLight] = useState("slate");
-	const [grayDark, setGrayDark] = useState("slate");
-	const [grayLightHex, setGrayLightHex] = useState("");
-	const [grayDarkHex, setGrayDarkHex] = useState("");
+	// Config state — palette
+	const [brandColors, setBrandColors] = useState<NamedBrandColor[]>([
+		{ name: "brand-primary", hex: "#3B82F6" },
+	]);
+	const [surfaces, setSurfaces] = useState<NamedSurface[]>([
+		{ name: "gray", preset: "slate" },
+	]);
+	const [mapping, setMapping] = useState<PaletteMapping>({
+		primaryBrand: "brand-primary",
+		activeSurface: "gray",
+	});
+
+	// Config state — other
 	const [radiusAnchor, setRadiusAnchor] = useState(10);
 	const [typescale, setTypescale] = useState<TypescaleConfig>({
 		...DEFAULT_TYPESCALE,
@@ -347,6 +399,46 @@ export function GeneratePage() {
 	const [surfaceHueBlend, setSurfaceHueBlend] = useState(0);
 	const [surfaceHueShift, setSurfaceHueShift] = useState(0);
 	const [surfaceBrightness, setSurfaceBrightness] = useState(0);
+
+	// Helpers for palette manipulation
+	const updateBrand = useCallback((index: number, update: Partial<NamedBrandColor>) => {
+		setBrandColors((prev) => {
+			const next = [...prev];
+			next[index] = { ...next[index], ...update };
+			return next;
+		});
+	}, []);
+
+	const addBrand = useCallback(() => {
+		const hue = Math.random() * 360;
+		const hex = rgbToHex(oklchToRgb({ l: 0.65 + Math.random() * 0.13, c: 0.16 + Math.random() * 0.1, h: hue })).toUpperCase();
+		const name = `color-${brandColors.length + 1}`;
+		setBrandColors((prev) => [...prev, { name, hex }]);
+	}, [brandColors.length]);
+
+	const removeBrand = useCallback((index: number) => {
+		setBrandColors((prev) => {
+			const next = prev.filter((_, i) => i !== index);
+			if (next.length === 0) next.push({ name: "brand-primary", hex: "#3B82F6" });
+			return next;
+		});
+	}, []);
+
+	const addSurface = useCallback(() => {
+		const presets = RADIX_GRAYS.map((g) => g.name);
+		const used = new Set(surfaces.map((s) => s.preset));
+		const available = presets.find((p) => !used.has(p)) ?? presets[0];
+		const name = `surface-${surfaces.length + 1}`;
+		setSurfaces((prev) => [...prev, { name, preset: available }]);
+	}, [surfaces]);
+
+	const removeSurface = useCallback((index: number) => {
+		setSurfaces((prev) => {
+			const next = prev.filter((_, i) => i !== index);
+			if (next.length === 0) next.push({ name: "gray", preset: "slate" });
+			return next;
+		});
+	}, []);
 
 	// Result state
 	const [result, setResult] = useState<ImportResults | null>(null);
@@ -401,15 +493,9 @@ export function GeneratePage() {
 					setIsUpdate(true);
 					const extracted = extractBrandConfig(data.variables, data.collections);
 					if (extracted) {
-						setPrimaryColor(extracted.primaryColor);
-						if (extracted.secondaryColor) {
-							setSecondaryColor(extracted.secondaryColor);
-							setHasSecondary(true);
-						} else {
-							setHasSecondary(false);
-						}
-						setGrayLight(extracted.grayLight);
-						setGrayDark(extracted.grayDark);
+						setBrandColors(extracted.brandColors);
+						setSurfaces(extracted.surfaces);
+						setMapping(extracted.mapping);
 						setRadiusAnchor(extracted.radiusAnchor);
 						if (extracted.fonts.sans || extracted.fonts.serif || extracted.fonts.mono) {
 							setFonts({
@@ -458,26 +544,19 @@ export function GeneratePage() {
 
 	// Build config object
 	const brandConfig: BrandConfig | null = useMemo(() => {
-		if (!/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(primaryColor)) return null;
-		if (
-			hasSecondary &&
-			!/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(secondaryColor)
-		)
-			return null;
+		const validHex = (h: string) => /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(h);
+		// Validate all brand colors
+		if (!brandColors.every((b) => validHex(b.hex))) return null;
+		if (brandColors.length === 0) return null;
 
 		const hasStatusOverrides =
 			statusColors.danger || statusColors.success || statusColors.warning || statusColors.info;
 
-		const validHex = (h: string) => /^#[0-9a-fA-F]{6}$/.test(h);
-
 		return {
-			primary: primaryColor,
-			secondary: hasSecondary ? secondaryColor : undefined,
-			grayLight,
-			grayDark,
-			grayLightHex: validHex(grayLightHex) ? grayLightHex : undefined,
-			grayDarkHex: validHex(grayDarkHex) ? grayDarkHex : undefined,
-			darkMode: true,
+			primary: brandColors[0].hex, // backward compat field
+			brandColors,
+			surfaces,
+			mapping,
 			radius: radiusAnchor,
 			typescale,
 			fonts,
@@ -486,17 +565,11 @@ export function GeneratePage() {
 			surfaceHueBlend: surfaceHueBlend !== 0 ? surfaceHueBlend : undefined,
 			surfaceHueShift: surfaceHueShift !== 0 ? surfaceHueShift : undefined,
 			surfaceBrightness: surfaceBrightness !== 0 ? surfaceBrightness : undefined,
-			secondaryAsDarkPrimary: hasSecondary && secondaryAsDarkPrimary ? true : undefined,
 		};
 	}, [
-		primaryColor,
-		secondaryColor,
-		hasSecondary,
-		secondaryAsDarkPrimary,
-		grayLight,
-		grayDark,
-		grayLightHex,
-		grayDarkHex,
+		brandColors,
+		surfaces,
+		mapping,
 		radiusAnchor,
 		typescale,
 		fonts,
@@ -664,20 +737,27 @@ export function GeneratePage() {
 		const randHex = (l: number, c: number, h: number) =>
 			rgbToHex(oklchToRgb({ l, c, h })).toUpperCase();
 
-		// Primary: bright, punchy color (L 0.65–0.78, high chroma)
-		const primaryHue = Math.random() * 360;
-		setPrimaryColor(randHex(0.65 + Math.random() * 0.13, 0.16 + Math.random() * 0.10, primaryHue));
+		// Randomize all brand colors with offset hues
+		const baseHue = Math.random() * 360;
+		setBrandColors((prev) =>
+			prev.map((b, i) => ({
+				...b,
+				hex: randHex(
+					0.65 + Math.random() * 0.13,
+					0.14 + Math.random() * 0.1,
+					(baseHue + i * (120 + Math.random() * 60)) % 360,
+				),
+			})),
+		);
 
-		// Secondary: offset 60–180° from primary, similarly bright
-		const secondaryHue = (primaryHue + 60 + Math.random() * 120) % 360;
-		setSecondaryColor(randHex(0.65 + Math.random() * 0.13, 0.14 + Math.random() * 0.10, secondaryHue));
-		setHasSecondary(true);
-
-		// Surface: random Radix preset per mode
-		setGrayLight(RADIX_GRAYS[Math.floor(Math.random() * RADIX_GRAYS.length)].name);
-		setGrayDark(RADIX_GRAYS[Math.floor(Math.random() * RADIX_GRAYS.length)].name);
-		setGrayLightHex("");
-		setGrayDarkHex("");
+		// Randomize surface presets
+		setSurfaces((prev) =>
+			prev.map((s) => ({
+				...s,
+				preset: RADIX_GRAYS[Math.floor(Math.random() * RADIX_GRAYS.length)].name,
+				hex: undefined,
+			})),
+		);
 
 		// Status: semantic hue ranges, bright and clean
 		const ranges: Record<string, [number, number]> = {
@@ -853,100 +933,107 @@ export function GeneratePage() {
 					<div className={styles.configSection}>
 						{/* ── Brand Colors ── */}
 						<Frame>
-							<FrameHeader><h3 className={styles.sectionTitle}>Brand Colors</h3></FrameHeader>
+							<FrameHeader>
+								<h3 className={styles.sectionTitle}>Brand Colors</h3>
+								<Button onClick={addBrand} size="sm" variant="ghost">
+									+ Add
+								</Button>
+							</FrameHeader>
 							<FramePanel className={styles.sectionContent}>
-								<div className={styles.fieldGroup}>
-									<label>Brand primary</label>
-									<div className={styles.colorInputRow}>
-										<input
-											aria-label="Primary color picker"
-											className={styles.colorSwatch}
-											onChange={(e) => setPrimaryColor(e.target.value)}
-											type="color"
-											value={primaryColor}
-										/>
-										<Input
-											autoComplete="off"
-											className={styles.colorHexInput}
-											maxLength={7}
-											onChange={(e) => {
-												let v = e.target.value;
-												if (!v.startsWith("#")) v = `#${v}`;
-												if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
-													setPrimaryColor(v.toUpperCase());
-											}}
-											placeholder="#3B82F6"
-											spellCheck={false}
-											value={primaryColor}
-										/>
-									</div>
-									{generated && (
-										<ColorRampPreview
-											inputHex={primaryColor}
-											scale={generated.primitives.find(
-												(s) => s.name === "brand-primary",
-											)}
-										/>
-									)}
-								</div>
-
-								<Separator />
-
-								<div className={styles.fieldGroup}>
-									<CheckboxWithLabel
-										checked={hasSecondary}
-										id="has-secondary"
-										label="Include brand secondary"
-										onChange={setHasSecondary}
-									/>
-									{hasSecondary && (
-										<>
-											<div className={styles.colorInputRow}>
-												<input
-													aria-label="Secondary color picker"
-													className={styles.colorSwatch}
-													onChange={(e) => setSecondaryColor(e.target.value)}
-													type="color"
-													value={secondaryColor}
-												/>
-												<Input
-													autoComplete="off"
-													className={styles.colorHexInput}
-													maxLength={7}
-													onChange={(e) => {
-														let v = e.target.value;
-														if (!v.startsWith("#")) v = `#${v}`;
-														if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
-															setSecondaryColor(v.toUpperCase());
-													}}
-													placeholder="#10B981"
-													spellCheck={false}
-													value={secondaryColor}
-												/>
-											</div>
-											{generated && (
-												<ColorRampPreview
-													inputHex={secondaryColor}
-													scale={generated.primitives.find(
-														(s) => s.name === "brand-secondary",
-													)}
-												/>
-											)}
-											<CheckboxWithLabel
-												checked={secondaryAsDarkPrimary}
-												id="secondary-dark-primary"
-												label="Use as primary in dark mode"
-												onChange={setSecondaryAsDarkPrimary}
+								{brandColors.map((brand, index) => (
+									<div className={styles.fieldGroup} key={`brand-${index}`}>
+										<div className={styles.colorInputRow}>
+											<input
+												aria-label={`${brand.name} color picker`}
+												className={styles.colorSwatch}
+												onChange={(e) => updateBrand(index, { hex: e.target.value })}
+												type="color"
+												value={brand.hex}
 											/>
-											{secondaryAsDarkPrimary && (
-												<span className={styles.hint}>
-													Semantic --primary will reference brand secondary in dark mode
-												</span>
+											<Input
+												autoComplete="off"
+												className={styles.colorHexInput}
+												maxLength={7}
+												onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+													let v = e.target.value;
+													if (!v.startsWith("#")) v = `#${v}`;
+													if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
+														updateBrand(index, { hex: v.toUpperCase() });
+												}}
+												placeholder="#3B82F6"
+												spellCheck={false}
+												value={brand.hex}
+											/>
+											<Input
+												autoComplete="off"
+												className={styles.colorNameInput}
+												onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+													updateBrand(index, { name: e.target.value.replace(/[^a-zA-Z0-9-]/g, "") })
+												}
+												placeholder="name"
+												spellCheck={false}
+												value={brand.name}
+											/>
+											{brandColors.length > 1 && (
+												<Button
+													onClick={() => removeBrand(index)}
+													size="icon-sm"
+													variant="ghost"
+												>
+													<X size={12} />
+												</Button>
 											)}
-										</>
-									)}
-								</div>
+										</div>
+										{generated && (
+											<ColorRampPreview
+												inputHex={brand.hex}
+												scale={generated.primitives.find(
+													(s) => s.name === brand.name,
+												)}
+											/>
+										)}
+										{index < brandColors.length - 1 && <Separator />}
+									</div>
+								))}
 
+								{/* Mapping: which brand → primary */}
+								{brandColors.length > 1 && (
+									<>
+										<Separator />
+										<div className={styles.fieldGroup}>
+											<label>Primary brand</label>
+											<select
+												className={styles.mappingSelect}
+												onChange={(e) => setMapping((m) => ({ ...m, primaryBrand: e.target.value }))}
+												value={mapping.primaryBrand}
+											>
+												{brandColors.map((b) => (
+													<option key={b.name} value={b.name}>{b.name}</option>
+												))}
+											</select>
+										</div>
+										<div className={styles.fieldGroup}>
+											<label>Dark mode primary</label>
+											<select
+												className={styles.mappingSelect}
+												onChange={(e) =>
+													setMapping((m) => ({
+														...m,
+														darkPrimaryBrand: e.target.value === m.primaryBrand ? undefined : e.target.value,
+													}))
+												}
+												value={mapping.darkPrimaryBrand ?? mapping.primaryBrand}
+											>
+												{brandColors.map((b) => (
+													<option key={b.name} value={b.name}>{b.name}</option>
+												))}
+											</select>
+											<span className={styles.hint}>
+												Which brand color maps to --primary in dark mode
+											</span>
+										</div>
+									</>
+								)}
 							</FramePanel>
 						</Frame>
 
@@ -954,21 +1041,26 @@ export function GeneratePage() {
 						<Frame>
 							<FrameHeader className={styles.sectionTitleFrame}>
 								<h3 className={styles.sectionTitle}>Surface Colors</h3>
-								{(surfaceSaturation !== 100 || surfaceHueBlend !== 0 || surfaceHueShift !== 0 || surfaceBrightness !== 0) && (
-									<Button
-										onClick={() => {
-											setSurfaceSaturation(100);
-											setSurfaceHueBlend(0);
-											setSurfaceHueShift(0);
-											setSurfaceBrightness(0);
-										}}
-										size="sm"
-										variant="secondary"
-									>
-										<RefreshCw size={12} />
-										Reset
+								<div style={{ display: "flex", gap: "var(--spacing-xs)", alignItems: "center" }}>
+									{(surfaceSaturation !== 100 || surfaceHueBlend !== 0 || surfaceHueShift !== 0 || surfaceBrightness !== 0) && (
+										<Button
+											onClick={() => {
+												setSurfaceSaturation(100);
+												setSurfaceHueBlend(0);
+												setSurfaceHueShift(0);
+												setSurfaceBrightness(0);
+											}}
+											size="sm"
+											variant="secondary"
+										>
+											<RefreshCw size={12} />
+											Reset
+										</Button>
+									)}
+									<Button onClick={addSurface} size="sm" variant="ghost">
+										+ Add
 									</Button>
-								)}
+								</div>
 							</FrameHeader>
 							<FramePanel className={styles.sectionContent}>
 								<div className={styles.surfaceSliderGrid}>
@@ -1026,36 +1118,85 @@ export function GeneratePage() {
 									</div>
 								</div>
 								<Separator />
-								<div className={styles.surfaceToneColumns}>
-									<SurfaceToneSelector
-										brightness={surfaceBrightness}
-										customHex={grayLightHex}
-										generated={generated}
-										hueBlend={surfaceHueBlend}
-										hueShift={surfaceHueShift}
-										label="Light"
-										mode="light"
-										onChangeHex={setGrayLightHex}
-										onChangePreset={setGrayLight}
-										preset={grayLight}
-										primaryColor={primaryColor}
-										saturation={surfaceSaturation}
-									/>
-									<SurfaceToneSelector
-										brightness={surfaceBrightness}
-										customHex={grayDarkHex}
-										generated={generated}
-										hueBlend={surfaceHueBlend}
-										hueShift={surfaceHueShift}
-										label="Dark"
-										mode="dark"
-										onChangeHex={setGrayDarkHex}
-										onChangePreset={setGrayDark}
-										preset={grayDark}
-										primaryColor={hasSecondary && secondaryAsDarkPrimary ? secondaryColor : primaryColor}
-										saturation={surfaceSaturation}
-									/>
-								</div>
+								{surfaces.map((surface, index) => (
+									<div key={`surface-${index}`}>
+										<div className={styles.fieldGroup}>
+											<div className={styles.colorInputRow}>
+												<Input
+													autoComplete="off"
+													className={styles.colorNameInput}
+													onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+														setSurfaces((prev) => {
+															const next = [...prev];
+															next[index] = { ...next[index], name: e.target.value.replace(/[^a-zA-Z0-9-]/g, "") };
+															return next;
+														})
+													}
+													placeholder="name"
+													spellCheck={false}
+													value={surface.name}
+												/>
+												{surfaces.length > 1 && (
+													<Button
+														onClick={() => removeSurface(index)}
+														size="icon-sm"
+														variant="ghost"
+													>
+														<X size={12} />
+													</Button>
+												)}
+											</div>
+										</div>
+										<SurfaceToneSelector
+											brightness={surfaceBrightness}
+											customHex={surface.hex ?? ""}
+											hueBlend={surfaceHueBlend}
+											hueShift={surfaceHueShift}
+											label={surface.name}
+											mode="light"
+											onChangeHex={(hex) =>
+												setSurfaces((prev) => {
+													const next = [...prev];
+													next[index] = { ...next[index], hex: hex || undefined };
+													return next;
+												})
+											}
+											onChangePreset={(preset) =>
+												setSurfaces((prev) => {
+													const next = [...prev];
+													next[index] = { ...next[index], preset, hex: undefined };
+													return next;
+												})
+											}
+											preset={surface.preset ?? "slate"}
+											primaryColor={brandColors.find((b) => b.name === mapping.primaryBrand)?.hex ?? brandColors[0].hex}
+											saturation={surfaceSaturation}
+										/>
+										{index < surfaces.length - 1 && <Separator />}
+									</div>
+								))}
+
+								{/* Active surface mapping */}
+								{surfaces.length > 1 && (
+									<>
+										<Separator />
+										<div className={styles.fieldGroup}>
+											<label>Active surface</label>
+											<select
+												className={styles.mappingSelect}
+												onChange={(e) => setMapping((m) => ({ ...m, activeSurface: e.target.value }))}
+												value={mapping.activeSurface}
+											>
+												{surfaces.map((s) => (
+													<option key={s.name} value={s.name}>{s.name}</option>
+												))}
+											</select>
+											<span className={styles.hint}>
+												Which surface maps to --background, --card, etc.
+											</span>
+										</div>
+									</>
+								)}
 							</FramePanel>
 						</Frame>
 
@@ -1428,7 +1569,6 @@ function SurfaceToneSelector({
 	mode,
 	preset,
 	customHex,
-	generated,
 	onChangePreset,
 	onChangeHex,
 	saturation = 100,
@@ -1441,7 +1581,6 @@ function SurfaceToneSelector({
 	mode: "light" | "dark";
 	preset: string;
 	customHex: string;
-	generated: GeneratedSystem | null;
 	onChangePreset: (name: string) => void;
 	onChangeHex: (hex: string) => void;
 	saturation?: number;
@@ -1456,14 +1595,19 @@ function SurfaceToneSelector({
 	const adjustOpts = { hueShift, primaryBlend: hueBlend / 100, primaryHue, brightness: brightness / 100 };
 	const isCustom = /^#[0-9a-fA-F]{6}$/.test(customHex);
 
-	// Preview colors: use generated neutral scale when available
-	// (custom hex always, or Radix presets when saturation is adjusted)
-	const generatedColors = generated
-		? (mode === "light"
-			? generated.neutralScaleLight?.light
-			: generated.neutralScaleDark?.dark)
-		: undefined;
-	const previewColors = (isCustom || generatedColors) ? generatedColors : undefined;
+	// Preview colors for custom hex: compute locally from the hex + adjustments
+	// (don't use generated system preview which only holds the active surface)
+	const customPreviewColors = useMemo(() => {
+		if (!isCustom) return undefined;
+		const scale = generateNeutralScale(customHex, {
+			saturation: satMul,
+			hueShift,
+			primaryBlend: hueBlend / 100,
+			primaryHue,
+			brightness: brightness / 100,
+		});
+		return mode === "light" ? scale?.light : scale?.dark;
+	}, [isCustom, customHex, satMul, hueShift, hueBlend, primaryHue, brightness, mode]);
 
 	return (
 		<div className={styles.fieldGroup}>
@@ -1505,9 +1649,9 @@ function SurfaceToneSelector({
 					Your color's hue will be used to tint a neutral surface ramp
 				</span>
 			)}
-			{isCustom && previewColors && (
+			{isCustom && customPreviewColors && (
 				<div className={styles.grayPreview}>
-					{previewColors.map((hex, i) => (
+					{customPreviewColors.map((hex, i) => (
 						<div
 							className={styles.grayStep}
 							key={i}
