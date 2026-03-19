@@ -1173,7 +1173,7 @@ export function GeneratePage() {
 												</div>
 												<NeutralPresetStrip
 													customHex={neutral.hex}
-													onChange={(name) => updateNeutral(index, { preset: name, hex: undefined })}
+													onChange={(presetName) => updateNeutral(index, { preset: presetName, hex: undefined, name: presetName })}
 													surfaceAdjust={{ saturation: surfaceSaturation, brightness: surfaceBrightness }}
 													value={preset}
 												/>
@@ -1189,11 +1189,13 @@ export function GeneratePage() {
 							<FrameHeader><h3 className={styles.sectionTitle}>Aliases & Semantics</h3></FrameHeader>
 							<FramePanel className={styles.sectionContent}>
 								{/* Surface alias: which neutral for light/dark */}
-								<div className={styles.fieldGroup}>
-									<label>Surface</label>
-									<span className={styles.hint}>
-										Which neutral ramp to use for backgrounds, cards, and borders.
-									</span>
+								<div className={styles.mappingGroup}>
+									<div className={styles.mappingGroupHeader}>
+										<label>Surface</label>
+										<span className={styles.hint}>
+											Neutral ramp for backgrounds, cards, and borders.
+										</span>
+									</div>
 									<div className={styles.mappingRow}>
 										<div className={styles.mappingCol}>
 											<span className={styles.mappingLabel}>Light</span>
@@ -1228,11 +1230,13 @@ export function GeneratePage() {
 								<Separator />
 
 								{/* Primary semantic: which accent for light/dark */}
-								<div className={styles.fieldGroup}>
-									<label>Primary</label>
-									<span className={styles.hint}>
-										Which accent color to use for primary actions and interactive elements.
-									</span>
+								<div className={styles.mappingGroup}>
+									<div className={styles.mappingGroupHeader}>
+										<label>Primary</label>
+										<span className={styles.hint}>
+											Accent color for primary actions and interactive elements.
+										</span>
+									</div>
 									<div className={styles.mappingRow}>
 										<div className={styles.mappingCol}>
 											<span className={styles.mappingLabel}>Light</span>
