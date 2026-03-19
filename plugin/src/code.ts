@@ -394,13 +394,13 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 				try {
 					let style: BaseStyle | null = null;
 					if (category === "paint")
-						style = figma.getStyleById(id) as PaintStyle | null;
+						style = await figma.getStyleByIdAsync(id) as PaintStyle | null;
 					else if (category === "text")
-						style = figma.getStyleById(id) as TextStyle | null;
+						style = await figma.getStyleByIdAsync(id) as TextStyle | null;
 					else if (category === "effect")
-						style = figma.getStyleById(id) as EffectStyle | null;
+						style = await figma.getStyleByIdAsync(id) as EffectStyle | null;
 					else if (category === "grid")
-						style = figma.getStyleById(id) as GridStyle | null;
+						style = await figma.getStyleByIdAsync(id) as GridStyle | null;
 					if (style) {
 						style.remove();
 						success++;
@@ -427,7 +427,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			let failed = 0;
 			for (const { id, newName } of renames) {
 				try {
-					const style = figma.getStyleById(id);
+					const style = await figma.getStyleByIdAsync(id);
 					if (style) {
 						style.name = newName;
 						success++;
@@ -455,7 +455,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			const newStyleIds: string[] = [];
 			for (const id of styleIds) {
 				try {
-					const style = figma.getStyleById(id);
+					const style = await figma.getStyleByIdAsync(id);
 					if (!style) {
 						failed++;
 						continue;
@@ -524,7 +524,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			let failed = 0;
 			for (const edit of edits) {
 				try {
-					const style = figma.getStyleById(edit.styleId);
+					const style = await figma.getStyleByIdAsync(edit.styleId);
 					if (!style) {
 						failed++;
 						continue;
@@ -606,6 +606,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 		case "scan-rebind": {
 			const { styleIds } = msg.data;
+			try {
 
 			// --- Build variable lookup maps ---
 
@@ -821,7 +822,8 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 			// --- Scan styles ---
 
 			for (const styleId of styleIds) {
-				const style = figma.getStyleById(styleId);
+				try {
+				const style = await figma.getStyleByIdAsync(styleId);
 				if (!style) continue;
 
 				if (style.type === "PAINT") {
@@ -915,8 +917,8 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 					const styleName = textStyle.name;
 
 					// fontSize — path-based: e.g. "typography/large-title" → "typography/large-title/font/size"
-					if (!bv.fontSize) {
-						const size = textStyle.fontSize as number;
+					if (!bv.fontSize && typeof textStyle.fontSize === "number") {
+						const size = textStyle.fontSize;
 						const result = findFloatVar(size, styleName, "font/size");
 						if (result) {
 							suggestions.push({
@@ -957,23 +959,42 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 					// fontFamily — path-based, then fallback to any "family" variable
 					if (!bv.fontFamily) {
-						const family = textStyle.fontName.family;
-						const result = findStringVar(
-							family,
-							styleName,
-							"font/family",
-							"family",
-						);
-						if (result) {
-							suggestions.push({
-								styleId,
+						const family = textStyle.fontName?.family;
+						if (family) {
+							const result = findStringVar(
+								family,
 								styleName,
-								field: "fontFamily",
-								currentValue: family,
-								suggestedVariableId: result.var.id,
-								suggestedVariableName: result.var.name,
-								matchType: result.type,
-							});
+								"font/family",
+								"family",
+							);
+							if (result) {
+								suggestions.push({
+									styleId,
+									styleName,
+									field: "fontFamily",
+									currentValue: family,
+									suggestedVariableId: result.var.id,
+									suggestedVariableName: result.var.name,
+									matchType: result.type,
+								});
+							} else {
+								// Try direct value match across all string variables
+								// (handles cases where variable name doesn't contain "family")
+								const directMatch = varStringMap.find((v) =>
+									v.values.some((val) => val.toLowerCase() === family.toLowerCase()),
+								);
+								if (directMatch) {
+									suggestions.push({
+										styleId,
+										styleName,
+										field: "fontFamily",
+										currentValue: family,
+										suggestedVariableId: directMatch.id,
+										suggestedVariableName: directMatch.name,
+										matchType: "name",
+									});
+								}
+							}
 						}
 					}
 
@@ -1023,12 +1044,22 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 						}
 					}
 				}
+				} catch (styleErr) {
+					console.warn("scan-rebind: skipping style", styleId, styleErr);
+				}
 			}
 
 			figma.ui.postMessage({
 				type: "rebind-suggestions",
 				data: { suggestions },
 			});
+			} catch (err) {
+				console.error("scan-rebind error:", err);
+				figma.ui.postMessage({
+					type: "rebind-suggestions",
+					data: { suggestions: [] },
+				});
+			}
 			break;
 		}
 
@@ -1040,7 +1071,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			for (const { styleId, field, variableId } of bindings) {
 				try {
-					const style = figma.getStyleById(styleId);
+					const style = await figma.getStyleByIdAsync(styleId);
 					const variable = await figma.variables.getVariableByIdAsync(variableId);
 					if (!(style && variable)) {
 						failed++;
@@ -1158,7 +1189,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 			for (const { styleId, field } of bindings) {
 				try {
-					const style = figma.getStyleById(styleId);
+					const style = await figma.getStyleByIdAsync(styleId);
 					if (!style) {
 						failed++;
 						continue;
