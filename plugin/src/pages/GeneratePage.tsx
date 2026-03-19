@@ -473,8 +473,17 @@ export function GeneratePage() {
 	// Helpers for accent/neutral manipulation
 	const updateAccent = useCallback((index: number, update: Partial<NamedBrandColor>) => {
 		setAccentColors((prev) => {
+			const oldName = prev[index].name;
 			const next = [...prev];
 			next[index] = { ...next[index], ...update };
+			// Keep mapping in sync when name changes
+			if (update.name && update.name !== oldName) {
+				setMapping((m) => ({
+					...m,
+					primaryBrand: m.primaryBrand === oldName ? update.name! : m.primaryBrand,
+					darkPrimaryBrand: m.darkPrimaryBrand === oldName ? update.name! : m.darkPrimaryBrand,
+				}));
+			}
 			return next;
 		});
 	}, []);
@@ -488,16 +497,32 @@ export function GeneratePage() {
 
 	const removeAccent = useCallback((index: number) => {
 		setAccentColors((prev) => {
+			const removed = prev[index].name;
 			const next = prev.filter((_, i) => i !== index);
 			if (next.length === 0) next.push({ name: "blue", hex: "#3B82F6" });
+			const fallback = next[0].name;
+			setMapping((m) => ({
+				...m,
+				primaryBrand: m.primaryBrand === removed ? fallback : m.primaryBrand,
+				darkPrimaryBrand: m.darkPrimaryBrand === removed ? fallback : m.darkPrimaryBrand,
+			}));
 			return next;
 		});
 	}, []);
 
 	const updateNeutral = useCallback((index: number, update: Partial<NamedSurface>) => {
 		setNeutralColors((prev) => {
+			const oldName = prev[index].name;
 			const next = [...prev];
 			next[index] = { ...next[index], ...update };
+			// Keep mapping in sync when name changes
+			if (update.name && update.name !== oldName) {
+				setMapping((m) => ({
+					...m,
+					activeSurface: m.activeSurface === oldName ? update.name! : m.activeSurface,
+					darkActiveSurface: m.darkActiveSurface === oldName ? update.name! : m.darkActiveSurface,
+				}));
+			}
 			return next;
 		});
 	}, []);
@@ -512,8 +537,15 @@ export function GeneratePage() {
 
 	const removeNeutral = useCallback((index: number) => {
 		setNeutralColors((prev) => {
+			const removed = prev[index].name;
 			const next = prev.filter((_, i) => i !== index);
 			if (next.length === 0) next.push({ name: "n1", preset: "slate" });
+			const fallback = next[0].name;
+			setMapping((m) => ({
+				...m,
+				activeSurface: m.activeSurface === removed ? fallback : m.activeSurface,
+				darkActiveSurface: m.darkActiveSurface === removed ? fallback : m.darkActiveSurface,
+			}));
 			return next;
 		});
 	}, []);

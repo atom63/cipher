@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GridProvider } from "@/contexts/grid-context";
 import { PasswordGate } from "@/contexts/password-gate";
+import { PersonalizationProvider } from "@/contexts/personalization-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { useDebugMode } from "@/hooks/use-debug-mode";
 import { usePageMeta } from "@/hooks/use-page-meta";
@@ -42,7 +43,9 @@ function RootComponent() {
 
   return (
     <ThemeProvider>
-      <RootInner location={location} />
+      <PersonalizationProvider>
+        <RootInner location={location} />
+      </PersonalizationProvider>
     </ThemeProvider>
   );
 }

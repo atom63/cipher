@@ -998,18 +998,6 @@ function buildSemanticDefs(
 		},
 	];
 
-	// --- Brand accent tokens (one per non-primary brand) ---
-	for (const brand of allBrandNames) {
-		if (brand === primaryBrandName) continue;
-		const ref = `{primitives.color.${brand}.500}`;
-		defs.push({
-			name: `brand-${brand}`,
-			light: ref,
-			dark: ref,
-			description: `Brand color: ${brand}`,
-		});
-	}
-
 	return defs;
 }
 
@@ -1342,7 +1330,6 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 	};
 
 	// --- Paint styles: semantic colors bound to variables ---
-	// Skip brand-* tokens — they are pass-throughs to brand primitives
 	const semanticPaint: Record<string, any> = {};
 	const mapping = resolveMapping(config);
 	const brandColorsList = resolveBrandColors(config);
@@ -1352,7 +1339,6 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 		brandColorsList.map((b) => b.name),
 	);
 	for (const def of semanticDefs) {
-		if (def.name.startsWith("brand-")) continue;
 		const styleName = def.name;
 		const opacity = styleName === "accent" ? 0.8 : 1;
 		const binding = {
