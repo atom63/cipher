@@ -684,9 +684,11 @@ describe("generateCss", () => {
 		expect(css).toContain("@theme inline {");
 		expect(css).toContain(":root {");
 		expect(css).toContain("--color-brand-primary-500:");
-		// Gray uses --color-gray-N pattern
-		expect(css).toContain("--color-gray-1:");
-		expect(css).toContain("--color-gray-12:");
+		// Gray uses --color-gray-light-N / --color-gray-dark-N pattern
+		expect(css).toContain("--color-gray-light-1:");
+		expect(css).toContain("--color-gray-light-12:");
+		expect(css).toContain("--color-gray-dark-1:");
+		expect(css).toContain("--color-gray-dark-12:");
 		// Semantic tokens (shadcn-compatible names)
 		expect(css).toContain("--card:");
 		expect(css).toContain("--destructive:");
@@ -872,6 +874,30 @@ describe("multi-palette", () => {
 		expect(semanticNames).toContain("brand-purple");
 	});
 
+	test("surfaces support separate light/dark presets", () => {
+		const config: BrandConfig = {
+			primary: "#3B82F6",
+			surfaces: [{
+				name: "gray",
+				preset: "slate",
+				darkPreset: "sand",
+			}],
+			mapping: { primaryBrand: "brand-primary", activeSurface: "gray" },
+			brandColors: [{ name: "brand-primary", hex: "#3B82F6" }],
+		};
+		const result = generateDesignSystem(config);
+		const lightStep1 = result.tokens.find(
+			(t) => t.category === "primitives" && t.figmaName === "color/gray/light/1",
+		);
+		const darkStep1 = result.tokens.find(
+			(t) => t.category === "primitives" && t.figmaName === "color/gray/dark/1",
+		);
+		expect(lightStep1).toBeDefined();
+		expect(darkStep1).toBeDefined();
+		// Light and dark should have different values (different presets)
+		expect(lightStep1?.originalValue).not.toBe(darkStep1?.originalValue);
+	});
+
 	test("backward compat: legacy config still works", () => {
 		const legacy: BrandConfig = {
 			primary: "#3B82F6",
@@ -915,16 +941,18 @@ describe("generateCss — multi-palette", () => {
 		expect(css).toContain("--color-green-500:");
 	});
 
-	test("CSS :root uses active surface name", () => {
+	test("CSS :root uses active surface name with light/dark", () => {
 		const css = generateCss(multiConfig);
-		expect(css).toContain("--color-slate-1:");
-		expect(css).toContain("--color-slate-12:");
+		expect(css).toContain("--color-slate-light-1:");
+		expect(css).toContain("--color-slate-light-12:");
+		expect(css).toContain("--color-slate-dark-1:");
+		expect(css).toContain("--color-slate-dark-12:");
 	});
 
-	test("CSS .dark uses active surface name", () => {
+	test("CSS .dark semantics reference surface dark vars", () => {
 		const css = generateCss(multiConfig);
 		const darkBlock = css.split(".dark {")[1];
-		expect(darkBlock).toContain("--color-slate-");
+		expect(darkBlock).toContain("var(--color-slate-dark-");
 	});
 
 	test("CSS semantic --primary references mapped brand", () => {
@@ -936,5 +964,89 @@ describe("generateCss — multi-palette", () => {
 		const css = generateCss({ primary: "#3B82F6" });
 		expect(css).toContain("--color-brand-primary-500:");
 		expect(css).toContain("--color-gray-");
+	});
+});
+
+// =========================================================================
+// darkActiveSurface: separate light/dark surface mapping
+// =========================================================================
+
+describe("darkActiveSurface", () => {
+	const config: BrandConfig = {
+		primary: "#3B82F6",
+		brandColors: [{ name: "blue", hex: "#3B82F6" }],
+		surfaces: [
+			{ name: "slate", preset: "slate" },
+			{ name: "sand", preset: "sand" },
+		],
+		mapping: {
+			primaryBrand: "blue",
+			activeSurface: "slate",
+			darkActiveSurface: "sand",
+		},
+	};
+
+	test("aliases light refs point to activeSurface", () => {
+		const result = generateDesignSystem(config);
+		const surfLight1 = result.tokens.find(
+			(t) => t.category === "aliases" && t.figmaName === "surface/light/1",
+		);
+		expect(surfLight1?.originalValue).toBe("{primitives.color.slate.light.1}");
+	});
+
+	test("aliases dark refs point to darkActiveSurface", () => {
+		const result = generateDesignSystem(config);
+		const surfDark1 = result.tokens.find(
+			(t) => t.category === "aliases" && t.figmaName === "surface/dark/1",
+		);
+		expect(surfDark1?.originalValue).toBe("{primitives.color.sand.dark.1}");
+	});
+
+	test("preview radixGrayLight comes from activeSurface", () => {
+		const result = generateDesignSystem(config);
+		// slate is the light surface, so radixGrayLight should be slate
+		expect(result.radixGrayLight).not.toBeNull();
+	});
+
+	test("preview radixGrayDark comes from darkActiveSurface", () => {
+		const result = generateDesignSystem(config);
+		// sand is the dark surface, so radixGrayDark should be sand (different from light)
+		expect(result.radixGrayDark).not.toBeNull();
+		if (result.radixGrayLight && result.radixGrayDark) {
+			expect(result.radixGrayLight.light[0]).not.toBe(result.radixGrayDark.dark[0]);
+		}
+	});
+
+	test("CSS :root has both light and dark surface vars for activeSurface", () => {
+		const css = generateCss(config);
+		const rootBlock = css.split(":root {")[1].split("}")[0];
+		expect(rootBlock).toContain("--color-slate-light-1:");
+		expect(rootBlock).toContain("--color-slate-dark-1:");
+	});
+
+	test("CSS :root also has darkActiveSurface vars when different", () => {
+		const css = generateCss(config);
+		const rootBlock = css.split(":root {")[1].split("}")[0];
+		// sand is darkActiveSurface, so its light/dark vars should also be in :root
+		expect(rootBlock).toContain("--color-sand-light-1:");
+		expect(rootBlock).toContain("--color-sand-dark-1:");
+	});
+
+	test("CSS .dark semantic refs use darkActiveSurface dark vars", () => {
+		const css = generateCss(config);
+		const darkBlock = css.split(".dark {")[1].split("}")[0];
+		expect(darkBlock).toContain("var(--color-sand-dark-");
+	});
+
+	test("falls back to activeSurface when darkActiveSurface omitted", () => {
+		const fallbackConfig: BrandConfig = {
+			...config,
+			mapping: { primaryBrand: "blue", activeSurface: "slate" },
+		};
+		const result = generateDesignSystem(fallbackConfig);
+		const surfDark1 = result.tokens.find(
+			(t) => t.category === "aliases" && t.figmaName === "surface/dark/1",
+		);
+		expect(surfDark1?.originalValue).toBe("{primitives.color.slate.dark.1}");
 	});
 });

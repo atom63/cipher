@@ -50,18 +50,36 @@ export interface NamedBrandColor {
 
 /** A named surface/gray ramp */
 export interface NamedSurface {
-	/** Custom hex (overrides preset when set) */
+	/** Custom hex for dark mode (overrides darkPreset when set) */
+	darkHex?: string;
+	/** Radix preset for dark mode (defaults to preset) */
+	darkPreset?: string;
+	/** Custom hex for light mode (overrides preset when set) */
 	hex?: string;
 	/** Display name (used in Figma path: color/{name}/light|dark/1-12) */
 	name: string;
-	/** Radix preset name (e.g. "slate", "sand") */
+	/** Radix preset name for light mode (e.g. "slate", "sand") */
 	preset?: string;
+}
+
+/** Bundled palette: brand color + surface light/dark as one theme option */
+export interface PaletteEntry {
+	/** Brand/accent hex color */
+	brandHex: string;
+	/** Display name for this palette */
+	name: string;
+	/** Radix preset for dark surface (defaults to surfaceLightPreset) */
+	surfaceDarkPreset?: string;
+	/** Radix preset for light surface */
+	surfaceLightPreset?: string;
 }
 
 /** Mapping from palette → semantic roles */
 export interface PaletteMapping {
-	/** Which surface ramp to use for --background/--card/--muted/etc. */
+	/** Which palette/surface to use for --background/--card/--muted/etc. */
 	activeSurface: string;
+	/** Surface for dark mode aliases (defaults to activeSurface) */
+	darkActiveSurface?: string;
 	/** Brand color for --primary in dark mode (defaults to primaryBrand) */
 	darkPrimaryBrand?: string;
 	/** Which brand color to use as --primary */
@@ -73,6 +91,8 @@ export interface BrandConfig {
 	brandColors?: NamedBrandColor[];
 	/** Custom font name overrides (prepended to system fallback stacks) */
 	fonts?: FontOverrides;
+	/** Bundled palettes — when present, derives brandColors + surfaces from these */
+	palettes?: PaletteEntry[];
 	/** Surface color tone for dark mode — Radix preset name or hex color (default: same as grayLight) */
 	grayDark?: string;
 	/** Custom hex for dark surface generation (overrides grayDark preset) */
@@ -118,11 +138,17 @@ export interface StatusColorOverrides {
 
 // --- Resolved config helpers ---
 
-/** Resolve brandColors from config, falling back to legacy primary/secondary */
+/** Resolve brandColors from config — palettes → brandColors → legacy fallback */
 function resolveBrandColors(config: BrandConfig): NamedBrandColor[] {
+	// From palettes
+	if (config.palettes && config.palettes.length > 0) {
+		return config.palettes.map((p) => ({ name: p.name, hex: p.brandHex }));
+	}
+	// From explicit brandColors
 	if (config.brandColors && config.brandColors.length > 0) {
 		return config.brandColors;
 	}
+	// Legacy fallback
 	const colors: NamedBrandColor[] = [
 		{ name: "brand-primary", hex: config.primary },
 	];
@@ -132,16 +158,31 @@ function resolveBrandColors(config: BrandConfig): NamedBrandColor[] {
 	return colors;
 }
 
-/** Resolve surfaces from config, falling back to legacy grayLight/grayDark */
+/** Resolve surfaces from config — palettes → surfaces → legacy fallback */
 function resolveSurfaces(config: BrandConfig): NamedSurface[] {
+	// From palettes
+	if (config.palettes && config.palettes.length > 0) {
+		return config.palettes.map((p) => ({
+			name: p.name,
+			preset: p.surfaceLightPreset ?? "slate",
+			darkPreset: p.surfaceDarkPreset !== (p.surfaceLightPreset ?? "slate")
+				? p.surfaceDarkPreset
+				: undefined,
+		}));
+	}
+	// From explicit surfaces
 	if (config.surfaces && config.surfaces.length > 0) {
 		return config.surfaces;
 	}
-	const preset = config.grayLight ?? config.grayName ?? "slate";
+	// Legacy fallback
+	const lightPreset = config.grayLight ?? config.grayName ?? "slate";
+	const darkPreset = config.grayDark ?? lightPreset;
 	return [{
 		name: "gray",
-		preset: config.grayLightHex ? undefined : preset,
+		preset: config.grayLightHex ? undefined : lightPreset,
 		hex: config.grayLightHex,
+		darkPreset: config.grayDarkHex ? undefined : (darkPreset !== lightPreset ? darkPreset : undefined),
+		darkHex: config.grayDarkHex,
 	}];
 }
 
@@ -315,27 +356,22 @@ function generatePrimitives(config: BrandConfig): {
 
 	// Generate surface ramps for each named surface
 	for (const surface of surfaces) {
-		const surfGrayLightName = surface.preset ?? "slate";
-		// For legacy single-surface, dark mode may use a different preset
-		const surfGrayDarkName = surfaces.length === 1
-			? (config.grayDark ?? surfGrayLightName)
-			: surfGrayLightName;
+		const surfLightPreset = surface.preset ?? "slate";
+		const surfDarkPreset = surface.darkPreset ?? surfLightPreset;
+		const surfLightHex = surface.hex;
+		const surfDarkHex = surface.darkHex ?? surfLightHex;
 
-		const surfRadixLight = surface.hex ? null : (getRadixGray(surfGrayLightName) ?? RADIX_GRAYS[0]);
-		const surfRadixDark = surface.hex ? null : (getRadixGray(surfGrayDarkName) ?? (surfRadixLight ?? RADIX_GRAYS[0]));
-		const surfNeutralLight = surface.hex ? generateNeutralScale(surface.hex, lightSurfaceOpts) : null;
-		const surfNeutralDark = surfaces.length === 1 && config.grayDarkHex
-			? generateNeutralScale(config.grayDarkHex, darkSurfaceOpts)
-			: (surface.hex ? generateNeutralScale(surface.hex, darkSurfaceOpts) : null);
+		const surfRadixLight = surfLightHex ? null : (getRadixGray(surfLightPreset) ?? RADIX_GRAYS[0]);
+		const surfRadixDark = surfDarkHex ? null : (getRadixGray(surfDarkPreset) ?? (surfRadixLight ?? RADIX_GRAYS[0]));
+		const surfNeutralLight = surfLightHex ? generateNeutralScale(surfLightHex, lightSurfaceOpts) : null;
+		const surfNeutralDark = surfDarkHex ? generateNeutralScale(surfDarkHex, darkSurfaceOpts) : null;
 
 		const lightColors = surfNeutralLight?.light
 			?? adjustSaturation(surfRadixLight?.light ?? RADIX_GRAYS[0].light, satMul, lightAdjustOpts);
 		const darkColors = surfNeutralDark?.dark
 			?? adjustSaturation(surfRadixDark?.dark ?? RADIX_GRAYS[0].dark, satMul, darkAdjustOpts);
-		const lightLabel = surface.hex ? `Custom (${surface.hex})` : (surfRadixLight?.label ?? surface.name);
-		const darkLabel = surfaces.length === 1 && config.grayDarkHex
-			? `Custom (${config.grayDarkHex})`
-			: (surface.hex ? `Custom (${surface.hex})` : (surfRadixDark?.label ?? surface.name));
+		const lightLabel = surfLightHex ? `Custom (${surfLightHex})` : (surfRadixLight?.label ?? surface.name);
+		const darkLabel = surfDarkHex ? `Custom (${surfDarkHex})` : (surfRadixDark?.label ?? surface.name);
 
 		for (let i = 0; i < 12; i++) {
 			const step = i + 1;
@@ -364,10 +400,18 @@ function generatePrimitives(config: BrandConfig): {
 		}
 
 		// Track active surface for preview
+		const darkSurfaceName = mapping.darkActiveSurface ?? mapping.activeSurface;
 		if (surface.name === mapping.activeSurface) {
 			radixGrayLight = surfRadixLight;
-			radixGrayDark = surfRadixDark;
 			neutralScaleLight = surfNeutralLight;
+			// If no separate dark surface, also use this for dark
+			if (darkSurfaceName === mapping.activeSurface) {
+				radixGrayDark = surfRadixDark;
+				neutralScaleDark = surfNeutralDark;
+			}
+		}
+		if (surface.name === darkSurfaceName && darkSurfaceName !== mapping.activeSurface) {
+			radixGrayDark = surfRadixDark;
 			neutralScaleDark = surfNeutralDark;
 		}
 	}
@@ -671,18 +715,19 @@ function generatePrimitives(config: BrandConfig): {
 function generateAliases(config: BrandConfig): DesignToken[] {
 	const tokens: DesignToken[] = [];
 	const mapping = resolveMapping(config);
-	const surfaceName = mapping.activeSurface;
+	const lightSurface = mapping.activeSurface;
+	const darkSurface = mapping.darkActiveSurface ?? lightSurface;
 
 	// --- Surface (light/dark references → active surface ramp) ---
 	for (let i = 1; i <= 12; i++) {
 		tokens.push(
 			makeToken(
 				`surface/light/${i}`,
-				`{primitives.color.${surfaceName}.light.${i}}`,
+				`{primitives.color.${lightSurface}.light.${i}}`,
 				"aliases",
 				{
-					description: `Surface light step ${i} (→ ${surfaceName})`,
-					originalValue: `{primitives.color.${surfaceName}.light.${i}}`,
+					description: `Surface light step ${i} (→ ${lightSurface})`,
+					originalValue: `{primitives.color.${lightSurface}.light.${i}}`,
 					type: "color",
 				},
 			),
@@ -690,11 +735,11 @@ function generateAliases(config: BrandConfig): DesignToken[] {
 		tokens.push(
 			makeToken(
 				`surface/dark/${i}`,
-				`{primitives.color.${surfaceName}.dark.${i}}`,
+				`{primitives.color.${darkSurface}.dark.${i}}`,
 				"aliases",
 				{
-					description: `Surface dark step ${i} (→ ${surfaceName})`,
-					originalValue: `{primitives.color.${surfaceName}.dark.${i}}`,
+					description: `Surface dark step ${i} (→ ${darkSurface})`,
+					originalValue: `{primitives.color.${darkSurface}.dark.${i}}`,
 					type: "color",
 				},
 			),
@@ -1077,18 +1122,36 @@ function generateResponsive(config: BrandConfig): DesignToken[] {
 
 export function generateCss(config: BrandConfig): string {
 	const system = generateDesignSystem(config);
-	const lightGrayColors = system.neutralScaleLight?.light ?? system.radixGrayLight?.light ?? RADIX_GRAYS[0].light;
-	const darkGrayColors = system.neutralScaleDark?.dark ?? system.radixGrayDark?.dark ?? RADIX_GRAYS[0].dark;
+	// Light surface: light and dark ramps
+	const lightSurfaceLight = system.neutralScaleLight?.light ?? system.radixGrayLight?.light ?? RADIX_GRAYS[0].light;
+	const lightSurfaceDark = system.neutralScaleLight?.dark ?? system.radixGrayLight?.dark ?? RADIX_GRAYS[0].dark;
+	// Dark surface (may be different): light and dark ramps
+	const darkSurfaceLight = system.neutralScaleDark?.light ?? system.radixGrayDark?.light ?? lightSurfaceLight;
+	const darkSurfaceDark = system.neutralScaleDark?.dark ?? system.radixGrayDark?.dark ?? lightSurfaceDark;
+
 	const radiusScale = computeRadiusScale(
 		config.radius ?? DEFAULT_RADIUS.anchor,
 	);
 	const lines: string[] = [];
 
-	// Primitives as @theme inline
+	const mapping = resolveMapping(config);
+	const brandColors = resolveBrandColors(config);
+	const lightSurfaceName = mapping.activeSurface;
+	const darkSurfaceName = mapping.darkActiveSurface ?? lightSurfaceName;
+
+	const defs = buildSemanticDefs(
+		mapping.primaryBrand,
+		mapping.darkPrimaryBrand ?? mapping.primaryBrand,
+		brandColors.map((b) => b.name),
+	);
+
+	// ── @theme inline ──────────────────────────────────────────────────────
+
 	lines.push("@theme inline {");
 
-	// Brand color scales (all palette entries)
-	const brandColors = resolveBrandColors(config);
+	// — Brand colors —
+	lines.push("");
+	lines.push("  /* Brand */");
 	for (const brand of brandColors) {
 		const scale = system.primitives.find((s) => s.name === brand.name);
 		if (scale) {
@@ -1098,7 +1161,9 @@ export function generateCss(config: BrandConfig): string {
 		}
 	}
 
-	// Status color ramps
+	// — Status colors —
+	lines.push("");
+	lines.push("  /* Status */");
 	const statusOverrides = config.statusColors;
 	const statusEntries = [
 		{ name: "danger", hex: statusOverrides?.danger ?? "#EF4444" },
@@ -1113,78 +1178,107 @@ export function generateCss(config: BrandConfig): string {
 		}
 	}
 
-	// Spacing
+	// — Surface / neutral (registered for Tailwind, values set in :root / .dark) —
+	lines.push("");
+	lines.push("  /* Surface */");
+	for (let i = 1; i <= 12; i++) {
+		lines.push(`  --color-${lightSurfaceName}-light-${i}: var(--color-${lightSurfaceName}-light-${i});`);
+	}
+	for (let i = 1; i <= 12; i++) {
+		lines.push(`  --color-${lightSurfaceName}-dark-${i}: var(--color-${lightSurfaceName}-dark-${i});`);
+	}
+	if (darkSurfaceName !== lightSurfaceName) {
+		for (let i = 1; i <= 12; i++) {
+			lines.push(`  --color-${darkSurfaceName}-light-${i}: var(--color-${darkSurfaceName}-light-${i});`);
+		}
+		for (let i = 1; i <= 12; i++) {
+			lines.push(`  --color-${darkSurfaceName}-dark-${i}: var(--color-${darkSurfaceName}-dark-${i});`);
+		}
+	}
+
+	// — Semantic color registrations —
+	lines.push("");
+	lines.push("  /* Semantics */");
+	for (const def of defs) {
+		lines.push(`  --color-${def.name}: var(--${def.name});`);
+	}
+
+	// — Spacing —
+	lines.push("");
+	lines.push("  /* Spacing */");
 	for (const [key, px] of Object.entries(SPACING_SCALE)) {
 		lines.push(`  --spacing-${key}: ${px}px;`);
 	}
 
-	// Radius
+	// — Radius —
+	lines.push("");
+	lines.push("  /* Radius */");
 	for (const [size, px] of Object.entries(radiusScale)) {
 		lines.push(`  --radius-${size}: ${px}px;`);
 	}
 
-	// Shadows
+	// — Shadows —
+	lines.push("");
+	lines.push("  /* Shadows */");
 	for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
 		lines.push(`  --shadow-${level}: ${shadowToCss(layers)};`);
 	}
 
-	// Blur
+	// — Blur —
+	lines.push("");
+	lines.push("  /* Blur */");
 	for (const [name, px] of Object.entries(BLUR_SCALE)) {
 		lines.push(`  --blur-${name}: ${px}px;`);
 	}
 
-	// Font families
+	// — Font families —
+	lines.push("");
+	lines.push("  /* Fonts */");
 	const fontStacks = buildFontFamilies(config.fonts);
 	for (const [name, stack] of Object.entries(fontStacks)) {
 		lines.push(`  --font-${name}: ${stack};`);
 	}
 
-	// Durations
+	// — Durations —
+	lines.push("");
+	lines.push("  /* Duration */");
 	for (const [name, rawKey] of Object.entries(DURATION_SEMANTIC)) {
 		lines.push(`  --duration-${name}: ${DURATION_RAW[rawKey]}ms;`);
 	}
 
-	// Semantic color registrations for Tailwind
-	const mapping = resolveMapping(config);
-	const defs = buildSemanticDefs(
-		mapping.primaryBrand,
-		mapping.darkPrimaryBrand ?? mapping.primaryBrand,
-		brandColors.map((b) => b.name),
-	);
-	for (const def of defs) {
-		lines.push(`  --color-${def.name}: var(--${def.name});`);
-	}
-
 	lines.push("}");
+
+	// ── :root (light mode) ─────────────────────────────────────────────────
+
 	lines.push("");
-
-	// Radix gray + semantics as :root / .dark
 	lines.push(":root {");
-
-	// Active surface colors (light mode)
-	const activeSurfaceName = mapping.activeSurface;
 	for (let i = 0; i < 12; i++) {
-		lines.push(`  --color-${activeSurfaceName}-${i + 1}: ${lightGrayColors[i]};`);
+		lines.push(`  --color-${lightSurfaceName}-light-${i + 1}: ${lightSurfaceLight[i]};`);
 	}
-
-	// Semantic color references (light mode)
+	for (let i = 0; i < 12; i++) {
+		lines.push(`  --color-${lightSurfaceName}-dark-${i + 1}: ${lightSurfaceDark[i]};`);
+	}
+	if (darkSurfaceName !== lightSurfaceName) {
+		for (let i = 0; i < 12; i++) {
+			lines.push(`  --color-${darkSurfaceName}-light-${i + 1}: ${darkSurfaceLight[i]};`);
+		}
+		for (let i = 0; i < 12; i++) {
+			lines.push(`  --color-${darkSurfaceName}-dark-${i + 1}: ${darkSurfaceDark[i]};`);
+		}
+	}
+	lines.push("");
 	for (const def of defs) {
-		lines.push(`  --${def.name}: ${refToCssVar(def.light, activeSurfaceName)};`);
+		lines.push(`  --${def.name}: ${refToCssVar(def.light, lightSurfaceName)};`);
 	}
-
 	lines.push("}");
+
+	// ── .dark ──────────────────────────────────────────────────────────────
 
 	lines.push("");
 	lines.push(".dark {");
-
-	for (let i = 0; i < 12; i++) {
-		lines.push(`  --color-${activeSurfaceName}-${i + 1}: ${darkGrayColors[i]};`);
-	}
-
 	for (const def of defs) {
-		lines.push(`  --${def.name}: ${refToCssVar(def.dark, activeSurfaceName)};`);
+		lines.push(`  --${def.name}: ${refToCssVar(def.dark, darkSurfaceName)};`);
 	}
-
 	lines.push("}");
 
 	// Typography
@@ -1206,7 +1300,7 @@ function refToCssVar(ref: string, surfaceName = "gray"): string {
 		/^aliases\.surface\.(light|dark)\.(\d+)$/,
 	);
 	if (surfaceMatch) {
-		return `var(--color-${surfaceName}-${surfaceMatch[2]})`;
+		return `var(--color-${surfaceName}-${surfaceMatch[1]}-${surfaceMatch[2]})`;
 	}
 
 	// Primitive color references

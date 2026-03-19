@@ -138,6 +138,23 @@ export async function createVariablesFromTokens(
 		// Map to store created variables for reference resolution
 		const variableMap = new Map<string, Variable>();
 
+		// Pre-populate with ALL existing Figma variables so cross-collection
+		// references resolve even when the referenced variable was created in a
+		// prior import session (not just in this run).
+		const allExistingCollections = await figma.variables.getLocalVariableCollectionsAsync();
+		const collectionIdToName = new Map<string, string>();
+		for (const col of allExistingCollections) {
+			collectionIdToName.set(col.id, col.name);
+		}
+		const allExistingVars = await figma.variables.getLocalVariablesAsync();
+		for (const v of allExistingVars) {
+			const colName = collectionIdToName.get(v.variableCollectionId);
+			if (colName) {
+				variableMap.set(`${colName}:${v.name}`, v);
+			}
+			variableMap.set(v.name, v);
+		}
+
 		// Process each collection
 		for (const collectionKey of collectionsToProcess) {
 			const collectionTokens = tokensByCollection[collectionKey];

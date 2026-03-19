@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Dices, RefreshCw, Wand2, X } from "lucide-react";
+import { Check, ChevronDown, Dices, RefreshCw, SlidersHorizontal, Wand2, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
@@ -18,7 +18,7 @@ import { Dialog, DialogActions } from "../components/ui/Dialog";
 import { Input } from "../components/ui/Input";
 import { NumberField } from "../components/ui/NumberField";
 import { adjustSaturation, generateNeutralScale, hexToRgb, oklchToRgb, rgbToHex, rgbToOklch, SHADE_STEPS } from "../generators/color-scale";
-import { RADIX_GRAYS } from "../generators/radix-grays";
+import { getRadixGray, RADIX_GRAYS } from "../generators/radix-grays";
 import {
 	type BrandConfig,
 	type GeneratedSystem,
@@ -47,12 +47,12 @@ type ViewState = "loading" | "config" | "progress" | "success";
 // ---------------------------------------------------------------------------
 
 interface ExtractedConfig {
-	brandColors: NamedBrandColor[];
+	accentColors: NamedBrandColor[];
 	fonts: FontOverrides;
 	mapping: PaletteMapping;
+	neutralColors: NamedSurface[];
 	radiusAnchor: number;
 	statusColors: StatusColorOverrides;
-	surfaces: NamedSurface[];
 	typescale: TypescaleConfig | null;
 }
 
@@ -137,9 +137,9 @@ function extractBrandConfig(
 		}
 	}
 
-	const brandColors: NamedBrandColor[] = [...brandMap.entries()].map(([name, hex]) => ({ name, hex }));
-	if (brandColors.length === 0) {
-		brandColors.push({ name: "brand-primary", hex: "#3B82F6" });
+	const accentColors: NamedBrandColor[] = [...brandMap.entries()].map(([name, hex]) => ({ name, hex }));
+	if (accentColors.length === 0) {
+		accentColors.push({ name: "brand-primary", hex: "#3B82F6" });
 	}
 
 	// --- Discover surfaces ---
@@ -150,42 +150,110 @@ function extractBrandConfig(
 		if (match) surfaceNames.add(match[1]);
 	}
 
-	const surfaces: NamedSurface[] = [];
+	const neutralColors: NamedSurface[] = [];
 	for (const name of surfaceNames) {
-		const step1 = find("primitives", `color/${name}/light/1`);
+		// Detect light preset from description
+		const lightStep1 = find("primitives", `color/${name}/light/1`);
 		let preset: string | undefined;
-		if (step1?.description) {
+		let customHex: string | undefined;
+		if (lightStep1?.description) {
+			// Check for custom hex in description: "Custom (#abc123) step 1 (light)"
+			const customMatch = lightStep1.description.match(/Custom\s*\((#[0-9a-fA-F]{6})\)/i);
+			if (customMatch) {
+				customHex = customMatch[1].toUpperCase();
+			} else {
+				for (const gray of RADIX_GRAYS) {
+					if (lightStep1.description.toLowerCase().startsWith(gray.label.toLowerCase())) {
+						preset = gray.name;
+						break;
+					}
+				}
+			}
+		}
+		// Detect dark preset from description (may differ from light)
+		const darkStep1 = find("primitives", `color/${name}/dark/1`);
+		let darkPreset: string | undefined;
+		if (darkStep1?.description) {
 			for (const gray of RADIX_GRAYS) {
-				if (step1.description.toLowerCase().startsWith(gray.label.toLowerCase())) {
-					preset = gray.name;
+				if (darkStep1.description.toLowerCase().startsWith(gray.label.toLowerCase())) {
+					darkPreset = gray.name;
 					break;
 				}
 			}
 		}
-		surfaces.push({ name, preset: preset ?? "slate" });
+		neutralColors.push({
+			name,
+			preset: preset ?? "slate",
+			darkPreset: darkPreset && darkPreset !== (preset ?? "slate") ? darkPreset : undefined,
+			hex: customHex,
+		});
 	}
-	if (surfaces.length === 0) {
-		surfaces.push({ name: "gray", preset: "slate" });
+	if (neutralColors.length === 0) {
+		neutralColors.push({ name: "gray", preset: "slate" });
 	}
 
-	// --- Mapping: detect which brand is primary from semantics ---
+	// --- Mapping: detect from aliases and semantics ---
+	const aliases = variables.filter((v) =>
+		v.collectionName.toLowerCase().startsWith("aliases"),
+	);
 	const semantics = variables.filter((v) =>
 		v.collectionName.toLowerCase().startsWith("semantics"),
 	);
+
+	// Detect activeSurface from alias surface/light/1 → {primitives.color.{name}.light.1}
+	let activeSurface = neutralColors[0].name;
+	const surfaceLightAlias = aliases.find((v) => v.name === "surface/light/1");
+	if (surfaceLightAlias) {
+		const ref = Object.values(surfaceLightAlias.valuesByMode)[0] ?? "";
+		const refMatch = ref.match(/color[./]([^./]+)[./]light[./]1/);
+		if (refMatch && surfaceNames.has(refMatch[1])) {
+			activeSurface = refMatch[1];
+		}
+	}
+
+	// Detect darkActiveSurface from alias surface/dark/1 → {primitives.color.{name}.dark.1}
+	let darkActiveSurface: string | undefined;
+	const surfaceDarkAlias = aliases.find((v) => v.name === "surface/dark/1");
+	if (surfaceDarkAlias) {
+		const ref = Object.values(surfaceDarkAlias.valuesByMode)[0] ?? "";
+		const refMatch = ref.match(/color[./]([^./]+)[./]dark[./]1/);
+		if (refMatch && surfaceNames.has(refMatch[1]) && refMatch[1] !== activeSurface) {
+			darkActiveSurface = refMatch[1];
+		}
+	}
+
+	// Detect primaryBrand from semantic "primary" light mode
+	let primaryBrand = accentColors[0].name;
 	const primarySemantic = semantics.find((v) => v.name === "primary");
-	let primaryBrand = brandColors[0].name;
 	if (primarySemantic) {
-		const ref = Object.values(primarySemantic.valuesByMode)[0] ?? "";
-		// Reference like {primitives.color.blue.500} or {color.blue.500}
-		const refMatch = ref.match(/color[./]([^./]+)[./]500/);
+		// Light mode value: first mode entry
+		const modes = Object.entries(primarySemantic.valuesByMode);
+		const lightMode = modes.find(([, val]) => String(val).includes("500"));
+		const ref = lightMode?.[1] ?? modes[0]?.[1] ?? "";
+		const refMatch = String(ref).match(/color[./]([^./]+)[./]500/);
 		if (refMatch && brandMap.has(refMatch[1])) {
 			primaryBrand = refMatch[1];
 		}
 	}
 
+	// Detect darkPrimaryBrand from semantic "primary" dark mode (if different)
+	let darkPrimaryBrand: string | undefined;
+	if (primarySemantic) {
+		const modes = Object.entries(primarySemantic.valuesByMode);
+		if (modes.length >= 2) {
+			const darkRef = String(modes[1][1]);
+			const darkMatch = darkRef.match(/color[./]([^./]+)[./]500/);
+			if (darkMatch && brandMap.has(darkMatch[1]) && darkMatch[1] !== primaryBrand) {
+				darkPrimaryBrand = darkMatch[1];
+			}
+		}
+	}
+
 	const mapping: PaletteMapping = {
 		primaryBrand,
-		activeSurface: surfaces[0].name,
+		darkPrimaryBrand,
+		activeSurface,
+		darkActiveSurface,
 	};
 
 	// --- Radius ---
@@ -352,8 +420,8 @@ function extractBrandConfig(
 	}
 
 	return {
-		brandColors,
-		surfaces,
+		accentColors,
+		neutralColors,
 		mapping,
 		radiusAnchor,
 		fonts,
@@ -372,17 +440,19 @@ export function GeneratePage() {
 	const postMessage = usePostMessage();
 	const { showError } = useToast();
 
-	// Config state — palette
-	const [brandColors, setBrandColors] = useState<NamedBrandColor[]>([
-		{ name: "brand-primary", hex: "#3B82F6" },
+	// Config state — separate accent colors and neutral colors
+	const [accentColors, setAccentColors] = useState<NamedBrandColor[]>([
+		{ name: "blue", hex: "#3B82F6" },
 	]);
-	const [surfaces, setSurfaces] = useState<NamedSurface[]>([
+	const [neutralColors, setNeutralColors] = useState<NamedSurface[]>([
 		{ name: "gray", preset: "slate" },
 	]);
 	const [mapping, setMapping] = useState<PaletteMapping>({
-		primaryBrand: "brand-primary",
+		primaryBrand: "blue",
 		activeSurface: "gray",
 	});
+	const [showSurfaceConfig, setShowSurfaceConfig] = useState(false);
+	const surfaceConfigRef = useRef<HTMLDivElement>(null);
 
 	// Config state — other
 	const [radiusAnchor, setRadiusAnchor] = useState(10);
@@ -400,40 +470,48 @@ export function GeneratePage() {
 	const [surfaceHueShift, setSurfaceHueShift] = useState(0);
 	const [surfaceBrightness, setSurfaceBrightness] = useState(0);
 
-	// Helpers for palette manipulation
-	const updateBrand = useCallback((index: number, update: Partial<NamedBrandColor>) => {
-		setBrandColors((prev) => {
+	// Helpers for accent/neutral manipulation
+	const updateAccent = useCallback((index: number, update: Partial<NamedBrandColor>) => {
+		setAccentColors((prev) => {
 			const next = [...prev];
 			next[index] = { ...next[index], ...update };
 			return next;
 		});
 	}, []);
 
-	const addBrand = useCallback(() => {
+	const addAccent = useCallback(() => {
 		const hue = Math.random() * 360;
 		const hex = rgbToHex(oklchToRgb({ l: 0.65 + Math.random() * 0.13, c: 0.16 + Math.random() * 0.1, h: hue })).toUpperCase();
-		const name = `color-${brandColors.length + 1}`;
-		setBrandColors((prev) => [...prev, { name, hex }]);
-	}, [brandColors.length]);
+		const name = `accent-${accentColors.length + 1}`;
+		setAccentColors((prev) => [...prev, { name, hex }]);
+	}, [accentColors]);
 
-	const removeBrand = useCallback((index: number) => {
-		setBrandColors((prev) => {
+	const removeAccent = useCallback((index: number) => {
+		setAccentColors((prev) => {
 			const next = prev.filter((_, i) => i !== index);
-			if (next.length === 0) next.push({ name: "brand-primary", hex: "#3B82F6" });
+			if (next.length === 0) next.push({ name: "blue", hex: "#3B82F6" });
 			return next;
 		});
 	}, []);
 
-	const addSurface = useCallback(() => {
-		const presets = RADIX_GRAYS.map((g) => g.name);
-		const used = new Set(surfaces.map((s) => s.preset));
-		const available = presets.find((p) => !used.has(p)) ?? presets[0];
-		const name = `surface-${surfaces.length + 1}`;
-		setSurfaces((prev) => [...prev, { name, preset: available }]);
-	}, [surfaces]);
+	const updateNeutral = useCallback((index: number, update: Partial<NamedSurface>) => {
+		setNeutralColors((prev) => {
+			const next = [...prev];
+			next[index] = { ...next[index], ...update };
+			return next;
+		});
+	}, []);
 
-	const removeSurface = useCallback((index: number) => {
-		setSurfaces((prev) => {
+	const addNeutral = useCallback(() => {
+		const presets = RADIX_GRAYS.map((g) => g.name);
+		const used = new Set(neutralColors.map((n) => n.preset));
+		const preset = presets.find((p) => !used.has(p)) ?? presets[0];
+		const name = `neutral-${neutralColors.length + 1}`;
+		setNeutralColors((prev) => [...prev, { name, preset }]);
+	}, [neutralColors]);
+
+	const removeNeutral = useCallback((index: number) => {
+		setNeutralColors((prev) => {
 			const next = prev.filter((_, i) => i !== index);
 			if (next.length === 0) next.push({ name: "gray", preset: "slate" });
 			return next;
@@ -493,8 +571,8 @@ export function GeneratePage() {
 					setIsUpdate(true);
 					const extracted = extractBrandConfig(data.variables, data.collections);
 					if (extracted) {
-						setBrandColors(extracted.brandColors);
-						setSurfaces(extracted.surfaces);
+						setAccentColors(extracted.accentColors);
+						setNeutralColors(extracted.neutralColors);
 						setMapping(extracted.mapping);
 						setRadiusAnchor(extracted.radiusAnchor);
 						if (extracted.fonts.sans || extracted.fonts.serif || extracted.fonts.mono) {
@@ -545,17 +623,16 @@ export function GeneratePage() {
 	// Build config object
 	const brandConfig: BrandConfig | null = useMemo(() => {
 		const validHex = (h: string) => /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(h);
-		// Validate all brand colors
-		if (!brandColors.every((b) => validHex(b.hex))) return null;
-		if (brandColors.length === 0) return null;
+		if (!accentColors.every((a) => validHex(a.hex))) return null;
+		if (accentColors.length === 0) return null;
 
 		const hasStatusOverrides =
 			statusColors.danger || statusColors.success || statusColors.warning || statusColors.info;
 
 		return {
-			primary: brandColors[0].hex, // backward compat field
-			brandColors,
-			surfaces,
+			primary: accentColors[0].hex,
+			brandColors: accentColors,
+			surfaces: neutralColors,
 			mapping,
 			radius: radiusAnchor,
 			typescale,
@@ -567,8 +644,8 @@ export function GeneratePage() {
 			surfaceBrightness: surfaceBrightness !== 0 ? surfaceBrightness : undefined,
 		};
 	}, [
-		brandColors,
-		surfaces,
+		accentColors,
+		neutralColors,
 		mapping,
 		radiusAnchor,
 		typescale,
@@ -737,11 +814,11 @@ export function GeneratePage() {
 		const randHex = (l: number, c: number, h: number) =>
 			rgbToHex(oklchToRgb({ l, c, h })).toUpperCase();
 
-		// Randomize all brand colors with offset hues
+		// Randomize accent colors
 		const baseHue = Math.random() * 360;
-		setBrandColors((prev) =>
-			prev.map((b, i) => ({
-				...b,
+		setAccentColors((prev) =>
+			prev.map((a, i) => ({
+				...a,
 				hex: randHex(
 					0.65 + Math.random() * 0.13,
 					0.14 + Math.random() * 0.1,
@@ -750,12 +827,12 @@ export function GeneratePage() {
 			})),
 		);
 
-		// Randomize surface presets
-		setSurfaces((prev) =>
-			prev.map((s) => ({
-				...s,
+		// Randomize neutral presets
+		setNeutralColors((prev) =>
+			prev.map((n) => ({
+				...n,
 				preset: RADIX_GRAYS[Math.floor(Math.random() * RADIX_GRAYS.length)].name,
-				hex: undefined,
+				darkPreset: RADIX_GRAYS[Math.floor(Math.random() * RADIX_GRAYS.length)].name,
 			})),
 		);
 
@@ -772,6 +849,18 @@ export function GeneratePage() {
 		}
 		setStatusColors(newStatus);
 	}, []);
+
+	// Close surface config flyout on outside click
+	useEffect(() => {
+		if (!showSurfaceConfig) return;
+		const handler = (e: MouseEvent) => {
+			if (surfaceConfigRef.current && !surfaceConfigRef.current.contains(e.target as Node)) {
+				setShowSurfaceConfig(false);
+			}
+		};
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, [showSurfaceConfig]);
 
 	// ---- Loading ----
 	if (view === "loading") {
@@ -931,272 +1020,249 @@ export function GeneratePage() {
 					/>
 
 					<div className={styles.configSection}>
-						{/* ── Brand Colors ── */}
+						{/* ── Color Primitives ── */}
 						<Frame>
 							<FrameHeader>
-								<h3 className={styles.sectionTitle}>Brand Colors</h3>
-								<Button onClick={addBrand} size="sm" variant="ghost">
-									+ Add
-								</Button>
+								<h3 className={styles.sectionTitle}>Color Primitives</h3>
 							</FrameHeader>
 							<FramePanel className={styles.sectionContent}>
-								{brandColors.map((brand, index) => (
-									<div className={styles.fieldGroup} key={`brand-${index}`}>
-										<div className={styles.colorInputRow}>
-											<input
-												aria-label={`${brand.name} color picker`}
-												className={styles.colorSwatch}
-												onChange={(e) => updateBrand(index, { hex: e.target.value })}
-												type="color"
-												value={brand.hex}
-											/>
-											<Input
-												autoComplete="off"
-												className={styles.colorHexInput}
-												maxLength={7}
-												onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-													let v = e.target.value;
-													if (!v.startsWith("#")) v = `#${v}`;
-													if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
-														updateBrand(index, { hex: v.toUpperCase() });
-												}}
-												placeholder="#3B82F6"
-												spellCheck={false}
-												value={brand.hex}
-											/>
-											<Input
-												autoComplete="off"
-												className={styles.colorNameInput}
-												onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-													updateBrand(index, { name: e.target.value.replace(/[^a-zA-Z0-9-]/g, "") })
-												}
-												placeholder="name"
-												spellCheck={false}
-												value={brand.name}
-											/>
-											{brandColors.length > 1 && (
-												<Button
-													onClick={() => removeBrand(index)}
-													size="icon-sm"
-													variant="ghost"
-												>
-													<X size={12} />
-												</Button>
-											)}
-										</div>
-										{generated && (
-											<ColorRampPreview
-												inputHex={brand.hex}
-												scale={generated.primitives.find(
-													(s) => s.name === brand.name,
-												)}
-											/>
-										)}
-										{index < brandColors.length - 1 && <Separator />}
+								{/* Accent colors */}
+								<div className={styles.fieldGroup}>
+									<div className={styles.primitiveGroupHeader}>
+										<label>Accent</label>
+										<Button onClick={addAccent} size="sm" variant="ghost">+ Add</Button>
 									</div>
-								))}
-
-								{/* Mapping: which brand → primary */}
-								{brandColors.length > 1 && (
-									<>
-										<Separator />
-										<div className={styles.fieldGroup}>
-											<label>Primary brand</label>
-											<select
-												className={styles.mappingSelect}
-												onChange={(e) => setMapping((m) => ({ ...m, primaryBrand: e.target.value }))}
-												value={mapping.primaryBrand}
-											>
-												{brandColors.map((b) => (
-													<option key={b.name} value={b.name}>{b.name}</option>
-												))}
-											</select>
-										</div>
-										<div className={styles.fieldGroup}>
-											<label>Dark mode primary</label>
-											<select
-												className={styles.mappingSelect}
-												onChange={(e) =>
-													setMapping((m) => ({
-														...m,
-														darkPrimaryBrand: e.target.value === m.primaryBrand ? undefined : e.target.value,
-													}))
-												}
-												value={mapping.darkPrimaryBrand ?? mapping.primaryBrand}
-											>
-												{brandColors.map((b) => (
-													<option key={b.name} value={b.name}>{b.name}</option>
-												))}
-											</select>
-											<span className={styles.hint}>
-												Which brand color maps to --primary in dark mode
-											</span>
-										</div>
-									</>
-								)}
-							</FramePanel>
-						</Frame>
-
-						{/* ── Surface Colors ── */}
-						<Frame>
-							<FrameHeader className={styles.sectionTitleFrame}>
-								<h3 className={styles.sectionTitle}>Surface Colors</h3>
-								<div style={{ display: "flex", gap: "var(--spacing-xs)", alignItems: "center" }}>
-									{(surfaceSaturation !== 100 || surfaceHueBlend !== 0 || surfaceHueShift !== 0 || surfaceBrightness !== 0) && (
-										<Button
-											onClick={() => {
-												setSurfaceSaturation(100);
-												setSurfaceHueBlend(0);
-												setSurfaceHueShift(0);
-												setSurfaceBrightness(0);
-											}}
-											size="sm"
-											variant="secondary"
-										>
-											<RefreshCw size={12} />
-											Reset
-										</Button>
-									)}
-									<Button onClick={addSurface} size="sm" variant="ghost">
-										+ Add
-									</Button>
-								</div>
-							</FrameHeader>
-							<FramePanel className={styles.sectionContent}>
-								<div className={styles.surfaceSliderGrid}>
-									<div className={styles.fieldGroup}>
-										<label>Saturation <span className={styles.sliderValue}>{surfaceSaturation}%</span></label>
-										<input
-											aria-label="Surface color saturation"
-											className={styles.rangeSlider}
-											max={500}
-											min={0}
-											onChange={(e) => setSurfaceSaturation(Number(e.target.value))}
-											step={5}
-											type="range"
-											value={surfaceSaturation}
-										/>
-									</div>
-									<div className={styles.fieldGroup}>
-										<label>Brightness <span className={styles.sliderValue}>{surfaceBrightness > 0 ? "+" : ""}{surfaceBrightness}</span></label>
-										<input
-											aria-label="Surface brightness offset"
-											className={styles.rangeSlider}
-											max={50}
-											min={-50}
-											onChange={(e) => setSurfaceBrightness(Number(e.target.value))}
-											step={5}
-											type="range"
-											value={surfaceBrightness}
-										/>
-									</div>
-									<div className={styles.fieldGroup}>
-										<label>Brand tint <span className={styles.sliderValue}>{surfaceHueBlend}%</span></label>
-										<input
-											aria-label="Blend brand primary hue into surfaces"
-											className={styles.rangeSlider}
-											max={100}
-											min={0}
-											onChange={(e) => setSurfaceHueBlend(Number(e.target.value))}
-											step={5}
-											type="range"
-											value={surfaceHueBlend}
-										/>
-									</div>
-									<div className={styles.fieldGroup}>
-										<label>Hue shift <span className={styles.sliderValue}>{surfaceHueShift > 0 ? "+" : ""}{surfaceHueShift}°</span></label>
-										<input
-											aria-label="Surface hue rotation across lightness"
-											className={styles.rangeSlider}
-											max={60}
-											min={-60}
-											onChange={(e) => setSurfaceHueShift(Number(e.target.value))}
-											step={5}
-											type="range"
-											value={surfaceHueShift}
-										/>
-									</div>
-								</div>
-								<Separator />
-								{surfaces.map((surface, index) => (
-									<div key={`surface-${index}`}>
-										<div className={styles.fieldGroup}>
+									{accentColors.map((accent, index) => (
+										<div className={styles.surfaceCard} key={`accent-${index}`}>
 											<div className={styles.colorInputRow}>
+												<input
+													aria-label={`${accent.name} accent color`}
+													className={styles.colorSwatch}
+													onChange={(e) => updateAccent(index, { hex: e.target.value })}
+													type="color"
+													value={accent.hex}
+												/>
+												<Input
+													autoComplete="off"
+													className={styles.colorHexInput}
+													inputSize="sm"
+													maxLength={7}
+													onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+														let v = e.target.value;
+														if (!v.startsWith("#")) v = `#${v}`;
+														if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
+															updateAccent(index, { hex: v.toUpperCase() });
+													}}
+													placeholder="#3B82F6"
+													spellCheck={false}
+													value={accent.hex}
+												/>
 												<Input
 													autoComplete="off"
 													className={styles.colorNameInput}
+													inputSize="sm"
 													onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-														setSurfaces((prev) => {
-															const next = [...prev];
-															next[index] = { ...next[index], name: e.target.value.replace(/[^a-zA-Z0-9-]/g, "") };
-															return next;
-														})
+														updateAccent(index, { name: e.target.value.replace(/[^a-zA-Z0-9-]/g, "") })
 													}
 													placeholder="name"
 													spellCheck={false}
-													value={surface.name}
+													value={accent.name}
 												/>
-												{surfaces.length > 1 && (
+												{accentColors.length > 1 && (
 													<Button
-														onClick={() => removeSurface(index)}
-														size="icon-sm"
-														variant="ghost"
+														onClick={() => removeAccent(index)}
+														size="icon"
+														variant="destructive-soft"
 													>
 														<X size={12} />
 													</Button>
 												)}
 											</div>
+											{generated && (
+												<ColorRampPreview
+													inputHex={accent.hex}
+													scale={generated.primitives.find(
+														(s) => s.name === accent.name,
+													)}
+												/>
+											)}
 										</div>
-										<SurfaceToneSelector
-											brightness={surfaceBrightness}
-											customHex={surface.hex ?? ""}
-											hueBlend={surfaceHueBlend}
-											hueShift={surfaceHueShift}
-											label={surface.name}
-											mode="light"
-											onChangeHex={(hex) =>
-												setSurfaces((prev) => {
-													const next = [...prev];
-													next[index] = { ...next[index], hex: hex || undefined };
-													return next;
-												})
-											}
-											onChangePreset={(preset) =>
-												setSurfaces((prev) => {
-													const next = [...prev];
-													next[index] = { ...next[index], preset, hex: undefined };
-													return next;
-												})
-											}
-											preset={surface.preset ?? "slate"}
-											primaryColor={brandColors.find((b) => b.name === mapping.primaryBrand)?.hex ?? brandColors[0].hex}
-											saturation={surfaceSaturation}
-										/>
-										{index < surfaces.length - 1 && <Separator />}
-									</div>
-								))}
+									))}
+								</div>
 
-								{/* Active surface mapping */}
-								{surfaces.length > 1 && (
-									<>
-										<Separator />
-										<div className={styles.fieldGroup}>
-											<label>Active surface</label>
+								<Separator />
+
+								{/* Neutral colors */}
+								<div className={styles.fieldGroup}>
+									<div className={styles.primitiveGroupHeader}>
+										<label>Neutral</label>
+										<div className={styles.primitiveGroupActions}>
+											<div className={styles.configFlyoutAnchor} ref={surfaceConfigRef}>
+												<Button
+													onClick={() => setShowSurfaceConfig((v) => !v)}
+													size="sm"
+													variant="ghost"
+												>
+													<SlidersHorizontal size={14} />
+												</Button>
+												{showSurfaceConfig && (
+													<div className={styles.configFlyout}>
+														<div className={styles.fieldGroup}>
+															<label>Saturation <span className={styles.sliderValue}>{surfaceSaturation}%</span></label>
+															<input aria-label="Surface saturation" className={styles.rangeSlider} max={500} min={0} onChange={(e) => setSurfaceSaturation(Number(e.target.value))} step={5} type="range" value={surfaceSaturation} />
+														</div>
+														<div className={styles.fieldGroup}>
+															<label>Brightness <span className={styles.sliderValue}>{surfaceBrightness > 0 ? "+" : ""}{surfaceBrightness}%</span></label>
+															<input aria-label="Surface brightness" className={styles.rangeSlider} max={100} min={-100} onChange={(e) => setSurfaceBrightness(Number(e.target.value))} step={5} type="range" value={surfaceBrightness} />
+														</div>
+													</div>
+												)}
+											</div>
+											<Button onClick={addNeutral} size="sm" variant="ghost">+ Add</Button>
+										</div>
+									</div>
+									{neutralColors.map((neutral, index) => {
+										const preset = neutral.preset ?? "slate";
+										const gray = getRadixGray(preset) ?? RADIX_GRAYS[0];
+										const displayHex = neutral.hex ?? gray.light[5];
+										return (
+											<div className={styles.surfaceCard} key={`neutral-${index}`}>
+												<div className={styles.colorInputRow}>
+													<input
+														aria-label={`${neutral.name} neutral color`}
+														className={styles.colorSwatch}
+														onChange={(e) => updateNeutral(index, { hex: e.target.value })}
+														type="color"
+														value={displayHex}
+													/>
+													<Input
+														autoComplete="off"
+														className={styles.colorHexInput}
+														inputSize="sm"
+														maxLength={7}
+														onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+															let v = e.target.value;
+															if (!v.startsWith("#")) v = `#${v}`;
+															if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
+																updateNeutral(index, { hex: v.toUpperCase() });
+														}}
+														placeholder={gray.light[5]}
+														spellCheck={false}
+														value={neutral.hex ?? ""}
+													/>
+													<Input
+														autoComplete="off"
+														className={styles.colorNameInput}
+														inputSize="sm"
+														onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+															updateNeutral(index, { name: e.target.value.replace(/[^a-zA-Z0-9-]/g, "") })
+														}
+														placeholder="name"
+														spellCheck={false}
+														value={neutral.name}
+													/>
+													{neutralColors.length > 1 && (
+														<Button
+															onClick={() => removeNeutral(index)}
+															size="icon"
+															variant="destructive-soft"
+														>
+															<X size={12} />
+														</Button>
+													)}
+												</div>
+												<NeutralPresetStrip
+													customHex={neutral.hex}
+													onChange={(name) => updateNeutral(index, { preset: name, hex: undefined })}
+													surfaceAdjust={{ saturation: surfaceSaturation, brightness: surfaceBrightness }}
+													value={preset}
+												/>
+											</div>
+										);
+									})}
+								</div>
+							</FramePanel>
+						</Frame>
+
+						{/* ── Aliases & Semantics ── */}
+						<Frame>
+							<FrameHeader><h3 className={styles.sectionTitle}>Aliases & Semantics</h3></FrameHeader>
+							<FramePanel className={styles.sectionContent}>
+								{/* Surface alias: which neutral for light/dark */}
+								<div className={styles.fieldGroup}>
+									<label>Surface</label>
+									<span className={styles.hint}>
+										Which neutral ramp to use for backgrounds, cards, and borders.
+									</span>
+									<div className={styles.mappingRow}>
+										<div className={styles.mappingCol}>
+											<span className={styles.mappingLabel}>Light</span>
 											<select
 												className={styles.mappingSelect}
 												onChange={(e) => setMapping((m) => ({ ...m, activeSurface: e.target.value }))}
 												value={mapping.activeSurface}
 											>
-												{surfaces.map((s) => (
-													<option key={s.name} value={s.name}>{s.name}</option>
+												{neutralColors.map((n) => (
+													<option key={n.name} value={n.name}>{n.name}</option>
 												))}
 											</select>
-											<span className={styles.hint}>
-												Which surface maps to --background, --card, etc.
-											</span>
 										</div>
-									</>
-								)}
+										<div className={styles.mappingCol}>
+											<span className={styles.mappingLabel}>Dark</span>
+											<select
+												className={styles.mappingSelect}
+												onChange={(e) => setMapping((m) => ({
+													...m,
+													darkActiveSurface: e.target.value === m.activeSurface ? undefined : e.target.value,
+												}))}
+												value={mapping.darkActiveSurface ?? mapping.activeSurface}
+											>
+												{neutralColors.map((n) => (
+													<option key={n.name} value={n.name}>{n.name}</option>
+												))}
+											</select>
+										</div>
+									</div>
+								</div>
+
+								<Separator />
+
+								{/* Primary semantic: which accent for light/dark */}
+								<div className={styles.fieldGroup}>
+									<label>Primary</label>
+									<span className={styles.hint}>
+										Which accent color to use for primary actions and interactive elements.
+									</span>
+									<div className={styles.mappingRow}>
+										<div className={styles.mappingCol}>
+											<span className={styles.mappingLabel}>Light</span>
+											<select
+												className={styles.mappingSelect}
+												onChange={(e) => setMapping((m) => ({ ...m, primaryBrand: e.target.value }))}
+												value={mapping.primaryBrand}
+											>
+												{accentColors.map((a) => (
+													<option key={a.name} value={a.name}>{a.name}</option>
+												))}
+											</select>
+										</div>
+										<div className={styles.mappingCol}>
+											<span className={styles.mappingLabel}>Dark</span>
+											<select
+												className={styles.mappingSelect}
+												onChange={(e) => setMapping((m) => ({
+													...m,
+													darkPrimaryBrand: e.target.value === m.primaryBrand ? undefined : e.target.value,
+												}))}
+												value={mapping.darkPrimaryBrand ?? mapping.primaryBrand}
+											>
+												{accentColors.map((a) => (
+													<option key={a.name} value={a.name}>{a.name}</option>
+												))}
+											</select>
+										</div>
+									</div>
+								</div>
 							</FramePanel>
 						</Frame>
 
@@ -1509,6 +1575,113 @@ function ColorRampPreview({
 	);
 }
 
+// --- Neutral preset strip (interactive) ---
+
+function NeutralPresetStrip({
+	value,
+	onChange,
+	customHex,
+	surfaceAdjust,
+}: {
+	value: string;
+	onChange: (preset: string) => void;
+	customHex?: string;
+	surfaceAdjust?: { saturation: number; brightness: number };
+}) {
+	const [open, setOpen] = useState(false);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const gray = getRadixGray(value) ?? RADIX_GRAYS[0];
+	const hasCustom = !!customHex;
+
+	// Compute adjustment options from surface sliders
+	const adjustOpts = useMemo(() => {
+		if (!surfaceAdjust) return null;
+		const { saturation, brightness } = surfaceAdjust;
+		if (saturation === 100 && brightness === 0) return null;
+		return {
+			satMul: saturation / 100,
+			brightness: brightness / 100,
+		};
+	}, [surfaceAdjust]);
+
+	// Generate preview colors with adjustments applied
+	const displayColors = useMemo(() => {
+		if (hasCustom && customHex && /^#[0-9a-fA-F]{6}$/.test(customHex)) {
+			const opts = adjustOpts
+				? { saturation: adjustOpts.satMul, brightness: adjustOpts.brightness }
+				: undefined;
+			return generateNeutralScale(customHex, opts).light;
+		}
+		if (adjustOpts) {
+			return adjustSaturation(gray.light, adjustOpts.satMul, {
+				brightness: adjustOpts.brightness,
+			});
+		}
+		return gray.light;
+	}, [hasCustom, customHex, gray.light, adjustOpts]);
+
+	// Close on outside click
+	useEffect(() => {
+		if (!open) return;
+		const handler = (e: MouseEvent) => {
+			if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+				setOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, [open]);
+
+	return (
+		<div className={styles.neutralStripContainer} ref={containerRef}>
+			<button
+				className={styles.neutralStripTrigger}
+				onClick={() => setOpen((v) => !v)}
+				type="button"
+			>
+				<div className={styles.grayPreview}>
+					{displayColors.map((hex, i) => (
+						<div className={styles.grayStep} key={i} style={{ backgroundColor: hex }} />
+					))}
+				</div>
+				<div className={styles.neutralStripLabel}>
+					<span>{hasCustom ? "custom" : value}</span>
+					<ChevronDown className={styles.neutralStripChevron} data-open={open} size={12} />
+				</div>
+			</button>
+			{open && (
+				<div className={styles.neutralStripDropdown}>
+					{RADIX_GRAYS.map((g) => {
+						const isSelected = g.name === value;
+						return (
+							<button
+								className={styles.neutralStripOption}
+								data-selected={isSelected}
+								key={g.name}
+								onClick={() => {
+									onChange(g.name);
+									setOpen(false);
+								}}
+								type="button"
+							>
+								<div className={styles.grayPreview}>
+									{g.light.map((hex, i) => (
+										<div className={styles.grayStep} key={i} style={{ backgroundColor: hex }} />
+									))}
+								</div>
+								<div className={styles.neutralStripOptionLabel}>
+									<span>{g.name}</span>
+									{isSelected && <Check size={12} />}
+								</div>
+							</button>
+						);
+					})}
+				</div>
+			)}
+		</div>
+	);
+}
+
 // --- Radius visual preview ---
 
 function RadiusPreview({ scale }: { scale: Record<string, number> }) {
@@ -1558,137 +1731,6 @@ function TypescalePreview({ config }: { config: TypescaleConfig }) {
 					</span>
 				</div>
 			))}
-		</div>
-	);
-}
-
-// --- Surface tone selector (light or dark) ---
-
-function SurfaceToneSelector({
-	label,
-	mode,
-	preset,
-	customHex,
-	onChangePreset,
-	onChangeHex,
-	saturation = 100,
-	brightness = 0,
-	hueBlend = 0,
-	hueShift = 0,
-	primaryColor,
-}: {
-	label: string;
-	mode: "light" | "dark";
-	preset: string;
-	customHex: string;
-	onChangePreset: (name: string) => void;
-	onChangeHex: (hex: string) => void;
-	saturation?: number;
-	brightness?: number;
-	hueBlend?: number;
-	hueShift?: number;
-	primaryColor?: string;
-}) {
-	const satMul = saturation / 100;
-	const primaryRgb = primaryColor ? hexToRgb(primaryColor) : null;
-	const primaryHue = primaryRgb ? rgbToOklch(primaryRgb.r, primaryRgb.g, primaryRgb.b).h : 0;
-	const adjustOpts = { hueShift, primaryBlend: hueBlend / 100, primaryHue, brightness: brightness / 100 };
-	const isCustom = /^#[0-9a-fA-F]{6}$/.test(customHex);
-
-	// Preview colors for custom hex: compute locally from the hex + adjustments
-	// (don't use generated system preview which only holds the active surface)
-	const customPreviewColors = useMemo(() => {
-		if (!isCustom) return undefined;
-		const scale = generateNeutralScale(customHex, {
-			saturation: satMul,
-			hueShift,
-			primaryBlend: hueBlend / 100,
-			primaryHue,
-			brightness: brightness / 100,
-		});
-		return mode === "light" ? scale?.light : scale?.dark;
-	}, [isCustom, customHex, satMul, hueShift, hueBlend, primaryHue, brightness, mode]);
-
-	return (
-		<div className={styles.fieldGroup}>
-			<label>{label}</label>
-			<div className={styles.colorInputRow}>
-				<input
-					aria-label={`${label} custom surface color`}
-					className={styles.colorSwatch}
-					onChange={(e) => onChangeHex(e.target.value)}
-					type="color"
-					value={isCustom ? customHex : "#888888"}
-				/>
-				<Input
-					autoComplete="off"
-					className={styles.colorHexInput}
-					maxLength={7}
-					onChange={(e) => {
-						let v = e.target.value;
-						if (!v.startsWith("#")) v = `#${v}`;
-						if (v.length <= 7 && /^#[0-9a-fA-F]*$/.test(v))
-							onChangeHex(v.toUpperCase());
-					}}
-					placeholder="Custom hex or pick preset"
-					spellCheck={false}
-					value={customHex}
-				/>
-				{isCustom && (
-					<Button
-						onClick={() => onChangeHex("")}
-						size="sm"
-						variant="ghost"
-					>
-						Clear
-					</Button>
-				)}
-			</div>
-			{isCustom && (
-				<span className={styles.hint}>
-					Your color's hue will be used to tint a neutral surface ramp
-				</span>
-			)}
-			{isCustom && customPreviewColors && (
-				<div className={styles.grayPreview}>
-					{customPreviewColors.map((hex, i) => (
-						<div
-							className={styles.grayStep}
-							key={i}
-							style={{ backgroundColor: hex }}
-							title={`Step ${i + 1}: ${hex}`}
-						/>
-					))}
-				</div>
-			)}
-			<div className={styles.graySelector}>
-				{RADIX_GRAYS.map((g) => (
-					<button
-						aria-label={`${g.label} surface tone`}
-						aria-pressed={!isCustom && preset === g.name}
-						className={styles.grayOption}
-						data-selected={!isCustom && preset === g.name}
-						key={g.name}
-						onClick={() => {
-							onChangeHex("");
-							onChangePreset(g.name);
-						}}
-						title={g.label}
-						type="button"
-					>
-						<div className={styles.grayPreview}>
-							{adjustSaturation(mode === "light" ? g.light : g.dark, satMul, adjustOpts).map((hex, i) => (
-								<div
-									className={styles.grayStep}
-									key={i}
-									style={{ backgroundColor: hex }}
-								/>
-							))}
-						</div>
-						<span className={styles.grayName}>{g.name}</span>
-					</button>
-				))}
-			</div>
 		</div>
 	);
 }

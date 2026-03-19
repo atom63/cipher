@@ -99,6 +99,33 @@ describe("reference integrity", () => {
 		}
 	});
 
+	test("references resolve with custom neutral names (brandColors + surfaces path)", () => {
+		const result = generateDesignSystem({
+			primary: "#3B82F6",
+			brandColors: [{ name: "blue", hex: "#3B82F6" }],
+			surfaces: [{ name: "n1", preset: "slate" }],
+			mapping: { primaryBrand: "blue", activeSurface: "n1" },
+		});
+
+		const tokenPaths = new Set<string>();
+		for (const token of result.tokens) {
+			const path = `${token.category}.${token.figmaName.replace(/\//g, ".")}`;
+			tokenPaths.add(path);
+		}
+
+		for (const token of result.tokens) {
+			const ref = String(token.originalValue);
+			const match = ref.match(/^\{([^}]+)\}$/);
+			if (match) {
+				const refPath = match[1];
+				expect(
+					tokenPaths.has(refPath),
+					`Token "${token.category}/${token.figmaName}" references "${refPath}" which doesn't exist`,
+				).toBe(true);
+			}
+		}
+	});
+
 	test("semantics reference aliases, not primitives directly (for surface/accent)", () => {
 		const result = generateDesignSystem({
 			primary: "#3B82F6",
@@ -462,8 +489,10 @@ describe("CSS output correctness", () => {
 				primary: "#3B82F6",
 				grayName,
 			});
-			expect(css).toContain("--color-gray-1:");
-			expect(css).toContain("--color-gray-12:");
+			expect(css).toContain("--color-gray-light-1:");
+			expect(css).toContain("--color-gray-light-12:");
+			expect(css).toContain("--color-gray-dark-1:");
+			expect(css).toContain("--color-gray-dark-12:");
 		}
 	});
 });
