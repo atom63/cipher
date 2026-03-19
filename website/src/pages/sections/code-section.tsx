@@ -185,7 +185,7 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
         <FadeUp delay={0.1}>
           <div className="mt-8 overflow-hidden rounded-xl border border-border/60 shadow-5">
             {/* Interactive file tabs */}
-            <div className="flex items-center gap-0 overflow-x-auto border-border/50 border-b bg-card/80">
+            <div className="flex items-center gap-0 overflow-x-auto border-border/50 border-b bg-card/80 backdrop-blur-xl">
               {TOKEN_SNIPPETS.map((snippet) => (
                 <button
                   className={`shrink-0 border-border/30 border-r px-3.5 py-2 font-mono text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
@@ -207,7 +207,7 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
             </div>
 
             {/* Code content — fixed height with bottom fade */}
-            <div className="relative bg-card/40">
+            <div className="relative bg-card/40 backdrop-blur-xl">
               <div className="h-[340px] overflow-hidden p-4 sm:p-5">
                 <motion.pre
                   animate={{ opacity: 1 }}

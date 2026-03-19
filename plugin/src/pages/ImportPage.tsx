@@ -1,9 +1,10 @@
-import { Upload } from "lucide-react";
+import { Palette, Upload } from "lucide-react";
 import { useRef, useState } from "react";
-import type { FileImportHandle } from "../components/import";
+import type { FileImportHandle, PasteColorRampHandle } from "../components/import";
 import {
 	CollectionSelector,
 	FileImport,
+	PasteColorRamp,
 	ProgressView,
 	SuccessView,
 	TokenTable,
@@ -12,8 +13,10 @@ import { PageBody, PageFooter, PageLayout } from "../components/layout";
 import {
 	Button,
 	Frame,
+	FrameHeader,
 	FramePanel,
 	SectionHeader,
+	Tabs,
 	useToast,
 } from "../components/ui";
 import { useFigmaMessage, usePostMessage } from "../hooks/useFigmaMessage";
@@ -39,7 +42,10 @@ type ImportViewState =
 
 export function ImportPage() {
 	const fileImportRef = useRef<FileImportHandle>(null);
+	const pasteRef = useRef<PasteColorRampHandle>(null);
 	const [view, setView] = useState<ImportViewState>("upload");
+	const [uploadTab, setUploadTab] = useState<"file" | "paste">("file");
+	const [pasteColorCount, setPasteColorCount] = useState(0);
 	const [tokens, setTokens] = useState<DesignToken[]>([]);
 	const [isCipherExport, setIsCipherExport] = useState(false);
 	const [collectionName, setCollectionName] = useState("Design Tokens");
@@ -187,6 +193,23 @@ export function ImportPage() {
 		setView("collection");
 	};
 
+	/** Pasted color ramps skip collection selection — go straight to primitives */
+	const handleRampTokensParsed = (parsed: ParsedTokens) => {
+		setTokens(parsed.tokens);
+		setCollectionName("primitives");
+		setImportMode("import");
+		setSelectedCollections(["primitives"]);
+		setSkippedCollection(true);
+		postMessage({
+			type: "check-import-conflicts",
+			data: {
+				tokens: parsed.tokens,
+				collectionName: "primitives",
+				selectedCollections: ["primitives"],
+			},
+		});
+	};
+
 	const handleCollectionSelected = (
 		_mode: "new" | "existing",
 		name: string,
@@ -242,6 +265,7 @@ export function ImportPage() {
 		setCollectionName("Design Tokens");
 		setImportMode("import");
 		setSelectedCollections([]);
+		setSkippedCollection(false);
 		setConflicts([]);
 		setStylesData(undefined);
 		setResult({
@@ -255,8 +279,14 @@ export function ImportPage() {
 
 	const handleCancel = () => resetState();
 
+	const [skippedCollection, setSkippedCollection] = useState(false);
+
 	const handleBackToCollection = () => {
-		setView("collection");
+		if (skippedCollection) {
+			resetState();
+		} else {
+			setView("collection");
+		}
 	};
 
 	const handleClose = () => {
@@ -331,28 +361,56 @@ export function ImportPage() {
 	// ---- Upload (default) ----
 	return (
 		<PageLayout>
-			<PageBody>
+			<PageBody style={{ display: "flex", flexDirection: "column" }}>
 				<SectionHeader
-					description="Import design tokens from JSON or CSS into Figma variables"
+					description="Import design tokens from JSON, CSS, or pasted color ramps"
 					title="Import"
 					variant="primary"
 				/>
 
-				<Frame>
-					<FramePanel>
-						<FileImport onTokensParsed={handleTokensParsed} ref={fileImportRef} />
+				<Frame style={{ flex: 1, minHeight: 0 }}>
+					<FrameHeader>
+						<Tabs
+							activeTab={uploadTab}
+							onTabChange={(id) => setUploadTab(id as "file" | "paste")}
+							size="sm"
+							tabs={[
+								{ id: "file", label: "File" },
+								{ id: "paste", label: "Paste Colors" },
+							]}
+						/>
+					</FrameHeader>
+					<FramePanel style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+						{uploadTab === "file" ? (
+							<FileImport onTokensParsed={handleTokensParsed} ref={fileImportRef} />
+						) : (
+							<PasteColorRamp onCountChange={setPasteColorCount} onTokensParsed={handleRampTokensParsed} ref={pasteRef} />
+						)}
 					</FramePanel>
 				</Frame>
 			</PageBody>
 
 			<PageFooter>
-				<Button
-					onClick={() => fileImportRef.current?.openFilePicker()}
-					variant="primary"
-				>
-					<Upload size={14} />
-					Upload File
-				</Button>
+				{uploadTab === "file" ? (
+					<Button
+						onClick={() => fileImportRef.current?.openFilePicker()}
+						variant="primary"
+					>
+						<Upload size={14} />
+						Upload File
+					</Button>
+				) : (
+					<Button
+						disabled={pasteColorCount === 0}
+						onClick={() => pasteRef.current?.submit()}
+						variant="primary"
+					>
+						<Palette size={14} />
+						{pasteColorCount > 0
+							? `Import ${pasteColorCount} Colors`
+							: "Import Colors"}
+					</Button>
+				)}
 			</PageFooter>
 		</PageLayout>
 	);

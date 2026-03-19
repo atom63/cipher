@@ -99,16 +99,17 @@ export function parseHslColor(hsl: string): ColorValue | null {
 
 // Parse OKLCH color to RGB (proper conversion)
 export function parseOKLCHColor(oklch: string): ColorValue | null {
-	// Support both with and without alpha: oklch(L C H) or oklch(L C H / alpha)
+	// Support: oklch(L C H), oklch(L C H / alpha), oklch(L% C H), oklch(L% C H / alpha)
 	const match = oklch.match(
-		/oklch\(([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)(?:\s*\/\s*([0-9.]+))?\)/,
+		/oklch\(([0-9.]+)(%?)\s+([0-9.]+)\s+([0-9.]+)(?:\s*\/\s*([0-9.]+))?\)/,
 	);
 	if (!match) return null;
 
-	const L = Number.parseFloat(match[1]);
-	const C = Number.parseFloat(match[2]);
-	const H = Number.parseFloat(match[3]);
-	const alpha = match[4] !== undefined ? Number.parseFloat(match[4]) : 1;
+	// L can be 0-1 (decimal) or 0-100 with % suffix
+	const L = match[2] === "%" ? Number.parseFloat(match[1]) / 100 : Number.parseFloat(match[1]);
+	const C = Number.parseFloat(match[3]);
+	const H = Number.parseFloat(match[4]);
+	const alpha = match[5] !== undefined ? Number.parseFloat(match[5]) : 1;
 
 	// Convert OKLCH to OKLab
 	const hRad = (H * Math.PI) / 180;
