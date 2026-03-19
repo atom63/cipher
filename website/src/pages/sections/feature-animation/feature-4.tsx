@@ -329,8 +329,8 @@ export function ModernCssAnimation() {
         <motion.rect
           animate={{
             opacity: isDone ? [0, 0.5, 0] : 0,
-            scaleX: isDone ? 1.2 : 1,
-            scaleY: isDone ? 1.3 : 1,
+            scaleX: isDone ? 1.125 : 1,
+            scaleY: isDone ? 1.35 : 1,
           }}
           fill="none"
           height="24"

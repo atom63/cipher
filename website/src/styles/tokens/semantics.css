@@ -6,7 +6,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-background: var(--background);
   --color-border: var(--border);
-  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-brand-secondary: var(--brand-brand-secondary);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-chart-1: var(--chart-1);
@@ -64,9 +64,9 @@
   --input: var(--surface-light-5);
   --ring: var(--surface-light-6);
   --chart-1: var(--color-brand-primary-500);
-  --chart-2: var(--color-brand-primary-500);
+  --chart-2: var(--color-brand-secondary-500);
   --chart-3: var(--color-brand-primary-500);
-  --chart-4: var(--color-brand-primary-500);
+  --chart-4: var(--color-brand-secondary-500);
   --chart-5: var(--color-brand-primary-500);
   --sidebar: var(--surface-light-3);
   --sidebar-foreground: var(--foreground);
@@ -78,7 +78,7 @@
   --sidebar-ring: var(--ring);
   --light: var(--surface-light-1);
   --dark: var(--surface-dark-1);
-  --brand-secondary: var(--color-brand-secondary-500);
+  --brand-brand-secondary: var(--color-brand-secondary-500);
 }
 
 .dark {
@@ -104,9 +104,9 @@
   --input: var(--surface-dark-7);
   --ring: var(--surface-dark-8);
   --chart-1: var(--color-brand-primary-500);
-  --chart-2: var(--color-brand-primary-500);
+  --chart-2: var(--color-brand-secondary-500);
   --chart-3: var(--color-brand-primary-500);
-  --chart-4: var(--color-brand-primary-500);
+  --chart-4: var(--color-brand-secondary-500);
   --chart-5: var(--color-brand-primary-500);
   --sidebar: var(--surface-dark-3);
   --sidebar-foreground: var(--foreground);
@@ -118,5 +118,5 @@
   --sidebar-ring: var(--ring);
   --light: var(--surface-light-1);
   --dark: var(--surface-dark-1);
-  --brand-secondary: var(--color-brand-secondary-500);
+  --brand-brand-secondary: var(--color-brand-secondary-500);
 }

@@ -189,7 +189,7 @@ function extractBrandConfig(
 		});
 	}
 	if (neutralColors.length === 0) {
-		neutralColors.push({ name: "gray", preset: "slate" });
+		neutralColors.push({ name: "n1", preset: "slate" });
 	}
 
 	// --- Mapping: detect from aliases and semantics ---
@@ -445,11 +445,11 @@ export function GeneratePage() {
 		{ name: "blue", hex: "#3B82F6" },
 	]);
 	const [neutralColors, setNeutralColors] = useState<NamedSurface[]>([
-		{ name: "gray", preset: "slate" },
+		{ name: "n1", preset: "slate" },
 	]);
 	const [mapping, setMapping] = useState<PaletteMapping>({
 		primaryBrand: "blue",
-		activeSurface: "gray",
+		activeSurface: "n1",
 	});
 	const [showSurfaceConfig, setShowSurfaceConfig] = useState(false);
 	const surfaceConfigRef = useRef<HTMLDivElement>(null);
@@ -506,14 +506,14 @@ export function GeneratePage() {
 		const presets = RADIX_GRAYS.map((g) => g.name);
 		const used = new Set(neutralColors.map((n) => n.preset));
 		const preset = presets.find((p) => !used.has(p)) ?? presets[0];
-		const name = `neutral-${neutralColors.length + 1}`;
+		const name = `n${neutralColors.length + 1}`;
 		setNeutralColors((prev) => [...prev, { name, preset }]);
 	}, [neutralColors]);
 
 	const removeNeutral = useCallback((index: number) => {
 		setNeutralColors((prev) => {
 			const next = prev.filter((_, i) => i !== index);
-			if (next.length === 0) next.push({ name: "gray", preset: "slate" });
+			if (next.length === 0) next.push({ name: "n1", preset: "slate" });
 			return next;
 		});
 	}, []);

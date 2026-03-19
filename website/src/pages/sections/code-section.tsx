@@ -238,7 +238,7 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
                         return <div key={`${activeFile}-${i}`}>{"\u00A0"}</div>;
                       }
 
-                      if (trimmed.includes(":") && trimmed.includes(";")) {
+                      if (trimmed.includes(":") && (trimmed.includes(";") || trimmed.endsWith(","))) {
                         const colonIdx = trimmed.indexOf(":");
                         const prop = trimmed.slice(0, colonIdx);
                         const val = trimmed.slice(colonIdx);
