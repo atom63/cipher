@@ -43,7 +43,7 @@ function MediaElement({
 }
 
 // =============================================================================
-// COVER
+// COVER — bold opening. Title anchors bottom-left, image fills right column.
 // =============================================================================
 
 export function CoverSlide({
@@ -72,8 +72,8 @@ export function CoverSlide({
       <Display size="lg">{title}</Display>
       {subtitle && (
         <>
-          <Spacer size="lg" />
-          <Body size="lg">{subtitle}</Body>
+          <Spacer size="md" />
+          <Body size="lg" color="secondary">{subtitle}</Body>
         </>
       )}
       {badges && badges.length > 0 && (
@@ -95,7 +95,7 @@ export function CoverSlide({
     return (
       <div className="grid min-h-0 flex-1 grid-cols-[3fr_2fr] gap-16 *:min-h-0">
         {text}
-        <div className="min-h-0 overflow-hidden rounded-2xl">
+        <div className="min-h-0 overflow-hidden rounded-2xl border border-border/20">
           <img
             alt={imageAlt}
             className="size-full object-cover"
@@ -110,7 +110,7 @@ export function CoverSlide({
 }
 
 // =============================================================================
-// SPLIT
+// SPLIT — text + media side by side
 // =============================================================================
 
 type SplitRatio = "equal" | "wide-media" | "narrow-media";
@@ -176,6 +176,32 @@ const splitGridMap: Record<SplitRatio, string> = {
   "narrow-media": "grid-cols-[3fr_2fr]",
 };
 
+function SplitMediaColumn({
+  mediaSrc,
+  mediaAlt,
+  mediaType,
+  aspectRatio,
+  fit,
+}: {
+  mediaSrc: string;
+  mediaAlt: string;
+  mediaType?: "image" | "video";
+  aspectRatio: "16/9" | "4/3" | "1" | "auto";
+  fit: "cover" | "contain";
+}) {
+  return (
+    <div className="flex min-h-0 w-full items-center justify-center overflow-hidden rounded-2xl border border-border/15">
+      <MediaElement
+        aspectRatio={aspectRatio}
+        fit={fit}
+        mediaAlt={mediaAlt}
+        mediaSrc={mediaSrc}
+        mediaType={mediaType}
+      />
+    </div>
+  );
+}
+
 export function SplitTextMedia({
   label,
   title,
@@ -189,24 +215,9 @@ export function SplitTextMedia({
   ratio = "equal",
 }: SplitProps) {
   return (
-    <div
-      className={`grid min-h-0 flex-1 gap-16 ${splitGridMap[ratio]} *:min-h-0`}
-    >
-      <SplitTextColumn
-        body={body}
-        bullets={bullets}
-        label={label}
-        title={title}
-      />
-      <div className="flex min-h-0 w-full items-center justify-center">
-        <MediaElement
-          aspectRatio={aspectRatio}
-          fit={fit}
-          mediaAlt={mediaAlt}
-          mediaSrc={mediaSrc}
-          mediaType={mediaType}
-        />
-      </div>
+    <div className={`grid min-h-0 flex-1 gap-16 ${splitGridMap[ratio]} *:min-h-0`}>
+      <SplitTextColumn body={body} bullets={bullets} label={label} title={title} />
+      <SplitMediaColumn aspectRatio={aspectRatio} fit={fit} mediaAlt={mediaAlt} mediaSrc={mediaSrc} mediaType={mediaType} />
     </div>
   );
 }
@@ -230,30 +241,15 @@ export function SplitMediaText({
         ? "grid-cols-[2fr_3fr]"
         : "grid-cols-2";
   return (
-    <div
-      className={`grid min-h-0 flex-1 gap-16 ${gridCols} *:min-h-0`}
-    >
-      <div className="flex min-h-0 w-full items-center justify-center">
-        <MediaElement
-          aspectRatio={aspectRatio}
-          fit={fit}
-          mediaAlt={mediaAlt}
-          mediaSrc={mediaSrc}
-          mediaType={mediaType}
-        />
-      </div>
-      <SplitTextColumn
-        body={body}
-        bullets={bullets}
-        label={label}
-        title={title}
-      />
+    <div className={`grid min-h-0 flex-1 gap-16 ${gridCols} *:min-h-0`}>
+      <SplitMediaColumn aspectRatio={aspectRatio} fit={fit} mediaAlt={mediaAlt} mediaSrc={mediaSrc} mediaType={mediaType} />
+      <SplitTextColumn body={body} bullets={bullets} label={label} title={title} />
     </div>
   );
 }
 
 // =============================================================================
-// FULL BLEED
+// FULL BLEED — edge-to-edge media with gradient text overlay
 // =============================================================================
 
 export function FullBleedSlide({
@@ -290,17 +286,17 @@ export function FullBleedSlide({
         />
       )}
       {(label ?? title) && (
-        <div className="absolute inset-x-0 bottom-0 z-10 bg-linear-to-t from-black/70 to-transparent px-16 pt-32 pb-14">
+        <div className="absolute inset-x-0 bottom-0 z-10 bg-linear-to-t from-black/80 via-black/40 to-transparent px-20 pt-40 pb-16">
           <Stack gap="xs">
             {label && (
-              <Label color="inherit">
-                <span className="text-white/60">{label}</span>
-              </Label>
+              <span className="font-medium font-mono text-white/50 text-xl uppercase tracking-[0.12em]">
+                {label}
+              </span>
             )}
             {title && (
-              <Title color="inherit">
-                <span className="text-white">{title}</span>
-              </Title>
+              <h2 className="font-semibold text-[44px] text-white leading-[1.1] tracking-[-0.02em]">
+                {title}
+              </h2>
             )}
           </Stack>
         </div>
@@ -310,7 +306,7 @@ export function FullBleedSlide({
 }
 
 // =============================================================================
-// STATS
+// STATS — big numbers in cards
 // =============================================================================
 
 interface StatItem {
@@ -349,9 +345,10 @@ export function StatsSlide({
               <Display color="accent" size="md">
                 {s.value}
               </Display>
-              <Label>{s.label}</Label>
+              <Divider color="accent" />
+              <Label color="secondary">{s.label}</Label>
               {s.description && (
-                <Body align="center" size="sm">
+                <Body align="center" size="sm" color="muted">
                   {s.description}
                 </Body>
               )}
@@ -364,7 +361,7 @@ export function StatsSlide({
 }
 
 // =============================================================================
-// QUOTE
+// QUOTE — centered, large, with prominent decorative mark
 // =============================================================================
 
 export function QuoteSlide({
@@ -384,7 +381,7 @@ export function QuoteSlide({
 }
 
 // =============================================================================
-// CONTENT
+// CONTENT — title + divider + body/bullets
 // =============================================================================
 
 export function ContentSlide({
@@ -428,7 +425,7 @@ export function ContentSlide({
 }
 
 // =============================================================================
-// COMPARISON
+// COMPARISON — two columns, accent wins visually
 // =============================================================================
 
 interface ComparisonColumn {
@@ -448,33 +445,36 @@ export function ComparisonSlide({
   left: ComparisonColumn;
   right: ComparisonColumn;
 }) {
-  const renderCol = (col: ComparisonColumn) => (
-    <Box
-      className="flex min-h-0 flex-col"
-      padding="lg"
-      variant={col.variant ?? "outline"}
-    >
-      <div className="shrink-0">
-        <Stack gap="md">
-          <Subtitle color={col.variant === "accent" ? "accent" : "muted"}>
-            {col.title}
-          </Subtitle>
-          <Divider color={col.variant === "accent" ? "accent" : "muted"} />
-        </Stack>
-      </div>
-      <Spacer size="md" />
-      <div className="min-h-0 flex-1">
-        <List
-          gap="sm"
-          marker={col.variant === "accent" ? "bullet" : "dash"}
-        >
-          {col.items.map((item) => (
-            <Item key={item}>{item}</Item>
-          ))}
-        </List>
-      </div>
-    </Box>
-  );
+  const renderCol = (col: ComparisonColumn) => {
+    const isAccent = col.variant === "accent";
+    return (
+      <Box
+        className="flex min-h-0 flex-col"
+        padding="lg"
+        variant={isAccent ? "accent" : "outline"}
+      >
+        <div className="shrink-0">
+          <Stack gap="md">
+            <Subtitle color={isAccent ? "accent" : "secondary"}>
+              {col.title}
+            </Subtitle>
+            <Divider color={isAccent ? "accent" : "muted"} />
+          </Stack>
+        </div>
+        <Spacer size="md" />
+        <div className="min-h-0 flex-1">
+          <List
+            gap="sm"
+            marker={isAccent ? "bullet" : "dash"}
+          >
+            {col.items.map((item) => (
+              <Item key={item}>{item}</Item>
+            ))}
+          </List>
+        </div>
+      </Box>
+    );
+  };
 
   return (
     <Stack className="flex-1" gap="lg">
@@ -484,7 +484,7 @@ export function ComparisonSlide({
           {title && <Title>{title}</Title>}
         </Stack>
       )}
-      <Columns count={2} gap="xl">
+      <Columns count={2} gap="lg">
         {renderCol(left)}
         {renderCol(right)}
       </Columns>
@@ -534,7 +534,7 @@ export function ProfileSlide({
 }
 
 // =============================================================================
-// SECTION
+// SECTION — big centered title with optional large number
 // =============================================================================
 
 export function SectionSlide({
@@ -551,7 +551,7 @@ export function SectionSlide({
       <Stack align="center" gap="none">
         {number && (
           <>
-            <span className="font-extralight font-mono text-[160px] text-primary/15 leading-none tracking-[-0.04em]">
+            <span className="font-light font-mono text-[160px] text-primary/12 leading-none tracking-[-0.04em]">
               {number}
             </span>
             <Spacer size="lg" />
@@ -572,7 +572,7 @@ export function SectionSlide({
 }
 
 // =============================================================================
-// CLOSING
+// CLOSING — large display text with subtle footer
 // =============================================================================
 
 export function ClosingSlide({
@@ -604,12 +604,12 @@ export function ClosingSlide({
         <>
           <Spacer size="2xl" />
           <Row gap="lg" justify="center" wrap>
-            {items.map((i) => (
-              <span
-                className="font-medium font-mono text-muted-foreground/40 text-sm uppercase tracking-[0.15em]"
-                key={`${i.label}-${i.value}`}
-              >
-                {i.value}
+            {items.map((i, idx) => (
+              <span key={`${i.label}-${i.value}`} className="flex items-center gap-4">
+                {idx > 0 && <span className="text-foreground/10">·</span>}
+                <span className="font-medium font-mono text-foreground/30 text-lg uppercase tracking-[0.12em]">
+                  {i.value}
+                </span>
               </span>
             ))}
           </Row>

@@ -11,13 +11,13 @@ const textAlignClasses: Record<TextAlign, string> = {
 
 const textColorClasses: Record<TextColor, string> = {
   default: "text-foreground",
-  secondary: "text-foreground/50",
+  secondary: "text-foreground/70",
   muted: "text-muted-foreground",
   accent: "text-primary",
   inherit: "",
 };
 
-/** Hero text — for single impactful words/numbers. Extralight, massive. */
+/** Hero text — massive, light weight. For single impactful words or numbers. */
 export function Display({
   children,
   align = "left",
@@ -30,20 +30,20 @@ export function Display({
   size?: "sm" | "md" | "lg";
 }) {
   const sizeClasses = {
-    sm: "text-6xl",
-    md: "text-8xl",
-    lg: "text-[128px]",
+    sm: "text-7xl",
+    md: "text-[96px]",
+    lg: "text-[120px]",
   };
   return (
     <p
-      className={`break-words font-extralight leading-[0.85] tracking-[-0.04em] ${sizeClasses[size]} ${textAlignClasses[align]} ${textColorClasses[color]}`}
+      className={`break-words font-light leading-[0.9] tracking-[-0.04em] ${sizeClasses[size]} ${textAlignClasses[align]} ${textColorClasses[color]}`}
     >
       {children}
     </p>
   );
 }
 
-/** Large headline — for section openers. Bold, tight leading. */
+/** Large headline — for section openers. Bold, tight. */
 export function Headline({
   children,
   align = "left",
@@ -62,7 +62,7 @@ export function Headline({
   );
 }
 
-/** Slide title — for slide headings. Semibold, readable. */
+/** Slide title — primary heading per slide. */
 export function Title({
   children,
   align = "left",
@@ -74,18 +74,18 @@ export function Title({
 }) {
   return (
     <h2
-      className={`break-words font-semibold text-5xl leading-tight tracking-[-0.02em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
+      className={`break-words font-semibold text-[44px] leading-[1.1] tracking-[-0.02em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
     >
       {children}
     </h2>
   );
 }
 
-/** Subtitle — secondary headings. Medium weight. */
+/** Subtitle — secondary heading. */
 export function Subtitle({
   children,
   align = "left",
-  color = "muted",
+  color = "default",
 }: {
   children: ReactNode;
   align?: TextAlign;
@@ -93,14 +93,14 @@ export function Subtitle({
 }) {
   return (
     <h3
-      className={`break-words font-medium text-3xl leading-snug tracking-[-0.01em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
+      className={`break-words font-semibold text-[32px] leading-snug tracking-[-0.01em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
     >
       {children}
     </h3>
   );
 }
 
-/** Body text — for paragraphs. Relaxed leading for readability. */
+/** Body text — paragraphs. Legible from the back of the room. */
 export function Body({
   children,
   align = "left",
@@ -113,20 +113,20 @@ export function Body({
   size?: "sm" | "md" | "lg";
 }) {
   const sizeClasses = {
-    sm: "text-2xl",
-    md: "text-[28px]",
-    lg: "text-[32px]",
+    sm: "text-[22px]",
+    md: "text-[26px]",
+    lg: "text-[30px]",
   };
   return (
     <p
-      className={`break-words leading-relaxed ${sizeClasses[size]} ${textAlignClasses[align]} ${textColorClasses[color]}`}
+      className={`break-words leading-[1.5] ${sizeClasses[size]} ${textAlignClasses[align]} ${textColorClasses[color]}`}
     >
       {children}
     </p>
   );
 }
 
-/** Small label — uppercase, tracked, monospace. For categories and overlines. */
+/** Label — uppercase monospace overline. Scaled for presentation. */
 export function Label({
   children,
   align = "left",
@@ -138,14 +138,14 @@ export function Label({
 }) {
   return (
     <span
-      className={`font-medium font-mono text-lg uppercase tracking-[0.15em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
+      className={`font-medium font-mono text-xl uppercase tracking-[0.12em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
     >
       {children}
     </span>
   );
 }
 
-/** Inline accent — highlighted text within body. */
+/** Inline accent — bold highlight within body text. */
 export function Accent({
   children,
   color = "accent",
@@ -162,7 +162,7 @@ export function Accent({
   );
 }
 
-/** Monospace text — for code, numbers, technical content. */
+/** Monospace text — code, numbers, technical content. */
 export function Mono({
   children,
   size = "md",
@@ -170,11 +170,11 @@ export function Mono({
   children: ReactNode;
   size?: "sm" | "md" | "lg";
 }) {
-  const sizeClasses = { sm: "text-lg", md: "text-2xl", lg: "text-4xl" };
+  const sizeClasses = { sm: "text-xl", md: "text-2xl", lg: "text-4xl" };
   return <span className={`font-mono ${sizeClasses[size]}`}>{children}</span>;
 }
 
-/** Quote — italic blockquote with decorative mark and attribution. */
+/** Quote — large italic with decorative mark and attribution. */
 export function Quote({
   children,
   attribution,
@@ -183,18 +183,18 @@ export function Quote({
   attribution?: string;
 }) {
   return (
-    <blockquote className="relative max-w-[1000px] break-words">
+    <blockquote className="relative max-w-[1100px] break-words">
       <span
         aria-hidden="true"
-        className="absolute -top-16 -left-10 text-[240px] text-primary/6 leading-none select-none"
+        className="absolute -top-20 -left-12 text-[280px] text-primary/10 leading-none select-none"
       >
         &ldquo;
       </span>
-      <p className="relative text-[40px] text-foreground/60 italic leading-[1.4]">
+      <p className="relative text-[38px] text-foreground/80 italic leading-[1.45]">
         {children}
       </p>
       {attribution && (
-        <footer className="mt-10 font-mono text-lg text-muted-foreground/40 uppercase tracking-[0.15em]">
+        <footer className="mt-10 font-mono text-xl text-muted-foreground/50 uppercase tracking-[0.12em]">
           — {attribution}
         </footer>
       )}
