@@ -1,16 +1,18 @@
 type ObjectFit = "cover" | "contain" | "fill";
-type AspectRatio = "16/9" | "4/3" | "1" | "auto";
+type AspectRatio = "16/9" | "4/3" | "3/4" | "1/1" | "1" | "auto";
 
-const aspectRatioClasses: Record<Exclude<AspectRatio, "auto">, string> = {
+const aspectRatioClasses: Record<string, string> = {
   "16/9": "aspect-video",
   "4/3": "aspect-[4/3]",
+  "3/4": "aspect-[3/4]",
+  "1/1": "aspect-square",
   "1": "aspect-square",
 };
 
 export function Image({
   src,
   alt,
-  fit = "contain",
+  fit = "cover",
   rounded = true,
   aspectRatio,
   className,
@@ -56,7 +58,7 @@ export function Image({
 
 export function Video({
   src,
-  fit = "contain",
+  fit = "cover",
   rounded = true,
   aspectRatio,
   autoPlay = true,

@@ -30,7 +30,7 @@ function MediaElement({
   mediaSrc: string;
   mediaAlt: string;
   mediaType?: "image" | "video";
-  aspectRatio?: "16/9" | "4/3" | "1" | "auto";
+  aspectRatio?: "16/9" | "4/3" | "3/4" | "1/1" | "1" | "auto";
   fit?: "cover" | "contain";
 }) {
   const isVideo = mediaType ? mediaType === "video" : VIDEO_EXT.test(mediaSrc);
@@ -50,8 +50,10 @@ export function CoverSlide({
   title,
   subtitle,
   badges,
-  imageSrc,
-  imageAlt = "Cover",
+  mediaSrc,
+  mediaAlt = "Cover",
+  mediaType,
+  aspectRatio,
   font = "sans",
   italic = false,
 }: {
@@ -59,8 +61,11 @@ export function CoverSlide({
   title: string;
   subtitle?: string;
   badges?: string[];
-  imageSrc?: string;
-  imageAlt?: string;
+  /** Media source — supports both images and videos (auto-detected from extension) */
+  mediaSrc?: string;
+  mediaAlt?: string;
+  mediaType?: "image" | "video";
+  aspectRatio?: "16/9" | "4/3" | "3/4" | "1/1" | "1" | "auto";
   font?: "sans" | "serif";
   italic?: boolean;
 }) {
@@ -94,15 +99,17 @@ export function CoverSlide({
     </Stack>
   );
 
-  if (imageSrc) {
+  if (mediaSrc) {
     return (
       <div className="grid min-h-0 flex-1 grid-cols-[3fr_2fr] gap-16 *:min-h-0">
         {text}
-        <div className="min-h-0 overflow-hidden rounded-2xl border border-border/20">
-          <img
-            alt={imageAlt}
-            className="size-full object-cover"
-            src={imageSrc}
+        <div className="flex min-h-0 w-full items-center justify-center overflow-hidden rounded-2xl border border-border/15">
+          <MediaElement
+            mediaSrc={mediaSrc}
+            mediaAlt={mediaAlt}
+            mediaType={mediaType}
+            aspectRatio={aspectRatio ?? "auto"}
+            fit="cover"
           />
         </div>
       </div>
@@ -126,7 +133,7 @@ interface SplitProps {
   mediaSrc: string;
   mediaAlt?: string;
   mediaType?: "image" | "video";
-  aspectRatio?: "16/9" | "4/3" | "1" | "auto";
+  aspectRatio?: "16/9" | "4/3" | "3/4" | "1/1" | "1" | "auto";
   fit?: "cover" | "contain";
   ratio?: SplitRatio;
 }
@@ -189,7 +196,7 @@ function SplitMediaColumn({
   mediaSrc: string;
   mediaAlt: string;
   mediaType?: "image" | "video";
-  aspectRatio: "16/9" | "4/3" | "1" | "auto";
+  aspectRatio: "16/9" | "4/3" | "3/4" | "1/1" | "1" | "auto";
   fit: "cover" | "contain";
 }) {
   return (
