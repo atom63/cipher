@@ -1,6 +1,19 @@
 /**
  * MDX STYLES - Consolidated style definitions
  * Extracted to separate file to avoid circular dependencies
+ *
+ * IMPORTANT: Two styling paths exist for MDX elements:
+ *
+ * 1. Component mapping (mdxComponents) — applies to markdown syntax (e.g. ![alt](src))
+ *    and lowercase HTML tags that MDX routes through the provider. Styles live in
+ *    `mdxStyles.content.*` and are applied via `cn()` in each component.
+ *
+ * 2. Root selectors (below) — apply to raw JSX written directly in MDX files
+ *    (e.g. <figure><video ... /></figure>). These bypass the component mapping,
+ *    so styles must be applied via descendant selectors on the root wrapper.
+ *
+ * When changing spacing/styles for media or figures, update BOTH paths or the
+ * styling will be inconsistent between markdown syntax and raw JSX usage.
  */
 
 export const mdxStyles = {
@@ -8,9 +21,10 @@ export const mdxStyles = {
   // Note: .not-mdx, .example-container, and .component-preview will opt-out of all typography styles
   root: [
     "mdx text-foreground",
-    // Normalize media inside figures (raw JSX blocks bypass component mapping)
-    "[&_figure>video]:mt-4 [&_figure>video]:w-full [&_figure>video]:rounded-lg [&_figure>video]:border [&_figure>video]:border-border",
-    "[&_figure>img]:mt-4 [&_figure>img]:w-full [&_figure>img]:rounded-lg",
+    // Raw JSX figures bypass component mapping — must style via root selectors
+    "[&_figure]:my-10 [&_figure:first-child]:mt-0 [&_figure:last-child]:mb-0",
+    "[&_figure>video]:mt-0 [&_figure>video]:w-full [&_figure>video]:rounded-lg [&_figure>video]:border [&_figure>video]:border-border",
+    "[&_figure>img]:mt-0 [&_figure>img]:w-full [&_figure>img]:rounded-lg",
     "[&_figure>iframe]:w-full [&_figure>iframe]:rounded-lg [&_figure>iframe]:border [&_figure>iframe]:border-border",
     "[&_figure>figcaption]:mt-3 [&_figure>figcaption]:text-center [&_figure>figcaption]:text-sm [&_figure>figcaption]:text-muted-foreground [&_figure>figcaption]:leading-relaxed",
     // .not-mdx resets
@@ -97,14 +111,14 @@ export const mdxStyles = {
     td: "px-4 py-3 align-middle text-foreground",
     caption: "mt-3 text-xs text-secondary-foreground",
 
-    // media
-    img: "mt-4 rounded-lg",
-    figure: "my-8 first:mt-0 last:mb-0",
+    // media — generous vertical rhythm, media acts as a visual pause
+    img: "my-10 first:mt-0 last:mb-0 rounded-lg",
+    figure: "my-10 first:mt-0 last:mb-0",
     figcaption:
       "text-sm mt-3 text-center text-muted-foreground leading-relaxed",
-    iframe: "mt-4 w-full rounded-lg border border-border",
-    video: "mt-4 w-full rounded-lg border border-border",
-    audio: "mt-4 w-full",
+    iframe: "my-10 first:mt-0 last:mb-0 w-full rounded-lg border border-border",
+    video: "my-10 first:mt-0 last:mb-0 w-full rounded-lg border border-border",
+    audio: "my-10 first:mt-0 last:mb-0 w-full",
 
     // details/summary
     details: "mt-6 rounded-lg border border-border bg-card p-4",

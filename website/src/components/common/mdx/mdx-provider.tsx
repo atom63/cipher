@@ -37,8 +37,8 @@ const narrowTextElements = [
   "[&>details]:mx-auto [&>details]:max-w-xl",
   // Figcaptions inside full-width figures
   "[&>figure>figcaption]:mx-auto [&>figure>figcaption]:max-w-xl",
-  // Let paragraphs containing images break out to full width
-  "[&>p:has(>img)]:max-w-none",
+  // Let paragraphs containing images break out to full width and inherit media spacing
+  "[&>p:has(>img)]:max-w-none [&>p:has(>img)]:my-10 [&>p:has(>img)]:first:mt-0 [&>p:has(>img)]:last:mb-0",
 ].join(" ");
 
 const proseVariants = {
