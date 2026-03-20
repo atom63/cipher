@@ -8,6 +8,11 @@ export const mdxStyles = {
   // Note: .not-mdx, .example-container, and .component-preview will opt-out of all typography styles
   root: [
     "mdx text-foreground",
+    // Normalize media inside figures (raw JSX blocks bypass component mapping)
+    "[&_figure>video]:mt-4 [&_figure>video]:w-full [&_figure>video]:rounded-lg [&_figure>video]:border [&_figure>video]:border-border",
+    "[&_figure>img]:mt-4 [&_figure>img]:w-full [&_figure>img]:rounded-lg",
+    "[&_figure>iframe]:w-full [&_figure>iframe]:rounded-lg [&_figure>iframe]:border [&_figure>iframe]:border-border",
+    "[&_figure>figcaption]:mt-3 [&_figure>figcaption]:text-center [&_figure>figcaption]:text-sm [&_figure>figcaption]:text-muted-foreground [&_figure>figcaption]:leading-relaxed",
     // .not-mdx resets
     "[&_.not-mdx:not(.example-container)]:!m-0",
     "[&_.not-mdx_p]:!m-0 [&_.not-mdx_a]:!no-underline",
@@ -72,8 +77,8 @@ export const mdxStyles = {
 
     // lists
     ul: "mt-4 mb-4 list-disc space-y-2 pl-4 [&_ul]:mt-2 [&_ul]:space-y-2 [&_ul]:pl-4",
-    ol: "mt-4 list-decimal space-y-2 pl-4 [&_ol]:mt-2 [&_ol]:space-y-2 [&_ol]:pl-4",
-    li: "text-base leading-7",
+    ol: "mt-4 mb-4 list-decimal space-y-2 pl-4 [&_ol]:mt-2 [&_ol]:space-y-2 [&_ol]:pl-4",
+    li: "text-base leading-7 text-secondary-foreground",
 
     // hr
     hr: "my-10 border-t border-border",
@@ -93,13 +98,13 @@ export const mdxStyles = {
     caption: "mt-3 text-xs text-secondary-foreground",
 
     // media
-    img: "rounded-lg",
+    img: "mt-4 rounded-lg",
     figure: "my-8 first:mt-0 last:mb-0",
     figcaption:
-      "text-sm mt-3 text-center text-secondary-foreground leading-relaxed",
-    iframe: "w-full rounded-lg border border-border",
-    video: "w-full rounded-lg border border-border",
-    audio: "w-full",
+      "text-sm mt-3 text-center text-muted-foreground leading-relaxed",
+    iframe: "mt-4 w-full rounded-lg border border-border",
+    video: "mt-4 w-full rounded-lg border border-border",
+    audio: "mt-4 w-full",
 
     // details/summary
     details: "mt-6 rounded-lg border border-border bg-card p-4",

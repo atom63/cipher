@@ -163,7 +163,10 @@ export const mdxComponents = {
   ),
 
   // Content elements
-  blockquote: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  blockquote: ({
+    className,
+    ...props
+  }: React.ComponentPropsWithoutRef<"blockquote">) => (
     <blockquote
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.blockquote : "",
@@ -172,7 +175,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  code: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => {
+  code: ({ className, ...props }: React.ComponentPropsWithoutRef<"code">) => {
     const shouldStyle = useShouldApplyTypography(className);
     const isInline = !className?.includes("language-");
     if (isInline) {
@@ -245,7 +248,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  strong: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  strong: ({ className, ...props }: React.ComponentPropsWithoutRef<"strong">) => (
     <strong
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.strong : "",
@@ -254,7 +257,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  em: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  em: ({ className, ...props }: React.ComponentPropsWithoutRef<"em">) => (
     <em
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.em : "",
@@ -263,7 +266,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  kbd: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  kbd: ({ className, ...props }: React.ComponentPropsWithoutRef<"kbd">) => (
     <kbd
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.kbd : "",
@@ -345,7 +348,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  figure: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  figure: ({ className, ...props }: React.ComponentPropsWithoutRef<"figure">) => (
     <figure
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.figure : "",
@@ -354,7 +357,10 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  figcaption: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  figcaption: ({
+    className,
+    ...props
+  }: React.ComponentPropsWithoutRef<"figcaption">) => (
     <figcaption
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.figcaption : "",
@@ -401,7 +407,10 @@ export const mdxComponents = {
   ),
 
   // Interactive elements
-  details: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  details: ({
+    className,
+    ...props
+  }: React.ComponentPropsWithoutRef<"details">) => (
     <details
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.details : "",
@@ -410,7 +419,10 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  summary: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  summary: ({
+    className,
+    ...props
+  }: React.ComponentPropsWithoutRef<"summary">) => (
     <summary
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.summary : "",
@@ -421,7 +433,7 @@ export const mdxComponents = {
   ),
 
   // Text formatting elements
-  mark: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  mark: ({ className, ...props }: React.ComponentPropsWithoutRef<"mark">) => (
     <mark
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.mark : "",
@@ -430,7 +442,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  del: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  del: ({ className, ...props }: React.ComponentPropsWithoutRef<"del">) => (
     <del
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.del : "",
@@ -439,7 +451,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  ins: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  ins: ({ className, ...props }: React.ComponentPropsWithoutRef<"ins">) => (
     <ins
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.ins : "",
@@ -448,7 +460,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  sub: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  sub: ({ className, ...props }: React.ComponentPropsWithoutRef<"sub">) => (
     <sub
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.sub : "",
@@ -457,7 +469,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  sup: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  sup: ({ className, ...props }: React.ComponentPropsWithoutRef<"sup">) => (
     <sup
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.sup : "",
@@ -468,7 +480,7 @@ export const mdxComponents = {
   ),
 
   // Semantic elements
-  abbr: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  abbr: ({ className, ...props }: React.ComponentPropsWithoutRef<"abbr">) => (
     <abbr
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.abbr : "",
@@ -477,7 +489,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  cite: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  cite: ({ className, ...props }: React.ComponentPropsWithoutRef<"cite">) => (
     <cite
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.cite : "",
@@ -486,7 +498,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  dfn: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  dfn: ({ className, ...props }: React.ComponentPropsWithoutRef<"dfn">) => (
     <dfn
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.dfn : "",
@@ -495,7 +507,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  time: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  time: ({ className, ...props }: React.ComponentPropsWithoutRef<"time">) => (
     <time
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.time : "",
@@ -504,7 +516,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  var: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  var: ({ className, ...props }: React.ComponentPropsWithoutRef<"var">) => (
     <var
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.var : "",
@@ -513,7 +525,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  samp: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  samp: ({ className, ...props }: React.ComponentPropsWithoutRef<"samp">) => (
     <samp
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.samp : "",
@@ -522,7 +534,10 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  output: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
+  output: ({
+    className,
+    ...props
+  }: React.ComponentPropsWithoutRef<"output">) => (
     <output
       className={cn(
         useShouldApplyTypography(className) ? mdxStyles.content.output : "",

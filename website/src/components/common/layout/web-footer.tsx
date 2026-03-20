@@ -16,7 +16,7 @@ export function WebFooter({ className }: FooterProps) {
 
   return (
     <footer className={cn("", className)}>
-      <Container maxWidth="narrower" padding="all">
+      <Container maxWidth="narrow" padding="all">
         <div className="flex flex-wrap items-center justify-between gap-4 py-2 text-muted-foreground/50 text-xs">
           <span>
             © {currentYear} Cipher · Made by{" "}

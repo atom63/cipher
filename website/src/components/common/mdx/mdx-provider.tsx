@@ -35,6 +35,10 @@ const narrowTextElements = [
   "[&>div]:mx-auto [&>div]:max-w-xl",
   // Details
   "[&>details]:mx-auto [&>details]:max-w-xl",
+  // Figcaptions inside full-width figures
+  "[&>figure>figcaption]:mx-auto [&>figure>figcaption]:max-w-xl",
+  // Let paragraphs containing images break out to full width
+  "[&>p:has(>img)]:max-w-none",
 ].join(" ");
 
 const proseVariants = {
@@ -57,7 +61,7 @@ export const MDXContentProvider = forwardRef<
   MDXContentProviderProps
 >(function MDXContentProvider(
   { children, className, components, variant = "default" },
-  ref
+  ref,
 ) {
   const mergedComponents = components
     ? { ...mdxComponents, ...components }

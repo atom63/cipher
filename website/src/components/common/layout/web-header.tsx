@@ -12,7 +12,7 @@ interface WebHeaderProps {
 export default function WebHeader({ className }: WebHeaderProps) {
   return (
     <header className={cn("sticky top-0 z-50", className)}>
-      <Container maxWidth="narrower" padding="all">
+      <Container maxWidth="narrow" padding="all">
         <div className="flex h-8 items-center justify-between">
           <Link
             className="rounded-sm text-foreground no-underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

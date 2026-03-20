@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { mdxStyles } from "../mdx-styles";
 
 export interface MediaCaptionProps {
   children: ReactNode;
@@ -20,12 +21,7 @@ export function MediaCaption({ children, className }: MediaCaptionProps) {
   }
 
   return (
-    <figcaption
-      className={cn(
-        "mt-3 text-center text-muted-foreground text-sm leading-relaxed",
-        className
-      )}
-    >
+    <figcaption className={cn(mdxStyles.content.figcaption, className)}>
       {children}
     </figcaption>
   );
