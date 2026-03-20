@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useRef, useMemo } from "react";
 
 const RGBA_RE = /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/;
 const VAR_RE = /^var\((.+)\)$/;
@@ -30,13 +30,22 @@ function rgbaToHex(rgba: string): string {
  * rgba(235, 135, 0, 1).
  */
 export function useTokenColors<T extends Record<string, string>>(vars: T): T {
+  // Stabilize the vars object — callers pass inline literals which create
+  // new references every render. Serialize to compare by value, not reference.
+  const serialized = JSON.stringify(vars);
+  const stableVars = useRef(vars);
+  if (JSON.stringify(stableVars.current) !== serialized) {
+    stableVars.current = vars;
+  }
+
   return useMemo(() => {
+    const v = stableVars.current;
     if (typeof window === "undefined") {
-      return vars;
+      return v;
     }
     const style = getComputedStyle(document.documentElement);
     const resolved = {} as Record<string, string>;
-    for (const [key, cssVar] of Object.entries(vars)) {
+    for (const [key, cssVar] of Object.entries(v)) {
       const match = cssVar.match(VAR_RE);
       if (match) {
         const varName = match[1];
@@ -47,5 +56,6 @@ export function useTokenColors<T extends Record<string, string>>(vars: T): T {
       }
     }
     return resolved as T;
-  }, [vars]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serialized]);
 }

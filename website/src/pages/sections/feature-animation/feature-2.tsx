@@ -14,10 +14,10 @@ type Phase =
 export function ManageAnimation() {
   const { ref, visible } = useVisible();
   const c = useTokenColors({
-    primary500: "var(--color-brand-primary-500)",
-    primary600: "var(--color-brand-primary-600)",
-    primary200: "var(--color-brand-primary-200)",
-    secondary500: "var(--color-brand-secondary-500)",
+    primary500: "var(--color-b1-500)",
+    primary600: "var(--color-b1-600)",
+    primary200: "var(--color-b1-200)",
+    secondary500: "var(--color-b2-500)",
   });
 
   const tokens = useMemo(

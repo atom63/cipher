@@ -8,7 +8,7 @@ type Phase = "idle" | "extract" | "compile" | "build" | "done";
 export function ModernCssAnimation() {
   const { ref, visible } = useVisible();
   const c = useTokenColors({
-    primary: "var(--color-brand-primary-500)",
+    primary: "var(--color-b1-500)",
     info: "var(--color-info-500)",
   });
 

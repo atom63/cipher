@@ -8,22 +8,22 @@ type FlowState = "idle" | "in" | "processing" | "out";
 const THEME_DEFS = [
   {
     id: "primary" as const,
-    colorVar: "var(--color-brand-primary-500)",
-    surface: "var(--color-brand-primary-100)",
+    colorVar: "var(--color-b1-500)",
+    surface: "var(--color-b1-100)",
     status: "var(--color-success-500)",
     radius: 8,
   },
   {
     id: "secondary" as const,
-    colorVar: "var(--color-brand-secondary-500)",
-    surface: "var(--color-brand-secondary-100)",
+    colorVar: "var(--color-b2-500)",
+    surface: "var(--color-b2-100)",
     status: "var(--color-warning-500)",
     radius: 24,
   },
   {
     id: "success" as const,
     colorVar: "var(--color-success-500)",
-    surface: "var(--color-success-100)",
+    surface: "var(--color-b3-100)",
     status: "var(--color-danger-500)",
     radius: 0,
   },
@@ -43,8 +43,8 @@ const PATHS_OUT = [
 export function GenerateAnimation() {
   const { ref, visible } = useVisible();
   const colors = useTokenColors({
-    primary: "var(--color-brand-primary-500)",
-    secondary: "var(--color-brand-secondary-500)",
+    primary: "var(--color-b1-500)",
+    secondary: "var(--color-b2-500)",
     success: "var(--color-success-500)",
   });
 

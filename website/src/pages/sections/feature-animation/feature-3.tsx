@@ -8,8 +8,8 @@ type Flow = "none" | "l-r" | "r-l";
 export function RoundTripAnimation() {
   const { ref, visible } = useVisible();
   const c = useTokenColors({
-    primary: "var(--color-brand-primary-500)",
-    secondary: "var(--color-brand-secondary-500)",
+    primary: "var(--color-b1-500)",
+    secondary: "var(--color-b2-500)",
     success: "var(--color-success-500)",
     danger: "var(--color-danger-500)",
   });
