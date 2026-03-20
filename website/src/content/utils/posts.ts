@@ -71,7 +71,10 @@ posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 /**
  * Get post by slug
  */
-export function getPostBySlug(slug: string): Post | null {
+export function getPostBySlug(slug: string, type?: string): Post | null {
+  if (type) {
+    return posts.find((p) => p.slug === slug && p.type === type) || null;
+  }
   return posts.find((p) => p.slug === slug) || null;
 }
 

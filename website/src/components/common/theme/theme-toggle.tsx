@@ -1,6 +1,7 @@
 import { Moon, Sun } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -10,9 +11,10 @@ import { useTheme } from "@/contexts/theme-context";
 
 interface ThemeToggleProps {
   size?: "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+  className?: string;
 }
 
-export function ThemeToggle({ size = "icon" }: ThemeToggleProps) {
+export function ThemeToggle({ size = "icon", className }: ThemeToggleProps) {
   const { theme, setTheme, isDark } = useTheme();
 
   const toggleTheme = () => {
@@ -30,7 +32,7 @@ export function ThemeToggle({ size = "icon" }: ThemeToggleProps) {
       <TooltipTrigger
         render={
           <Button
-            className="relative"
+            className={cn("relative", className)}
             size={size}
             variant="ghost"
             onClick={toggleTheme}

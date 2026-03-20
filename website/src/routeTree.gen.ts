@@ -9,15 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SlidesRouteImport } from './routes/slides'
 import { Route as PreviewRouteImport } from './routes/preview'
 import { Route as ComponentsRouteImport } from './routes/components'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SlidesIndexRouteImport } from './routes/slides.index'
 import { Route as ComponentsIndexRouteImport } from './routes/components.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
+import { Route as SlidesSlugRouteImport } from './routes/slides.$slug'
 import { Route as ComponentsSlugRouteImport } from './routes/components.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 
+const SlidesRoute = SlidesRouteImport.update({
+  id: '/slides',
+  path: '/slides',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PreviewRoute = PreviewRouteImport.update({
   id: '/preview',
   path: '/preview',
@@ -38,6 +46,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SlidesIndexRoute = SlidesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SlidesRoute,
+} as any)
 const ComponentsIndexRoute = ComponentsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -47,6 +60,11 @@ const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => BlogRoute,
+} as any)
+const SlidesSlugRoute = SlidesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => SlidesRoute,
 } as any)
 const ComponentsSlugRoute = ComponentsSlugRouteImport.update({
   id: '/$slug',
@@ -64,18 +82,23 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogRouteWithChildren
   '/components': typeof ComponentsRouteWithChildren
   '/preview': typeof PreviewRoute
+  '/slides': typeof SlidesRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/components/$slug': typeof ComponentsSlugRoute
+  '/slides/$slug': typeof SlidesSlugRoute
   '/blog/': typeof BlogIndexRoute
   '/components/': typeof ComponentsIndexRoute
+  '/slides/': typeof SlidesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/preview': typeof PreviewRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/components/$slug': typeof ComponentsSlugRoute
+  '/slides/$slug': typeof SlidesSlugRoute
   '/blog': typeof BlogIndexRoute
   '/components': typeof ComponentsIndexRoute
+  '/slides': typeof SlidesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -83,10 +106,13 @@ export interface FileRoutesById {
   '/blog': typeof BlogRouteWithChildren
   '/components': typeof ComponentsRouteWithChildren
   '/preview': typeof PreviewRoute
+  '/slides': typeof SlidesRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/components/$slug': typeof ComponentsSlugRoute
+  '/slides/$slug': typeof SlidesSlugRoute
   '/blog/': typeof BlogIndexRoute
   '/components/': typeof ComponentsIndexRoute
+  '/slides/': typeof SlidesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -95,28 +121,36 @@ export interface FileRouteTypes {
     | '/blog'
     | '/components'
     | '/preview'
+    | '/slides'
     | '/blog/$slug'
     | '/components/$slug'
+    | '/slides/$slug'
     | '/blog/'
     | '/components/'
+    | '/slides/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/preview'
     | '/blog/$slug'
     | '/components/$slug'
+    | '/slides/$slug'
     | '/blog'
     | '/components'
+    | '/slides'
   id:
     | '__root__'
     | '/'
     | '/blog'
     | '/components'
     | '/preview'
+    | '/slides'
     | '/blog/$slug'
     | '/components/$slug'
+    | '/slides/$slug'
     | '/blog/'
     | '/components/'
+    | '/slides/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -124,10 +158,18 @@ export interface RootRouteChildren {
   BlogRoute: typeof BlogRouteWithChildren
   ComponentsRoute: typeof ComponentsRouteWithChildren
   PreviewRoute: typeof PreviewRoute
+  SlidesRoute: typeof SlidesRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/slides': {
+      id: '/slides'
+      path: '/slides'
+      fullPath: '/slides'
+      preLoaderRoute: typeof SlidesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/preview': {
       id: '/preview'
       path: '/preview'
@@ -156,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/slides/': {
+      id: '/slides/'
+      path: '/'
+      fullPath: '/slides/'
+      preLoaderRoute: typeof SlidesIndexRouteImport
+      parentRoute: typeof SlidesRoute
+    }
     '/components/': {
       id: '/components/'
       path: '/'
@@ -169,6 +218,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/'
       preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof BlogRoute
+    }
+    '/slides/$slug': {
+      id: '/slides/$slug'
+      path: '/$slug'
+      fullPath: '/slides/$slug'
+      preLoaderRoute: typeof SlidesSlugRouteImport
+      parentRoute: typeof SlidesRoute
     }
     '/components/$slug': {
       id: '/components/$slug'
@@ -213,11 +269,25 @@ const ComponentsRouteWithChildren = ComponentsRoute._addFileChildren(
   ComponentsRouteChildren,
 )
 
+interface SlidesRouteChildren {
+  SlidesSlugRoute: typeof SlidesSlugRoute
+  SlidesIndexRoute: typeof SlidesIndexRoute
+}
+
+const SlidesRouteChildren: SlidesRouteChildren = {
+  SlidesSlugRoute: SlidesSlugRoute,
+  SlidesIndexRoute: SlidesIndexRoute,
+}
+
+const SlidesRouteWithChildren =
+  SlidesRoute._addFileChildren(SlidesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BlogRoute: BlogRouteWithChildren,
   ComponentsRoute: ComponentsRouteWithChildren,
   PreviewRoute: PreviewRoute,
+  SlidesRoute: SlidesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

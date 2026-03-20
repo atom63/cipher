@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, FileQuestion } from "lucide-react";
+import { ArrowLeft, FileQuestion, Presentation } from "lucide-react";
 import Container from "@/components/common/layout/container";
 import Section from "@/components/common/layout/section";
 import { MDXContentProvider } from "@/components/common/mdx/mdx-provider";
@@ -13,6 +13,7 @@ interface BlogPostProps {
 
 export default function BlogPost({ slug }: BlogPostProps) {
   const post = getPostBySlug(slug);
+  const hasSlides = !!getPostBySlug(slug, "slides");
 
   if (!post) {
     return (
@@ -47,9 +48,19 @@ export default function BlogPost({ slug }: BlogPostProps) {
               </Link>
             </Button>
             <h1 className="font-bold text-3xl tracking-tight">{post.title}</h1>
-            <p className="mt-2 text-muted-foreground text-sm">
-              {post.author} · {post.date} · {post.readingTime} min read
-            </p>
+            <div className="mt-2 flex items-center gap-3">
+              <p className="text-muted-foreground text-sm">
+                {post.author} · {post.date} · {post.readingTime} min read
+              </p>
+              {hasSlides && (
+                <Button asChild size="sm" variant="ghost">
+                  <Link to="/slides/$slug" params={{ slug }}>
+                    <Presentation className="size-3.5" />
+                    Slides
+                  </Link>
+                </Button>
+              )}
+            </div>
           </div>
         </Section>
       </Container>
