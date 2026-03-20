@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 type ObjectFit = "cover" | "contain" | "fill";
 type AspectRatio = "16/9" | "4/3" | "1" | "auto";
 

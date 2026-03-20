@@ -3,7 +3,6 @@
  * Use for quick, consistent slides. Use primitives for custom layouts.
  */
 
-import type { ReactNode } from "react";
 import { Center, Columns, Row, Spacer, Stack } from "../primitives/layout";
 import { Avatar, Image, Video } from "../primitives/media";
 import {

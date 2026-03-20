@@ -119,8 +119,8 @@ export function getPostNavigation(currentSlug: string): {
   }
 
   return {
-    previous: currentIndex > 0 ? posts[currentIndex - 1] : null,
-    next: currentIndex < posts.length - 1 ? posts[currentIndex + 1] : null,
+    previous: currentIndex > 0 ? (posts[currentIndex - 1] ?? null) : null,
+    next: currentIndex < posts.length - 1 ? (posts[currentIndex + 1] ?? null) : null,
   };
 }
 
