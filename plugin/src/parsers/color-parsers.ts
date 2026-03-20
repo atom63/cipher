@@ -100,16 +100,19 @@ export function parseHslColor(hsl: string): ColorValue | null {
 // Parse OKLCH color to RGB (proper conversion)
 export function parseOKLCHColor(oklch: string): ColorValue | null {
 	// Support: oklch(L C H), oklch(L C H / alpha), oklch(L% C H), oklch(L% C H / alpha)
+	// Hue can be "none" (achromatic) — treated as 0
 	const match = oklch.match(
-		/oklch\(([0-9.]+)(%?)\s+([0-9.]+)\s+([0-9.]+)(?:\s*\/\s*([0-9.]+))?\)/,
+		/oklch\(([0-9.]+|none)(%?)\s+([0-9.]+|none)\s+([0-9.]+|none)(?:\s*\/\s*([0-9.]+%?))?\)/,
 	);
 	if (!match) return null;
 
-	// L can be 0-1 (decimal) or 0-100 with % suffix
-	const L = match[2] === "%" ? Number.parseFloat(match[1]) / 100 : Number.parseFloat(match[1]);
-	const C = Number.parseFloat(match[3]);
-	const H = Number.parseFloat(match[4]);
-	const alpha = match[5] !== undefined ? Number.parseFloat(match[5]) : 1;
+	// L can be 0-1 (decimal) or 0-100 with % suffix; "none" → 0
+	const L = match[1] === "none" ? 0 : match[2] === "%" ? Number.parseFloat(match[1]) / 100 : Number.parseFloat(match[1]);
+	const C = match[3] === "none" ? 0 : Number.parseFloat(match[3]);
+	const H = match[4] === "none" ? 0 : Number.parseFloat(match[4]);
+	const alpha = match[5] !== undefined
+		? match[5].endsWith("%") ? Number.parseFloat(match[5]) / 100 : Number.parseFloat(match[5])
+		: 1;
 
 	// Convert OKLCH to OKLab
 	const hRad = (H * Math.PI) / 180;

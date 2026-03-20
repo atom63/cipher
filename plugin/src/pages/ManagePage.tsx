@@ -1573,6 +1573,26 @@ export function ManagePage({
 									role="button"
 									tabIndex={0}
 								>
+									<span onClick={(e) => e.stopPropagation()}>
+										<Checkbox
+											id={`group-${collectionName}`}
+											checked={groupSelected === allVars.length}
+											indeterminate={groupSelected > 0 && groupSelected < allVars.length}
+											size="sm"
+											onChange={() => {
+												const ids = allVars.map((v) => v.id);
+												setSelectedIds((prev) => {
+													const next = new Set(prev);
+													if (groupSelected === allVars.length) {
+														for (const id of ids) next.delete(id);
+													} else {
+														for (const id of ids) next.add(id);
+													}
+													return next;
+												});
+											}}
+										/>
+									</span>
 									{isCollapsed ? (
 										<ChevronRight size={14} />
 									) : (
@@ -1608,6 +1628,26 @@ export function ManagePage({
 													role="button"
 													tabIndex={0}
 												>
+													<span onClick={(e) => e.stopPropagation()}>
+														<Checkbox
+															id={`subgroup-${subGroupKey}`}
+															checked={subSelected === vars.length}
+															indeterminate={subSelected > 0 && subSelected < vars.length}
+															size="sm"
+															onChange={() => {
+																const ids = vars.map((v) => v.id);
+																setSelectedIds((prev) => {
+																	const next = new Set(prev);
+																	if (subSelected === vars.length) {
+																		for (const id of ids) next.delete(id);
+																	} else {
+																		for (const id of ids) next.add(id);
+																	}
+																	return next;
+																});
+															}}
+														/>
+													</span>
 													{isSubCollapsed ? (
 														<ChevronRight size={12} />
 													) : (

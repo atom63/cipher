@@ -247,22 +247,14 @@ export const PasteColorRamp = forwardRef<
 												<div className={styles.gradientRow} key={mode.name}>
 													<span className={styles.modeLabel}>{mode.name}</span>
 													<div
-														className={styles.gradientBar}
+														className={styles.gradientBarFlex}
 														title={modeSteps.map((s) => `${s.step}: ${s.value}`).join("\n")}
 													>
-														{modeSteps.map((s, i) => (
-															<span
+														{modeSteps.map((s) => (
+															<div
 																className={styles.gradientSegment}
 																key={s.step}
-																style={{
-																	backgroundColor: colorToHex(s.color!),
-																	borderRadius:
-																		i === 0
-																			? "var(--radius-sm) 0 0 var(--radius-sm)"
-																			: i === modeSteps.length - 1
-																				? "0 var(--radius-sm) var(--radius-sm) 0"
-																				: undefined,
-																}}
+																style={{ backgroundColor: colorToHex(s.color!) }}
 															/>
 														))}
 													</div>
@@ -275,19 +267,11 @@ export const PasteColorRamp = forwardRef<
 										className={styles.gradientBar}
 										title={validSteps.map((s) => `${s.step}: ${s.value}`).join("\n")}
 									>
-										{validSteps.map((s, i) => (
-											<span
+										{validSteps.map((s) => (
+											<div
 												className={styles.gradientSegment}
 												key={s.step}
-												style={{
-													backgroundColor: colorToHex(s.color!),
-													borderRadius:
-														i === 0
-															? "var(--radius-sm) 0 0 var(--radius-sm)"
-															: i === validSteps.length - 1
-																? "0 var(--radius-sm) var(--radius-sm) 0"
-																: undefined,
-												}}
+												style={{ backgroundColor: colorToHex(s.color!) }}
 											/>
 										))}
 									</div>
