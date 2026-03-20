@@ -23,20 +23,28 @@ export function Display({
   align = "left",
   color = "default",
   size = "lg",
+  font = "sans",
+  italic = false,
 }: {
   children: ReactNode;
   align?: TextAlign;
   color?: TextColor;
   size?: "sm" | "md" | "lg";
+  font?: "sans" | "serif";
+  italic?: boolean;
 }) {
   const sizeClasses = {
     sm: "text-7xl",
     md: "text-[96px]",
     lg: "text-[120px]",
   };
+  const fontClasses = {
+    sans: "font-light tracking-[-0.04em]",
+    serif: "font-serif font-normal tracking-[-0.02em]",
+  };
   return (
     <p
-      className={`break-words font-light leading-[0.9] tracking-[-0.04em] ${sizeClasses[size]} ${textAlignClasses[align]} ${textColorClasses[color]}`}
+      className={`text-balance break-words leading-[0.9] ${fontClasses[font]} ${italic ? "italic" : ""} ${sizeClasses[size]} ${textAlignClasses[align]} ${textColorClasses[color]}`}
     >
       {children}
     </p>
@@ -55,7 +63,7 @@ export function Headline({
 }) {
   return (
     <h1
-      className={`break-words font-bold text-7xl leading-[0.95] tracking-[-0.03em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
+      className={`text-balance break-words font-bold text-7xl leading-[0.95] tracking-[-0.03em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
     >
       {children}
     </h1>
@@ -74,7 +82,7 @@ export function Title({
 }) {
   return (
     <h2
-      className={`break-words font-semibold text-[44px] leading-[1.1] tracking-[-0.02em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
+      className={`text-balance break-words font-semibold font-serif text-[44px] leading-[1.1] tracking-[-0.02em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
     >
       {children}
     </h2>
@@ -93,7 +101,7 @@ export function Subtitle({
 }) {
   return (
     <h3
-      className={`break-words font-semibold text-[32px] leading-snug tracking-[-0.01em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
+      className={`text-balance break-words font-semibold text-[32px] leading-snug tracking-[-0.01em] ${textAlignClasses[align]} ${textColorClasses[color]}`}
     >
       {children}
     </h3>
@@ -119,7 +127,7 @@ export function Body({
   };
   return (
     <p
-      className={`break-words leading-[1.5] ${sizeClasses[size]} ${textAlignClasses[align]} ${textColorClasses[color]}`}
+      className={`text-balance break-words leading-[1.5] ${sizeClasses[size]} ${textAlignClasses[align]} ${textColorClasses[color]}`}
     >
       {children}
     </p>
@@ -174,7 +182,7 @@ export function Mono({
   return <span className={`font-mono ${sizeClasses[size]}`}>{children}</span>;
 }
 
-/** Quote — large italic with decorative mark and attribution. */
+/** Quote — cinematic pull-quote with bold accent line and serif type. */
 export function Quote({
   children,
   attribution,
@@ -183,19 +191,21 @@ export function Quote({
   attribution?: string;
 }) {
   return (
-    <blockquote className="relative max-w-[1100px] break-words">
-      <span
-        aria-hidden="true"
-        className="absolute -top-20 -left-12 text-[280px] text-primary/10 leading-none select-none"
-      >
-        &ldquo;
-      </span>
-      <p className="relative text-[38px] text-foreground/80 italic leading-[1.45]">
-        {children}
+    <blockquote className="relative max-w-[1100px] break-words text-center">
+      {/* Accent bar above quote */}
+      <div className="mx-auto mb-10 h-[3px] w-16 rounded-full bg-primary/40" />
+
+      <p className="relative font-serif text-balance text-[42px] text-foreground/90 italic leading-[1.4]">
+        &ldquo;{children}&rdquo;
       </p>
+
       {attribution && (
-        <footer className="mt-10 font-mono text-xl text-muted-foreground/50 uppercase tracking-[0.12em]">
-          — {attribution}
+        <footer className="mt-12 flex items-center justify-center gap-4">
+          <span className="h-px w-8 bg-foreground/15" />
+          <span className="font-mono text-lg text-muted-foreground/60 uppercase tracking-[0.15em]">
+            {attribution}
+          </span>
+          <span className="h-px w-8 bg-foreground/15" />
         </footer>
       )}
     </blockquote>

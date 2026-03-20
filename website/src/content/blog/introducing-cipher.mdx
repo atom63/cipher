@@ -1,89 +1,126 @@
 ---
-title: "Why I Built a Figma Plugin With Zero Knowledge of How to Build One"
+title: "I Didn’t Mean to Build a Figma Plugin. I Was Trying to Fix My Workflow"
 date: "2026-03-19"
 author: "You Zhang"
 type: "blog"
 tags: ["announcement", "design tokens", "figma", "css", "ai"]
 ---
 
-Over the past year, I've worked with several brands on their products — some needed a design system from scratch for a single product, others had multiple product endpoints sharing similar functionality but different visual identities. The design process in Figma was repeatable every time. At some point I stopped and thought: instead of designing for one product and repeating, I should design a *system* that scales by changing the look and feel.
+Over the past year, I kept running into the same pattern.
+
+I was working across different brands and products. Some needed a design system from scratch. Others had multiple product surfaces with shared functionality but different visual identities. But underneath all of them, the structure was surprisingly similar. The product changed. The look and feel changed. The token setup did not.
+
+At some point, I stopped designing the product and started designing the system behind it.
 
 That idea became Cipher.
 
 <figure>
   <video src="/placeholder/placeholder.mp4" autoPlay loop muted playsInline />
-  <figcaption>Cipher generating a complete token system from a few brand inputs.</figcaption>
+  <figcaption>
+    Cipher generates a complete token system from a few brand inputs.
+  </figcaption>
 </figure>
 
-## How I got here
+## The shift
 
-My workflow evolved in stages. I started heavily in Figma — working closely with engineers on handoff, running multiple rounds of craft review, the usual back-and-forth. Then I transitioned to coding my designs directly in React through Cursor, handing off production-ready components instead of specs. That eliminated most alignment issues because the code *was* the source of truth.
+What I noticed across projects was that the most repetitive part of the work was not the UI itself. It was the system setup behind it.
 
-By designing in code, I gradually evolved a framework of design tokens that kept my codebase and Figma files in sync. A three-tier structure — primitives, aliases, semantics — rooted in how Tailwind CSS and shadcn/ui think about tokens. That structure became the foundation of the plugin.
+Across projects, I kept rebuilding the same foundation in Figma: color ramps, aliases, semantic tokens, typography scales, radii, theme mappings, and shared UI patterns. What usually changed was the visual identity — brand color, tone, type choices, and surface treatment.
 
-## What pushed me to build this
+That made me realize I should stop treating each setup as a one-off deliverable and start treating it as a reusable structure.
 
-If you've ever managed a design system in Figma, you know the pain. Figma's variable tables and styles have no batch operations. Need to rename 50 variables? One by one. Need to delete an old color ramp? One by one. Need to update values across modes? One by one.
+## Why the existing workflow stopped scaling
 
-![Figma's variable table — powerful, but every edit is manual](/placeholder/placeholder.svg)
+If you have managed a design system in Figma, you probably know where this starts to hurt.
 
-It's tedious manual work that can't be sped up — not even with AI agents, because there's no API surface for them to work with. And the bigger problem: those variables live in Figma, disconnected from the codebase where they actually get used. Two sources of truth that slowly drift apart.
+Variables and styles are powerful, but the editing experience is still painfully manual. Rename 50 variables? One by one. Delete an outdated scale? One by one. Fix mappings across modes? One by one. As systems grow, the work becomes less about design thinking and more about table maintenance.
 
-I wanted a tool that could generate a complete token system from a few brand decisions, batch-manage everything, and round-trip between Figma and CSS. So I built one.
+And the bigger issue is that these tokens often live separately from the codebase where they actually matter. Figma becomes one source of truth. Code becomes another. Over time, they drift.
 
-## Two weeks, zero plugin experience
+That disconnect bothered me more and more.
 
-Cipher is a personal project. I built the whole thing in about two weeks of heads-down work, solo, with everything designed in code — no Figma comps. I also had zero knowledge of how to build Figma plugins when I started.
+![Figma's variable table — powerful, but still extremely manual](/placeholder/placeholder.svg)
 
-That's the part I find most interesting to share: we used to learn how to build something *before* building it. Read the docs, understand the API, plan the architecture, then start coding. But with AI agents, you can flip that. Start building, hit a wall, figure it out with the agent, keep going. The learning happens *inside* the building. Cursor made it possible for me — a designer who codes — to ship a working plugin in a timeline that would've been impossible otherwise.
+## How coding changed the way I designed
+
+Around the same time, I was shifting more of my workflow into code.
+
+Instead of designing entirely in Figma and handing off specs, I started building components directly in React, often using Cursor as part of the process. That changed a lot for me. The handoff got cleaner. Alignment got easier. In many cases, the code itself became the most accurate version of the design.
+
+My design-in-code workflow started with Tailwind CSS, then expanded with shadcn/ui. But Tailwind was mostly primitive-driven, while shadcn leaned on flat semantic tokens. To support theming and personalization more cleanly, I started adding a mapping layer between the two. That eventually evolved into a three-tier structure: primitives, aliases, and semantics.
+
+This token architecture became the real foundation behind Cipher.
+
+## Why I built it
+
+By that point, I knew exactly what kind of tool I wanted: something that could generate a full token system from a few brand decisions, make large-scale edits in Figma less painful, and connect cleanly to code through plain CSS.
+
+I wanted the structure to be reusable, scalable, and flexible enough to support theming and personalization without rebuilding the foundation each time.
+
+That tool became Cipher.
+
+## The surprising part: I had never built a Figma plugin before
+
+Cipher is a personal project. I built the first version in about two weeks of focused solo work, with everything designed directly in code. No Figma comps, no plugin background, and no prior experience with the Figma plugin ecosystem.
+
+That is probably the part I find most worth sharing.
+
+For a long time, the default way of making things was to learn first, then build: read the docs, understand the APIs, plan the architecture, and only then begin.
+
+AI changes that order.
+
+With tools like Cursor, I could start building immediately, solve problems in context, and learn through the process instead of before it. That felt like a real shift.
+
+Not because AI removes the need to think, but because it lowers the cost of getting started. It makes it much easier to work through unfamiliar territory while still building toward something real.
+
+For someone like me — a designer who codes, but is not traditionally a engineer — that changed what felt possible.
 
 ## What Cipher actually does
 
-You give it a few inputs — brand colors, a type scale, a radius anchor, font families — and it generates a complete token system in Figma using native variables and styles. The structure has three tiers:
+Cipher helps generate and manage a token-based design system inside Figma using native variables and styles.
 
-**Primitives** — the raw values. Color ramps, spacing scales, font sizes, durations. These describe *what exists* in your system.
+You provide a few core inputs:
 
-**Aliases** — the indirection layer. Surface colors mapped to a neutral palette, duration semantics, font family assignments. These describe *what things are called*.
+- brand and surface colors
+- typography scale
+- radius anchor
+- font families
 
-**Semantics** — the application layer. `--primary`, `--background`, `--border`, `--destructive`, with light and dark mode built in. These describe *how things are used*.
+From that, Cipher generates a three-tier token structure:
+
+**Primitives**  
+Raw values like color ramps, spacing scales, font sizes, and durations.
+
+**Aliases**  
+A mapping layer between raw values and semantic tokens. Instead of updating hundreds of semantic assignments when a palette changes, you can remap a much smaller set of aliases — such as surface roles or font assignments — and let the system cascade from there.
+
+**Semantics**  
+The application layer: tokens like `--primary`, `--background`, `--border`, and `--destructive`, with light and dark mode built in. These define how values are used in the product.
 
 <figure>
   <video src="/placeholder/output.webm" autoPlay loop muted playsInline />
-  <figcaption>The three-tier token structure — primitives, aliases, and semantics — generated in Figma.</figcaption>
+  <figcaption>The three-tier token structure generated in Figma.</figcaption>
 </figure>
 
-The separation matters because you can swap a surface palette or change your primary brand color without touching every component. The aliases absorb the change.
+That separation is what makes the system flexible. You can change a brand color or swap a surface palette without needing to rewrite every component. The architecture stays stable while the visual identity adapts.
 
 ## Built for Tailwind and shadcn
 
-The token structure isn't arbitrary — it's rooted in how Tailwind CSS v4 and shadcn/ui organize design decisions. Cipher exports CSS custom properties wrapped in `@theme` blocks, ready to drop into any project using that stack:
+Cipher is designed around the way I already work in code: Tailwind CSS v4, shadcn/ui, and tokenized CSS custom properties.
 
-```css
-:root {
-  --primary: var(--color-b1-500);
-  --background: var(--surface-light-2);
-  --border: var(--surface-light-4);
-}
+It exports plain CSS variables that can be copied directly into the codebase, so token changes move from Figma to implementation with almost no translation layer in between.
 
-.dark {
-  --primary: var(--color-b3-500);
-  --background: var(--surface-dark-1);
-  --border: var(--surface-dark-6);
-}
-```
+<figure>
+  <video src="/placeholder/output.webm" autoPlay loop muted playsInline />
+  <figcaption>
+    Copy the exported CSS into the codebase and see the UI update immediately.
+  </figcaption>
+</figure>
 
-No proprietary format, no translation step. Your tokens are just CSS variables. Import them, and your Tailwind utilities and shadcn components work immediately.
+## Why this project matters to me
 
-## From single brand to personalization
+Cipher is not just a plugin project for me. It represents a shift in how I think about design systems, tooling, and building.
 
-Cipher started as a solution for the common case: one brand color, light and dark themes, ship it. But it can also handle more complex scenarios — multiple brand colors, multiple surface palettes, and mappings between them. You can set up a system where different products share the same token structure but swap in different palettes, or where users can personalize their experience by choosing from available brand and surface combinations.
+It came out of repeated friction in real projects. It reflects my move from designing screens to designing systems. And it was only possible because AI-native workflows made it realistic for me to build something outside my original expertise.
 
-![Multiple brand palettes sharing the same token architecture](/placeholder/placeholder.svg)
-
-The same three-tier architecture handles both cases. The primitives expand, the aliases remap, and the semantics stay stable.
-
-## Try it
-
-Cipher is free during beta. Install it from the [Figma Community](https://www.figma.com/community/plugin/1613643367110247078/cipher) and generate your first token system in under a minute. It runs entirely inside Figma — no cloud, no accounts, no telemetry.
-
-If you have feedback, ideas, or want to see the code, everything is on [GitHub](https://github.com/atom63/cipher).
+I think more designers are going to work this way — not because everyone wants to become an engineer, but because the gap between seeing a missing tool and making one is getting smaller.

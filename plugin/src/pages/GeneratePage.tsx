@@ -842,31 +842,25 @@ export function GeneratePage() {
 		setResult(null);
 	}, []);
 
-	const handleShuffle = useCallback(() => {
+	const handleShuffleAccents = useCallback(() => {
 		const randHex = (l: number, c: number, h: number) =>
 			rgbToHex(oklchToRgb({ l, c, h })).toUpperCase();
 
-		// Randomize accent colors
+		// Distribute hues evenly around the wheel with jitter to avoid duplicates
 		const baseHue = Math.random() * 360;
-		setAccentColors((prev) =>
-			prev.map((a, i) => ({
+		setAccentColors((prev) => {
+			const count = prev.length;
+			// Golden angle (~137.5°) distributes hues maximally apart regardless of count
+			const goldenAngle = 137.508;
+			return prev.map((a, i) => ({
 				...a,
 				hex: randHex(
 					0.65 + Math.random() * 0.13,
 					0.14 + Math.random() * 0.1,
-					(baseHue + i * (120 + Math.random() * 60)) % 360,
+					(baseHue + i * goldenAngle + (Math.random() - 0.5) * 20) % 360,
 				),
-			})),
-		);
-
-		// Randomize neutral presets
-		setNeutralColors((prev) =>
-			prev.map((n) => ({
-				...n,
-				preset: RADIX_GRAYS[Math.floor(Math.random() * RADIX_GRAYS.length)].name,
-				darkPreset: RADIX_GRAYS[Math.floor(Math.random() * RADIX_GRAYS.length)].name,
-			})),
-		);
+			}));
+		});
 
 		// Status: semantic hue ranges, bright and clean
 		const ranges: Record<string, [number, number]> = {
@@ -880,6 +874,27 @@ export function GeneratePage() {
 			newStatus[key] = randHex(0.65 + Math.random() * 0.12, 0.16 + Math.random() * 0.08, lo + Math.random() * (hi - lo));
 		}
 		setStatusColors(newStatus);
+	}, []);
+
+	const handleShuffleNeutrals = useCallback(() => {
+		// Generate random neutral hues using golden angle distribution,
+		// low chroma so generateNeutralScale mutes them into proper surfaces
+		const baseHue = Math.random() * 360;
+		const goldenAngle = 137.508;
+		setNeutralColors((prev) =>
+			prev.map((n, i) => {
+				const hue = (baseHue + i * goldenAngle + (Math.random() - 0.5) * 20) % 360;
+				const hex = rgbToHex(
+					oklchToRgb({ l: 0.55 + Math.random() * 0.1, c: 0.03 + Math.random() * 0.04, h: hue }),
+				).toUpperCase();
+				return {
+					...n,
+					preset: undefined,
+					darkPreset: undefined,
+					hex,
+				};
+			}),
+		);
 	}, []);
 
 	// Close surface config flyout on outside click
@@ -1562,9 +1577,13 @@ export function GeneratePage() {
 
 				</PageBody>
 				<PageFooter>
-					<Button onClick={handleShuffle} variant="ghost">
+					<Button onClick={handleShuffleAccents} variant="ghost">
 						<Dices size={14} />
-						Shuffle Colors
+						Shuffle Accents
+					</Button>
+					<Button onClick={handleShuffleNeutrals} variant="ghost">
+						<Dices size={14} />
+						Shuffle Neutrals
 					</Button>
 <Button disabled={!generated} onClick={handleSubmit} variant="primary">
 						<Wand2 size={14} />

@@ -111,12 +111,12 @@ export const slideMdxComponents = {
 
   // --- Typography overrides for presentation scale ---
   h1: ({ children }: { children?: ReactNode }) => (
-    <h1 className="font-extrabold text-7xl leading-[0.95] tracking-[-0.03em]">
+    <h1 className="font-bold text-7xl leading-[0.95] tracking-[-0.03em]">
       {children}
     </h1>
   ),
   h2: ({ children }: { children?: ReactNode }) => (
-    <h2 className="font-bold text-5xl">{children}</h2>
+    <h2 className="font-semibold text-5xl">{children}</h2>
   ),
   h3: ({ children }: { children?: ReactNode }) => (
     <h3 className="font-semibold text-3xl">{children}</h3>

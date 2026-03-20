@@ -1,66 +1,92 @@
 ---
-title: "Introducing Cipher"
+title: "I Didn’t Mean to Build a Figma Plugin"
 date: "2026-03-19"
 author: "You Zhang"
 type: "slides"
 theme: "dark"
-tags: ["presentation", "design tokens", "figma"]
+tags: ["presentation", "design tokens", "figma", "ai"]
 ---
 
 import {
-  CoverSlide, SplitTextMedia, SplitMediaText, StatsSlide, QuoteSlide,
-  ContentSlide, ComparisonSlide, ClosingSlide, FullBleedSlide
-} from '@/components/slides/templates'
-import { Break, Section } from '@/components/slides/slide-mdx-components'
+  CoverSlide,
+  SplitTextMedia,
+  SplitMediaText,
+  StatsSlide,
+  QuoteSlide,
+  ContentSlide,
+  ComparisonSlide,
+  ClosingSlide,
+  FullBleedSlide,
+} from "@/components/slides/templates";
+import { Break, Section } from "@/components/slides/slide-mdx-components";
 
-<Section>Introduction</Section>
+<Section>Opening</Section>
 
 <CoverSlide
-  label="Workshop — March 2026"
-  title="Cipher"
-  subtitle="A token system that aligns design and code"
-  badges={["Figma Plugin", "Open Source", "Free Beta"]}
+  label="Story Behind Cipher — March 2026"
+  title="I Didn’t Mean to Build a Figma Plugin"
+  subtitle="I was trying to fix a workflow that kept repeating"
+  badges={["Figma Plugin", "Design Systems", "AI-Native Build"]}
   imageSrc="/placeholder/placeholder.svg"
+  font="serif"
+  italic
 />
 
 <Break />
 
 <SplitTextMedia
-  title="The Repeatable Pattern"
-  body="Over the past year, I worked with several brands — the design process in Figma was repeatable every time."
+  label="The Pattern"
+  title="Different products, same foundation"
+  body="Over the past year, I kept running into the same pattern across different brands and products."
   bullets={[
-    "Some needed a system from scratch",
-    "Others had multiple products, same functionality",
-    "I should design a system that scales"
+    "Some needed a design system from scratch",
+    "Others had multiple product surfaces with different visual identities",
+    "But underneath, the token structure was often almost the same",
   ]}
   mediaSrc="/placeholder/placeholder.mp4"
-  mediaAlt="Repeatable design patterns"
+  mediaAlt="Repeatable design system setup across projects"
   ratio="narrow-media"
 />
 
 <Break />
 
-<Section>My Journey</Section>
+<QuoteSlide
+  quote="At some point, I stopped designing the product and started designing the system behind it."
+  attribution="The shift that led to Cipher"
+/>
+
+<Break />
+
+<Section>The Shift</Section>
 
 <SplitMediaText
-  label="Evolution"
-  title="From Figma to Code"
+  label="What kept repeating"
+  title="The UI changed. The scaffolding did not."
   bullets={[
-    "Started in Figma — handoff, craft review",
-    "Transitioned to coding designs in React",
-    "Handed off production-ready components",
-    "The code became the source of truth"
+    "Color ramps",
+    "Aliases and semantic tokens",
+    "Typography scales and radii",
+    "Theme mappings and shared UI patterns",
   ]}
   mediaSrc="/placeholder/output.webm"
-  mediaAlt="Coding design in React"
+  mediaAlt="Shared token scaffolding across projects"
   ratio="equal"
 />
 
 <Break />
 
-<QuoteSlide
-  quote="By designing in code, I evolved a three-tier token structure — primitives, aliases, semantics — rooted in how Tailwind CSS and shadcn/ui think about tokens."
-  attribution="The foundation of the plugin"
+<SplitTextMedia
+  label="Realization"
+  title="The work was not just designing screens"
+  body="The most repetitive part of the process was not the UI itself. It was the system setup behind it."
+  bullets={[
+    "Visual identity changed from project to project",
+    "The token setup usually did not",
+    "That made the system feel more reusable than the product",
+  ]}
+  mediaSrc="/placeholder/placeholder.svg"
+  mediaAlt="Reusable system structure"
+  ratio="equal"
 />
 
 <Break />
@@ -68,17 +94,83 @@ import { Break, Section } from '@/components/slides/slide-mdx-components'
 <Section>The Problem</Section>
 
 <SplitTextMedia
-  label="Figma Pain Points"
-  title="What Pushed Me to Build This"
+  label="Figma Pain"
+  title="The workflow stopped scaling"
+  body="Figma variables and styles are powerful, but the maintenance is still painfully manual."
   bullets={[
-    "No batch operations on variables",
     "Rename 50 variables? One by one",
-    "Can't speed up — even with AI agents",
-    "Variables disconnected from codebase"
+    "Delete old scales? One by one",
+    "Fix mappings across modes? One by one",
+    "As systems grow, the work becomes table maintenance",
   ]}
   mediaSrc="/placeholder/placeholder.svg"
-  mediaAlt="Figma variable table"
+  mediaAlt="Figma variable table and manual editing"
   ratio="narrow-media"
+/>
+
+<Break />
+
+<QuoteSlide
+  quote="Figma became one source of truth. Code became another. Over time, they drifted."
+  attribution="The disconnect that pushed the workflow further"
+/>
+
+<Break />
+
+<Section>From Design to Code</Section>
+
+<SplitMediaText
+  label="Workflow Change"
+  title="Coding changed how I designed"
+  bullets={[
+    "I started moving more of my workflow into React",
+    "Instead of handing off specs, I handed off working components",
+    "Alignment got easier",
+    "The code often became the most accurate version of the design",
+  ]}
+  mediaSrc="/placeholder/output.webm"
+  mediaAlt="Designing directly in code"
+  ratio="equal"
+/>
+
+<Break />
+
+<SplitTextMedia
+  label="Token Evolution"
+  title="Why the three-tier model emerged"
+  body="My design-in-code workflow started with Tailwind CSS, then expanded with shadcn/ui."
+  bullets={[
+    "Tailwind was mostly primitive-driven",
+    "shadcn leaned more on flat semantic tokens",
+    "To support theming and personalization, I added a mapping layer",
+    "That evolved into primitives, aliases, and semantics",
+  ]}
+  mediaSrc="/placeholder/placeholder.svg"
+  mediaAlt="Three-tier token structure"
+  ratio="equal"
+/>
+
+<Break />
+
+<Section>Why Cipher</Section>
+
+<ContentSlide
+  label="Intent"
+  title="What kind of tool I wanted"
+  bullets={[
+    "Generate a full token system from a few brand decisions",
+    "Make large-scale edits in Figma far less painful",
+    "Keep design and code connected through plain CSS",
+    "Support theming and personalization without rebuilding the foundation",
+  ]}
+  markerStyle="number"
+/>
+
+<Break />
+
+<QuoteSlide
+  quote="By that point, I knew exactly what kind of tool I wanted."
+  attribution="The point where Cipher became inevitable"
 />
 
 <Break />
@@ -86,118 +178,157 @@ import { Break, Section } from '@/components/slides/slide-mdx-components'
 <Section>Building It</Section>
 
 <StatsSlide
-  label="The Build"
-  title="Two Weeks, Zero Plugin Experience"
+  label="First Version"
+  title="Built in two weeks, with zero plugin experience"
   stats={[
-    { value: "2", label: "Weeks", description: "Heads-down build" },
-    { value: "1", label: "Person", description: "Solo project" },
-    { value: "0", label: "Figma Comps", description: "Designed in code" }
+    { value: "2", label: "Weeks", description: "Focused solo build" },
+    { value: "1", label: "Builder", description: "Personal project" },
+    {
+      value: "0",
+      label: "Plugin Background",
+      description: "Learned while making",
+    },
   ]}
 />
 
 <Break />
 
-<QuoteSlide
-  quote="We used to learn how to build something before building it. With AI agents, you can start building and learn inside the building."
-  attribution="On building with Cursor"
+<SplitTextMedia
+  label="What changed"
+  title="AI changed the order of operations"
+  body="For a long time, the default model was to learn first, then build."
+  bullets={[
+    "Read the docs",
+    "Understand the APIs",
+    "Plan the architecture",
+    "Then begin",
+  ]}
+  mediaSrc="/placeholder/placeholder.svg"
+  mediaAlt="Traditional build process"
+  ratio="equal"
 />
 
 <Break />
 
-<Section>Token Architecture</Section>
+<QuoteSlide
+  quote="With tools like Cursor, I could start building immediately, solve problems in context, and learn through the process instead of before it."
+  attribution="The part most worth sharing"
+/>
+
+<Break />
 
 <ContentSlide
-  label="Three Tiers"
-  title="Primitives → Aliases → Semantics"
+  label="Why this mattered"
+  title="What AI actually changed for me"
   bullets={[
-    "Primitives — raw values: color ramps, spacing, durations",
-    "Aliases — indirection: surface colors, font mappings",
-    "Semantics — application: --primary, --background, --border",
-    "Swap a palette without touching every component"
+    "Not less thinking",
+    "Not less judgment",
+    "Just a lower cost of starting",
+    "And a much easier way to work through unfamiliar territory",
   ]}
   markerStyle="number"
 />
 
 <Break />
 
-<FullBleedSlide
-  mediaSrc="/placeholder/output.webm"
-  mediaAlt="Token system generated in Figma"
-  title="Three-tier tokens in Figma"
-  label="Live Demo"
+<Section>What Cipher Does</Section>
+
+<ContentSlide
+  label="Core Inputs"
+  title="Generate a token system from a few decisions"
+  bullets={[
+    "Brand and surface colors",
+    "Typography scale",
+    "Radius anchor",
+    "Font families",
+  ]}
+  markerStyle="number"
 />
 
 <Break />
 
 <ComparisonSlide
-  label="Architecture"
-  title="Why Three Tiers?"
+  label="Three Tiers"
+  title="Primitives → Aliases → Semantics"
   left={{
-    title: "Without Structure",
+    title: "Structure",
     variant: "outline",
     items: [
-      "Colors scattered everywhere",
-      "Rebrand = touch every file",
-      "Dark mode = duplicate tokens",
-      "No single source of truth"
-    ]
+      "Primitives = raw values",
+      "Aliases = mapping layer",
+      "Semantics = application layer",
+      "Each tier has a different job",
+    ],
   }}
   right={{
-    title: "With Cipher",
+    title: "Why it matters",
     variant: "accent",
     items: [
-      "Primitives define what exists",
-      "Aliases define what things are called",
-      "Semantics define how things are used",
-      "Change one layer, everything updates"
-    ]
+      "Change palettes without touching every semantic token",
+      "Remap a smaller alias set instead of hundreds of assignments",
+      "Keep the architecture stable as visual identity changes",
+      "Support theming and personalization at scale",
+    ],
   }}
 />
 
 <Break />
 
-<Section>Technical Details</Section>
+<FullBleedSlide
+  mediaSrc="/placeholder/output.webm"
+  mediaAlt="Cipher generating a token structure in Figma"
+  title="Three-tier tokens generated in Figma"
+  label="Live Demo"
+/>
+
+<Break />
+
+<Section>Design to Code</Section>
 
 <SplitTextMedia
-  label="Stack Compatibility"
-  title="Built for Tailwind & shadcn"
-  body="Exports CSS custom properties in @theme blocks — no proprietary format."
+  label="Code Workflow"
+  title="Built for Tailwind and shadcn"
+  body="Cipher is designed around the way I already work in code."
   bullets={[
-    "Import tokens → Tailwind utilities work immediately",
-    "shadcn components work out of the box",
-    "No translation step, just CSS variables"
+    "Tailwind CSS v4",
+    "shadcn/ui",
+    "Tokenized CSS custom properties",
+    "Plain CSS export with almost no translation layer",
   ]}
-  mediaSrc="/placeholder/placeholder.svg"
-  mediaAlt="CSS token output"
+  mediaSrc="/placeholder/output.webm"
+  mediaAlt="Export tokens to CSS and apply them in code"
   ratio="equal"
 />
 
 <Break />
 
-<Section>Scaling</Section>
+<QuoteSlide
+  quote="Copy the exported CSS into the codebase and see the UI update immediately."
+  attribution="The workflow Cipher was built for"
+/>
+
+<Break />
+
+<Section>Why It Matters</Section>
 
 <SplitMediaText
-  label="Beyond Single Brand"
-  title="From One Brand to Personalization"
+  label="Bigger than one plugin"
+  title="This project changed how I think about building"
   bullets={[
-    "Started as: one brand color, light/dark, ship it",
-    "Scales to: multiple brand colors and surface palettes",
-    "Users can personalize by choosing combinations",
-    "Same three-tier architecture handles both"
+    "It came out of repeated friction in real projects",
+    "It reflects a shift from designing screens to designing systems",
+    "It showed me I could build outside my original expertise",
+    "And it made the gap between noticing a missing tool and making one feel much smaller",
   ]}
   mediaSrc="/placeholder/placeholder.mp4"
-  mediaAlt="Multiple brand palettes"
+  mediaAlt="Broader impact of building your own tools"
   ratio="equal"
 />
 
 <Break />
 
 <ClosingSlide
-  title="Try Cipher"
-  subtitle="Free during beta — install from Figma Community"
-  footerItems={[
-    { label: "Plugin", value: "Figma Community" },
-    { label: "Code", value: "GitHub" },
-    { label: "Price", value: "Free" }
-  ]}
+  title="Cipher is currently under review on Figma"
+  subtitle="If you’re interested, let me know and I’ll keep you posted when it goes live."
+  font="serif"
 />

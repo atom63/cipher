@@ -53,6 +53,8 @@ export function CoverSlide({
   badges,
   imageSrc,
   imageAlt = "Cover",
+  font = "sans",
+  italic = false,
 }: {
   label?: string;
   title: string;
@@ -60,6 +62,8 @@ export function CoverSlide({
   badges?: string[];
   imageSrc?: string;
   imageAlt?: string;
+  font?: "sans" | "serif";
+  italic?: boolean;
 }) {
   const text = (
     <Stack className="flex-1 min-h-0" gap="none" justify="end">
@@ -69,7 +73,7 @@ export function CoverSlide({
           <Spacer size="lg" />
         </>
       )}
-      <Display size="lg">{title}</Display>
+      <Display size="lg" font={font} italic={italic}>{title}</Display>
       {subtitle && (
         <>
           <Spacer size="md" />
@@ -572,26 +576,32 @@ export function SectionSlide({
 }
 
 // =============================================================================
-// CLOSING — large display text with subtle footer
+// CLOSING — cinematic ending with accent line and layered typography
 // =============================================================================
 
 export function ClosingSlide({
   title,
   subtitle,
+  font = "sans",
   footerItems,
 }: {
   title: string;
   subtitle?: string;
+  font?: "sans" | "serif";
   footerItems?: Array<{ label: string; value: string } | string>;
 }) {
   const items = footerItems?.map((f) =>
     typeof f === "string" ? { label: f, value: f } : f,
   );
   return (
-    <Stack align="center" className="flex-1" gap="none" justify="center">
-      <Display align="center" size="lg">
+    <Stack align="center" className="flex-1 relative" gap="none" justify="center">
+      {/* Decorative accent line */}
+      <div className="w-16 h-[3px] rounded-full bg-primary/40 mb-12" />
+
+      <Display align="center" size="lg" font={font}>
         {title}
       </Display>
+
       {subtitle && (
         <>
           <Spacer size="xl" />
@@ -600,9 +610,12 @@ export function ClosingSlide({
           </Body>
         </>
       )}
+
       {items && items.length > 0 && (
         <>
           <Spacer size="2xl" />
+          <div className="h-px w-24 bg-foreground/8" />
+          <Spacer size="lg" />
           <Row gap="lg" justify="center" wrap>
             {items.map((i, idx) => (
               <span key={`${i.label}-${i.value}`} className="flex items-center gap-4">
