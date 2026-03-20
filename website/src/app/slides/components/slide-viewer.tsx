@@ -120,7 +120,7 @@ export function SlideViewer({ Content, title }: SlideViewerProps) {
           />
 
           <div
-            className="flex size-full flex-col px-32 py-[120px]"
+            className="relative flex size-full flex-col px-32 py-[120px]"
             data-slide-content
             ref={contentRef}
           >
@@ -167,8 +167,8 @@ export function SlideViewer({ Content, title }: SlideViewerProps) {
               >
                 <Minimize className="size-3.5" />
               </button>
-              <PersonalizeToggle size="icon-xs" popoverClassName="z-[200]" />
-              <ThemeToggle size="icon-xs" />
+              <PersonalizeToggle size="icon-xs" className={toolbarButtonClass} popoverClassName="z-[200]" popoverContainer={containerRef.current} />
+              <ThemeToggle size="icon-xs" className={toolbarButtonClass} />
             </div>
           </div>
         )}

@@ -18,6 +18,7 @@ import {
   Fill,
   Position,
   Row,
+  SlideBackground,
   Spacer,
   Stack,
 } from "./primitives/layout";
@@ -181,6 +182,7 @@ export const slideMdxComponents = {
   Bleed,
   Fill,
   Position,
+  SlideBackground,
 
   // --- Primitives: Typography ---
   Display,

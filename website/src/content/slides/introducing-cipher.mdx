@@ -18,10 +18,20 @@ import {
   ClosingSlide,
   FullBleedSlide,
 } from "@/components/slides/templates";
+import {
+  Stack, Row, Center, Columns, Spacer, SlideBackground,
+} from "@/components/slides/primitives/layout";
+import {
+  Display, Title, Body, Label, Accent,
+} from "@/components/slides/primitives/typography";
+import {
+  Badge, Box, Divider, Highlight, List, Item,
+} from "@/components/slides/primitives/visual";
 import { Break, Section } from "@/components/slides/slide-mdx-components";
 
 <Section>Opening</Section>
 
+<SlideBackground variant="corner" position="bottom-right" opacity={0.15} size="xl" />
 <CoverSlide
   label="Story Behind Cipher — March 2026"
   title="I Didn’t Mean to Build a Figma Plugin"
@@ -93,20 +103,20 @@ import { Break, Section } from "@/components/slides/slide-mdx-components";
 
 <Section>The Problem</Section>
 
-<SplitTextMedia
-  label="Figma Pain"
-  title="The workflow stopped scaling"
-  body="Figma variables and styles are powerful, but the maintenance is still painfully manual."
-  bullets={[
-    "Rename 50 variables? One by one",
-    "Delete old scales? One by one",
-    "Fix mappings across modes? One by one",
-    "As systems grow, the work becomes table maintenance",
-  ]}
-  mediaSrc="/placeholder/placeholder.svg"
-  mediaAlt="Figma variable table and manual editing"
-  ratio="narrow-media"
-/>
+<SlideBackground variant="glow" opacity={0.1} size="xl" />
+<Center>
+  <Stack align="center" gap="xl">
+    <Display size="md" color="accent" align="center">One by one.</Display>
+    <Body align="center" size="lg" color="muted">
+      Rename 50 variables. Delete old scales. Fix mappings across modes.
+    </Body>
+    <Row gap="sm" wrap>
+      <Badge variant="outline">No batch operations</Badge>
+      <Badge variant="outline">No API for agents</Badge>
+      <Badge variant="accent">Disconnected from code</Badge>
+    </Row>
+  </Stack>
+</Center>
 
 <Break />
 
@@ -154,17 +164,37 @@ import { Break, Section } from "@/components/slides/slide-mdx-components";
 
 <Section>Why Cipher</Section>
 
-<ContentSlide
-  label="Intent"
-  title="What kind of tool I wanted"
-  bullets={[
-    "Generate a full token system from a few brand decisions",
-    "Make large-scale edits in Figma far less painful",
-    "Keep design and code connected through plain CSS",
-    "Support theming and personalization without rebuilding the foundation",
-  ]}
-  markerStyle="number"
-/>
+<Stack className="flex-1" gap="lg" justify="center">
+  <Label>Intent</Label>
+  <Title>What kind of tool I wanted</Title>
+  <Spacer size="sm" />
+  <Columns count={2} gap="lg">
+    <Highlight variant="accent">
+      <Stack gap="sm">
+        <Body color="accent" size="sm">Generate</Body>
+        <Body size="sm">A full token system from a few brand decisions</Body>
+      </Stack>
+    </Highlight>
+    <Highlight variant="muted">
+      <Stack gap="sm">
+        <Body color="default" size="sm">Batch manage</Body>
+        <Body size="sm">Large-scale edits in Figma, far less painful</Body>
+      </Stack>
+    </Highlight>
+    <Highlight variant="muted">
+      <Stack gap="sm">
+        <Body color="default" size="sm">Connect</Body>
+        <Body size="sm">Design and code through plain CSS variables</Body>
+      </Stack>
+    </Highlight>
+    <Highlight variant="accent">
+      <Stack gap="sm">
+        <Body color="accent" size="sm">Scale</Body>
+        <Body size="sm">Support theming and personalization without rebuilding</Body>
+      </Stack>
+    </Highlight>
+  </Columns>
+</Stack>
 
 <Break />
 
@@ -217,17 +247,24 @@ import { Break, Section } from "@/components/slides/slide-mdx-components";
 
 <Break />
 
-<ContentSlide
-  label="Why this mattered"
-  title="What AI actually changed for me"
-  bullets={[
-    "Not less thinking",
-    "Not less judgment",
-    "Just a lower cost of starting",
-    "And a much easier way to work through unfamiliar territory",
-  ]}
-  markerStyle="number"
-/>
+<SlideBackground variant="mesh" opacity={0.08} size="lg" />
+<Center>
+  <Stack align="center" gap="xl">
+    <Label align="center">Why this mattered</Label>
+    <Title align="center">What AI actually changed for me</Title>
+    <Divider color="accent" />
+    <Columns count={2} gap="xl">
+      <Stack align="center" gap="sm">
+        <Display size="sm" color="muted" align="center">Not</Display>
+        <Body align="center" size="sm" color="muted">less thinking or less judgment</Body>
+      </Stack>
+      <Stack align="center" gap="sm">
+        <Display size="sm" color="accent" align="center">Yes</Display>
+        <Body align="center" size="sm">a lower cost of starting and navigating unfamiliar territory</Body>
+      </Stack>
+    </Columns>
+  </Stack>
+</Center>
 
 <Break />
 
@@ -327,6 +364,7 @@ import { Break, Section } from "@/components/slides/slide-mdx-components";
 
 <Break />
 
+<SlideBackground variant="gradient" opacity={0.1} />
 <ClosingSlide
   title="Cipher is currently under review on Figma"
   subtitle="If you’re interested, let me know and I’ll keep you posted when it goes live."

@@ -149,3 +149,103 @@ export function Position({
   const style: CSSProperties = { position: "absolute", top, right, bottom, left };
   return <div style={style}>{children}</div>;
 }
+
+// =============================================================================
+// SLIDE BACKGROUND — decorative gradient layers behind content
+// =============================================================================
+
+type BgVariant = "glow" | "corner" | "gradient" | "mesh";
+type BgPosition = "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
+const positionStyles: Record<BgPosition, CSSProperties> = {
+  center: { top: "50%", left: "50%", transform: "translate(-50%, -50%)" },
+  "top-left": { top: "-20%", left: "-20%" },
+  "top-right": { top: "-20%", right: "-20%" },
+  "bottom-left": { bottom: "-20%", left: "-20%" },
+  "bottom-right": { bottom: "-20%", right: "-20%" },
+};
+
+/** Decorative gradient background layer. Renders behind slide content. */
+export function SlideBackground({
+  variant = "glow",
+  position = "center",
+  opacity = 0.12,
+  size = "lg",
+}: {
+  variant?: BgVariant;
+  position?: BgPosition;
+  opacity?: number;
+  /** Size of the gradient area */
+  size?: "sm" | "md" | "lg" | "xl";
+}) {
+  const sizeClasses = {
+    sm: "size-[400px]",
+    md: "size-[600px]",
+    lg: "size-[900px]",
+    xl: "size-[1200px]",
+  };
+
+  if (variant === "mesh") {
+    return (
+      <div className="pointer-events-none absolute inset-0 -mx-32 -my-[120px] z-0 overflow-hidden">
+        <div
+          className={`absolute rounded-full ${sizeClasses[size]}`}
+          style={{
+            ...positionStyles["top-right"],
+            opacity: opacity * 0.8,
+            background: "radial-gradient(circle, var(--primary) 0%, transparent 65%)",
+          }}
+        />
+        <div
+          className={`absolute rounded-full ${sizeClasses[size]}`}
+          style={{
+            ...positionStyles["bottom-left"],
+            opacity: opacity * 0.5,
+            background: "radial-gradient(circle, var(--primary) 0%, transparent 65%)",
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (variant === "gradient") {
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 -mx-32 -my-[120px] -z-10"
+        style={{
+          opacity,
+          background: "linear-gradient(135deg, var(--primary) 0%, transparent 60%)",
+        }}
+      />
+    );
+  }
+
+  if (variant === "corner") {
+    return (
+      <div className="pointer-events-none absolute inset-0 -mx-32 -my-[120px] z-0 overflow-hidden">
+        <div
+          className={`absolute rounded-full ${sizeClasses[size]}`}
+          style={{
+            ...positionStyles[position === "center" ? "bottom-right" : position],
+            opacity,
+            background: "radial-gradient(circle, var(--primary) 0%, transparent 65%)",
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Default: glow — centered radial
+  return (
+    <div className="pointer-events-none absolute inset-0 -mx-32 -my-[120px] z-0 overflow-hidden">
+      <div
+        className={`absolute rounded-full ${sizeClasses[size]}`}
+        style={{
+          ...positionStyles[position],
+          opacity,
+          background: "radial-gradient(circle, var(--primary) 0%, transparent 65%)",
+        }}
+      />
+    </div>
+  );
+}

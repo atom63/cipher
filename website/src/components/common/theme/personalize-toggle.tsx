@@ -52,6 +52,8 @@ interface PersonalizeToggleProps {
   size?: "icon" | "icon-xs" | "icon-sm" | "icon-lg";
   className?: string;
   popoverClassName?: string;
+  /** Portal container — use when inside fullscreen elements */
+  popoverContainer?: HTMLElement | null;
 }
 
 function pickRandom<T>(arr: readonly T[], exclude: T): T {
@@ -59,7 +61,7 @@ function pickRandom<T>(arr: readonly T[], exclude: T): T {
   return others[Math.floor(Math.random() * others.length)];
 }
 
-export function PersonalizeToggle({ size = "icon", className, popoverClassName }: PersonalizeToggleProps) {
+export function PersonalizeToggle({ size = "icon", className, popoverClassName, popoverContainer }: PersonalizeToggleProps) {
   const { brand, surfaceLight, surfaceDark, dirty, reset, setBrand, setSurfaceLight, setSurfaceDark } =
     usePersonalization();
   const { isDark } = useTheme();
@@ -78,7 +80,7 @@ export function PersonalizeToggle({ size = "icon", className, popoverClassName }
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className={cn("w-56 space-y-4 p-3", popoverClassName)} side="bottom" sideOffset={8}>
+      <PopoverContent align="end" className={cn("w-56 space-y-4 p-3", popoverClassName)} container={popoverContainer ?? undefined} side="top" sideOffset={8}>
         {/* Brand color */}
         <div className="space-y-1.5">
           <span className="text-muted-foreground text-xs font-medium">Primary</span>

@@ -40,6 +40,15 @@ export function SlideStage({
           transform: `translate(-50%, -50%) scale(${scale})`,
         }}
       >
+        {/* Atmospheric primary glow — subtle radial in corner */}
+        <div
+          className="pointer-events-none absolute -right-[200px] -bottom-[200px] z-0 size-[800px] rounded-full opacity-[0.07]"
+          style={{ background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)" }}
+        />
+        <div
+          className="pointer-events-none absolute -top-[300px] -left-[300px] z-0 size-[600px] rounded-full opacity-[0.04]"
+          style={{ background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)" }}
+        />
         {children}
       </div>
     </div>

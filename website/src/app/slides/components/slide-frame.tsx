@@ -40,6 +40,9 @@ export const SlideFrame = memo(function SlideFrame({
           {deckTitle}
         </span>
       </div>
+
+      {/* Bottom edge: primary accent gradient line */}
+      <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-primary/20 to-transparent" />
     </div>
   );
 });
