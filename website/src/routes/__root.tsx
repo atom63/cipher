@@ -1,6 +1,6 @@
 import { createRootRoute, Outlet, useLocation } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GridProvider } from "@/contexts/grid-context";
@@ -9,6 +9,8 @@ import { PersonalizationProvider } from "@/contexts/personalization-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { useDebugMode } from "@/hooks/use-debug-mode";
 import { usePageMeta } from "@/hooks/use-page-meta";
+
+const Dither = lazy(() => import("@/components/vendor/dither/Dither"));
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -55,6 +57,21 @@ function RootInner({ location }: { location: ReturnType<typeof useLocation> }) {
 
   return (
     <PasswordGate disabled>
+      <div className="pointer-events-none fixed inset-0 z-[-1] invert mix-blend-overlay dark:invert-0">
+        <Suspense fallback={null}>
+          <Dither
+            waveColor={[0.5, 0.5, 0.5]}
+            disableAnimation={false}
+            enableMouseInteraction
+            colorNum={3}
+            waveAmplitude={0.45}
+            waveFrequency={2}
+            waveSpeed={0.02}
+            opacity={0.5}
+            fadeDuration={3000}
+          />
+        </Suspense>
+      </div>
       <GridProvider>
         <TooltipProvider>
           <motion.div
