@@ -8,10 +8,13 @@ interface PageMetaOptions {
    * @default false - only set on root level
    */
   includeStructuredData?: boolean;
+  /** Additional JSON-LD structured data to append (e.g. BlogPosting) */
+  jsonLd?: Record<string, unknown>;
   keywords?: string[];
   ogDescription?: string;
   ogImage?: string;
   ogTitle?: string;
+  ogType?: string;
   ogUrl?: string;
   title?: string;
   twitterDescription?: string;
@@ -134,8 +137,38 @@ function applyPageMetaTags(options: PageMetaOptions) {
       : `${metadataConfig.openGraph.url}${twitterImage}`
   );
 
+  if (options.ogType) {
+    updateMetaTag('meta[property="og:type"]', options.ogType);
+  }
+
+  // Set canonical link
+  const canonicalUrl = options.ogUrl || window.location.href;
+  let canonicalLink = document.querySelector(
+    'link[rel="canonical"]'
+  ) as HTMLLinkElement;
+  if (!canonicalLink) {
+    canonicalLink = document.createElement("link");
+    canonicalLink.rel = "canonical";
+    document.head.appendChild(canonicalLink);
+  }
+  canonicalLink.href = canonicalUrl;
+
   if (options.includeStructuredData) {
     setStructuredData();
+  }
+
+  // Set page-specific JSON-LD
+  if (options.jsonLd) {
+    let pageJsonLd = document.querySelector(
+      'script[data-page-jsonld]'
+    ) as HTMLScriptElement;
+    if (!pageJsonLd) {
+      pageJsonLd = document.createElement("script");
+      pageJsonLd.type = "application/ld+json";
+      pageJsonLd.setAttribute("data-page-jsonld", "true");
+      document.head.appendChild(pageJsonLd);
+    }
+    pageJsonLd.textContent = JSON.stringify(options.jsonLd);
   }
 }
 
@@ -144,6 +177,12 @@ export function usePageMeta(options: PageMetaOptions = {}) {
     applyPageMetaTags(options);
     return () => {
       document.title = metadataConfig.title.default;
+      // Clean up page-specific JSON-LD
+      const pageJsonLd = document.querySelector("script[data-page-jsonld]");
+      if (pageJsonLd) pageJsonLd.remove();
+      // Clean up canonical link
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.remove();
     };
   }, [options]);
 }

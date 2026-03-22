@@ -26,7 +26,7 @@ export function ModernCssAnimation() {
           break;
         }
         setPhase("extract");
-        await sleep(800);
+        await sleep(900);
         if (!mounted) {
           break;
         }
@@ -36,12 +36,12 @@ export function ModernCssAnimation() {
           break;
         }
         setPhase("build");
-        await sleep(800);
+        await sleep(900);
         if (!mounted) {
           break;
         }
         setPhase("done");
-        await sleep(2500);
+        await sleep(2800);
         if (!mounted) {
           break;
         }

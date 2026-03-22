@@ -57,7 +57,7 @@ export function ManageAnimation() {
 
     const run = async () => {
       while (mounted) {
-        await sleep(1500);
+        await sleep(1400);
         if (!mounted) {
           break;
         }
@@ -67,7 +67,7 @@ export function ManageAnimation() {
           break;
         }
         setPhase("rename");
-        await sleep(1500);
+        await sleep(1400);
         if (!mounted) {
           break;
         }
@@ -77,7 +77,7 @@ export function ManageAnimation() {
           break;
         }
         setPhase("update-color");
-        await sleep(1500);
+        await sleep(1400);
         if (!mounted) {
           break;
         }

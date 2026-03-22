@@ -18,6 +18,7 @@ interface MDXModule {
   frontmatter: {
     slug?: string;
     title: string;
+    description?: string;
     date: string;
     author?: string;
     readingTime?: number;
@@ -35,6 +36,7 @@ export interface Post {
   author: string;
   Content: ComponentType;
   date: string;
+  description: string;
   readingTime: number;
   related: Array<{ title: string; meta: string; href?: string }>;
   slug: string;
@@ -55,6 +57,7 @@ export const posts: Post[] = Object.entries(mdxModules).map(
   ([filePath, mod]) => ({
     slug: mod.frontmatter.slug || slugFromPath(filePath),
     title: mod.frontmatter.title,
+    description: mod.frontmatter.description || "",
     date: formatDate(mod.frontmatter.date),
     author: mod.frontmatter.author || "Flux Lab",
     readingTime: mod.frontmatter.readingTime || 1,

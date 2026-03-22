@@ -1,0 +1,73 @@
+---
+title: "The Design Token Workflow That Replaced Our Manual Figma Setup"
+description: "A walkthrough of Cipher's four core workflows — generate, manage, round-trip sync, and modern CSS export — that automate design token management between Figma and code."
+date: "2026-03-21"
+author: "You Zhang"
+type: "blog"
+tags: ["design tokens", "figma", "workflow", "css variables", "tailwind css", "shadcn/ui", "design systems"]
+---
+
+import { GenerateAnimation } from "@/pages/sections/feature-animation/feature-1";
+import { ManageAnimation } from "@/pages/sections/feature-animation/feature-2";
+import { RoundTripAnimation } from "@/pages/sections/feature-animation/feature-3";
+import { ModernCssAnimation } from "@/pages/sections/feature-animation/feature-4";
+
+Managing design tokens manually in Figma works — until it doesn't. Once you're past a handful of colors and a type scale, you're spending more time on variable housekeeping than actual design work. Renaming, syncing across modes, keeping Figma and code in agreement — it adds up.
+
+Cipher was built to solve that. Here's a breakdown of the four core workflows it introduces, and why each one matters for teams working with design tokens at scale.
+
+## Generating a complete token system from brand inputs
+
+Most design token setups start the same way: you create a color ramp, define some semantic aliases, set up light and dark mode, add typography scales, spacing, and radii. The structure is predictable. The work is not.
+
+Cipher flips this by generating the entire token system from a few brand-level decisions — your primary color, surface palette, type choices, and radius anchor. From those inputs, it produces a three-tier structure of primitives, aliases, and semantic tokens, all wired up with proper mode support.
+
+<ExampleContainer wide>
+  <GenerateAnimation />
+</ExampleContainer>
+
+The generation step handles the part of design system setup that's structurally repetitive but still takes hours to do by hand. Color ramps are derived algorithmically. Semantic mappings follow a consistent pattern. You get a working system in seconds instead of days.
+
+This matters for SEO-adjacent concerns too: teams that ship faster with consistent foundations tend to build more content surfaces, each properly themed and tokenized.
+
+## Batch editing Figma variables and styles
+
+Once a token system exists, it needs maintenance. Renaming a variable in Figma means clicking into it, editing, and confirming — one at a time. Deleting an outdated scale? Same thing. Updating color values across a mode? You get the idea.
+
+Cipher adds batch operations to Figma's native variable system. Select multiple tokens, rename them with find-and-replace patterns, update values, move them between groups, or delete them in bulk.
+
+<ExampleContainer wide>
+  <ManageAnimation />
+</ExampleContainer>
+
+This is the workflow that saves the most cumulative time. A rename operation that would take 20 minutes of clicking becomes a single action. It also reduces the risk of inconsistency — when you can edit tokens as a set, you're less likely to miss one and create a subtle mismatch between your Figma file and your codebase.
+
+## Round-trip sync between Figma and code
+
+The gap between design and code is where tokens tend to drift. Figma has one set of values, the codebase has another, and over time they diverge. Someone updates a color in code but forgets to update Figma. Or a designer tweaks a token in Figma and the developer never gets the update.
+
+Cipher supports bidirectional sync through CSS export and import. Export your tokens as CSS custom properties, make changes in your editor, and import the updated CSS back into Figma. Changes flow in both directions without requiring a third-party sync service or manual reconciliation.
+
+<ExampleContainer wide>
+  <RoundTripAnimation />
+</ExampleContainer>
+
+This round-trip workflow keeps Figma and code aligned as a single source of truth rather than two competing ones. It's especially useful for teams where designers and developers both need to make token-level changes — neither side has to wait for the other to manually propagate updates.
+
+## Exporting tokens for Tailwind CSS v4 and shadcn/ui
+
+The final step in any token workflow is getting values into the codebase. Most export tools produce generic JSON or flat CSS. Cipher is more opinionated: it outputs tokens in formats that work directly with Tailwind CSS v4's `@theme` blocks and shadcn/ui's semantic token convention.
+
+<ExampleContainer wide>
+  <ModernCssAnimation />
+</ExampleContainer>
+
+The export produces clean CSS custom properties organized by token tier — primitives, aliases, and semantics — ready to paste into your project's stylesheet. No build step, no translation layer, no config mapping. The tokens you defined in Figma become the tokens your components consume.
+
+This matters because the closer your design tokens are to production CSS, the fewer opportunities there are for drift, misinterpretation, or manual translation errors. It also means your Figma file and your codebase speak the same language — literally the same variable names and values.
+
+## Why workflow matters more than individual features
+
+Each of these four workflows solves a specific pain point. But the real value is in how they connect. Generate a system, manage it over time, keep it synced between tools, and export it in a format your codebase already understands.
+
+That's the design token workflow that replaced our manual Figma setup — and it's the one we think more teams should adopt.

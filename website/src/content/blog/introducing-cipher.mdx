@@ -1,5 +1,6 @@
 ---
-title: "I Didn’t Mean to Build a Figma Plugin. I Was Trying to Fix My Workflow"
+title: "I Didn't Mean to Build a Figma Plugin. I Was Trying to Fix My Workflow"
+description: "How rebuilding the same design token setup across projects led to Cipher — a Figma plugin that generates a complete token system from a few brand inputs."
 date: "2026-03-19"
 author: "You Zhang"
 type: "blog"
@@ -14,14 +15,9 @@ At some point, I stopped designing the product and started designing the system 
 
 That idea became Cipher.
 
-<figure>
-  <video src="/placeholder/placeholder.mp4" autoPlay loop muted playsInline />
-  <figcaption>
-    Cipher generates a complete token system from a few brand inputs.
-  </figcaption>
-</figure>
+{/* TODO: Add hero video/image showing Cipher generating a token system */}
 
-## The shift
+## From product design to design system architecture
 
 What I noticed across projects was that the most repetitive part of the work was not the UI itself. It was the system setup behind it.
 
@@ -29,7 +25,7 @@ Across projects, I kept rebuilding the same foundation in Figma: color ramps, al
 
 That made me realize I should stop treating each setup as a one-off deliverable and start treating it as a reusable structure.
 
-## Why the existing workflow stopped scaling
+## Why manual Figma variable management doesn't scale
 
 If you have managed a design system in Figma, you probably know where this starts to hurt.
 
@@ -39,9 +35,9 @@ And the bigger issue is that these tokens often live separately from the codebas
 
 That disconnect bothered me more and more.
 
-![Figma's variable table — powerful, but still extremely manual](/placeholder/placeholder.svg)
+{/* TODO: Add screenshot of Figma's variable table */}
 
-## How coding changed the way I designed
+## From Figma handoff to designing in code
 
 Around the same time, I was shifting more of my workflow into code.
 
@@ -51,7 +47,7 @@ My design-in-code workflow started with Tailwind CSS, then expanded with shadcn/
 
 This token architecture became the real foundation behind Cipher.
 
-## Why I built it
+## Why I built a Figma plugin for design token generation
 
 By that point, I knew exactly what kind of tool I wanted: something that could generate a full token system from a few brand decisions, make large-scale edits in Figma less painful, and connect cleanly to code through plain CSS.
 
@@ -59,7 +55,7 @@ I wanted the structure to be reusable, scalable, and flexible enough to support 
 
 That tool became Cipher.
 
-## The surprising part: I had never built a Figma plugin before
+## Building a Figma plugin with AI — with no prior experience
 
 Cipher is a personal project. I built the first version in about two weeks of focused solo work, with everything designed directly in code. No Figma comps, no plugin background, and no prior experience with the Figma plugin ecosystem.
 
@@ -75,7 +71,7 @@ Not because AI removes the need to think, but because it lowers the cost of gett
 
 For someone like me — a designer who codes, but is not traditionally a engineer — that changed what felt possible.
 
-## What Cipher actually does
+## How Cipher generates a complete design token system
 
 Cipher helps generate and manage a token-based design system inside Figma using native variables and styles.
 
@@ -88,34 +84,26 @@ You provide a few core inputs:
 
 From that, Cipher generates a three-tier token structure:
 
-**Primitives**  
+**Primitives**
 Raw values like color ramps, spacing scales, font sizes, and durations.
 
-**Aliases**  
+**Aliases**
 A mapping layer between raw values and semantic tokens. Instead of updating hundreds of semantic assignments when a palette changes, you can remap a much smaller set of aliases — such as surface roles or font assignments — and let the system cascade from there.
 
-**Semantics**  
+**Semantics**
 The application layer: tokens like `--primary`, `--background`, `--border`, and `--destructive`, with light and dark mode built in. These define how values are used in the product.
 
-<figure>
-  <video src="/placeholder/output.webm" autoPlay loop muted playsInline />
-  <figcaption>The three-tier token structure generated in Figma.</figcaption>
-</figure>
+{/* TODO: Add video showing the three-tier token structure in Figma */}
 
 That separation is what makes the system flexible. You can change a brand color or swap a surface palette without needing to rewrite every component. The architecture stays stable while the visual identity adapts.
 
-## Built for Tailwind and shadcn
+## Exporting design tokens for Tailwind CSS v4 and shadcn/ui
 
 Cipher is designed around the way I already work in code: Tailwind CSS v4, shadcn/ui, and tokenized CSS custom properties.
 
 It exports plain CSS variables that can be copied directly into the codebase, so token changes move from Figma to implementation with almost no translation layer in between.
 
-<figure>
-  <video src="/placeholder/output.webm" autoPlay loop muted playsInline />
-  <figcaption>
-    Copy the exported CSS into the codebase and see the UI update immediately.
-  </figcaption>
-</figure>
+{/* TODO: Add video showing CSS export and live UI update */}
 
 ## Why this project matters to me
 

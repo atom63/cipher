@@ -18,12 +18,8 @@ export function HeroSection() {
         <div className="relative flex flex-col items-center text-center">
           <FadeUp>
             <div className="flex items-center justify-center gap-2.5">
-              <Badge variant="default">
-                Beta
-              </Badge>
-              <Badge variant="outline">
-                Free to use
-              </Badge>
+              <Badge variant="default">Beta</Badge>
+              <Badge variant="outline">Free to use</Badge>
             </div>
           </FadeUp>
 
@@ -36,7 +32,7 @@ export function HeroSection() {
           </FadeUp>
 
           <FadeUp delay={0.1}>
-            <p className="mx-auto mt-6 max-w-lg text-muted-foreground text-xl leading-relaxed">
+            <p className="mx-auto mt-6 max-w-lg text-muted-foreground text-xl leading-relaxed text-balance">
               Cipher helps you generate, update, manage, and round-trip
               structured tokens through an opinionated workflow built to keep
               design decisions and code implementation aligned.
@@ -55,12 +51,20 @@ export function HeroSection() {
 
           <FadeUp delay={0.2}>
             <div className="mt-8 sm:mt-10">
-              <a href="https://www.figma.com/community/plugin/1613643367110247078" rel="noopener noreferrer" target="_blank">
+              <a
+                href="https://www.figma.com/community/plugin/1613643367110247078"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
                 <RichButton size="lg">
                   Install plugin
                   <ArrowRight className="size-4" />
                 </RichButton>
               </a>
+              <p className="mt-3 text-muted-foreground/50 text-xs text-balance">
+                If the link returns 404, the plugin is currently under Figma
+                review.
+              </p>
             </div>
           </FadeUp>
         </div>

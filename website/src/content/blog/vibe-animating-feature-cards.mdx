@@ -1,0 +1,168 @@
+---
+title: "Vibe Animating: How I Used Gemini Canvas to Build 4 Feature Animations in One Session"
+description: "A look at using Google Gemini's Canvas mode to rapidly prototype consistent, token-aware SVG animations for Cipher's landing page — and how I wired them into a real design token codebase."
+date: "2026-03-21"
+author: "You Zhang"
+type: "blog"
+tags:
+  ["animation", "gemini", "ai", "design tokens", "vibe coding", "svg", "motion"]
+---
+
+import { GenerateAnimation } from "@/pages/sections/feature-animation/feature-1";
+import { ManageAnimation } from "@/pages/sections/feature-animation/feature-2";
+import { RoundTripAnimation } from "@/pages/sections/feature-animation/feature-3";
+import { ModernCssAnimation } from "@/pages/sections/feature-animation/feature-4";
+
+Cipher's landing page needed four feature cards — each with an animated visual that explains a core workflow at a glance. No static screenshots. No Lottie files. Real, interactive React animations that respond to the page's theme and design tokens.
+
+I built all four in a single session using Gemini's Canvas mode. Here's how that worked, what surprised me, and how I made the output production-ready.
+
+## What I mean by "vibe animating"
+
+Vibe coding gets talked about a lot in the context of shipping features fast. Vibe _animating_ is a more specific version of that: using AI to rapidly explore motion ideas, iterate on timing and choreography, and land on something that feels right — without writing every keyframe by hand.
+
+The process is more like directing than programming. You describe what the animation should communicate, show the AI what you have so far, and steer it toward something that matches the visual language of your project.
+
+Gemini Canvas was especially good for this because it renders the output live as you iterate. You see the animation running, say "make the transition snappier" or "stagger the dots instead of fading them all at once," and the canvas updates in place. That feedback loop is what makes it feel like animating rather than coding.
+
+## The four feature cards
+
+Each card represents one of Cipher's core workflows. The animation runs on a loop, demonstrating the concept without requiring interaction.
+
+### Generate + Update
+
+Build a full token system from a few brand decisions. Come back anytime to adjust and regenerate.
+
+<ExampleContainer wide>
+  <div className="extrude-1 flex w-full flex-col overflow-hidden rounded-xl bg-card max-w-sm mx-auto">
+    <div
+      aria-hidden="true"
+      className="aspect-video bg-linear-to-b from-primary/10 to-background/0"
+    >
+      <GenerateAnimation />
+    </div>
+    <div className="mt-auto p-4">
+      <p className="font-bold text-foreground text-lg">Generate + Update</p>
+      <p className="mt-1 text-base text-muted-foreground leading-relaxed">
+        Build a full token system from a few brand decisions. Come back anytime
+        to adjust and regenerate.
+      </p>
+    </div>
+  </div>
+</ExampleContainer>
+
+This animation shows inputs flowing through a processing step and producing styled outputs — color swatches, type samples, and a themed button. The key challenge was making the flow feel continuous without being distracting. Gemini nailed the staggered timing on the third try.
+
+### Manage
+
+Rename, edit, move, duplicate, or delete variables and styles in batch.
+
+<ExampleContainer wide>
+  <div className="extrude-1 flex w-full flex-col overflow-hidden rounded-xl bg-card max-w-sm mx-auto">
+    <div
+      aria-hidden="true"
+      className="aspect-video bg-linear-to-b from-primary/10 to-background/0"
+    >
+      <ManageAnimation />
+    </div>
+    <div className="mt-auto p-4">
+      <p className="font-bold text-foreground text-lg">Manage</p>
+      <p className="mt-1 text-base text-muted-foreground leading-relaxed">
+        Rename, edit, move, duplicate, or delete variables and styles in batch.
+      </p>
+    </div>
+  </div>
+</ExampleContainer>
+
+This one simulates a Figma-like variable panel with selection states, renaming, and color updates. The animation cycles through a realistic editing sequence — select two tokens, rename them, select one, update its color, then reset. Getting the floating action bar to appear and disappear at the right moments took a few rounds of prompting.
+
+### Round-trip
+
+Export CSS for code, make changes, import back into Figma. Keep everything aligned.
+
+<ExampleContainer wide>
+  <div className="extrude-1 flex w-full flex-col overflow-hidden rounded-xl bg-card max-w-sm mx-auto">
+    <div
+      aria-hidden="true"
+      className="aspect-video bg-linear-to-b from-primary/10 to-background/0"
+    >
+      <RoundTripAnimation />
+    </div>
+    <div className="mt-auto p-4">
+      <p className="font-bold text-foreground text-lg">Round-trip</p>
+      <p className="mt-1 text-base text-muted-foreground leading-relaxed">
+        Export CSS for code, make changes, import back into Figma. Keep
+        everything aligned.
+      </p>
+    </div>
+  </div>
+</ExampleContainer>
+
+A two-panel layout showing Figma on the left and CSS on the right, with animated sync bridges flowing in both directions. The bidirectional flow was the hardest to get right — the animation needs to clearly show that changes can originate from either side.
+
+### Modern CSS
+
+Outputs Tailwind v4 @theme blocks and shadcn/ui-compatible tokens out of the box.
+
+<ExampleContainer wide>
+  <div className="extrude-1 flex w-full flex-col overflow-hidden rounded-xl bg-card max-w-sm mx-auto">
+    <div
+      aria-hidden="true"
+      className="aspect-video bg-linear-to-b from-primary/10 to-background/0"
+    >
+      <ModernCssAnimation />
+    </div>
+    <div className="mt-auto p-4">
+      <p className="font-bold text-foreground text-lg">Modern CSS</p>
+      <p className="mt-1 text-base text-muted-foreground leading-relaxed">
+        Outputs Tailwind v4 @theme blocks and shadcn/ui-compatible tokens out of
+        the box.
+      </p>
+    </div>
+  </div>
+</ExampleContainer>
+
+A three-panel pipeline: design tokens flow into Tailwind v4 compilation, which produces a styled shadcn/ui component. The final glow effect when the component "activates" was one of those happy accidents — Gemini suggested it and it immediately felt right.
+
+## Making AI-generated animations work with a real token codebase
+
+The hardest part wasn't generating the animations. It was integrating them into a codebase where colors, spacing, and typography are all driven by CSS custom properties that change based on theme and user personalization.
+
+Gemini Canvas gives you working React code, but it tends to hardcode colors as hex values and sizes as pixel literals. That's fine for a prototype, but it breaks the moment someone switches to dark mode or changes their brand color.
+
+The fix was a shared `useTokenColors` hook that resolves CSS custom properties to computed values at runtime. Every animation reads its colors from the design token system instead of hardcoded values:
+
+```tsx
+const colors = useTokenColors({
+  primary: "var(--primary)",
+  border: "var(--border)",
+  muted: "var(--muted)",
+  card: "var(--card)",
+});
+```
+
+This means all four animations automatically adapt when the theme changes — same animation logic, different palette. That's the kind of thing AI won't do on its own, but it's trivial to add once you have the pattern.
+
+The other shared piece is a `useVisible` hook that pauses animations when they scroll out of view. Without it, you'd have four complex animations running simultaneously whether anyone can see them or not.
+
+## What worked well about the Gemini Canvas workflow
+
+**Speed of exploration.** I could try three different choreography ideas for the same concept in the time it would normally take to implement one. Most of the value came from seeing bad ideas fail fast.
+
+**Consistent visual language.** By feeding Gemini the output of the first animation as context for the second, the four cards ended up with a shared visual language — similar line weights, similar timing curves, similar use of color — without me having to manually enforce a style guide.
+
+**Live preview.** Canvas mode renders the animation as you iterate. This is fundamentally different from generating code and then switching to a browser to see it. The feedback loop is tight enough that you can steer the animation's feel, not just its logic.
+
+## What I had to fix manually
+
+**Token integration.** Every hardcoded color had to be replaced with `useTokenColors`. This was mechanical but important.
+
+**Performance.** The initial output used `requestAnimationFrame` loops and inline style recalculations that caused unnecessary re-renders. Switching to Motion (Framer Motion) for the animation runtime and `useVisible` for pause/resume made them production-ready.
+
+**Sizing.** Canvas doesn't know about your layout constraints. Each animation needed to be refactored to fill its `aspect-video` container responsively rather than using fixed dimensions.
+
+## The takeaway
+
+AI-assisted animation isn't about removing the craft. It's about compressing the exploration phase. The iteration from "here's what I want this to communicate" to "here's a working animation that does it" went from days to hours.
+
+But the integration work — making it theme-aware, performant, and responsive — is still manual. That's where the design engineering judgment lives, and it's the part that makes the difference between a demo and a product.

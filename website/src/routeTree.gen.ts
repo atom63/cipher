@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SlidesRouteImport } from './routes/slides'
 import { Route as PreviewRouteImport } from './routes/preview'
+import { Route as FeatureCardsRouteImport } from './routes/feature-cards'
 import { Route as ComponentsRouteImport } from './routes/components'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as IndexRouteImport } from './routes/index'
@@ -29,6 +30,11 @@ const SlidesRoute = SlidesRouteImport.update({
 const PreviewRoute = PreviewRouteImport.update({
   id: '/preview',
   path: '/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeatureCardsRoute = FeatureCardsRouteImport.update({
+  id: '/feature-cards',
+  path: '/feature-cards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComponentsRoute = ComponentsRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
   '/components': typeof ComponentsRouteWithChildren
+  '/feature-cards': typeof FeatureCardsRoute
   '/preview': typeof PreviewRoute
   '/slides': typeof SlidesRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/feature-cards': typeof FeatureCardsRoute
   '/preview': typeof PreviewRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/components/$slug': typeof ComponentsSlugRoute
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
   '/components': typeof ComponentsRouteWithChildren
+  '/feature-cards': typeof FeatureCardsRoute
   '/preview': typeof PreviewRoute
   '/slides': typeof SlidesRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/'
     | '/blog'
     | '/components'
+    | '/feature-cards'
     | '/preview'
     | '/slides'
     | '/blog/$slug'
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/feature-cards'
     | '/preview'
     | '/blog/$slug'
     | '/components/$slug'
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/'
     | '/blog'
     | '/components'
+    | '/feature-cards'
     | '/preview'
     | '/slides'
     | '/blog/$slug'
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BlogRoute: typeof BlogRouteWithChildren
   ComponentsRoute: typeof ComponentsRouteWithChildren
+  FeatureCardsRoute: typeof FeatureCardsRoute
   PreviewRoute: typeof PreviewRoute
   SlidesRoute: typeof SlidesRouteWithChildren
 }
@@ -175,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: '/preview'
       fullPath: '/preview'
       preLoaderRoute: typeof PreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feature-cards': {
+      id: '/feature-cards'
+      path: '/feature-cards'
+      fullPath: '/feature-cards'
+      preLoaderRoute: typeof FeatureCardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/components': {
@@ -286,6 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BlogRoute: BlogRouteWithChildren,
   ComponentsRoute: ComponentsRouteWithChildren,
+  FeatureCardsRoute: FeatureCardsRoute,
   PreviewRoute: PreviewRoute,
   SlidesRoute: SlidesRouteWithChildren,
 }

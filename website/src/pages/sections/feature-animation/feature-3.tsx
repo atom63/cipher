@@ -18,10 +18,8 @@ export function RoundTripAnimation() {
     () => [
       { initiator: "code" as const, color: c.success },
       { initiator: "design" as const, color: c.primary },
-      { initiator: "code" as const, color: c.danger },
-      { initiator: "design" as const, color: c.secondary },
     ],
-    [c]
+    [c],
   );
 
   const [designColor, setDesignColor] = useState(c.primary);
@@ -39,44 +37,44 @@ export function RoundTripAnimation() {
       while (mounted) {
         const current = colorSteps[step % colorSteps.length]!;
 
-        await sleep(1500);
+        await sleep(1600);
         if (!mounted) {
           break;
         }
 
         if (current.initiator === "code") {
           setEditingCode(true);
-          await sleep(800);
+          await sleep(600);
           if (!mounted) {
             break;
           }
           setCodeColor(current.color);
-          await sleep(500);
+          await sleep(400);
           setEditingCode(false);
           setFlow("r-l");
-          await sleep(700);
+          await sleep(600);
           if (!mounted) {
             break;
           }
           setDesignColor(current.color);
-          await sleep(200);
+          await sleep(300);
           setFlow("none");
         } else {
           setEditingDesign(true);
-          await sleep(800);
+          await sleep(600);
           if (!mounted) {
             break;
           }
           setDesignColor(current.color);
-          await sleep(500);
+          await sleep(400);
           setEditingDesign(false);
           setFlow("l-r");
-          await sleep(700);
+          await sleep(600);
           if (!mounted) {
             break;
           }
           setCodeColor(current.color);
-          await sleep(200);
+          await sleep(300);
           setFlow("none");
         }
 
@@ -104,7 +102,11 @@ export function RoundTripAnimation() {
         }}
       />
 
-      <svg className="relative z-10 h-auto w-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 400 240">
+      <svg
+        className="relative z-10 h-auto w-full"
+        preserveAspectRatio="xMidYMid meet"
+        viewBox="0 0 400 240"
+      >
         {/* LEFT: Design panel */}
         <rect
           fill="var(--card)"

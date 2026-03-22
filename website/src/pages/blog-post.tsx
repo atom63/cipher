@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, FileQuestion, Presentation } from "lucide-react";
 import Container from "@/components/common/layout/container";
@@ -5,6 +6,8 @@ import Section from "@/components/common/layout/section";
 import { MDXContentProvider } from "@/components/common/mdx/mdx-provider";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { siteConfig } from "@/config/site";
+import { usePageMeta } from "@/hooks/use-page-meta";
 import { getPostBySlug } from "@/content/utils/posts";
 
 interface BlogPostProps {
@@ -14,6 +17,40 @@ interface BlogPostProps {
 export default function BlogPost({ slug }: BlogPostProps) {
   const post = getPostBySlug(slug);
   const hasSlides = !!getPostBySlug(slug, "slides");
+
+  const pageMeta = useMemo(() => {
+    if (!post) return {};
+    const postUrl = `${siteConfig.url}/blog/${post.slug}`;
+    return {
+      title: post.title,
+      description:
+        post.description ||
+        `${post.title} — by ${post.author}. ${post.readingTime} min read.`,
+      keywords: post.tags,
+      ogType: "article",
+      ogUrl: postUrl,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: post.title,
+        description: post.description || undefined,
+        author: {
+          "@type": "Person",
+          name: post.author,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: siteConfig.name,
+          url: siteConfig.url,
+        },
+        datePublished: post.date,
+        url: postUrl,
+        keywords: post.tags,
+      },
+    };
+  }, [post]);
+
+  usePageMeta(pageMeta);
 
   if (!post) {
     return (

@@ -67,7 +67,7 @@ export function GenerateAnimation() {
 
     const run = async () => {
       while (mounted) {
-        await sleep(2000);
+        await sleep(2500);
         if (!mounted) {
           break;
         }
@@ -82,17 +82,17 @@ export function GenerateAnimation() {
           break;
         }
         setFlow("processing");
-        await sleep(800);
+        await sleep(1000);
         if (!mounted) {
           break;
         }
         setFlow("out");
-        await sleep(300);
+        await sleep(400);
         if (!mounted) {
           break;
         }
         setOutputIdx((p) => (p + 1) % THEME_DEFS.length);
-        await sleep(500);
+        await sleep(900);
         if (!mounted) {
           break;
         }

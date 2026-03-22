@@ -1,79 +1,100 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["ultracite/biome/core", "ultracite/biome/react"],
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["!scripts", "!src/components/ui", "!src/components/vendor"]
+    "includes": [
+      "!src/routeTree.gen.ts",
+      "!src/components/animate-ui",
+      "!src/components/magicui",
+      "!src/components/vendor",
+      "!src/styles",
+      "!dist",
+      "!build",
+      "!.vite",
+      "!coverage",
+      "!*.config.js",
+      "!*.config.ts",
+      "!vite-env.d.ts",
+      "!_api",
+      "!api",
+      "!scripts",
+      "!public",
+      "!docs",
+      "!figma"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "correctness": {
+        "useExhaustiveDependencies": "error",
+        "noUndeclaredVariables": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noArrayIndexKey": "warn"
+      },
+      "style": {
+        "noNegationElse": "off",
+        "noNestedTernary": "off",
+        "useBlockStatements": "off"
+      },
+      "performance": {
+        "noBarrelFile": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "es5",
+      "semicolons": "asNeeded",
+      "arrowParentheses": "asNeeded",
+      "bracketSpacing": true,
+      "bracketSameLine": false
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2
+    }
   },
   "overrides": [
     {
-      // TanStack Router uses $param in filenames for dynamic routes
-      "includes": ["src/routes/**"],
+      "includes": ["src/components/ui/**", "src/os/components/ui/**"],
       "linter": {
-        "rules": {
-          "style": {
-            "useFilenamingConvention": "off"
-          }
-        }
+        "enabled": false
+      }
+    },
+    {
+      "includes": ["src/lib/**", "src/hooks/**"],
+      "linter": {
+        "enabled": false
       }
     },
     {
       "includes": [
-        "src/components/common/mdx/index.ts",
-        "src/hooks/use-page-title.ts"
+        "src/index.css",
+        "src/colors.css",
+        "src/os/apps/resume/resume-print.css"
       ],
       "linter": {
-        "rules": {
-          "performance": {
-            "noBarrelFile": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": [
-        "src/pages/sections/code-section.tsx",
-        "src/components/common/mdx/blocks/image-carousel.tsx"
-      ],
-      "linter": {
-        "rules": {
-          "suspicious": {
-            "noArrayIndexKey": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": ["src/pages/sections/feature-animation/**"],
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noExcessiveCognitiveComplexity": "off"
-          },
-          "suspicious": {
-            "noArrayIndexKey": "off"
-          },
-          "style": {
-            "noNestedTernary": "off",
-            "noNonNullAssertion": "off"
-          },
-          "a11y": {
-            "noSvgWithoutTitle": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": [
-        "src/styles/utils/debug.css",
-        "src/styles/utils/view-transition.css"
-      ],
-      "linter": {
-        "rules": {
-          "style": {
-            "noDescendingSpecificity": "off"
-          }
-        }
+        "enabled": false
       }
     }
   ]

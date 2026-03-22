@@ -402,7 +402,7 @@ export default function Preview() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="db-url">DATABASE_URL</Label>
-                  <InputGroupInput
+                  <Input
                     id="db-url"
                     type="password"
                     defaultValue="••••••••••••••••"
@@ -410,7 +410,7 @@ export default function Preview() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="api-url">NEXT_PUBLIC_API</Label>
-                  <InputGroupInput
+                  <Input
                     id="api-url"
                     type="text"
                     defaultValue="https://api.example.com"
@@ -418,7 +418,7 @@ export default function Preview() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="stripe">STRIPE_SECRET</Label>
-                  <InputGroupInput
+                  <Input
                     id="stripe"
                     type="password"
                     defaultValue="••••••••••••••••"
