@@ -31,6 +31,7 @@ import {
 	resolveFontNames,
 	SCREEN_SIZES,
 	SHADOW_SCALE,
+	SHADOW_SCALE_ORDER,
 	SIZES_SCALE,
 	SPACING_SCALE,
 	shadowToCss,
@@ -607,14 +608,15 @@ function generatePrimitives(config: BrandConfig): {
 
 	// ── Effects ───────────────────────────────────────────────────────────
 
-	// --- Shadows (multi-layer) ---
-	for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
+	// --- Shadows (multi-layer) — Tailwind names: shadow/2xs … shadow/2xl ---
+	for (const level of SHADOW_SCALE_ORDER) {
+		const layers = SHADOW_SCALE[level];
 		const cssValue = shadowToCss(layers);
 		tokens.push(
 			makeToken(`shadow/${level}`, cssValue, "primitives", {
 				type: "boxShadow",
 				originalValue: cssValue,
-				description: `Shadow elevation ${level}`,
+				description: `Shadow (${level})`,
 			}),
 		);
 	}
@@ -1208,7 +1210,8 @@ export function generateCss(config: BrandConfig): string {
 	// — Shadows —
 	lines.push("");
 	lines.push("  /* Shadows */");
-	for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
+	for (const level of SHADOW_SCALE_ORDER) {
+		const layers = SHADOW_SCALE[level];
 		lines.push(`  --shadow-${level}: ${shadowToCss(layers)};`);
 	}
 
@@ -1439,9 +1442,10 @@ function generateStyles(config: BrandConfig): Record<string, any> {
 	}
 	styles.text = textStyles;
 
-	// --- Effect styles: shadows + blurs ---
+	// --- Effect styles: shadows + blurs (names align with Tailwind shadow-* scale) ---
 	const shadows: Record<string, any> = {};
-	for (const [level, layers] of Object.entries(SHADOW_SCALE)) {
+	for (const level of SHADOW_SCALE_ORDER) {
+		const layers = SHADOW_SCALE[level];
 		const effects: any[] = [];
 		for (const layer of layers) {
 			effects.push({

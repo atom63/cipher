@@ -101,7 +101,7 @@
 
 .colorSwatch:hover {
   z-index: 1;
-  box-shadow: var(--shadow-shadow-3);
+  box-shadow: var(--shadow-md);
   transform: scaleY(1.2);
 }
 

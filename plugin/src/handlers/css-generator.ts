@@ -654,19 +654,124 @@ async function generateThemeInline(
 // EFFECTS: SHADOWS + BLURS
 // ============================================================================
 
+/** Tailwind v4 shadow scale (`--shadow-2xs` … `--shadow-2xl`); legacy Figma `shadow/0`…`shadow/6` still map here */
+const EFFECTS_TAILWIND_SHADOW_ORDER = [
+	"2xs",
+	"xs",
+	"sm",
+	"md",
+	"lg",
+	"xl",
+	"2xl",
+] as const;
+
+/** Legacy numeric effect-style steps → Tailwind shadow keys */
+const EFFECTS_NUMERIC_SHADOW_TO_TAILWIND: Record<string, string> = {
+	"0": "2xs",
+	"1": "xs",
+	"2": "sm",
+	"3": "md",
+	"4": "lg",
+	"5": "xl",
+	"6": "2xl",
+};
+
+const EFFECTS_BLUR_ORDER = [
+	"xs",
+	"sm",
+	"md",
+	"lg",
+	"xl",
+	"2xl",
+	"3xl",
+] as const;
+
+function formatShadowAlpha(a: number): string {
+	if (a >= 0.999) return "1";
+	return String(Number.parseFloat(a.toPrecision(4)));
+}
+
+/**
+ * One drop-shadow layer as CSS, using modern `rgb(r g b / a)` (Tailwind-aligned).
+ * Short form only when blur and spread are both 0 (e.g. 2xs); otherwise x y blur spread color.
+ */
+function dropShadowLayerToCss(layer: DropShadowEffect): string {
+	const x = `${Math.round(layer.offset.x)}px`;
+	const y = `${Math.round(layer.offset.y)}px`;
+	const blurPx = Math.round(layer.radius);
+	const spreadPx = Math.round(layer.spread ?? 0);
+	const r = Math.round((layer.color?.r ?? 0) * 255);
+	const g = Math.round((layer.color?.g ?? 0) * 255);
+	const b = Math.round((layer.color?.b ?? 0) * 255);
+	const a = layer.color?.a ?? 1;
+	const color = `rgb(${r} ${g} ${b} / ${formatShadowAlpha(a)})`;
+
+	if (blurPx === 0 && spreadPx === 0) {
+		return `${x} ${y} ${color}`;
+	}
+	const blur = `${blurPx}px`;
+	const spread = `${spreadPx}px`;
+	return `${x} ${y} ${blur} ${spread} ${color}`;
+}
+
+function effectStyleNameToTailwindShadowKey(styleName: string): string {
+	const lower = styleName.toLowerCase().trim();
+	const rest = lower.startsWith("shadow/")
+		? lower.slice("shadow/".length)
+		: lower.startsWith("shadow ")
+			? lower.slice("shadow ".length).trim()
+			: "";
+	const segment = (rest.split("/").pop() ?? rest).trim();
+	if (!segment) return "0";
+
+	const mapped = EFFECTS_NUMERIC_SHADOW_TO_TAILWIND[segment];
+	if (mapped !== undefined) return mapped;
+
+	const segLower = segment.toLowerCase();
+	if (
+		(EFFECTS_TAILWIND_SHADOW_ORDER as readonly string[]).includes(segLower)
+	) {
+		return segLower;
+	}
+
+	if (/^\d+$/.test(segment)) return segment;
+	return segLower.replace(/\s+/g, "-");
+}
+
+function tailwindShadowSortKey(key: string): [number, string] {
+	const order = EFFECTS_TAILWIND_SHADOW_ORDER as readonly string[];
+	const idx = order.indexOf(key);
+	if (idx !== -1) return [idx, ""];
+	const n = Number.parseInt(key, 10);
+	if (!Number.isNaN(n)) return [100 + n, ""];
+	return [1000, key];
+}
+
+function formatEffectsShadowBlock(cssVar: string, value: string): string[] {
+	const prop = `  ${cssVar}:`;
+	if (value.length <= 85 && !value.includes(",")) {
+		return [`${prop} ${value};`];
+	}
+	return [prop, `    ${value};`];
+}
+
 /**
  * Generate effects.css from Figma effect styles (shadows) and blur variables.
  * In Figma these all live under "Effects" — keeping them in one file mirrors
  * that mental model and avoids scattering related tokens across files.
+ *
+ * Shadows use Tailwind v4 names (`--shadow-2xs` … `--shadow-2xl`). Effect styles
+ * Production naming is `shadow/2xs`…`shadow/2xl` (matches Tailwind `shadow-*` utilities).
+ * Legacy files may use `shadow/0`…`shadow/6`; those map to the same `--shadow-*` scale.
+ * Output uses modern `rgb(r g b / a)` for box-shadow values.
  */
 async function generateEffectsCSS(
 	colorFormat: ColorFormat,
 	opacityMap: Map<string, number>,
+	includeThemeInline: boolean,
 ): Promise<CSSFile | null> {
 	try {
-		const shadowLines: string[] = [];
-		const shadowThemeLines: string[] = [];
-		let shadowCount = 0;
+		const shadowEntries: { key: string; lines: string[] }[] = [];
 
 		// --- Shadows from effect styles ---
 		const effectStyles = await figma.getLocalEffectStylesAsync();
@@ -676,45 +781,37 @@ async function generateEffectsCSS(
 				s.name.toLowerCase().startsWith("shadow "),
 		);
 
-		if (shadowStyles.length > 0) {
-			// Sort by the numeric level in the name (shadow/0, shadow/1, etc.)
-			shadowStyles.sort((a, b) => {
-				const aNum = Number.parseInt(a.name.split(/[/\s]/).pop() || "0", 10);
-				const bNum = Number.parseInt(b.name.split(/[/\s]/).pop() || "0", 10);
-				return aNum - bNum;
+		const shadowByKey = new Map<string, string[]>();
+
+		for (const style of shadowStyles) {
+			const twKey = effectStyleNameToTailwindShadowKey(style.name);
+			const layers = style.effects
+				.filter((e) => e.type === "DROP_SHADOW" && e.visible !== false)
+				.map((e) => dropShadowLayerToCss(e as DropShadowEffect));
+
+			if (layers.length === 0) continue;
+
+			const combined = layers.join(", ");
+			shadowByKey.set(twKey, formatEffectsShadowBlock(`--shadow-${twKey}`, combined));
+		}
+
+		if (shadowByKey.size > 0) {
+			const sortedKeys = [...shadowByKey.keys()].sort((a, b) => {
+				const [ai, as] = tailwindShadowSortKey(a);
+				const [bi, bs] = tailwindShadowSortKey(b);
+				if (ai !== bi) return ai - bi;
+				return as.localeCompare(bs);
 			});
-
-			for (const style of shadowStyles) {
-				const level = style.name.split(/[/\s]/).pop() || "0";
-				const dropShadows = style.effects
-					.filter((e) => e.type === "DROP_SHADOW" && e.visible !== false)
-					.map((effect) => {
-						const e = effect as DropShadowEffect;
-						const x = `${Math.round(e.offset.x)}px`;
-						const y = `${Math.round(e.offset.y)}px`;
-						const blur = `${Math.round(e.radius)}px`;
-						const spreadVal = (e as any).spread ?? 0;
-						const spread = `${Math.round(spreadVal)}px`;
-						const r = Math.round((e.color?.r ?? 0) * 255);
-						const g = Math.round((e.color?.g ?? 0) * 255);
-						const b = Math.round((e.color?.b ?? 0) * 255);
-						const a = Number.parseFloat((e.color?.a ?? 1).toPrecision(4));
-						return `${x} ${y} ${blur} ${spread} rgba(${r}, ${g}, ${b}, ${a})`;
-					})
-					.join(", ");
-
-				if (dropShadows) {
-					const desc = style.description ? ` /* ${style.description} */` : "";
-					shadowLines.push(`  --shadow-${level}: ${dropShadows};${desc}`);
-					shadowThemeLines.push(`  --shadow-${level}: var(--shadow-${level});`);
-					shadowCount++;
-				}
+			for (const key of sortedKeys) {
+				const blockLines = shadowByKey.get(key);
+				if (blockLines) shadowEntries.push({ key, lines: blockLines });
 			}
 		}
 
+		const shadowCount = shadowByKey.size;
+
 		// --- Blur variables from primitives ---
-		const blurLines: string[] = [];
-		const blurThemeLines: string[] = [];
+		const blurEntries: { lines: string[] }[] = [];
 		let blurCount = 0;
 
 		const collections = await figma.variables.getLocalVariableCollectionsAsync();
@@ -728,46 +825,90 @@ async function generateEffectsCSS(
 				.filter((v): v is Variable => v !== null)
 				.filter((v) => v.name.toLowerCase().startsWith("blur/"));
 
-			if (blurVars.length > 0) {
-				const modeId = primitives.modes[0].modeId;
-				for (const variable of blurVars) {
-					const varName = toVarName(variable.name, variable.resolvedType, primitives.name);
-					const cssValue = await valueToCSS(
-						variable.valuesByMode[modeId],
-						variable,
-						colorFormat,
-						false,
-						opacityMap,
-						primitives.name,
-					);
-					blurLines.push(`  ${varName}: ${cssValue};`);
-					blurThemeLines.push(`  ${varName}: var(${varName});`);
-					blurCount++;
-				}
+			const blurOrder = EFFECTS_BLUR_ORDER as readonly string[];
+
+			blurVars.sort((a, b) => {
+				const segA = a.name.toLowerCase().replace(/^blur\//, "");
+				const segB = b.name.toLowerCase().replace(/^blur\//, "");
+				const ia = blurOrder.indexOf(segA);
+				const ib = blurOrder.indexOf(segB);
+				if (ia !== -1 && ib !== -1) return ia - ib;
+				if (ia !== -1) return -1;
+				if (ib !== -1) return 1;
+				return segA.localeCompare(segB);
+			});
+
+			const modeId = primitives.modes[0].modeId;
+			for (const variable of blurVars) {
+				const varName = toVarName(variable.name, variable.resolvedType, primitives.name);
+				const cssValue = await valueToCSS(
+					variable.valuesByMode[modeId],
+					variable,
+					colorFormat,
+					false,
+					opacityMap,
+					primitives.name,
+				);
+				blurEntries.push({
+					lines: [`  ${varName}: ${cssValue};`],
+				});
+				blurCount++;
 			}
 		}
 
 		const totalCount = shadowCount + blurCount;
 		if (totalCount === 0) return null;
 
-		// Assemble the file
 		const lines: string[] = [];
-		lines.push(`/* Effects — ${totalCount} tokens (shadows, blurs) */`);
-		lines.push("");
-		lines.push(":root {");
-		for (const line of shadowLines) lines.push(line);
-		if (shadowLines.length > 0 && blurLines.length > 0) lines.push("");
-		for (const line of blurLines) lines.push(line);
-		lines.push("}");
+		lines.push("/* Effects — shadows and blurs */");
+		lines.push("/* Shadows override Tailwind's defaults so values match Figma tokens */");
+		lines.push(
+			"/* Usage: shadow-md shadow-black/5 → md spread at 5% opacity */",
+		);
 		lines.push("");
 
-		// @theme inline for Tailwind v4
-		const allThemeLines = [...shadowThemeLines, ...blurThemeLines];
-		if (allThemeLines.length > 0) {
+		const emitThemeBlock = () => {
 			lines.push("@theme inline {");
-			for (const line of allThemeLines) lines.push(line);
+			if (shadowEntries.length > 0) {
+				lines.push("  /* Shadows — Tailwind scale, customizable to match Figma */");
+				for (const { lines: L } of shadowEntries) {
+					for (const line of L) lines.push(line);
+				}
+			}
+			if (shadowEntries.length > 0 && blurEntries.length > 0) lines.push("");
+			if (blurEntries.length > 0) {
+				lines.push("  /* Blurs */");
+				for (const { lines: L } of blurEntries) {
+					for (const line of L) lines.push(line);
+				}
+			}
 			lines.push("}");
 			lines.push("");
+		};
+
+		const emitRootBlock = () => {
+			lines.push(":root {");
+			if (shadowEntries.length > 0) {
+				lines.push("  /* Shadows */");
+				for (const { lines: L } of shadowEntries) {
+					for (const line of L) lines.push(line);
+				}
+			}
+			if (shadowEntries.length > 0 && blurEntries.length > 0) lines.push("");
+			if (blurEntries.length > 0) {
+				lines.push("  /* Blurs */");
+				for (const { lines: L } of blurEntries) {
+					for (const line of L) lines.push(line);
+				}
+			}
+			lines.push("}");
+			lines.push("");
+		};
+
+		if (includeThemeInline) {
+			emitThemeBlock();
+		} else {
+			emitRootBlock();
 		}
 
 		return {
@@ -1436,7 +1577,11 @@ export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExpo
 
 	// Generate specialized files first so we know which prefixes to exclude
 	// from primitives (avoids duplication)
-	const effectsFile = await generateEffectsCSS(options.colorFormat, opacityMap);
+	const effectsFile = await generateEffectsCSS(
+		options.colorFormat,
+		opacityMap,
+		options.includeThemeInline,
+	);
 	const radiusFile = await generateRadiusCSS();
 
 	// Excluded from primitives entirely (both @theme inline and :root):

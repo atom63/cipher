@@ -8,6 +8,8 @@ import {
 	FONT_FAMILIES,
 	FONT_WEIGHTS,
 	SHADOW_SCALE,
+	SHADOW_SCALE_ORDER,
+	shadowToCss,
 	SPACING_SCALE,
 } from "../src/generators/token-presets";
 
@@ -206,22 +208,29 @@ describe("preset data integrity", () => {
 		expect(SPACING_SCALE["8"]).toBe(32);
 	});
 
-	test("SHADOW_SCALE has levels 0-6", () => {
-		for (let i = 0; i <= 6; i++) {
-			expect(SHADOW_SCALE[String(i)], `shadow level ${i} missing`).toBeDefined();
+	test("SHADOW_SCALE has Tailwind scale keys (2xs → 2xl)", () => {
+		expect(SHADOW_SCALE_ORDER.length).toBe(7);
+		for (const key of SHADOW_SCALE_ORDER) {
+			expect(SHADOW_SCALE[key], `shadow "${key}" missing`).toBeDefined();
 		}
 	});
 
-	test("shadow 0 has zero opacity", () => {
-		expect(SHADOW_SCALE["0"][0].opacity).toBe(0);
-		expect(SHADOW_SCALE["0"][0].blur).toBe(0);
+	test("shadow 2xs is minimal single-layer", () => {
+		expect(SHADOW_SCALE["2xs"].length).toBe(1);
+		expect(SHADOW_SCALE["2xs"][0].blur).toBe(0);
+		expect(SHADOW_SCALE["2xs"][0].opacity).toBe(0.05);
 	});
 
-	test("shadow complexity increases with level", () => {
-		for (let i = 1; i <= 6; i++) {
-			const layers = SHADOW_SCALE[String(i)];
+	test("shadow complexity: sm and up use at least one layer", () => {
+		for (const key of ["xs", "sm", "md", "lg", "xl", "2xl"] as const) {
+			const layers = SHADOW_SCALE[key];
 			expect(layers.length).toBeGreaterThanOrEqual(1);
 		}
+	});
+
+	test("shadowToCss uses modern rgb(0 0 0 / a), not rgba()", () => {
+		expect(shadowToCss(SHADOW_SCALE["2xs"])).toMatch(/rgb\(0 0 0 \/ 0\.05\)/);
+		expect(shadowToCss(SHADOW_SCALE.sm)).not.toMatch(/rgba\(/);
 	});
 
 	test("DURATION_RAW has monotonically increasing values", () => {

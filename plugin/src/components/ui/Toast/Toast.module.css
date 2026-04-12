@@ -22,7 +22,7 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-shadow-3);
+  box-shadow: var(--shadow-md);
   animation: slideIn 0.2s ease-out;
 }
 

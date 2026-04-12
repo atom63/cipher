@@ -713,7 +713,7 @@ describe("generateCss", () => {
 		});
 		expect(css).toContain("--spacing-4:");
 		expect(css).toContain("--radius-lg:");
-		expect(css).toContain("--shadow-3:");
+		expect(css).toContain("--shadow-md:");
 		expect(css).toContain("--font-sans:");
 		expect(css).toContain("--duration-normal:");
 		// Typography

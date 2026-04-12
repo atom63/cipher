@@ -135,16 +135,17 @@ const TOKEN_SNIPPETS: {
     label: "Effects",
     file: "effects.css",
     vars: 14,
-    code: `/* effects.css — shadows & blurs */
+    code: `/* Effects — shadows and blurs */
+/* Shadows override Tailwind defaults; names match shadow-* utilities */
 
-:root {
-  --shadow-0: 0px 0px 0px 0px rgba(0, 0, 0, 0);
-  --shadow-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.05),
-              0px 1px 3px 0px rgba(0, 0, 0, 0.1);
-  --shadow-3: 0px 4px 6px -2px rgba(0, 0, 0, 0.05),
-              0px 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-5: 0px 10px 15px -3px rgba(0, 0, 0, 0.04),
-              0px 25px 50px -12px rgba(0, 0, 0, 0.1);
+@theme inline {
+  --shadow-2xs: 0px 1px rgb(0 0 0 / 0.05);
+  --shadow-md:
+    0px 4px 6px -2px rgb(0 0 0 / 0.05),
+    0px 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-xl:
+    0px 10px 15px -3px rgb(0 0 0 / 0.04),
+    0px 25px 50px -12px rgb(0 0 0 / 0.1);
 
   --blur-sm: 8px;
   --blur-md: 12px;
@@ -183,7 +184,7 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
         </FadeUp>
 
         <FadeUp delay={0.1}>
-          <div className="mt-8 overflow-hidden rounded-xl border border-border/60 shadow-5">
+          <div className="mt-8 overflow-hidden rounded-xl border border-border/60 shadow-xl">
             {/* Interactive file tabs */}
             <div className="flex items-center gap-0 overflow-x-auto border-border/50 border-b bg-card/80 backdrop-blur-xl">
               {TOKEN_SNIPPETS.map((snippet) => (

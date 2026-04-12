@@ -91,8 +91,8 @@ export function computeRadiusScale(
 export const DEFAULT_RADIUS: RadiusConfig = { anchor: 10, multiplier: 1 };
 
 // =========================================================================
-// Shadows — Multi-layer elevation levels 0-6
-// Each level uses layered shadows for realistic depth
+// Shadows — Tailwind v4 scale (2xs → 2xl), multi-layer where needed
+// CSS uses modern rgb(0 0 0 / a); aligns with exported effects.css
 // =========================================================================
 
 export interface ShadowLayer {
@@ -103,42 +103,72 @@ export interface ShadowLayer {
 	spread: number;
 }
 
-export const SHADOW_SCALE: Record<string, ShadowLayer[]> = {
-	"0": [{ offsetX: 0, offsetY: 0, blur: 0, spread: 0, opacity: 0 }],
-	"1": [
-		{ offsetX: 0, offsetY: 1, blur: 2, spread: 0, opacity: 0.05 },
-		{ offsetX: 0, offsetY: 1, blur: 3, spread: 0, opacity: 0.1 },
-	],
-	"2": [
-		{ offsetX: 0, offsetY: 1, blur: 3, spread: 0, opacity: 0.04 },
-		{ offsetX: 0, offsetY: 4, blur: 6, spread: -1, opacity: 0.1 },
-	],
-	"3": [
-		{ offsetX: 0, offsetY: 4, blur: 6, spread: -2, opacity: 0.05 },
-		{ offsetX: 0, offsetY: 10, blur: 15, spread: -3, opacity: 0.1 },
-	],
-	"4": [
-		{ offsetX: 0, offsetY: 8, blur: 10, spread: -3, opacity: 0.04 },
-		{ offsetX: 0, offsetY: 20, blur: 25, spread: -5, opacity: 0.1 },
-	],
-	"5": [
-		{ offsetX: 0, offsetY: 10, blur: 15, spread: -3, opacity: 0.04 },
-		{ offsetX: 0, offsetY: 25, blur: 50, spread: -12, opacity: 0.1 },
-	],
-	"6": [
-		{ offsetX: 0, offsetY: 12, blur: 20, spread: -4, opacity: 0.04 },
-		{ offsetX: 0, offsetY: 30, blur: 60, spread: -18, opacity: 0.12 },
-	],
-};
+/** Iteration order for shadow tokens (Object key order is not guaranteed for mixed alnum keys) */
+export const SHADOW_SCALE_ORDER = [
+	"2xs",
+	"xs",
+	"sm",
+	"md",
+	"lg",
+	"xl",
+	"2xl",
+] as const;
 
+export type ShadowScaleKey = (typeof SHADOW_SCALE_ORDER)[number];
+
+function formatShadowAlpha(a: number): string {
+	if (a >= 0.999) return "1";
+	return String(Number.parseFloat(a.toPrecision(4)));
+}
+
+/** One layer as box-shadow CSS — matches plugin effects.css / Tailwind conventions */
 function shadowLayerToCss(layer: ShadowLayer): string {
-	return `${layer.offsetX}px ${layer.offsetY}px ${layer.blur}px ${layer.spread}px rgba(0, 0, 0, ${layer.opacity})`;
+	const x = `${layer.offsetX}px`;
+	const y = `${layer.offsetY}px`;
+	const blurPx = layer.blur;
+	const spreadPx = layer.spread;
+	const color = `rgb(0 0 0 / ${formatShadowAlpha(layer.opacity)})`;
+
+	if (blurPx === 0 && spreadPx === 0) {
+		return `${x} ${y} ${color}`;
+	}
+	const blur = `${blurPx}px`;
+	const spread = `${spreadPx}px`;
+	return `${x} ${y} ${blur} ${spread} ${color}`;
 }
 
 export function shadowToCss(defOrLayers: ShadowLayer | ShadowLayer[]): string {
 	const layers = Array.isArray(defOrLayers) ? defOrLayers : [defOrLayers];
 	return layers.map(shadowLayerToCss).join(", ");
 }
+
+export const SHADOW_SCALE: Record<ShadowScaleKey, ShadowLayer[]> = {
+	"2xs": [{ offsetX: 0, offsetY: 1, blur: 0, spread: 0, opacity: 0.05 }],
+	xs: [
+		{ offsetX: 0, offsetY: 1, blur: 2, spread: 0, opacity: 0.05 },
+		{ offsetX: 0, offsetY: 1, blur: 3, spread: 0, opacity: 0.1 },
+	],
+	sm: [
+		{ offsetX: 0, offsetY: 1, blur: 3, spread: 0, opacity: 0.04 },
+		{ offsetX: 0, offsetY: 4, blur: 6, spread: -1, opacity: 0.1 },
+	],
+	md: [
+		{ offsetX: 0, offsetY: 4, blur: 6, spread: -2, opacity: 0.05 },
+		{ offsetX: 0, offsetY: 10, blur: 15, spread: -3, opacity: 0.1 },
+	],
+	lg: [
+		{ offsetX: 0, offsetY: 8, blur: 10, spread: -3, opacity: 0.04 },
+		{ offsetX: 0, offsetY: 20, blur: 25, spread: -5, opacity: 0.1 },
+	],
+	xl: [
+		{ offsetX: 0, offsetY: 10, blur: 15, spread: -3, opacity: 0.04 },
+		{ offsetX: 0, offsetY: 25, blur: 50, spread: -12, opacity: 0.1 },
+	],
+	"2xl": [
+		{ offsetX: 0, offsetY: 12, blur: 20, spread: -4, opacity: 0.04 },
+		{ offsetX: 0, offsetY: 30, blur: 60, spread: -18, opacity: 0.12 },
+	],
+};
 
 // =========================================================================
 // Blur — Tailwind-aligned blur scale

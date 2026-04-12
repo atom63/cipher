@@ -25,7 +25,7 @@
   background-color: var(--background);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-shadow-3);
+  box-shadow: var(--shadow-md);
   animation: dropdownSlideDown 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

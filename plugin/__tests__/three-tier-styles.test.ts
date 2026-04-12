@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { BrandConfig } from "../src/generators/three-tier";
 import { generateDesignSystem } from "../src/generators/three-tier";
-import { SHADOW_SCALE } from "../src/generators/token-presets";
+import { SHADOW_SCALE_ORDER } from "../src/generators/token-presets";
 
 const defaultConfig: BrandConfig = {
 	primary: "#3B82F6",
@@ -312,10 +312,9 @@ describe("generateStyles — effect", () => {
 		expect(styles.effect).toHaveProperty("backdrop-blur");
 	});
 
-	test("shadow styles match SHADOW_SCALE levels (0-6)", () => {
+	test("shadow styles match SHADOW_SCALE (2xs → 2xl)", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
-		const shadowKeys = Object.keys(SHADOW_SCALE);
-		for (const level of shadowKeys) {
+		for (const level of SHADOW_SCALE_ORDER) {
 			expect(styles.effect.shadow).toHaveProperty(level);
 			expect(styles.effect.shadow[level].type).toBe("effect");
 			expect(styles.effect.shadow[level].id).toBeDefined();
@@ -324,10 +323,10 @@ describe("generateStyles — effect", () => {
 
 	test("shadow effects have correct drop-shadow structure", () => {
 		const { styles } = generateDesignSystem(defaultConfig);
-		// Level 2 has 2 layers
-		const shadow2 = styles.effect.shadow["2"];
-		expect(shadow2.effects.length).toBe(2);
-		for (const eff of shadow2.effects) {
+		// sm has 2 layers
+		const shadowSm = styles.effect.shadow.sm;
+		expect(shadowSm.effects.length).toBe(2);
+		for (const eff of shadowSm.effects) {
 			expect(eff.type).toBe("drop-shadow");
 			expect(eff.offsetX).toMatch(/px$/);
 			expect(eff.offsetY).toMatch(/px$/);

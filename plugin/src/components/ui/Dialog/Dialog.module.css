@@ -39,7 +39,7 @@
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-shadow-5);
+  box-shadow: var(--shadow-xl);
   transform-origin: center;
   animation: dialog-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }

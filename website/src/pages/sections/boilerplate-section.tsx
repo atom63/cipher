@@ -13,7 +13,7 @@ export function BoilerplateSection() {
     <Section gap={false} removeTopSpacing spacing="default">
       <Container maxWidth="narrow" padding="all">
         <FadeUp>
-          <div className="group extrude-1 overflow-hidden rounded-xl bg-card transition-shadow duration-300 hover:shadow-3">
+          <div className="group extrude-1 overflow-hidden rounded-xl bg-card transition-shadow duration-300 hover:shadow-md">
             <div className="flex flex-col items-center gap-6 px-6 py-10 text-center sm:px-10 sm:py-12">
               {/* Token flow diagram — arrows pulse on hover */}
               <div className="flex items-center gap-2 font-medium text-muted-foreground text-xs">

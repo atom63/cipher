@@ -142,7 +142,7 @@ Alert component uses `oklch` for color-mixing while the rest of the codebase use
 ### P9 — Unused and legacy tokens
 
 - `--sidebar-width` and `--sidebar-collapsed` defined but never used
-- `--shadow-shadow-1` redundant naming (should be `--shadow-1` or `--elevation-1`)
+- ~~`--shadow-shadow-*`~~ — fixed: UI now references `--shadow-xs` / `--shadow-md` / `--shadow-xl` (Tailwind-aligned)
 - `--muted-foreground-light`, `--border-light`, `--success-light` are undocumented variants
 
 Dead tokens in a token management tool are ironic.

@@ -61,9 +61,9 @@ const RichButton = forwardRef<HTMLButtonElement, RichButtonProps>(
 
     const primaryGlow =
       "color-mix(in srgb, var(--primary) 40%, transparent) 0px 8px 24px -4px";
-    const baseBoxShadow = `${insetShadow}, var(--shadow-4), ${primaryGlow}`;
-    const hoverBoxShadow = `${insetShadow}, var(--shadow-6), ${primaryGlow}`;
-    const activeBoxShadow = `${insetShadow}, var(--shadow-1), ${primaryGlow}`;
+    const baseBoxShadow = `${insetShadow}, var(--shadow-lg), ${primaryGlow}`;
+    const hoverBoxShadow = `${insetShadow}, var(--shadow-2xl), ${primaryGlow}`;
+    const activeBoxShadow = `${insetShadow}, var(--shadow-xs), ${primaryGlow}`;
 
     return (
       <Comp

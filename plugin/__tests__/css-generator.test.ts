@@ -60,7 +60,9 @@ describe("toVarName", () => {
 	});
 
 	test("handles shadow and blur paths", () => {
-		expect(toVarName("shadow/0", "STRING")).toBe("--shadow-0");
+		expect(toVarName("shadow/md", "STRING")).toBe("--shadow-md");
+		expect(toVarName("shadow/2xs", "STRING")).toBe("--shadow-2xs");
+		expect(toVarName("shadow/0", "STRING")).toBe("--shadow-0"); // legacy numeric
 		expect(toVarName("blur/xs", "FLOAT")).toBe("--blur-xs");
 		expect(toVarName("rounded/lg", "FLOAT")).toBe("--rounded-lg");
 	});

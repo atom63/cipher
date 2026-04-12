@@ -50,7 +50,7 @@
   color: var(--background);
   background-color: var(--foreground);
   box-shadow:
-    var(--shadow-shadow-1),
+    var(--shadow-xs),
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
@@ -58,7 +58,7 @@
 .default:hover:not(:disabled) {
   background-color: color-mix(in oklch, var(--foreground) 90%, transparent);
   box-shadow:
-    var(--shadow-shadow-2),
+    var(--shadow-sm),
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
@@ -66,7 +66,7 @@
 .default:active:not(:disabled) {
   background-color: color-mix(in oklch, var(--foreground) 85%, transparent);
   box-shadow:
-    var(--shadow-shadow-1),
+    var(--shadow-xs),
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
@@ -221,7 +221,7 @@
   color: var(--destructive-foreground);
   background-color: var(--destructive);
   box-shadow:
-    var(--shadow-shadow-1),
+    var(--shadow-xs),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
@@ -229,7 +229,7 @@
 .destructive:hover:not(:disabled) {
   background-color: color-mix(in oklch, var(--destructive) 90%, black);
   box-shadow:
-    var(--shadow-shadow-2),
+    var(--shadow-sm),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
@@ -237,7 +237,7 @@
 .destructive:active:not(:disabled) {
   background-color: color-mix(in oklch, var(--destructive) 80%, black);
   box-shadow:
-    var(--shadow-shadow-1),
+    var(--shadow-xs),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
