@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-// Available palette options — derived from primitives.css token names
-export const BRAND_OPTIONS = ["b1", "b2", "b3", "b4", "b5"] as const;
-export const SURFACE_OPTIONS = ["n1", "n2", "n3", "n4", "n5"] as const;
+// Available palette options — matches website/src/styles/tokens/primitives.css (b1–b6, n1–n6)
+export const BRAND_OPTIONS = ["b1", "b2", "b3", "b4", "b5", "b6"] as const;
+export const SURFACE_OPTIONS = ["n1", "n2", "n3", "n4", "n5", "n6"] as const;
 
 export type BrandId = (typeof BRAND_OPTIONS)[number];
 export type SurfaceId = (typeof SURFACE_OPTIONS)[number];

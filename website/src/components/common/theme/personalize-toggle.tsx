@@ -1,6 +1,5 @@
 import { Dices, Palette, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import {
   Popover,
   PopoverContent,
@@ -8,12 +7,26 @@ import {
 } from "@/components/ui/popover";
 import {
   BRAND_OPTIONS,
-  SURFACE_OPTIONS,
-  usePersonalization,
   type BrandId,
+  SURFACE_OPTIONS,
   type SurfaceId,
+  usePersonalization,
 } from "@/contexts/personalization-context";
 import { useTheme } from "@/contexts/theme-context";
+import { cn } from "@/lib/utils";
+
+/** Brand ramp preview: `primitives.css` `--color-b{1–6}-500` */
+function brandPrimitiveVar(brandId: BrandId): `--color-${BrandId}-500` {
+	return `--color-${brandId}-500`;
+}
+
+/** Neutral surface preview: `--color-n{1–6}-light-6` / `-dark-6` */
+function surfacePrimitiveVar(
+	surfaceId: SurfaceId,
+	mode: "light" | "dark",
+): `--color-${SurfaceId}-light-6` | `--color-${SurfaceId}-dark-6` {
+	return `--color-${surfaceId}-${mode}-6`;
+}
 
 function Swatch({
   active,
@@ -49,21 +62,35 @@ function Swatch({
 }
 
 interface PersonalizeToggleProps {
-  size?: "icon" | "icon-xs" | "icon-sm" | "icon-lg";
   className?: string;
   popoverClassName?: string;
   /** Portal container — use when inside fullscreen elements */
   popoverContainer?: HTMLElement | null;
+  size?: "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
 function pickRandom<T>(arr: readonly T[], exclude: T): T {
   const others = arr.filter((v) => v !== exclude);
-  return others[Math.floor(Math.random() * others.length)];
+  const index = Math.floor(Math.random() * others.length);
+  return others[index] ?? exclude;
 }
 
-export function PersonalizeToggle({ size = "icon", className, popoverClassName, popoverContainer }: PersonalizeToggleProps) {
-  const { brand, surfaceLight, surfaceDark, dirty, reset, setBrand, setSurfaceLight, setSurfaceDark } =
-    usePersonalization();
+export function PersonalizeToggle({
+  size = "icon",
+  className,
+  popoverClassName,
+  popoverContainer,
+}: PersonalizeToggleProps) {
+  const {
+    brand,
+    surfaceLight,
+    surfaceDark,
+    dirty,
+    reset,
+    setBrand,
+    setSurfaceLight,
+    setSurfaceDark,
+  } = usePersonalization();
   const { isDark } = useTheme();
 
   const shuffle = () => {
@@ -75,20 +102,33 @@ export function PersonalizeToggle({ size = "icon", className, popoverClassName, 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button aria-label="Personalize" className={className} size={size} variant="ghost">
+        <Button
+          aria-label="Personalize"
+          className={className}
+          size={size}
+          variant="ghost"
+        >
           <Palette className="size-4" />
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className={cn("w-56 space-y-4 p-3", popoverClassName)} container={popoverContainer ?? undefined} side="top" sideOffset={8}>
+      <PopoverContent
+        align="end"
+        className={cn("w-56 space-y-4 p-3", popoverClassName)}
+        container={popoverContainer ?? undefined}
+        side="top"
+        sideOffset={8}
+      >
         {/* Brand color */}
         <div className="space-y-1.5">
-          <span className="text-muted-foreground text-xs font-medium">Primary</span>
-          <div className="flex gap-2">
+          <span className="font-medium text-muted-foreground text-xs">
+            Primary
+          </span>
+          <div className="flex flex-wrap gap-2">
             {BRAND_OPTIONS.map((id) => (
               <Swatch
                 active={brand === id}
-                cssVar={`--color-${id}-500`}
+                cssVar={brandPrimitiveVar(id)}
                 key={id}
                 label={id}
                 onClick={() => setBrand(id as BrandId)}
@@ -99,17 +139,19 @@ export function PersonalizeToggle({ size = "icon", className, popoverClassName, 
 
         {/* Surface — show the active mode, control both */}
         <div className="space-y-1.5">
-          <span className="text-muted-foreground text-xs font-medium">
+          <span className="font-medium text-muted-foreground text-xs">
             Surface {isDark ? "(dark)" : "(light)"}
           </span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {SURFACE_OPTIONS.map((id) => (
               <Swatch
                 active={isDark ? surfaceDark === id : surfaceLight === id}
-                cssVar={`--color-${id}-${isDark ? "dark" : "light"}-6`}
+                cssVar={surfacePrimitiveVar(id, isDark ? "dark" : "light")}
                 key={id}
                 label={id}
-                onClick={() => (isDark ? setSurfaceDark : setSurfaceLight)(id as SurfaceId)}
+                onClick={() =>
+                  (isDark ? setSurfaceDark : setSurfaceLight)(id as SurfaceId)
+                }
               />
             ))}
           </div>
@@ -117,12 +159,22 @@ export function PersonalizeToggle({ size = "icon", className, popoverClassName, 
         {/* Actions */}
         <div className="flex gap-2">
           {dirty && (
-            <Button className="flex-1" onClick={reset} size="sm" variant="ghost">
+            <Button
+              className="flex-1"
+              onClick={reset}
+              size="sm"
+              variant="ghost"
+            >
               <RotateCcw className="size-3.5" />
               Reset
             </Button>
           )}
-          <Button className="flex-1" onClick={shuffle} size="sm" variant="outline">
+          <Button
+            className="flex-1"
+            onClick={shuffle}
+            size="sm"
+            variant="outline"
+          >
             <Dices className="size-3.5" />
             Shuffle
           </Button>

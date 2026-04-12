@@ -540,15 +540,25 @@ describe("semantics", () => {
 		}
 	});
 
-	test("includes brand-secondary semantic when secondary provided", () => {
+	test("includes brand-secondary primitive and chart tokens reference it when secondary provided", () => {
 		const result = generateDesignSystem({
 			...defaultConfig,
 			secondary: "#10B981",
 		});
-		const semantics = result.tokens.filter((t) => t.category === "semantics");
-		const names = semantics.map((t) => t.figmaName);
-		// Legacy secondary → brand name "brand-secondary" → semantic "brand-brand-secondary"
-		expect(names.some((n) => n.includes("brand-secondary"))).toBe(true);
+		const primNames = result.tokens
+			.filter((t) => t.category === "primitives")
+			.map((t) => t.figmaName);
+		expect(primNames).toContain("color/brand-secondary/500");
+
+		const chart2Light = result.tokens.find(
+			(t) =>
+				t.category === "semantics" &&
+				t.figmaName === "chart-2" &&
+				(t as { modeName?: string }).modeName === "Light",
+		);
+		expect(chart2Light?.originalValue).toBe(
+			"{primitives.color.brand-secondary.500}",
+		);
 	});
 
 	test("light and dark for forced-mode contexts", () => {
@@ -861,17 +871,27 @@ describe("multi-palette", () => {
 		expect(refs).toContain("{primitives.color.purple.500}");
 	});
 
-	test("emits brand-* semantic tokens for non-primary brands", () => {
+	test("chart semantics reference each brand primitive (no brand-* semantic names)", () => {
 		const result = generateDesignSystem(multiConfig);
+		const chartLight = result.tokens.filter(
+			(t) =>
+				t.category === "semantics" &&
+				t.figmaName.startsWith("chart-") &&
+				(t as { modeName?: string }).modeName === "Light",
+		);
+		const refs = chartLight.map((t) => String(t.originalValue));
+
+		expect(refs).toContain("{primitives.color.blue.500}");
+		expect(refs).toContain("{primitives.color.green.500}");
+		expect(refs).toContain("{primitives.color.purple.500}");
+
 		const semanticNames = result.tokens
 			.filter((t) => t.category === "semantics")
 			.map((t) => t.figmaName);
-
-		// blue is primary, so no brand-blue
+		// UI semantics use shadcn-style names (primary, chart-1, …), not brand-{color}
 		expect(semanticNames).not.toContain("brand-blue");
-		// green and purple get brand-* semantics
-		expect(semanticNames).toContain("brand-green");
-		expect(semanticNames).toContain("brand-purple");
+		expect(semanticNames).not.toContain("brand-green");
+		expect(semanticNames).not.toContain("brand-purple");
 	});
 
 	test("surfaces support separate light/dark presets", () => {
