@@ -882,35 +882,6 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							});
 						}
 					});
-				} else if (style.type === "EFFECT") {
-					const effectStyle = style as EffectStyle;
-					effectStyle.effects.forEach((e, ei) => {
-						if (e.type === "DROP_SHADOW" || e.type === "INNER_SHADOW") {
-							const bv = (e as any).boundVariables || {};
-							if (!bv.color) {
-								const shadow = e as DropShadowEffect;
-								const a = "a" in shadow.color ? shadow.color.a : 1;
-								const key = colorKey(
-									shadow.color.r,
-									shadow.color.g,
-									shadow.color.b,
-									a,
-								);
-								const match = findByColor(key);
-								if (match) {
-									suggestions.push({
-										styleId,
-										styleName: effectStyle.name,
-										field: `effect:${ei}`,
-										currentColor: rgbToHex(shadow.color),
-										suggestedVariableId: match.id,
-										suggestedVariableName: match.name,
-										matchType: "exact",
-									});
-								}
-							}
-						}
-					});
 				} else if (style.type === "TEXT") {
 					const textStyle = style as TextStyle;
 					const bv = (textStyle as any).boundVariables || {};
@@ -1120,26 +1091,6 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 								} else {
 									failed++;
 								}
-							} else {
-								failed++;
-							}
-						} else {
-							failed++;
-						}
-					} else if (style.type === "EFFECT") {
-						const effectStyle = style as EffectStyle;
-						if (field.startsWith("effect:")) {
-							const ei = Number.parseInt(field.split(":")[1], 10);
-							const effects = [...effectStyle.effects];
-							if (effects[ei]) {
-								effects[ei] = figma.variables.setBoundVariableForEffect(
-									effects[ei],
-									"color",
-									variable,
-								);
-								effectStyle.effects = effects;
-								success++;
-								applied.push({ styleId, field });
 							} else {
 								failed++;
 							}

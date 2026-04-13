@@ -1,6 +1,10 @@
 /**
  * Rebind matching helpers — extracted from scan-rebind handler for testability.
  * Used to match unbound style properties to local variables by path and value.
+ *
+ * **Scope:** Scan-rebind only suggests bindings for **paint** (fill) and **text**
+ * styles. Effect styles (shadow / blur) are **not** scanned — shadow colors and
+ * blur radii are intentionally left unbound so tokens stay on paint + typography.
  */
 
 /** Normalize a path for comparison: lowercase, strip hyphens/underscores/spaces */

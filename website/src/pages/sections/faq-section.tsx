@@ -26,10 +26,6 @@ const FAQ_ITEMS = [
     a: "Designers and developers who care about readable token systems and alignment between design and code.",
   },
   {
-    q: "What is the open-source starter?",
-    a: "A public repo that applies Cipher's token structure in code. Use it as a reference or boilerplate.",
-  },
-  {
     q: "Why is Cipher in beta?",
     a: "It's usable today, but the workflow and feature set are still evolving. The beta label sets expectations while the product improves.",
   },
