@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+	compareFigmaVariablePaths,
 	detectFontCategory,
 	generateBaseTypographyStyles,
 	inferTailwindFontKey,
@@ -65,6 +66,40 @@ describe("toVarName", () => {
 		expect(toVarName("shadow/0", "STRING")).toBe("--shadow-0"); // legacy numeric
 		expect(toVarName("blur/xs", "FLOAT")).toBe("--blur-xs");
 		expect(toVarName("rounded/lg", "FLOAT")).toBe("--rounded-lg");
+	});
+});
+
+// =========================================================================
+// compareFigmaVariablePaths — CSS export order (groups, light before dark, numeric)
+// =========================================================================
+
+describe("compareFigmaVariablePaths", () => {
+	test("orders light ramp before dark at same neutral path", () => {
+		expect(
+			compareFigmaVariablePaths("color/n1/light/1", "color/n1/dark/1"),
+		).toBeLessThan(0);
+		const paths = [
+			"color/n1/dark/1",
+			"color/n1/light/1",
+			"color/n1/light/2",
+		].sort(compareFigmaVariablePaths);
+		expect(paths).toEqual([
+			"color/n1/light/1",
+			"color/n1/light/2",
+			"color/n1/dark/1",
+		]);
+	});
+
+	test("numeric step order within light (2 before 10)", () => {
+		expect(
+			compareFigmaVariablePaths("color/n1/light/2", "color/n1/light/10"),
+		).toBeLessThan(0);
+	});
+
+	test("groups n1 before n2 when prefixes align", () => {
+		expect(
+			compareFigmaVariablePaths("color/n1/light/1", "color/n2/light/1"),
+		).toBeLessThan(0);
 	});
 });
 

@@ -320,6 +320,53 @@ async function valueToCSS(
 // COLLECTION CSS GENERATION
 // ============================================================================
 
+/**
+ * Compare two Figma variable path segments for export order: `light` before
+ * `dark`, pure numeric segments by number, otherwise `localeCompare` with
+ * `{ numeric: true }` (so b2 before b10).
+ */
+function compareFigmaPathSegment(a: string, b: string): number {
+	const al = a.toLowerCase();
+	const bl = b.toLowerCase();
+
+	if (al === "light" && bl === "dark") return -1;
+	if (al === "dark" && bl === "light") return 1;
+
+	const na = Number(al);
+	const nb = Number(bl);
+	if (
+		!(Number.isNaN(na) || Number.isNaN(nb)) &&
+		String(na) === al &&
+		String(nb) === bl
+	) {
+		return na - nb;
+	}
+
+	return al.localeCompare(bl, "en", { numeric: true, sensitivity: "base" });
+}
+
+/** Lexicographic order of full Figma variable paths (for CSS export). */
+export function compareFigmaVariablePaths(a: string, b: string): number {
+	const partsA = a.split("/");
+	const partsB = b.split("/");
+	const max = Math.max(partsA.length, partsB.length);
+	for (let i = 0; i < max; i++) {
+		const sa = partsA[i];
+		const sb = partsB[i];
+		if (sa === undefined) return -1;
+		if (sb === undefined) return 1;
+		const c = compareFigmaPathSegment(sa, sb);
+		if (c !== 0) return c;
+	}
+	return 0;
+}
+
+function sortVariablesByFigmaPath(variables: Variable[]): Variable[] {
+	return [...variables].sort((va, vb) =>
+		compareFigmaVariablePaths(va.name, vb.name),
+	);
+}
+
 async function generateCollectionCSS(
 	collection: VariableCollection,
 	colorFormat: ColorFormat,
@@ -339,7 +386,7 @@ async function generateCollectionCSS(
 	const excludePrefixes = options.excludePrefixes;
 	const rootExcludePrefixes = options.rootExcludePrefixes;
 	const colName = collection.name;
-	const variables = excludePrefixes
+	const variablesUnsorted = excludePrefixes
 		? allVariables.filter((v) => {
 				const varName = toVarName(v.name, v.resolvedType, colName);
 				return !excludePrefixes.some((p) => varName.startsWith(p));
@@ -348,12 +395,15 @@ async function generateCollectionCSS(
 
 	// Variables for :root — additionally exclude tokens that only belong in @theme inline
 	const allExclude = [...(excludePrefixes ?? []), ...(rootExcludePrefixes ?? [])];
-	const rootVariables = allExclude.length > 0
+	const rootVariablesUnsorted = allExclude.length > 0
 		? allVariables.filter((v) => {
 				const varName = toVarName(v.name, v.resolvedType, colName);
 				return !allExclude.some((p) => varName.startsWith(p));
 			})
-		: variables;
+		: variablesUnsorted;
+
+	const variables = sortVariablesByFigmaPath(variablesUnsorted);
+	const rootVariables = sortVariablesByFigmaPath(rootVariablesUnsorted);
 
 	const hasModes = collection.modes.length > 1;
 	const lines: string[] = [];
@@ -633,12 +683,7 @@ async function generateThemeInline(
 		}
 	}
 
-	// Sort alphabetically by variable name for consistent output
-	entries.sort((a, b) => {
-		const aName = a.split(":")[0];
-		const bName = b.split(":")[0];
-		return aName.localeCompare(bName);
-	});
+	// Order follows sortVariablesByFigmaPath (groups + light before dark + numeric steps)
 
 	for (const entry of entries) {
 		lines.push(entry);
