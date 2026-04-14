@@ -13,6 +13,16 @@ cipher/
 
 `boilerplate/` is a stripped-down copy of `website/` — same stack and design system, with cipher-specific content, blog, slides, and components showcase removed. It lives inside this repo but is published to a separate GitHub repo via git subtree.
 
+### Local dev
+
+```bash
+cd boilerplate
+pnpm install  # installs locally, not into the root workspace
+pnpm dev
+```
+
+A `.npmrc` with `ignore-workspace-root-check=true` is required so pnpm doesn't crawl up to the root `pnpm-workspace.yaml` and try to install as a workspace package.
+
 ### Remote
 
 ```
