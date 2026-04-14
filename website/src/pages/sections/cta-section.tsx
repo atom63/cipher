@@ -24,15 +24,16 @@ export function CtaSection() {
 
           <FadeUp delay={0.1}>
             <div className="mt-8 sm:mt-10">
-              <a href="https://www.figma.com/community/plugin/1613643367110247078" rel="noopener noreferrer" target="_blank">
+              <a
+                href="https://www.figma.com/community/plugin/1613643367110247078"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
                 <RichButton size="lg">
                   Install plugin
                   <ArrowRight className="size-4" />
                 </RichButton>
               </a>
-              <p className="mt-3 text-muted-foreground/50 text-xs">
-                If the link returns 404, the plugin is currently under Figma review.
-              </p>
             </div>
           </FadeUp>
 
