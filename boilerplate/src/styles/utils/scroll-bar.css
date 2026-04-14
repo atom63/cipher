@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@layer components {
+  * {
+    scrollbar-color: color-mix(in srgb, var(--foreground), transparent 50%)
+      var(--border);
+    scrollbar-width: thin;
+  }
+
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--border);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--foreground), transparent 50%);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--foreground), transparent 30%);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: var(--border);
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
