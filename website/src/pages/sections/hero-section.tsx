@@ -61,10 +61,6 @@ export function HeroSection() {
                   <ArrowRight className="size-4" />
                 </RichButton>
               </a>
-              <p className="mt-3 text-muted-foreground/50 text-xs text-balance">
-                If the link returns 404, the plugin is currently under Figma
-                review.
-              </p>
             </div>
           </FadeUp>
         </div>
