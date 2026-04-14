@@ -1,4 +1,4 @@
-import { socialsByName } from "@/config/socials";
+import { socialsByName } from "@/config/links";
 import { cn } from "@/lib/utils";
 import Container from "./container";
 
@@ -12,6 +12,7 @@ const linkClass =
 export function WebFooter({ className }: FooterProps) {
   const currentYear = new Date().getFullYear();
   const github = socialsByName.github;
+  const githubRepo = socialsByName["github repo"];
   const email = socialsByName.email;
 
   return (
@@ -30,10 +31,10 @@ export function WebFooter({ className }: FooterProps) {
             </a>
           </span>
           <nav className="flex items-center gap-4">
-            {github && (
+            {githubRepo && (
               <a
                 className={linkClass}
-                href={`${github.url}/cipher`}
+                href={githubRepo.url}
                 rel="noopener noreferrer"
                 target="_blank"
               >

@@ -6,6 +6,7 @@ tokens/styles/*.css
 
 # Dependencies
 node_modules/
+.pnpm-store/
 .pnp
 .pnp.js
 

@@ -43,12 +43,3 @@ Tailwind CSS v4 consumes these via `@theme inline`.
 ## License
 
 MIT © You Zhang (ATOM63)
-
-## Origin
-
-This repo is published from the `cipher` monorepo using git subtree:
-
-```bash
-# From inside cipher/
-git subtree push --prefix=boilerplate boilerplate main
-```
