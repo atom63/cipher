@@ -1534,8 +1534,9 @@ export async function importStylesFromTokens(
 						if (!effectData) return effect;
 
 						try {
-							// Clone the effect and add variable bindings
-							const _boundEffect: any = { ...effect };
+							// Chain all variable bindings on currentEffect so each binding
+							// sees the result of the previous one (Figma returns a new effect object).
+							let currentEffect = effect;
 
 							// Bind radius variable
 							if (effectData.radiusBoundVariable?.variableName) {
@@ -1547,16 +1548,15 @@ export async function importStylesFromTokens(
 								);
 								if (variable) {
 									try {
-										const boundEffectResult =
+										currentEffect =
 											figma.variables.setBoundVariableForEffect(
-												effect,
+												currentEffect,
 												"radius",
 												variable,
 											);
 										debug(
 											`🔗 Bound radius variable "${variable.name}" to effect ${index} in style "${name}"`,
 										);
-										return boundEffectResult;
 									} catch (error) {
 										console.warn(
 											`Could not bind radius variable to effect ${index}:`,
@@ -1580,16 +1580,15 @@ export async function importStylesFromTokens(
 								);
 								if (variable) {
 									try {
-										const boundEffectResult =
+										currentEffect =
 											figma.variables.setBoundVariableForEffect(
-												effect,
+												currentEffect,
 												"spread",
 												variable,
 											);
 										debug(
 											`🔗 Bound spread variable "${variable.name}" to effect ${index} in style "${name}"`,
 										);
-										return boundEffectResult;
 									} catch (error) {
 										console.warn(
 											`Could not bind spread variable to effect ${index}:`,
@@ -1613,16 +1612,15 @@ export async function importStylesFromTokens(
 								);
 								if (variable) {
 									try {
-										const boundEffectResult =
+										currentEffect =
 											figma.variables.setBoundVariableForEffect(
-												effect,
+												currentEffect,
 												"color",
 												variable,
 											);
 										debug(
 											`🔗 Bound color variable "${variable.name}" to effect ${index} in style "${name}"`,
 										);
-										return boundEffectResult;
 									} catch (error) {
 										console.warn(
 											`Could not bind color variable to effect ${index}:`,
@@ -1635,6 +1633,8 @@ export async function importStylesFromTokens(
 									);
 								}
 							}
+
+							return currentEffect;
 						} catch (error) {
 							console.warn(
 								`Error binding variables for effect ${index}:`,

@@ -23,6 +23,7 @@ import {
 	computeRadiusScale,
 	computeTypescale,
 	DEFAULT_RADIUS,
+	DEFAULT_TYPESCALE,
 	DURATION_RAW,
 	DURATION_SEMANTIC,
 	EASING_CURVES,
@@ -490,9 +491,9 @@ function generatePrimitives(config: BrandConfig): {
 
 	// --- Typescale with responsive variants (min, sm, md) ---
 	const typeSteps = computeTypescale(config.typescale);
-	const baseSize = config.typescale?.base ?? 16;
-	const headingLhPct = (config.typescale?.lineHeightHeading ?? 125) / 100;
-	const bodyLhPct = (config.typescale?.lineHeightBody ?? 150) / 100;
+	const baseSize = config.typescale?.base ?? DEFAULT_TYPESCALE.base;
+	const headingLhPct = (config.typescale?.lineHeightHeading ?? DEFAULT_TYPESCALE.lineHeightHeading) / 100;
+	const bodyLhPct = (config.typescale?.lineHeightBody ?? DEFAULT_TYPESCALE.lineHeightBody) / 100;
 	const SM_FACTOR = 0.85;
 	const MIN_FACTOR = 0.7;
 	const round = (v: number) => Math.round(v);

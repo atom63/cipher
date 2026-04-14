@@ -62,6 +62,8 @@ export function ExportPage() {
 		totalCollections: number;
 	} | null>(null);
 	const [expandedCssFile, setExpandedCssFile] = useState<string | null>(null);
+	/** Styles data fetched alongside CSS export — bundled into ZIP for round-trip */
+	const [stylesForZip, setStylesForZip] = useState<any>(null);
 
 	const postMessage = usePostMessage();
 	const { showError } = useToast();
@@ -101,13 +103,30 @@ export function ExportPage() {
 				totalVariables: msg.data.totalVariables,
 				totalCollections: msg.data.totalCollections,
 			});
+			setStylesForZip(null);
 			setView("css-preview");
 			setExpandedCssFile(null);
+			// Fetch styles data to bundle into the ZIP for full round-trip
+			postMessage({
+				type: "export-styles",
+				data: { selectedGroups: [], colorFormat },
+			});
+		}
+
+		if (msg.type === "styles-export-complete") {
+			// Store styles data for bundling into the ZIP download
+			if (msg.data.styles && msg.data.counts.total > 0) {
+				setStylesForZip(msg.data.styles);
+			}
 		}
 
 		if (msg.type === "export-error") {
-			showError(`Export error: ${msg.data.message}`);
-			setView("selection");
+			// Only reset to selection for the primary export — not for background
+			// styles fetch triggered after css-export-complete (which runs in css-preview state)
+			if (view === "exporting") {
+				showError(`Export error: ${msg.data.message}`);
+				setView("selection");
+			}
 		}
 	});
 
@@ -278,12 +297,16 @@ export function ExportPage() {
 						Export Again
 					</Button>
 					<Button
-						onClick={() =>
-							downloadAsZip(
-								cssFiles.map((f) => ({ name: f.name, content: f.content })),
-								"design-tokens-css",
-							)
-						}
+						onClick={() => {
+							const zipEntries = cssFiles.map((f) => ({ name: f.name, content: f.content }));
+							if (stylesForZip) {
+								zipEntries.push({
+									name: "styles.json",
+									content: JSON.stringify(stylesForZip, null, 2),
+								});
+							}
+							downloadAsZip(zipEntries, "design-tokens-css");
+						}}
 						variant="primary"
 					>
 						<Archive size={14} />

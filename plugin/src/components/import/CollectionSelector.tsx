@@ -91,6 +91,12 @@ export function CollectionSelector({
 			return;
 		}
 
+		// Multi-collection imports don't use a single target collection — proceed directly
+		if (isMultiCollection) {
+			onSelect("new", newCollectionName, importMode, Array.from(selectedCollections));
+			return;
+		}
+
 		if (mode === "new") {
 			if (!newCollectionName.trim()) {
 				showWarning("Please enter a collection name");

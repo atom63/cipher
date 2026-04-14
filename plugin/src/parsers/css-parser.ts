@@ -157,12 +157,14 @@ function categoryFromSelector(
 ): TokenCategory {
 	const trimmed = selector.trim();
 
-	// If we have a file-section category, use it for both :root and .dark
+	// @theme inline blocks are Tailwind re-exports — always skip, regardless of file.
+	// Without this, unrecognised files produce self-referencing tokens that fail validation.
+	if (trimmed.includes("@theme")) {
+		return "__skip__" as TokenCategory;
+	}
+
+	// If we have a file-section category, all blocks in that file share it.
 	if (fileCategory) {
-		// @theme inline blocks are Tailwind re-exports — skip the selector entirely
-		if (trimmed.includes("@theme")) {
-			return "__skip__" as TokenCategory;
-		}
 		return fileCategory;
 	}
 
@@ -187,16 +189,32 @@ function categoryFromSelector(
 }
 
 /**
- * Detect the mode name (Light/Dark) from selector context when in semantics.
+ * Detect the mode name from the selector for multi-mode collections.
+ *
+ * For "semantics" files: both :root (Light) and .dark (Dark) are assigned.
+ * For other files: only unambiguous non-default selectors (.dark, [data-mode="X"])
+ * are assigned a mode — :root stays modeless so single-mode collections
+ * keep their default mode without being renamed to "Light".
  */
 function modeFromSelector(
 	selector: string,
 	fileCategory: TokenCategory | null,
 ): string | undefined {
-	if (fileCategory !== "semantics") return undefined;
+	if (!fileCategory) return undefined;
 	const trimmed = selector.trim();
+
+	// .dark → always "Dark"
 	if (trimmed === ".dark" || trimmed.includes("dark")) return "Dark";
-	if (trimmed === ":root" || trimmed.includes(":root") || trimmed.includes("light")) return "Light";
+
+	// [data-mode="X"] or [data-theme="X"] → extract the mode name literally
+	const attrMatch = trimmed.match(/\[data-(?:mode|theme)=["']([^"']+)["']\]/);
+	if (attrMatch) return attrMatch[1];
+
+	// :root → "Light" but only for semantics/semantic, where both modes are defined
+	if (fileCategory === "semantics" || fileCategory === "semantic") {
+		if (trimmed === ":root" || trimmed.includes(":root") || trimmed.includes("light")) return "Light";
+	}
+
 	return undefined;
 }
 
@@ -388,9 +406,9 @@ export function parseCSS(cssText: string): CSSParseResult {
 
 	// Build section map from stripped text so offsets align with block matches
 	const sections = buildSectionMap(stripped);
-	const isCipherExport =
-		sections.length > 0 &&
-		sections.some((s) => FILE_CATEGORY_MAP[s.filename] !== undefined);
+	// Any sectioned file (/* === filename.css === */) is a Cipher export,
+	// even if the filenames don't match the standard FILE_CATEGORY_MAP keys.
+	const isCipherExport = sections.length > 0;
 
 	// Find all selector blocks
 	for (const blockMatch of stripped.matchAll(BLOCK_RE)) {
@@ -402,7 +420,7 @@ export function parseCSS(cssText: string): CSSParseResult {
 		// start, because the selector match may include a preceding section header)
 		const sectionFile = sectionAtOffset(sections, blockStartOffset);
 		const fileCategory = sectionFile
-			? FILE_CATEGORY_MAP[sectionFile] ?? null
+			? FILE_CATEGORY_MAP[sectionFile] ?? (sectionFile.replace(".css", "") as TokenCategory)
 			: null;
 
 		const category = categoryFromSelector(selector, fileCategory);

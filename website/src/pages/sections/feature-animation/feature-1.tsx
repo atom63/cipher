@@ -208,6 +208,7 @@ export function GenerateAnimation() {
             }}
             fill="none"
             height="14"
+            initial={{ rx: 3.2, ry: 3.2 }}
             stroke="var(--muted-foreground)"
             strokeWidth="1.5"
             transition={{ duration: 0.4 }}
@@ -368,6 +369,7 @@ export function GenerateAnimation() {
               ry: Math.min(output.radius * 0.5, 8),
             }}
             height="16"
+            initial={{ rx: 4, ry: 4, fill: "var(--color-b1-500)" }}
             transition={{ duration: 0.4 }}
             width="62"
             x="-11"

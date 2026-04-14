@@ -24,7 +24,7 @@ export function HeroSection() {
           </FadeUp>
 
           <FadeUp delay={0.05}>
-            <h1 className="mt-6 max-w-4xl text-balance font-extrabold text-8xl leading-none tracking-tight">
+            <h1 className="mt-6 max-w-4xl text-balance font-extrabold text-7xl leading-none tracking-tight">
               A token system that aligns{" "}
               <span className="text-primary">design</span> and{" "}
               <span className="text-primary">code</span>

@@ -251,6 +251,31 @@ export function resolveRatio(ratioKey: string): number {
 	return TYPESCALE_RATIOS[ratioKey]?.value ?? (Number(ratioKey) || 1.25);
 }
 
+/** Canonical ratio order smallest → largest, used for responsive breakpoint stepping */
+const RATIO_ORDER = [
+	"minor-second",
+	"major-second",
+	"minor-third",
+	"major-third",
+	"perfect-fourth",
+	"augmented-fourth",
+	"perfect-fifth",
+	"golden-ratio",
+] as const;
+
+/**
+ * Step a named ratio key down N positions toward a smaller interval.
+ * Used by the responsive typescale generator — tablet uses ratio-1,
+ * mobile uses ratio-2 — so each breakpoint has its own harmonically
+ * consistent modular scale rather than a compressed version of the desktop scale.
+ * Numeric or unknown ratio keys are returned unchanged.
+ */
+export function stepDownRatio(ratio: string, steps: number = 1): string {
+	const idx = RATIO_ORDER.indexOf(ratio as (typeof RATIO_ORDER)[number]);
+	if (idx === -1) return ratio;
+	return RATIO_ORDER[Math.max(0, idx - steps)];
+}
+
 /** Compute a modular type scale from config */
 export function computeTypescale(config?: TypescaleConfig): TypeStep[] {
 	const c = { ...DEFAULT_TYPESCALE, ...config };

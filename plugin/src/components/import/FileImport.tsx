@@ -31,68 +31,36 @@ function getExt(name: string): string {
 	return name.split(".").pop()?.toLowerCase() ?? "";
 }
 
-/** Read a FileSystemFileEntry as a File */
-function readFileEntry(entry: FileSystemFileEntry): Promise<File> {
-	return new Promise((resolve, reject) => entry.file(resolve, reject));
-}
-
-/** Recursively read all files from a FileSystemDirectoryEntry */
-async function readDirectoryEntry(
-	dirEntry: FileSystemDirectoryEntry,
-): Promise<File[]> {
-	const reader = dirEntry.createReader();
-	const files: File[] = [];
-
-	// readEntries returns batches, must call repeatedly until empty
-	const readBatch = (): Promise<FileSystemEntry[]> =>
-		new Promise((resolve, reject) => reader.readEntries(resolve, reject));
-
-	let batch = await readBatch();
-	while (batch.length > 0) {
-		for (const entry of batch) {
-			if (entry.isFile) {
-				files.push(await readFileEntry(entry as FileSystemFileEntry));
-			} else if (entry.isDirectory) {
-				files.push(
-					...(await readDirectoryEntry(entry as FileSystemDirectoryEntry)),
-				);
-			}
-		}
-		batch = await readBatch();
-	}
-
-	return files;
-}
-
-/** Extract files from a drop event, supporting both files and folders */
-async function getDroppedFiles(e: React.DragEvent): Promise<File[]> {
+/** Extract files from a drop event.
+ * Figma's plugin sandbox breaks the FileSystemEntry read API (both
+ * entry.file() and createReader()). Use webkitGetAsEntry() only to detect
+ * directory drops, then fall back to getAsFile() / dataTransfer.files for
+ * the actual File objects. */
+async function getDroppedFiles(
+	e: React.DragEvent,
+): Promise<{ files: File[]; hasDirectory: boolean }> {
 	const items = e.dataTransfer.items;
 
-	// Try webkitGetAsEntry for folder support
 	if (items?.length) {
-		const entries: FileSystemEntry[] = [];
+		// Check for directories using webkitGetAsEntry (read-only, safe in Figma)
 		for (let i = 0; i < items.length; i++) {
 			const entry = items[i].webkitGetAsEntry?.();
-			if (entry) entries.push(entry);
+			if (entry?.isDirectory) {
+				return { files: [], hasDirectory: true };
+			}
 		}
 
-		if (entries.length > 0) {
-			const files: File[] = [];
-			for (const entry of entries) {
-				if (entry.isDirectory) {
-					files.push(
-						...(await readDirectoryEntry(entry as FileSystemDirectoryEntry)),
-					);
-				} else if (entry.isFile) {
-					files.push(await readFileEntry(entry as FileSystemFileEntry));
-				}
-			}
-			return files;
+		// Collect files via getAsFile() — works in Figma's sandbox
+		const files = Array.from(items)
+			.map((item) => item.getAsFile())
+			.filter((f): f is File => f !== null);
+		if (files.length > 0) {
+			return { files, hasDirectory: false };
 		}
 	}
 
-	// Fallback: plain file list (no folder support)
-	return Array.from(e.dataTransfer.files);
+	// Final fallback
+	return { files: Array.from(e.dataTransfer.files), hasDirectory: false };
 }
 
 export const FileImport = forwardRef<FileImportHandle, FileImportProps>(
@@ -107,7 +75,7 @@ export const FileImport = forwardRef<FileImportHandle, FileImportProps>(
 		openFilePicker: () => fileInputRef.current?.click(),
 	}));
 
-	const sendToParse = (content: string, format: "json" | "css") => {
+	const sendToParse = (content: string, format: "json" | "css", stylesData?: any) => {
 		if (format === "json") {
 			try {
 				const data = JSON.parse(content);
@@ -124,7 +92,11 @@ export const FileImport = forwardRef<FileImportHandle, FileImportProps>(
 
 		postMessage({
 			type: "parse-tokens",
-			data: { content, format },
+			data: {
+				content,
+				format,
+				...(stylesData ? { stylesData } : {}),
+			},
 		});
 	};
 
@@ -142,7 +114,7 @@ export const FileImport = forwardRef<FileImportHandle, FileImportProps>(
 			// ZIP file (silent support for round-trip with our own exports)
 			if (files.length === 1 && getExt(files[0].name) === "zip") {
 				const buffer = await files[0].arrayBuffer();
-				const entries = readZip(buffer);
+				const entries = await readZip(buffer);
 				const cssEntries = entries.filter(
 					(e) => {
 						if (getExt(e.name) !== "css") return false;
@@ -163,6 +135,26 @@ export const FileImport = forwardRef<FileImportHandle, FileImportProps>(
 					return;
 				}
 
+				// Extract bundled styles.json if present (Cipher ZIP round-trip)
+				let bundledStyles: any = undefined;
+				const stylesEntry = entries.find((e) => {
+					const basename = e.name.includes("/")
+						? e.name.substring(e.name.lastIndexOf("/") + 1)
+						: e.name;
+					return basename === "styles.json" && getExt(e.name) === "json";
+				});
+				if (stylesEntry) {
+					try {
+						const stylesJson = JSON.parse(stylesEntry.content);
+						// Cipher styles JSON: { $schema: "figma-styles-export", styles: { paint, text, effect, grid } }
+						if (stylesJson.$schema === "figma-styles-export" && stylesJson.styles) {
+							bundledStyles = stylesJson.styles;
+						}
+					} catch (_e) {
+						// Malformed styles.json — ignore, proceed with CSS-only import
+					}
+				}
+
 				const combined = cssEntries
 					.map((e) => {
 						// Use basename only — FILE_CATEGORY_MAP keys are filenames without paths
@@ -172,7 +164,7 @@ export const FileImport = forwardRef<FileImportHandle, FileImportProps>(
 						return `/* === ${basename} === */\n${e.content}`;
 					})
 					.join("\n\n");
-				sendToParse(combined, "css");
+				sendToParse(combined, "css", bundledStyles);
 				return;
 			}
 
@@ -221,7 +213,12 @@ export const FileImport = forwardRef<FileImportHandle, FileImportProps>(
 
 		setIsLoading(true);
 		try {
-			const files = await getDroppedFiles(e);
+			const { files, hasDirectory } = await getDroppedFiles(e);
+			if (hasDirectory) {
+				showError("Folder drop isn't supported here. Export a ZIP from Figma and drop that instead.");
+				setIsLoading(false);
+				return;
+			}
 			await handleFiles(files);
 		} catch (error) {
 			showError(`Error reading drop: ${getErrorMessage(error)}`);
@@ -280,7 +277,7 @@ export const FileImport = forwardRef<FileImportHandle, FileImportProps>(
 							<FolderOpen size={20} />
 						</div>
 						<p className={styles.dropZonePrimary}>
-							Drop files or a folder here
+							Drop files here
 						</p>
 						<p className={styles.dropZoneSecondary}>
 							or click to browse
@@ -288,7 +285,7 @@ export const FileImport = forwardRef<FileImportHandle, FileImportProps>(
 						<div className={styles.formatBadges}>
 							<span className={styles.formatBadge}>.json</span>
 							<span className={styles.formatBadge}>.css</span>
-							<span className={styles.formatBadge}>folder</span>
+							<span className={styles.formatBadge}>.zip</span>
 						</div>
 					</>
 				)}

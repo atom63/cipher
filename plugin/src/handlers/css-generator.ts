@@ -1278,7 +1278,24 @@ async function generateTypographyCSS(
 		const lines: string[] = [];
 		let variableCount = 0;
 		lines.push(
-			"/* Typography — font families, weights, and responsive typescales */",
+			"/* Typography — font families, weights, and responsive typescales",
+		);
+		lines.push(" *");
+		lines.push(
+			" * Best for: plugin UI and components in constrained containers.",
+		);
+		lines.push(
+			" * Uses @media breakpoints and [data-window-size] selectors so type",
+		);
+		lines.push(
+			" * responds to container/window size rather than the full viewport.",
+		);
+		lines.push(" *");
+		lines.push(
+			" * For a landing page or any full-width viewport layout, prefer",
+		);
+		lines.push(
+			" * typography-fluid.css — smoother scaling, no window-size selectors. */",
 		);
 		lines.push("");
 
@@ -1434,6 +1451,266 @@ async function generateTypographyCSS(
 
 		return {
 			name: "typography.css",
+			content: lines.join("\n"),
+			variableCount,
+		};
+	} catch (_e) {
+		return null;
+	}
+}
+
+// ============================================================================
+// FLUID TYPOGRAPHY
+// ============================================================================
+
+/** Viewport widths that define the fluid interpolation range, matching the
+ *  screen primitives: iphone-16-pro (mobile min) → macbook-air (desktop md) */
+const FLUID_MIN_VW = 402;
+const FLUID_MAX_VW = 1280;
+const FLUID_VW_RANGE = FLUID_MAX_VW - FLUID_MIN_VW; // 878
+
+/**
+ * Build a CSS clamp() expression interpolating between two pixel sizes.
+ * Returns a fixed px value when min === max (body text, small text).
+ */
+function fluidClamp(minPx: number, maxPx: number): string {
+	if (minPx === maxPx) return `${minPx}px`;
+	const diff = maxPx - minPx;
+	return `clamp(${minPx}px, calc(${minPx}px + ${diff} * ((100vw - ${FLUID_MIN_VW}px) / ${FLUID_VW_RANGE})), ${maxPx}px)`;
+}
+
+/**
+ * Generate typography-fluid.css — same variable names as typography.css but
+ * using CSS clamp() for smooth, continuous scaling between mobile (402px) and
+ * desktop (1280px) without breakpoint jumps.
+ *
+ * Drop-in replacement for typography.css — import one or the other, not both.
+ */
+async function generateFluidTypographyCSS(
+	colorFormat: ColorFormat,
+	opacityMap: Map<string, number>,
+): Promise<CSSFile | null> {
+	try {
+		const collections = await figma.variables.getLocalVariableCollectionsAsync();
+
+		// --- Font family + weight from primitives (same as typography.css) ---
+		const primitives = collections.find(
+			(c) => c.name.toLowerCase() === "primitives",
+		);
+		const fontFamilyVars: Variable[] = [];
+		const fontWeightVars: Variable[] = [];
+
+		if (primitives) {
+			const primVars = (
+				await Promise.all(
+					primitives.variableIds.map((id) =>
+						figma.variables.getVariableByIdAsync(id),
+					),
+				)
+			).filter((v): v is Variable => v !== null);
+
+			for (const v of primVars) {
+				if (isFontFamilyVariable(v.name)) {
+					fontFamilyVars.push(v);
+				} else if (
+					v.name.toLowerCase().startsWith("font/weight/") ||
+					v.name.toLowerCase().startsWith("font-weight/")
+				) {
+					fontWeightVars.push(v);
+				}
+			}
+		}
+
+		// --- Responsive typescale vars ---
+		const responsive = collections.find(
+			(c) => c.name.toLowerCase() === "responsive",
+		);
+		if (!responsive) return null;
+
+		const variables = (
+			await Promise.all(
+				responsive.variableIds.map((id) =>
+					figma.variables.getVariableByIdAsync(id),
+				),
+			)
+		).filter((v): v is Variable => v !== null);
+
+		const typoVars = variables.filter((v) =>
+			v.name.toLowerCase().startsWith("typography/"),
+		);
+		if (typoVars.length === 0 && fontFamilyVars.length === 0) return null;
+
+		// Group by scale: { "xl": { "font-size": Variable, "line-height": Variable }, ... }
+		const scales: Record<string, Record<string, Variable>> = {};
+		for (const v of typoVars) {
+			const parts = v.name.split("/");
+			if (parts.length < 3) continue;
+			const scale = parts[1];
+			const prop = parts.slice(2).join("-");
+			if (!scales[scale]) scales[scale] = {};
+			scales[scale][prop] = v;
+		}
+
+		const scaleNames = Object.keys(scales).sort((a, b) => {
+			const ai = TYPESCALE_ORDER.indexOf(a);
+			const bi = TYPESCALE_ORDER.indexOf(b);
+			return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+		});
+
+		const modeIdMap: Record<string, string> = {};
+		for (const m of responsive.modes) {
+			modeIdMap[m.name] = m.modeId;
+		}
+
+		const minModeId = modeIdMap["mobile (min)"];
+		const mdModeId = modeIdMap["desktop (md)"];
+		if (!minModeId || !mdModeId) return null;
+
+		/** Resolve a responsive variable alias chain down to a raw number */
+		const resolveRawPx = async (
+			variable: Variable,
+			modeId: string,
+		): Promise<number | null> => {
+			let value = variable.valuesByMode[modeId];
+			if (value === undefined) return null;
+
+			let depth = 0;
+			while (isVariableAlias(value) && depth < 10) {
+				const aliasId = (value as VariableAlias).id;
+				const refVar = await figma.variables.getVariableByIdAsync(aliasId);
+				if (!refVar) return null;
+				const refCollection =
+					await figma.variables.getVariableCollectionByIdAsync(
+						refVar.variableCollectionId,
+					);
+				if (!refCollection) return null;
+				const refModeId = refCollection.modes[0].modeId;
+				value = refVar.valuesByMode[refModeId];
+				depth++;
+			}
+
+			return typeof value === "number" ? value : null;
+		};
+
+		const lines: string[] = [];
+		let variableCount = 0;
+
+		lines.push(
+			"/* Typography (Fluid) — font families, weights, and clamp() typescales",
+		);
+		lines.push(" *");
+		lines.push(
+			" * Best for: landing pages and full-width viewport layouts.",
+		);
+		lines.push(
+			" * Font sizes scale continuously between 402px (iPhone 16 Pro) and",
+		);
+		lines.push(
+			" * 1280px (MacBook Air) — no breakpoint jumps, no window-size selectors.",
+		);
+		lines.push(" *");
+		lines.push(
+			" * For plugin UI or components in constrained containers, use",
+		);
+		lines.push(
+			" * typography.css instead — it uses [data-window-size] selectors that",
+		);
+		lines.push(
+			" * respond to container/window size rather than the full viewport.",
+		);
+		lines.push(" *");
+		lines.push(
+			" * Drop-in replacement for typography.css — import one or the other, not both. */",
+		);
+		lines.push("");
+
+		// @theme inline — font families + typescale mappings
+		const themeEntries: string[] = ["  --typography-scale: 1;"];
+		for (const v of fontFamilyVars) {
+			const twKey = inferTailwindFontKey(v.name);
+			if (twKey) {
+				themeEntries.push(
+					`  --font-${twKey}: var(${toVarName(v.name, v.resolvedType, "primitives")});`,
+				);
+			}
+		}
+		for (const scale of scaleNames) {
+			if (scales[scale]["font-size"]) {
+				themeEntries.push(
+					`  --text-${scale}: var(--typography-${scale}-font-size);`,
+				);
+			}
+			if (scales[scale]["line-height"]) {
+				themeEntries.push(
+					`  --text-${scale}--line-height: var(--typography-${scale}-line-height);`,
+				);
+			}
+		}
+		lines.push("@theme inline {");
+		for (const entry of themeEntries) lines.push(entry);
+		lines.push("}");
+		lines.push("");
+
+		// :root — font families, weights, then clamp() typescales
+		const primModeId = primitives?.modes[0]?.modeId;
+		const fontRootLines: string[] = [];
+		if (primModeId !== undefined) {
+			for (const v of [...fontFamilyVars, ...fontWeightVars]) {
+				const varName = toVarName(v.name, v.resolvedType, "primitives");
+				const cssValue = await valueToCSS(
+					v.valuesByMode[primModeId],
+					v,
+					colorFormat,
+					false,
+					opacityMap,
+					"primitives",
+				);
+				fontRootLines.push(`  ${varName}: ${cssValue};`);
+				variableCount++;
+			}
+		}
+		if (fontRootLines.length > 0) {
+			lines.push(":root {");
+			for (const line of fontRootLines) lines.push(line);
+			lines.push("}");
+			lines.push("");
+		}
+
+		// :root — clamp() values for each scale step
+		const baseValues = new Map<string, string>();
+		if (scaleNames.length > 0) {
+			lines.push(":root {");
+			for (const scale of scaleNames) {
+				for (const prop of ["font-size", "line-height"] as const) {
+					const variable = scales[scale][prop];
+					if (!variable) continue;
+					const minPx = await resolveRawPx(variable, minModeId);
+					const mdPx = await resolveRawPx(variable, mdModeId);
+					if (minPx === null || mdPx === null) continue;
+
+					const fluid = fluidClamp(minPx, mdPx);
+					const withScale = `calc(${fluid} * var(--typography-scale, 1))`;
+					lines.push(`  --typography-${scale}-${prop}: ${withScale};`);
+					variableCount++;
+
+					if (prop === "font-size") {
+						baseValues.set(
+							`--typography-${scale}-font-size`,
+							`calc(${minPx}px * var(--typography-scale, 1))`,
+						);
+					}
+				}
+			}
+			lines.push("}");
+			lines.push("");
+
+			// @layer base — same element → variable mappings as typography.css
+			const baseLines = generateBaseTypographyStyles(scaleNames, baseValues);
+			for (const line of baseLines) lines.push(line);
+		}
+
+		return {
+			name: "typography-fluid.css",
 			content: lines.join("\n"),
 			variableCount,
 		};
@@ -1707,14 +1984,21 @@ export async function generateCSS(options: CSSGeneratorOptions): Promise<CSSExpo
 		totalVariables += typographyFile.variableCount;
 	}
 
+	const fluidTypographyFile = await generateFluidTypographyCSS(options.colorFormat, opacityMap);
+	if (fluidTypographyFile) {
+		files.push(fluidTypographyFile);
+		totalVariables += fluidTypographyFile.variableCount;
+	}
+
 	if (radiusFile) {
 		files.push(radiusFile);
 		totalVariables += radiusFile.variableCount;
 	}
 
-	// Generate index file that imports all
+	// Generate index file that imports all except typography-fluid.css —
+	// that's a drop-in swap for typography.css, not an additive import.
 	if (files.length > 1) {
-		const indexContent = `${files.map((f) => `@import "./${f.name}";`).join("\n")}\n`;
+		const indexContent = `${files.filter((f) => f.name !== "typography-fluid.css").map((f) => `@import "./${f.name}";`).join("\n")}\n`;
 		files.push({
 			name: "index.css",
 			content: indexContent,

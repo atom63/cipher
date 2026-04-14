@@ -55,6 +55,8 @@ export interface ParseTokensMessage {
 	data: {
 		content: string;
 		format?: "json" | "css";
+		/** Styles data bundled alongside CSS (from ZIP with styles.json) */
+		stylesData?: any;
 	};
 	type: "parse-tokens";
 }

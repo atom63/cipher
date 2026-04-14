@@ -1,6 +1,8 @@
 /**
- * Minimal ZIP reader for "store" method (no compression) ZIP files.
- * Designed to read ZIPs created by our own zip-download utility.
+ * Minimal ZIP reader supporting both "store" (method 0) and "deflate"
+ * (method 8) compression methods via the DecompressionStream API.
+ * Designed to read ZIPs created by our own zip-download utility (store only)
+ * as well as standard ZIPs created by OS tools (deflate).
  */
 
 interface ZipFileEntry {
@@ -18,11 +20,38 @@ function readUint32LE(view: DataView, offset: number): number {
 	return view.getUint32(offset, true);
 }
 
+/** Decompress raw deflate bytes using the DecompressionStream API. */
+async function inflateRaw(data: Uint8Array): Promise<Uint8Array> {
+	const ds = new DecompressionStream("deflate-raw");
+	const writer = ds.writable.getWriter();
+	const reader = ds.readable.getReader();
+
+	writer.write(data as Uint8Array<ArrayBuffer>);
+	writer.close();
+
+	const chunks: Uint8Array[] = [];
+	while (true) {
+		const { value, done } = await reader.read();
+		if (done) break;
+		if (value) chunks.push(value);
+	}
+
+	const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
+	const result = new Uint8Array(totalLength);
+	let pos = 0;
+	for (const chunk of chunks) {
+		result.set(chunk, pos);
+		pos += chunk.length;
+	}
+	return result;
+}
+
 /**
- * Extract text files from a ZIP archive (stored/no compression only).
+ * Extract text files from a ZIP archive.
+ * Supports both stored (method 0) and deflated (method 8) entries.
  * Returns an array of { name, content } entries.
  */
-export function readZip(buffer: ArrayBuffer): ZipFileEntry[] {
+export async function readZip(buffer: ArrayBuffer): Promise<ZipFileEntry[]> {
 	const view = new DataView(buffer);
 	const decoder = new TextDecoder("utf-8");
 	const entries: ZipFileEntry[] = [];
@@ -44,10 +73,22 @@ export function readZip(buffer: ArrayBuffer): ZipFileEntry[] {
 
 		const dataOffset = offset + 30 + nameLength + extraLength;
 
-		if (compressionMethod === 0 && compressedSize > 0) {
+		if (compressedSize > 0) {
 			const dataBytes = new Uint8Array(buffer, dataOffset, compressedSize);
-			const content = decoder.decode(dataBytes);
-			entries.push({ name, content });
+
+			if (compressionMethod === 0) {
+				// Stored — read directly
+				entries.push({ name, content: decoder.decode(dataBytes) });
+			} else if (compressionMethod === 8) {
+				// Deflate — decompress
+				try {
+					const inflated = await inflateRaw(dataBytes);
+					entries.push({ name, content: decoder.decode(inflated) });
+				} catch {
+					// Skip entries that can't be decompressed
+				}
+			}
+			// Other compression methods are unsupported and skipped
 		}
 
 		offset = dataOffset + compressedSize;

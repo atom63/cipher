@@ -76,7 +76,7 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 
 	switch (msg.type) {
 		case "parse-tokens": {
-			const { content, format } = msg.data;
+			const { content, format, stylesData: bundledStyles } = msg.data;
 			if (format === "css") {
 				const cssResult = parseCSS(content);
 				// Convert CSSParseResult → ParsedTokens shape
@@ -100,6 +100,8 @@ figma.ui.onmessage = async (msg: UIToMainMessage) => {
 							errors: cssResult.errors.length,
 						},
 						isCipherExport: cssResult.isCipherExport,
+						// Pass through styles bundled in ZIP (paint/text/effect/grid)
+						...(bundledStyles ? { styles: bundledStyles } : {}),
 					},
 				});
 			} else {
