@@ -10,7 +10,7 @@ export function CtaSection() {
       <Container maxWidth="narrow" padding="all">
         <div className="flex flex-col items-center text-center">
           <FadeUp>
-            <h2 className="max-w-xl text-balance font-extrabold text-6xl leading-tight tracking-tight">
+            <h2 className="max-w-xl text-balance font-extrabold text-6xl leading-none tracking-tight">
               Bring more structure to your{" "}
               <span className="text-primary">workflow</span>
             </h2>

@@ -32,7 +32,7 @@ export function HeroSection() {
           </FadeUp>
 
           <FadeUp delay={0.1}>
-            <p className="mx-auto mt-6 max-w-lg text-muted-foreground text-xl leading-relaxed text-balance">
+            <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-xl leading-relaxed text-balance">
               Cipher helps you generate, update, manage, and round-trip
               structured tokens through an opinionated workflow built to keep
               design decisions and code implementation aligned.

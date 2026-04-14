@@ -15,7 +15,6 @@ export function BoilerplateSection() {
     <Section gap={false} removeTopSpacing={false} spacing="spacious">
       <Container maxWidth="narrow" padding="all">
         <div className="flex flex-col items-center text-center">
-
           {/* Flow diagram — acts as the eyebrow label */}
           <FadeUp>
             <div className="flex items-center gap-3 text-muted-foreground/60 text-xs font-medium uppercase tracking-widest">
@@ -42,9 +41,9 @@ export function BoilerplateSection() {
           </FadeUp>
 
           <FadeUp delay={0.05}>
-            <h2 className="mt-6 max-w-xl text-balance font-extrabold text-5xl leading-tight tracking-tight">
-              Open source.{" "}
-              <span className="text-primary">Start building</span> from here.
+            <h2 className="mt-6 max-w-xl text-balance font-extrabold text-6xl leading-none tracking-tight">
+              Open source. <span className="text-primary">Start building</span>{" "}
+              from here.
             </h2>
           </FadeUp>
 
@@ -75,7 +74,6 @@ export function BoilerplateSection() {
               MIT · Free to use · Fork it
             </p>
           </FadeIn>
-
         </div>
       </Container>
     </Section>
