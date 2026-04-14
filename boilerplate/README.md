@@ -1,6 +1,6 @@
-# New Project
+# Boilerplate
 
-A sandbox playground for experimenting with ideas.
+Landing page starter extracted from the [Cipher](https://github.com/atom63/cipher) website. Same stack and design system — cipher-specific content stripped out.
 
 ## Stack
 
@@ -29,3 +29,12 @@ pnpm dev
 | `pnpm lint:fix` | Auto-fix lint issues |
 | `pnpm format` | Format code |
 | `pnpm tokens` | Generate design tokens |
+
+## Origin
+
+This repo is published from the `cipher` monorepo using git subtree:
+
+```bash
+# From inside cipher/
+git subtree push --prefix=boilerplate boilerplate main
+```

@@ -37,6 +37,20 @@ Generate complete three-tier token systems (primitives → aliases → semantics
 
 Auto-detects existing variables to pre-fill configuration for updates.
 
+## Monorepo
+
+| Directory | Description |
+|-----------|-------------|
+| `plugin/` | Figma plugin (React + esbuild) |
+| `website/` | Marketing site (React + Vite + TanStack Router) |
+| `boilerplate/` | Landing page starter synced to [cipher-boilerplate](https://github.com/atom63/cipher-boilerplate) via git subtree |
+
+To push boilerplate changes to its own remote:
+
+```bash
+git subtree push --prefix=boilerplate boilerplate main
+```
+
 ## Development
 
 ### Prerequisites
