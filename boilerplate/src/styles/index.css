@@ -2,9 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@import "./tailwind-colors.css";
-
-@import "./utils/index.css";
 @import "./tokens/index.css";
 @import "./base/index.css";
 

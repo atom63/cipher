@@ -12,8 +12,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "check": "ultracite check",
-    "fix": "ultracite fix",
-    "tokens": "node scripts/generate-tokens.js"
+    "fix": "ultracite fix"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",

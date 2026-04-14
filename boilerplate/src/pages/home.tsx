@@ -35,6 +35,7 @@ export default function Home() {
       <HeroSection />
       <FeaturesSection />
       <CodeSection reduced={reduced} />
+      <BoilerplateSection />
       <FaqSection />
       <CtaSection />
     </DefaultLayout>

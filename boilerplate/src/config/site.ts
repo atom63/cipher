@@ -1,4 +1,4 @@
-import { socialsByName } from "./socials";
+import { socialsByName } from "./links";
 
 export const siteConfig = {
   name: "Cipher",
@@ -8,7 +8,7 @@ export const siteConfig = {
   ogImage: "/og.jpg",
   favicon: "/favicons/favicon.ico",
   author: {
-    name: "You Zhang",
+    name: "You Zhang (ATOM63)",
     email: socialsByName.email?.url.replace("mailto:", "") ?? "",
     twitter: socialsByName.twitter?.handle ?? "",
   },
@@ -24,7 +24,7 @@ export const siteConfig = {
   ],
   links: {
     twitter: socialsByName.twitter?.url ?? "",
-    github: socialsByName.github?.url ?? "https://github.com/youzhang",
+    github: socialsByName.github?.url ?? "",
     linkedin: socialsByName.linkedin?.url ?? "",
     email: socialsByName.email?.url ?? "",
   },

@@ -8,7 +8,7 @@ export interface SocialLink {
 export const socials: SocialLink[] = [
   {
     name: "Email",
-    url: "mailto:yz.atom63@gmail.com",
+    url: "mailto:hello.youzhang@gmail.com",
     iconify: "mdi:email",
     handle: "hello.youzhang@gmail.com",
   },
@@ -42,6 +42,12 @@ export const socials: SocialLink[] = [
     iconify: "mdi:github",
     handle: "atom63",
   },
+  {
+    name: "GitHub Repo",
+    url: "https://github.com/atom63/cipher-boilerplate",
+    iconify: "mdi:github",
+    handle: "cipher-boilerplate",
+  }
 ];
 
 export const socialsByName = socials.reduce(

@@ -3,11 +3,8 @@ import { motion } from "motion/react";
 import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { GridProvider } from "@/contexts/grid-context";
-import { PasswordGate } from "@/contexts/password-gate";
 import { PersonalizationProvider } from "@/contexts/personalization-context";
 import { ThemeProvider } from "@/contexts/theme-context";
-import { useDebugMode } from "@/hooks/use-debug-mode";
 import { usePageMeta } from "@/hooks/use-page-meta";
 
 const Dither = lazy(() => import("@/components/vendor/dither/Dither"));
@@ -53,10 +50,8 @@ function RootComponent() {
 }
 
 function RootInner({ location }: { location: ReturnType<typeof useLocation> }) {
-  useDebugMode();
-
   return (
-    <PasswordGate disabled>
+    <>
       <div className="pointer-events-none fixed inset-0 z-[-1] invert mix-blend-overlay dark:invert-0">
         <Suspense fallback={null}>
           <Dither
@@ -72,20 +67,18 @@ function RootInner({ location }: { location: ReturnType<typeof useLocation> }) {
           />
         </Suspense>
       </div>
-      <GridProvider>
-        <TooltipProvider>
-          <motion.div
-            animate={{ opacity: 1 }}
-            className="min-h-screen"
-            initial={{ opacity: 0 }}
-            key={location.pathname}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <Outlet />
-          </motion.div>
-          <Toaster position="top-right" />
-        </TooltipProvider>
-      </GridProvider>
-    </PasswordGate>
+      <TooltipProvider>
+        <motion.div
+          animate={{ opacity: 1 }}
+          className="min-h-screen"
+          initial={{ opacity: 0 }}
+          key={location.pathname}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <Outlet />
+        </motion.div>
+        <Toaster position="top-right" />
+      </TooltipProvider>
+    </>
   );
 }
