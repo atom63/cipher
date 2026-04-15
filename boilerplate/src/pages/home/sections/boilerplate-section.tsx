@@ -1,9 +1,9 @@
 import { ArrowRight } from 'lucide-react'
 import { motion } from 'motion/react'
-import { RichButton } from '@/components/common/custom/rich-button'
 import Container from '@/components/common/layout/container'
 import Section from '@/components/common/layout/section'
 import { SectionHeader } from '@/components/common/layout/section-header'
+import { Button } from '@/components/ui/button'
 import { useReducedMotion } from '@/hooks/use-reduced-motion'
 import { FadeIn, FadeUp } from './animation'
 
@@ -44,16 +44,16 @@ export function BoilerplateSection() {
           <FadeUp delay={0.05}>
             <SectionHeader
               actions={
-                <a
-                  href="https://github.com/atom63/cipher-boilerplate"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <RichButton size="lg">
+                <Button asChild size="lg">
+                  <a
+                    href="https://github.com/atom63/cipher-boilerplate"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
                     View on GitHub
                     <ArrowRight className="size-4" />
-                  </RichButton>
-                </a>
+                  </a>
+                </Button>
               }
               align="center"
               className="mt-6"

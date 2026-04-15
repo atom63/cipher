@@ -1,5 +1,4 @@
 import { ArrowRight } from 'lucide-react'
-import { RichButton } from '@/components/common/custom/rich-button'
 import Container from '@/components/common/layout/container'
 import Section from '@/components/common/layout/section'
 import { SectionHeader } from '@/components/common/layout/section-header'
@@ -15,16 +14,16 @@ export function CtaSection() {
             <SectionHeader
               actions={
                 <>
-                  <a
-                    href="https://www.figma.com/community/plugin/1613643367110247078"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    <RichButton size="lg">
+                  <Button asChild size="lg">
+                    <a
+                      href="https://www.figma.com/community/plugin/1613643367110247078"
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
                       Try plugin
                       <ArrowRight className="size-4" />
-                    </RichButton>
-                  </a>
+                    </a>
+                  </Button>
                   <Button asChild size="lg" variant="outline">
                     <a
                       href="https://github.com/atom63/cipher-boilerplate"
