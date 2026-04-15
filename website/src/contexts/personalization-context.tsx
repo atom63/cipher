@@ -30,7 +30,7 @@ const STORAGE_KEY = 'personalization'
 const CSS_DEFAULTS = {
   brand: 'b1' as BrandId,
   surfaceLight: 'n1' as SurfaceId,
-  surfaceDark: 'n3' as SurfaceId,
+  surfaceDark: 'n1' as SurfaceId,
 }
 
 function loadState(): PersonalizationState {

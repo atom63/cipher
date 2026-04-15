@@ -22,8 +22,9 @@
     <script>
     'use strict'
     ;(() => {
-      var t = localStorage.getItem('theme') || 'dark'
-      var d = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
+      const t = localStorage.getItem('theme') || 'dark'
+      const d =
+        t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
       document.documentElement.classList.add(d ? 'dark' : 'light')
     })()
     </script>
