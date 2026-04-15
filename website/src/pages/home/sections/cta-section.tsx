@@ -3,6 +3,7 @@ import { RichButton } from '@/components/common/custom/rich-button'
 import Container from '@/components/common/layout/container'
 import Section from '@/components/common/layout/section'
 import { SectionHeader } from '@/components/common/layout/section-header'
+import { Button } from '@/components/ui/button'
 import { FadeIn, FadeUp } from './animation'
 
 export function CtaSection() {
@@ -13,16 +14,28 @@ export function CtaSection() {
           <FadeUp>
             <SectionHeader
               actions={
-                <a
-                  href="https://www.figma.com/community/plugin/1613643367110247078"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <RichButton size="lg">
-                    Try plugin
-                    <ArrowRight className="size-4" />
-                  </RichButton>
-                </a>
+                <>
+                  <a
+                    href="https://www.figma.com/community/plugin/1613643367110247078"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <RichButton size="lg">
+                      Try plugin
+                      <ArrowRight className="size-4" />
+                    </RichButton>
+                  </a>
+                  <Button asChild size="lg" variant="outline">
+                    <a
+                      href="https://github.com/atom63/cipher-boilerplate"
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      Get boilerplate
+                      <ArrowRight className="size-4" />
+                    </a>
+                  </Button>
+                </>
               }
               align="center"
               description="One plugin. Structured tokens. Design and code, aligned."
