@@ -50,3 +50,7 @@ test.js
 
 # OS
 Thumbs.db
+
+# Superpowers
+.superpowers/
+.claude/plugins/
