@@ -1,104 +1,103 @@
-import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
-import { useTokenColors } from "./use-token-color";
-import { useVisible } from "./use-visible";
+import { motion } from 'motion/react'
+import { useEffect, useMemo, useState } from 'react'
+import { useTokenColors } from './use-token-color'
+import { useVisible } from './use-visible'
 
-type Flow = "none" | "l-r" | "r-l";
+type Flow = 'none' | 'l-r' | 'r-l'
 
 export function RoundTripAnimation() {
-  const { ref, visible } = useVisible();
+  const { ref, visible } = useVisible()
   const c = useTokenColors({
-    primary: "var(--color-b1-500)",
-    secondary: "var(--color-b2-500)",
-    success: "var(--color-success-500)",
-    danger: "var(--color-danger-500)",
-  });
+    primary: 'var(--color-b1-500)',
+    secondary: 'var(--color-b2-500)',
+    success: 'var(--color-success-500)',
+    danger: 'var(--color-danger-500)',
+  })
 
   const colorSteps = useMemo(
     () => [
-      { initiator: "code" as const, color: c.success },
-      { initiator: "design" as const, color: c.primary },
+      { initiator: 'code' as const, color: c.success },
+      { initiator: 'design' as const, color: c.primary },
     ],
-    [c],
-  );
+    [c]
+  )
 
-  const [designColor, setDesignColor] = useState(c.primary);
-  const [codeColor, setCodeColor] = useState(c.primary);
-  const [editingDesign, setEditingDesign] = useState(false);
-  const [editingCode, setEditingCode] = useState(false);
-  const [flow, setFlow] = useState<Flow>("none");
+  const [designColor, setDesignColor] = useState(c.primary)
+  const [codeColor, setCodeColor] = useState(c.primary)
+  const [editingDesign, setEditingDesign] = useState(false)
+  const [editingCode, setEditingCode] = useState(false)
+  const [flow, setFlow] = useState<Flow>('none')
 
   useEffect(() => {
-    let mounted = true;
-    let step = 0;
-    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    let mounted = true
+    let step = 0
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
     const run = async () => {
       while (mounted) {
-        const current = colorSteps[step % colorSteps.length]!;
+        const current = colorSteps[step % colorSteps.length]!
 
-        await sleep(1600);
+        await sleep(1600)
         if (!mounted) {
-          break;
+          break
         }
 
-        if (current.initiator === "code") {
-          setEditingCode(true);
-          await sleep(600);
+        if (current.initiator === 'code') {
+          setEditingCode(true)
+          await sleep(600)
           if (!mounted) {
-            break;
+            break
           }
-          setCodeColor(current.color);
-          await sleep(400);
-          setEditingCode(false);
-          setFlow("r-l");
-          await sleep(600);
+          setCodeColor(current.color)
+          await sleep(400)
+          setEditingCode(false)
+          setFlow('r-l')
+          await sleep(600)
           if (!mounted) {
-            break;
+            break
           }
-          setDesignColor(current.color);
-          await sleep(300);
-          setFlow("none");
+          setDesignColor(current.color)
+          await sleep(300)
+          setFlow('none')
         } else {
-          setEditingDesign(true);
-          await sleep(600);
+          setEditingDesign(true)
+          await sleep(600)
           if (!mounted) {
-            break;
+            break
           }
-          setDesignColor(current.color);
-          await sleep(400);
-          setEditingDesign(false);
-          setFlow("l-r");
-          await sleep(600);
+          setDesignColor(current.color)
+          await sleep(400)
+          setEditingDesign(false)
+          setFlow('l-r')
+          await sleep(600)
           if (!mounted) {
-            break;
+            break
           }
-          setCodeColor(current.color);
-          await sleep(300);
-          setFlow("none");
+          setCodeColor(current.color)
+          await sleep(300)
+          setFlow('none')
         }
 
-        step++;
+        step++
       }
-    };
+    }
 
     if (visible) {
-      run();
+      run()
     }
     return () => {
-      mounted = false;
-    };
-  }, [visible, colorSteps]);
+      mounted = false
+    }
+  }, [visible, colorSteps])
 
   return (
     <div className="relative size-full overflow-hidden" ref={ref}>
       <div
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{
-          backgroundImage:
-            "radial-gradient(var(--border) 1px, transparent 1px)",
-          backgroundSize: "16px 16px",
-          backgroundPosition: "center",
+          backgroundImage: 'radial-gradient(var(--border) 1px, transparent 1px)',
+          backgroundSize: '16px 16px',
+          backgroundPosition: 'center',
         }}
       />
 
@@ -119,13 +118,7 @@ export function RoundTripAnimation() {
           y="30"
         />
 
-        <text
-          fill="var(--foreground)"
-          fontSize="12"
-          fontWeight="600"
-          x="36"
-          y="54"
-        >
+        <text fill="var(--foreground)" fontSize="12" fontWeight="600" x="36" y="54">
           Figma
         </text>
         <path d="M 20 68 L 170 68" stroke="var(--border)" strokeWidth="1" />
@@ -133,7 +126,7 @@ export function RoundTripAnimation() {
         {/* Design token row 1 — dynamic */}
         <motion.rect
           animate={{
-            fill: editingDesign ? "rgba(235, 135, 0, 0.08)" : "transparent",
+            fill: editingDesign ? 'rgba(235, 135, 0, 0.08)' : 'transparent',
           }}
           height="26"
           rx="6"
@@ -150,7 +143,7 @@ export function RoundTripAnimation() {
           initial={{ scale: 0.5 }}
           key={`d-${designColor}`}
           r="7"
-          transition={{ type: "spring", stiffness: 300, damping: 15 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 15 }}
         />
         <text
           fill="var(--foreground)"
@@ -218,13 +211,7 @@ export function RoundTripAnimation() {
         />
 
         <g clipPath="url(#code-panel-clip)">
-          <text
-            fill="var(--foreground)"
-            fontSize="12"
-            fontWeight="600"
-            x="246"
-            y="54"
-          >
+          <text fill="var(--foreground)" fontSize="12" fontWeight="600" x="246" y="54">
             semantics.css
           </text>
           <path d="M 230 68 L 380 68" stroke="var(--border)" strokeWidth="1" />
@@ -237,7 +224,7 @@ export function RoundTripAnimation() {
             x="246"
             y="92"
           >
-            {":"}
+            {':'}
           </text>
           <text
             fill="var(--muted-foreground)"
@@ -246,12 +233,12 @@ export function RoundTripAnimation() {
             x="252"
             y="92"
           >
-            root {"{"}
+            root {'{'}
           </text>
 
           <motion.rect
             animate={{
-              fill: editingCode ? "rgba(235, 135, 0, 0.08)" : "transparent",
+              fill: editingCode ? 'rgba(235, 135, 0, 0.08)' : 'transparent',
             }}
             height="20"
             rx="4"
@@ -266,14 +253,14 @@ export function RoundTripAnimation() {
             x="250"
             y="112"
           >
-            --primary:{" "}
+            --primary:{' '}
           </text>
 
           <motion.text
             animate={{ fill: codeColor }}
             fontFamily="var(--font-family-mono)"
             fontSize="10"
-            initial={{ fill: "var(--foreground)" }}
+            initial={{ fill: 'var(--foreground)' }}
             key={`c-${codeColor}`}
             transition={{ duration: 0.4 }}
             x="318"
@@ -304,7 +291,7 @@ export function RoundTripAnimation() {
             x="250"
             y="136"
           >
-            --surface:{" "}
+            --surface:{' '}
           </text>
           <text
             fill="var(--muted-foreground)"
@@ -323,7 +310,7 @@ export function RoundTripAnimation() {
             x="250"
             y="160"
           >
-            --text:{" "}
+            --text:{' '}
           </text>
           <text
             fill="var(--muted-foreground)"
@@ -342,7 +329,7 @@ export function RoundTripAnimation() {
             x="246"
             y="176"
           >
-            {"}"}
+            {'}'}
           </text>
         </g>
 
@@ -357,8 +344,8 @@ export function RoundTripAnimation() {
         />
         <motion.path
           animate={{
-            pathLength: flow === "l-r" ? 1 : 0,
-            opacity: flow === "l-r" ? [0, 1, 1, 0] : 0,
+            pathLength: flow === 'l-r' ? 1 : 0,
+            opacity: flow === 'l-r' ? [0, 1, 1, 0] : 0,
           }}
           d="M 170 100 L 230 100"
           initial={{ pathLength: 0, opacity: 0 }}
@@ -367,28 +354,28 @@ export function RoundTripAnimation() {
           strokeWidth="2.5"
           transition={{
             pathLength: {
-              duration: flow === "l-r" ? 0.7 : 0,
-              ease: "easeInOut",
+              duration: flow === 'l-r' ? 0.7 : 0,
+              ease: 'easeInOut',
             },
             opacity: {
-              duration: flow === "l-r" ? 0.7 : 0,
+              duration: flow === 'l-r' ? 0.7 : 0,
               times: [0, 0.1, 0.8, 1],
             },
           }}
         />
         <motion.circle
           animate={{
-            cx: flow === "l-r" ? 230 : 170,
-            opacity: flow === "l-r" ? [0, 1, 1, 0] : 0,
+            cx: flow === 'l-r' ? 230 : 170,
+            opacity: flow === 'l-r' ? [0, 1, 1, 0] : 0,
           }}
           cy="100"
           fill={designColor}
           initial={{ cx: 170, opacity: 0 }}
           r="4.5"
           transition={{
-            cx: { duration: flow === "l-r" ? 0.7 : 0, ease: "easeInOut" },
+            cx: { duration: flow === 'l-r' ? 0.7 : 0, ease: 'easeInOut' },
             opacity: {
-              duration: flow === "l-r" ? 0.7 : 0,
+              duration: flow === 'l-r' ? 0.7 : 0,
               times: [0, 0.1, 0.8, 1],
             },
           }}
@@ -404,8 +391,8 @@ export function RoundTripAnimation() {
         />
         <motion.path
           animate={{
-            pathLength: flow === "r-l" ? 1 : 0,
-            opacity: flow === "r-l" ? [0, 1, 1, 0] : 0,
+            pathLength: flow === 'r-l' ? 1 : 0,
+            opacity: flow === 'r-l' ? [0, 1, 1, 0] : 0,
           }}
           d="M 230 156 L 170 156"
           initial={{ pathLength: 0, opacity: 0 }}
@@ -414,33 +401,33 @@ export function RoundTripAnimation() {
           strokeWidth="2.5"
           transition={{
             pathLength: {
-              duration: flow === "r-l" ? 0.7 : 0,
-              ease: "easeInOut",
+              duration: flow === 'r-l' ? 0.7 : 0,
+              ease: 'easeInOut',
             },
             opacity: {
-              duration: flow === "r-l" ? 0.7 : 0,
+              duration: flow === 'r-l' ? 0.7 : 0,
               times: [0, 0.1, 0.8, 1],
             },
           }}
         />
         <motion.circle
           animate={{
-            cx: flow === "r-l" ? 170 : 230,
-            opacity: flow === "r-l" ? [0, 1, 1, 0] : 0,
+            cx: flow === 'r-l' ? 170 : 230,
+            opacity: flow === 'r-l' ? [0, 1, 1, 0] : 0,
           }}
           cy="156"
           fill={codeColor}
           initial={{ cx: 230, opacity: 0 }}
           r="4.5"
           transition={{
-            cx: { duration: flow === "r-l" ? 0.7 : 0, ease: "easeInOut" },
+            cx: { duration: flow === 'r-l' ? 0.7 : 0, ease: 'easeInOut' },
             opacity: {
-              duration: flow === "r-l" ? 0.7 : 0,
+              duration: flow === 'r-l' ? 0.7 : 0,
               times: [0, 0.1, 0.8, 1],
             },
           }}
         />
       </svg>
     </div>
-  );
+  )
 }

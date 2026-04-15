@@ -1,51 +1,48 @@
-import Container from "@/components/common/layout/container";
-import Section from "@/components/common/layout/section";
-import { FadeUp } from "./animation";
-import { GenerateAnimation } from "./feature-animation/feature-1";
-import { ManageAnimation } from "./feature-animation/feature-2";
-import { RoundTripAnimation } from "./feature-animation/feature-3";
-import { ModernCssAnimation } from "./feature-animation/feature-4";
+import Container from '@/components/common/layout/container'
+import Section from '@/components/common/layout/section'
+import { SectionHeader } from '@/components/common/layout/section-header'
+import { FadeUp } from './animation'
+import { GenerateAnimation } from './feature-animation/feature-1'
+import { ManageAnimation } from './feature-animation/feature-2'
+import { RoundTripAnimation } from './feature-animation/feature-3'
+import { ModernCssAnimation } from './feature-animation/feature-4'
 
 const CARDS = [
   {
-    title: "Generate + Update",
+    title: 'Generate + Update',
     description:
-      "Build a full token system from a few brand decisions. Come back anytime to adjust and regenerate.",
+      'Build a full token system from a few brand decisions. Come back anytime to adjust and regenerate.',
     Visual: GenerateAnimation,
   },
   {
-    title: "Manage",
-    description:
-      "Rename, edit, move, duplicate, or delete variables and styles in batch.",
+    title: 'Manage',
+    description: 'Rename, edit, move, duplicate, or delete variables and styles in batch.',
     Visual: ManageAnimation,
   },
   {
-    title: "Round-trip",
+    title: 'Round-trip',
     description:
-      "Export CSS for code, make changes, import back into Figma. Keep everything aligned.",
+      'Export CSS for code, make changes, import back into Figma. Keep everything aligned.',
     Visual: RoundTripAnimation,
   },
   {
-    title: "Modern CSS",
+    title: 'Modern CSS',
     description:
-      "Outputs Tailwind v4 @theme blocks and shadcn/ui-compatible tokens out of the box.",
+      'Outputs Tailwind v4 @theme blocks and shadcn/ui-compatible tokens out of the box.',
     Visual: ModernCssAnimation,
   },
-];
+]
 
 export function FeaturesSection() {
   return (
-    <Section
-      gap={false}
-      id="features"
-      removeTopSpacing={false}
-      spacing="generous"
-    >
+    <Section gap={false} id="features" removeTopSpacing={false} spacing="generous">
       <Container maxWidth="narrow" padding="all">
-        <FadeUp className="text-center">
-          <h2 className="text-balance font-bold text-4xl leading-tight tracking-tight">
-            From raw variables to a usable system
-          </h2>
+        <FadeUp>
+          <SectionHeader
+            align="center"
+            title="From raw variables to a usable system"
+            variant="muted"
+          />
         </FadeUp>
 
         <div className="mt-10 grid gap-5 sm:mt-14 md:grid-cols-2 md:gap-6">
@@ -59,9 +56,7 @@ export function FeaturesSection() {
                   <card.Visual />
                 </div>
                 <div className="mt-auto p-4">
-                  <h3 className="font-bold text-foreground text-lg">
-                    {card.title}
-                  </h3>
+                  <h3 className="font-bold text-foreground text-lg">{card.title}</h3>
                   <p className="mt-1 text-base text-muted-foreground leading-relaxed">
                     {card.description}
                   </p>
@@ -72,5 +67,5 @@ export function FeaturesSection() {
         </div>
       </Container>
     </Section>
-  );
+  )
 }

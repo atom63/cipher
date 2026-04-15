@@ -1,12 +1,12 @@
-import { useId } from "react";
-import { cn } from "@/lib/utils";
+import { useId } from 'react'
+import { cn } from '@/lib/utils'
 
 interface CrosshairPatternProps extends React.SVGProps<SVGSVGElement> {
-  /** Grid cell size in px */
-  cellSize?: number;
   /** Length of each crosshair arm in px */
-  armLength?: number;
-  className?: string;
+  armLength?: number
+  /** Grid cell size in px */
+  cellSize?: number
+  className?: string
 }
 
 /**
@@ -19,46 +19,38 @@ export function CrosshairPattern({
   className,
   ...props
 }: CrosshairPatternProps) {
-  const id = useId();
-  const center = cellSize / 2;
+  const id = useId()
+  const center = cellSize / 2
 
   return (
     <svg
       aria-hidden="true"
-      className={cn(
-        "pointer-events-none absolute inset-0 size-full",
-        className,
-      )}
+      className={cn('pointer-events-none absolute inset-0 size-full', className)}
       {...props}
     >
       <defs>
-        <pattern
-          id={id}
-          width={cellSize}
-          height={cellSize}
-          patternUnits="userSpaceOnUse"
-        >
+        <pattern height={cellSize} id={id} patternUnits="userSpaceOnUse" width={cellSize}>
           {/* Crosshair horizontal arm */}
           <line
-            x1={center - armLength}
-            y1={center}
-            x2={center + armLength}
-            y2={center}
             stroke="currentColor"
             strokeWidth="1"
+            x1={center - armLength}
+            x2={center + armLength}
+            y1={center}
+            y2={center}
           />
           {/* Crosshair vertical arm (brighter, overlaps the line) */}
           <line
-            x1={center}
-            y1={center - armLength}
-            x2={center}
-            y2={center + armLength}
             stroke="currentColor"
             strokeWidth="1"
+            x1={center}
+            x2={center}
+            y1={center - armLength}
+            y2={center + armLength}
           />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill={`url(#${id})`} />
+      <rect fill={`url(#${id})`} height="100%" width="100%" />
     </svg>
-  );
+  )
 }

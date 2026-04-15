@@ -1,24 +1,25 @@
-import { motion } from "motion/react";
-import { useState } from "react";
-import Container from "@/components/common/layout/container";
-import Section from "@/components/common/layout/section";
-import { ease, FadeUp } from "./animation";
+import { motion } from 'motion/react'
+import { useState } from 'react'
+import Container from '@/components/common/layout/container'
+import Section from '@/components/common/layout/section'
+import { SectionHeader } from '@/components/common/layout/section-header'
+import { ease, FadeUp } from './animation'
 
 // ---------------------------------------------------------------------------
 // Token snippets
 // ---------------------------------------------------------------------------
 
 const TOKEN_SNIPPETS: {
-  id: string;
-  label: string;
-  file: string;
-  vars: number;
-  code: string;
+  id: string
+  label: string
+  file: string
+  vars: number
+  code: string
 }[] = [
   {
-    id: "primitives",
-    label: "Primitives",
-    file: "primitives.css",
+    id: 'primitives',
+    label: 'Primitives',
+    file: 'primitives.css',
     vars: 232,
     code: `/* primitives.css — 232 variables */
 
@@ -50,9 +51,9 @@ const TOKEN_SNIPPETS: {
 }`,
   },
   {
-    id: "aliases",
-    label: "Aliases",
-    file: "aliases.css",
+    id: 'aliases',
+    label: 'Aliases',
+    file: 'aliases.css',
     vars: 32,
     code: `/* aliases.css — 32 variables */
 
@@ -77,9 +78,9 @@ const TOKEN_SNIPPETS: {
 }`,
   },
   {
-    id: "semantics",
-    label: "Semantics",
-    file: "semantics.css",
+    id: 'semantics',
+    label: 'Semantics',
+    file: 'semantics.css',
     vars: 37,
     code: `/* semantics.css — 37 variables */
 
@@ -104,9 +105,9 @@ const TOKEN_SNIPPETS: {
 }`,
   },
   {
-    id: "typography",
-    label: "Typography",
-    file: "typography.css",
+    id: 'typography',
+    label: 'Typography',
+    file: 'typography.css',
     vars: 18,
     code: `/* typography.css — font families, weights, and responsive typescales */
 
@@ -131,9 +132,9 @@ const TOKEN_SNIPPETS: {
 }`,
   },
   {
-    id: "effects",
-    label: "Effects",
-    file: "effects.css",
+    id: 'effects',
+    label: 'Effects',
+    file: 'effects.css',
     vars: 14,
     code: `/* Effects — shadows and blurs */
 /* Shadows override Tailwind defaults; names match shadow-* utilities */
@@ -154,45 +155,39 @@ const TOKEN_SNIPPETS: {
   --blur-2xl: 40px;
 }`,
   },
-];
+]
 
 // ---------------------------------------------------------------------------
 // Section
 // ---------------------------------------------------------------------------
 
 export function CodeSection({ reduced }: { reduced: boolean }) {
-  const [activeFile, setActiveFile] = useState("primitives");
+  const [activeFile, setActiveFile] = useState('primitives')
   // biome-ignore lint: activeFile always matches a snippet
-  const active = TOKEN_SNIPPETS.find((s) => s.id === activeFile)!;
+  const active = TOKEN_SNIPPETS.find(s => s.id === activeFile)!
 
   return (
-    <Section
-      gap={false}
-      id="system-in-code"
-      removeTopSpacing={false}
-      spacing="generous"
-    >
+    <Section gap={false} id="system-in-code" removeTopSpacing={false} spacing="generous">
       <Container maxWidth="narrow" padding="all">
-        <FadeUp className="text-center">
-          <h2 className="text-balance font-bold text-4xl leading-tight tracking-tight">
-            See the system in code
-          </h2>
-          <p className="mx-auto mt-3 max-w-lg text-balance text-muted-foreground">
-            Inspect the token structure Cipher generates — primitives, aliases,
-            semantics, type scales, and effects.
-          </p>
+        <FadeUp>
+          <SectionHeader
+            align="center"
+            description="Inspect the token structure Cipher generates — primitives, aliases, semantics, type scales, and effects."
+            title="See the system in code"
+            variant="muted"
+          />
         </FadeUp>
 
         <FadeUp delay={0.1}>
           <div className="mt-8 overflow-hidden rounded-xl border border-border/60 shadow-xl">
             {/* Interactive file tabs */}
             <div className="flex items-center gap-0 overflow-x-auto border-border/50 border-b bg-card/80 backdrop-blur-xl">
-              {TOKEN_SNIPPETS.map((snippet) => (
+              {TOKEN_SNIPPETS.map(snippet => (
                 <button
                   className={`shrink-0 border-border/30 border-r px-3.5 py-2 font-mono text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
                     snippet.id === activeFile
-                      ? "bg-background/80 text-foreground"
-                      : "text-muted-foreground/50 hover:text-muted-foreground"
+                      ? 'bg-background/80 text-foreground'
+                      : 'text-muted-foreground/50 hover:text-muted-foreground'
                   }`}
                   key={snippet.id}
                   onClick={() => setActiveFile(snippet.id)}
@@ -218,70 +213,60 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
                   transition={{ duration: 0.3, ease }}
                 >
                   <code>
-                    {active.code.split("\n").map((line, i) => {
-                      const trimmed = line.trimStart();
-                      const indent = line.length - trimmed.length;
-                      const spaces = " ".repeat(indent);
+                    {active.code.split('\n').map((line, i) => {
+                      const trimmed = line.trimStart()
+                      const indent = line.length - trimmed.length
+                      const spaces = ' '.repeat(indent)
 
-                      if (trimmed.startsWith("/*") || trimmed.startsWith("*")) {
+                      if (trimmed.startsWith('/*') || trimmed.startsWith('*')) {
                         return (
-                          <div
-                            className="text-muted-foreground/50"
-                            key={`${activeFile}-${i}`}
-                          >
+                          <div className="text-muted-foreground/50" key={`${activeFile}-${i}`}>
                             {spaces}
                             {trimmed}
                           </div>
-                        );
+                        )
                       }
 
                       if (!trimmed) {
-                        return <div key={`${activeFile}-${i}`}>{"\u00A0"}</div>;
+                        return <div key={`${activeFile}-${i}`}>{'\u00A0'}</div>
                       }
 
-                      if (trimmed.includes(":") && (trimmed.includes(";") || trimmed.endsWith(","))) {
-                        const colonIdx = trimmed.indexOf(":");
-                        const prop = trimmed.slice(0, colonIdx);
-                        const val = trimmed.slice(colonIdx);
+                      if (
+                        trimmed.includes(':') &&
+                        (trimmed.includes(';') || trimmed.endsWith(','))
+                      ) {
+                        const colonIdx = trimmed.indexOf(':')
+                        const prop = trimmed.slice(0, colonIdx)
+                        const val = trimmed.slice(colonIdx)
                         return (
                           <div key={`${activeFile}-${i}`}>
                             {spaces}
                             <span className="text-primary/80">{prop}</span>
-                            <span className="text-foreground/30">
-                              {val.slice(0, 2)}
-                            </span>
-                            <span className="text-foreground/60">
-                              {val.slice(2)}
-                            </span>
+                            <span className="text-foreground/30">{val.slice(0, 2)}</span>
+                            <span className="text-foreground/60">{val.slice(2)}</span>
                           </div>
-                        );
+                        )
                       }
 
                       if (
-                        trimmed.startsWith("@") ||
-                        trimmed.startsWith(":root") ||
-                        trimmed.startsWith(".dark")
+                        trimmed.startsWith('@') ||
+                        trimmed.startsWith(':root') ||
+                        trimmed.startsWith('.dark')
                       ) {
                         return (
-                          <div
-                            className="text-foreground/70"
-                            key={`${activeFile}-${i}`}
-                          >
+                          <div className="text-foreground/70" key={`${activeFile}-${i}`}>
                             {spaces}
                             {trimmed}
                           </div>
-                        );
+                        )
                       }
 
                       return (
-                        <div
-                          className="text-foreground/50"
-                          key={`${activeFile}-${i}`}
-                        >
+                        <div className="text-foreground/50" key={`${activeFile}-${i}`}>
                           {spaces}
                           {trimmed}
                         </div>
-                      );
+                      )
                     })}
                   </code>
                 </motion.pre>
@@ -292,5 +277,5 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
         </FadeUp>
       </Container>
     </Section>
-  );
+  )
 }

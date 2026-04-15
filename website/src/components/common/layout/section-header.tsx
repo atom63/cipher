@@ -1,112 +1,114 @@
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils'
 
 interface SectionHeaderProps {
-  align?: "left" | "center" | "right";
-  className?: string;
-  description?: string;
-  descriptionClassName?: string;
-  padding?: "none" | "tight" | "default" | "loose";
-  title: string;
-  titleClassName?: string;
-  variant?: "display" | "primary" | "secondary" | "muted" | "subtle";
+  actions?: React.ReactNode
+  align?: 'left' | 'center' | 'right'
+  className?: string
+  description?: string
+  descriptionClassName?: string
+  padding?: 'none' | 'tight' | 'default' | 'loose'
+  title: React.ReactNode
+  titleClassName?: string
+  variant?: 'display' | 'primary' | 'secondary' | 'muted' | 'subtle'
 }
 
 export function SectionHeader({
+  actions,
   title,
   description,
   className,
   titleClassName,
   descriptionClassName,
-  variant = "primary",
-  align = "left",
-  padding = "default",
+  variant = 'primary',
+  align = 'left',
+  padding = 'default',
 }: SectionHeaderProps) {
   const paddingClasses = {
-    none: "",
-    tight: "py-4 sm:py-6 md:py-8",
-    default: "py-8 sm:py-16 md:py-20",
-    loose: "py-12 sm:py-20 md:py-28",
-  };
+    none: '',
+    tight: 'py-4 sm:py-6 md:py-8',
+    default: 'py-8 sm:py-16 md:py-20',
+    loose: 'py-12 sm:py-20 md:py-28',
+  }
 
   const variantConfig = {
     display: {
-      TitleTag: "h1" as const,
-      DescTag: "h5" as const,
-      titleClass: "text-6xl max-w-2xl font-bold text-balance", // Uses h1 default (display-web: 80px)
-      descClass: "text-3xl mt-4 max-w-xl text-balance text-muted-foreground", // Uses h5 default (lead-web: 20px)
+      TitleTag: 'h1' as const,
+      DescTag: 'p' as const,
+      titleClass: 'font-extrabold text-7xl leading-none tracking-tight text-balance max-w-4xl',
+      descClass: 'mt-6 max-w-2xl text-xl leading-relaxed text-balance text-muted-foreground',
       withPadding: true,
     },
     primary: {
-      TitleTag: "h1" as const,
-      DescTag: "h5" as const,
-      titleClass: "font-bold", // Uses h1 default (display-web: 80px)
-      descClass: "mt-2 max-w-2xl text-balance text-muted-foreground", // Uses h5 default (lead-web: 20px)
+      TitleTag: 'h1' as const,
+      DescTag: 'p' as const,
+      titleClass: 'font-extrabold text-6xl leading-none tracking-tight text-balance max-w-3xl',
+      descClass: 'mt-6 max-w-2xl text-xl leading-relaxed text-balance text-muted-foreground',
       withPadding: false,
     },
     secondary: {
-      TitleTag: "h2" as const,
-      DescTag: "h5" as const,
-      titleClass: "font-semibold text-foreground", // Uses h2 default (title1-web: 60px)
-      descClass: "mt-2 max-w-2xl text-balance text-muted-foreground", // Uses h5 default (lead-web: 20px)
+      TitleTag: 'h2' as const,
+      DescTag: 'p' as const,
+      titleClass: 'font-extrabold text-5xl leading-none tracking-tight text-balance max-w-2xl',
+      descClass: 'mt-6 max-w-sm text-lg leading-relaxed text-balance text-muted-foreground',
       withPadding: false,
     },
     muted: {
-      TitleTag: "h5" as const,
-      DescTag: "p" as const,
-      titleClass: "font-medium text-foreground", // Uses h5 default (lead-web: 20px)
-      descClass: "mt-1 max-w-lg text-balance text-muted-foreground/80", // Uses p default (body-web: 16px)
+      TitleTag: 'h3' as const,
+      DescTag: 'p' as const,
+      titleClass: 'font-bold text-4xl leading-tight tracking-tight text-balance',
+      descClass: 'mt-2 max-w-lg text-base leading-relaxed text-muted-foreground',
       withPadding: false,
     },
     subtle: {
-      TitleTag: "h6" as const,
-      DescTag: "p" as const,
-      titleClass: "font-normal text-muted-foreground", // Uses h6 default (body-web: 16px)
-      descClass: "mt-1 max-w-md text-balance text-muted-foreground/70", // Uses p default (body-web: 16px)
+      TitleTag: 'h4' as const,
+      DescTag: 'p' as const,
+      titleClass: 'font-semibold text-2xl leading-snug tracking-tight',
+      descClass: 'mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground/80',
       withPadding: false,
     },
-  };
+  }
 
-  const config = variantConfig[variant];
-  const { TitleTag, DescTag, titleClass, descClass, withPadding } = config;
+  const config = variantConfig[variant]
+  const { TitleTag, DescTag, titleClass, descClass, withPadding } = config
 
   const alignClasses = {
-    center: "mx-auto text-center",
-    right: "ml-auto text-right",
-    left: "",
-  };
+    center: 'mx-auto text-center',
+    right: 'ml-auto text-right',
+    left: '',
+  }
+
+  const actionsAlignClass = {
+    center: 'justify-center',
+    right: 'justify-end',
+    left: 'justify-start',
+  }
 
   const content = (
     <>
-      <TitleTag className={cn(titleClass, alignClasses[align], titleClassName)}>
-        {title}
-      </TitleTag>
+      <TitleTag className={cn(titleClass, alignClasses[align], titleClassName)}>{title}</TitleTag>
       {description && (
-        <DescTag
-          className={cn(descClass, alignClasses[align], descriptionClassName)}
-        >
+        <DescTag className={cn(descClass, alignClasses[align], descriptionClassName)}>
           {description}
         </DescTag>
       )}
+      {actions && (
+        <div className={cn('mt-8 flex flex-wrap gap-3', actionsAlignClass[align])}>{actions}</div>
+      )}
     </>
-  );
+  )
 
   const renderContent = () =>
-    withPadding ? (
-      <div className={cn(paddingClasses[padding])}>{content}</div>
-    ) : (
-      content
-    );
+    withPadding ? <div className={cn(paddingClasses[padding])}>{content}</div> : content
 
   return (
     <div
       className={cn(
-        "",
-        align === "center" && "text-center",
-        align === "right" && "text-right",
+        align === 'center' && 'text-center',
+        align === 'right' && 'text-right',
         className
       )}
     >
       {renderContent()}
     </div>
-  );
+  )
 }
