@@ -24,6 +24,15 @@ export default function WebHeader({ className }: WebHeaderProps) {
 
           <div className="flex items-center gap-2">
             <Button asChild size="sm" variant="ghost">
+              <a
+                href="https://github.com/atom63/cipher-boilerplate"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Boilerplate
+              </a>
+            </Button>
+            <Button asChild size="sm" variant="ghost">
               <Link to="/preview">Preview UI</Link>
             </Button>
             <div className="flex items-center gap-0.5">
