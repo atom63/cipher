@@ -19,7 +19,8 @@ export default function WebHeader({ className }: WebHeaderProps) {
             className="rounded-sm text-foreground no-underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             to="/"
           >
-            <AnimatedLogo colored height={24} />
+            <AnimatedLogo className="sm:hidden" colored height={16} />
+            <AnimatedLogo className="hidden sm:inline-flex" colored height={24} />
           </Link>
 
           <div className="flex items-center gap-2">
