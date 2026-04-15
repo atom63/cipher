@@ -4,6 +4,8 @@ import Section from '@/components/common/layout/section'
 import { SectionHeader } from '@/components/common/layout/section-header'
 import { Button } from '@/components/ui/button'
 import { usePageMeta } from '@/hooks/use-page-meta'
+import { BoilerplateSection } from '@/pages/home/sections/boilerplate-section'
+import { CtaSection } from '@/pages/home/sections/cta-section'
 
 import { RootComponents } from './components'
 
@@ -50,6 +52,8 @@ export default function Preview() {
           <RootComponents />
         </Container>
       </Section>
+      <BoilerplateSection />
+      <CtaSection />
     </DefaultLayout>
   )
 }
