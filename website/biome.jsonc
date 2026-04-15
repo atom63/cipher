@@ -13,6 +13,7 @@
       "!src/components/animate-ui",
       "!src/components/magicui",
       "!src/components/vendor",
+      "!src/pages/home/sections/feature-animation",
       "!src/styles",
       "!dist",
       "!build",

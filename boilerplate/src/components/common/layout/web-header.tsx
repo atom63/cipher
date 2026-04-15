@@ -1,18 +1,18 @@
-import { Link } from "@tanstack/react-router";
-import { PersonalizeToggle } from "@/components/common/theme/personalize-toggle";
-import { ThemeToggle } from "@/components/common/theme/theme-toggle";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { AnimatedLogo } from "../icon/cipher/app-logo";
-import Container from "./container";
+import { Link } from '@tanstack/react-router'
+import { PersonalizeToggle } from '@/components/common/theme/personalize-toggle'
+import { ThemeToggle } from '@/components/common/theme/theme-toggle'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { AnimatedLogo } from '../icon/cipher/app-logo'
+import Container from './container'
 
 interface WebHeaderProps {
-  className?: string;
+  className?: string
 }
 
 export default function WebHeader({ className }: WebHeaderProps) {
   return (
-    <header className={cn("sticky top-0 z-50", className)}>
+    <header className={cn('sticky top-0 z-50', className)}>
       <Container maxWidth="narrow" padding="all">
         <div className="flex h-8 items-center justify-between">
           <Link
@@ -34,5 +34,5 @@ export default function WebHeader({ className }: WebHeaderProps) {
         </div>
       </Container>
     </header>
-  );
+  )
 }

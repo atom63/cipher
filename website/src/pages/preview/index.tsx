@@ -1,17 +1,17 @@
-import Container from "@/components/common/layout/container";
-import DefaultLayout from "@/components/common/layout/default-layout";
-import Section from "@/components/common/layout/section";
-import { SectionHeader } from "@/components/common/layout/section-header";
-import { Button } from "@/components/ui/button";
-import { usePageMeta } from "@/hooks/use-page-meta";
+import Container from '@/components/common/layout/container'
+import DefaultLayout from '@/components/common/layout/default-layout'
+import Section from '@/components/common/layout/section'
+import { SectionHeader } from '@/components/common/layout/section-header'
+import { Button } from '@/components/ui/button'
+import { usePageMeta } from '@/hooks/use-page-meta'
 
-import { RootComponents } from "./components";
+import { RootComponents } from './components'
 
 export default function Preview() {
   usePageMeta({
-    title: "UI Preview",
-    description: "Design system component preview and token showcase.",
-  });
+    title: 'UI Preview',
+    description: 'Design system component preview and token showcase.',
+  })
 
   return (
     <DefaultLayout>
@@ -30,11 +30,7 @@ export default function Preview() {
                   </a>
                 </Button>
                 <Button asChild variant="outline">
-                  <a
-                    href="https://ui.shadcn.com/"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
+                  <a href="https://ui.shadcn.com/" rel="noopener noreferrer" target="_blank">
                     shadcn/ui docs
                   </a>
                 </Button>
@@ -47,13 +43,13 @@ export default function Preview() {
           />
         </Container>
         <Container
+          className="rounded-xl border border-border bg-background"
           maxWidth="wider"
           padding="all"
-          className="bg-background rounded-xl border border-border"
         >
           <RootComponents />
         </Container>
       </Section>
     </DefaultLayout>
-  );
+  )
 }

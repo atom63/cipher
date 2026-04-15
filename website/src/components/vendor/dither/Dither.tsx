@@ -1,6 +1,6 @@
 import { useRef, useEffect, forwardRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { motion, useMotionValue, useSpring } from 'motion/react';
+import { motion, useSpring } from 'motion/react';
 import { EffectComposer, wrapEffect } from '@react-three/postprocessing';
 import { Effect } from 'postprocessing';
 import * as THREE from 'three';
@@ -300,8 +300,6 @@ interface DitherProps {
   mouseRadius?: number;
   /** Target opacity (0–1). Fades in on mount to avoid flash. */
   opacity?: number;
-  /** Fade-in duration in ms. @default 1000 */
-  fadeDuration?: number;
 }
 
 export default function Dither({
@@ -315,7 +313,6 @@ export default function Dither({
   enableMouseInteraction = true,
   mouseRadius = 1,
   opacity = 1,
-  fadeDuration = 1000,
 }: DitherProps) {
   const [ready, setReady] = useState(false);
   const motionOpacity = useSpring(0, {
