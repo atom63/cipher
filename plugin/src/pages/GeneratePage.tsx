@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Dices, RefreshCw, SlidersHorizontal, Wand2, X } from "lucide-react";
+import { Check, ChevronDown, Dices, Lock, RefreshCw, SlidersHorizontal, Unlock, Wand2, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProgressView, SuccessView } from "../components/import";
@@ -1094,6 +1094,16 @@ export function GeneratePage() {
 													type="color"
 													value={accent.hex}
 												/>
+												<Button
+													aria-label={accent.locked ? "Unlock color" : "Lock color"}
+													className={styles.lockButton}
+													data-locked={accent.locked ? "true" : undefined}
+													onClick={() => updateAccent(index, { locked: !accent.locked })}
+													size="icon"
+													variant="ghost"
+												>
+													{accent.locked ? <Lock size={12} /> : <Unlock size={12} />}
+												</Button>
 												<Input
 													autoComplete="off"
 													className={styles.colorHexInput}
@@ -1187,6 +1197,16 @@ export function GeneratePage() {
 														type="color"
 														value={displayHex}
 													/>
+													<Button
+														aria-label={neutral.locked ? "Unlock color" : "Lock color"}
+														className={styles.lockButton}
+														data-locked={neutral.locked ? "true" : undefined}
+														onClick={() => updateNeutral(index, { locked: !neutral.locked })}
+														size="icon"
+														variant="ghost"
+													>
+														{neutral.locked ? <Lock size={12} /> : <Unlock size={12} />}
+													</Button>
 													<Input
 														autoComplete="off"
 														className={styles.colorHexInput}

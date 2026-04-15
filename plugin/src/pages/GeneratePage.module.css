@@ -92,6 +92,22 @@
 	align-items: center;
 }
 
+.lockButton {
+	flex-shrink: 0;
+	color: var(--muted-foreground);
+	opacity: 0.35;
+	transition: opacity var(--transition), color var(--transition);
+}
+
+.lockButton:hover {
+	opacity: 1;
+}
+
+.lockButton[data-locked="true"] {
+	color: var(--primary);
+	opacity: 1;
+}
+
 .colorSwatch {
 	flex-shrink: 0;
 	width: var(--size-8);
