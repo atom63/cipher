@@ -852,14 +852,18 @@ export function GeneratePage() {
 			const count = prev.length;
 			// Golden angle (~137.5°) distributes hues maximally apart regardless of count
 			const goldenAngle = 137.508;
-			return prev.map((a, i) => ({
-				...a,
-				hex: randHex(
-					0.65 + Math.random() * 0.13,
-					0.14 + Math.random() * 0.1,
-					(baseHue + i * goldenAngle + (Math.random() - 0.5) * 20) % 360,
-				),
-			}));
+			return prev.map((a, i) =>
+				a.locked
+					? a
+					: {
+							...a,
+							hex: randHex(
+								0.65 + Math.random() * 0.13,
+								0.14 + Math.random() * 0.1,
+								(baseHue + i * goldenAngle + (Math.random() - 0.5) * 20) % 360,
+							),
+						},
+			);
 		});
 
 		// Status: semantic hue ranges, bright and clean
@@ -883,6 +887,7 @@ export function GeneratePage() {
 		const goldenAngle = 137.508;
 		setNeutralColors((prev) =>
 			prev.map((n, i) => {
+				if (n.locked) return n;
 				const hue = (baseHue + i * goldenAngle + (Math.random() - 0.5) * 20) % 360;
 				const hex = rgbToHex(
 					oklchToRgb({ l: 0.55 + Math.random() * 0.1, c: 0.03 + Math.random() * 0.04, h: hue }),
