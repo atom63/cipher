@@ -46,6 +46,8 @@ import {
 export interface NamedBrandColor {
 	/** Base hex color */
 	hex: string;
+	/** When true, shuffle will skip this color */
+	locked?: boolean;
 	/** Display name (used in Figma path: color/{name}/50-950) */
 	name: string;
 }
@@ -58,6 +60,8 @@ export interface NamedSurface {
 	darkPreset?: string;
 	/** Custom hex for light mode (overrides preset when set) */
 	hex?: string;
+	/** When true, shuffle will skip this surface */
+	locked?: boolean;
 	/** Display name (used in Figma path: color/{name}/light|dark/1-12) */
 	name: string;
 	/** Radix preset name for light mode (e.g. "slate", "sand") */

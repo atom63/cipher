@@ -43,6 +43,18 @@ describe("generateDesignSystem", () => {
 		const ids = result.tokens.map((t) => t.id);
 		expect(new Set(ids).size).toBe(ids.length);
 	});
+
+	test("locked flag on brandColor does not affect token output", () => {
+		const withoutLock = generateDesignSystem({ primary: "#3B82F6" });
+		const withLock = generateDesignSystem({
+			primary: "#3B82F6",
+			brandColors: [{ name: "brand-primary", hex: "#3B82F6", locked: true }],
+		});
+		const baseSize = (r: typeof withoutLock) =>
+			r.tokens.find((t) => t.figmaName === "font/typescale/base/size/md")?.value;
+		expect(baseSize(withLock)).toBe(baseSize(withoutLock));
+		expect(withLock.tokens.length).toBe(withoutLock.tokens.length);
+	});
 });
 
 // =========================================================================
