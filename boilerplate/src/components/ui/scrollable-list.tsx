@@ -32,8 +32,8 @@ const chevronVariants = {
 interface ScrollableListProps {
   children: React.ReactNode
   className?: string
-  showChevrons?: boolean
   disabled?: boolean
+  showChevrons?: boolean
   wrapLayoutBreakpoint?: number
 }
 
@@ -170,7 +170,7 @@ export function ScrollableList({
   return (
     <div className={className} ref={containerRef}>
       <div className="relative isolate">
-        <ScrollArea ref={scrollAreaRef} >
+        <ScrollArea ref={scrollAreaRef}>
           <div className="flex gap-2">{children}</div>
           <ScrollBar className="sr-only" orientation="horizontal" />
         </ScrollArea>

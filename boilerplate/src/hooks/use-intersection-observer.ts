@@ -1,50 +1,51 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react'
 
 interface UseIntersectionObserverOptions extends IntersectionObserverInit {
-  freezeOnceVisible?: boolean;
-  rootMargin?: string;
-  threshold?: number | number[];
+  freezeOnceVisible?: boolean
+  rootMargin?: string
+  threshold?: number | number[]
 }
 
 export function useIntersectionObserver<T extends HTMLElement = HTMLDivElement>(
   options: UseIntersectionObserverOptions = {}
-): [React.RefObject<T>, boolean] {
+): [React.RefObject<T | null>, boolean] {
   const {
     threshold = 0.1,
     root = null,
-    rootMargin = "50px", // Load content 50px before it enters viewport
+    rootMargin = '50px', // Load content 50px before it enters viewport
     freezeOnceVisible = false,
-  } = options;
+  } = options
 
-  const elementRef = useRef<T>(null);
-  const [isIntersecting, setIsIntersecting] = useState(false);
+  const elementRef = useRef<T>(null)
+  const [isIntersecting, setIsIntersecting] = useState(false)
 
   useEffect(() => {
-    const element = elementRef.current;
+    const element = elementRef.current
 
     if (!element) {
-      return;
+      return
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const isElementIntersecting = entry.isIntersecting;
+        if (!entry) return
+        const isElementIntersecting = entry.isIntersecting
 
-        setIsIntersecting(isElementIntersecting);
+        setIsIntersecting(isElementIntersecting)
 
         if (isElementIntersecting && freezeOnceVisible) {
-          observer.unobserve(element);
+          observer.unobserve(element)
         }
       },
       { threshold, root, rootMargin }
-    );
+    )
 
-    observer.observe(element);
+    observer.observe(element)
 
     return () => {
-      observer.disconnect();
-    };
-  }, [threshold, root, rootMargin, freezeOnceVisible]);
+      observer.disconnect()
+    }
+  }, [threshold, root, rootMargin, freezeOnceVisible])
 
-  return [elementRef, isIntersecting];
+  return [elementRef, isIntersecting]
 }

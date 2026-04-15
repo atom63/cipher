@@ -1,133 +1,120 @@
-import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
-import { useTokenColors } from "./use-token-color";
-import { useVisible } from "./use-visible";
+import { motion } from 'motion/react'
+import { useEffect, useMemo, useState } from 'react'
+import { useTokenColors } from './use-token-color'
+import { useVisible } from './use-visible'
 
-type Phase =
-  | "idle"
-  | "select-two"
-  | "rename"
-  | "select-one"
-  | "update-color"
-  | "deselect";
+type Phase = 'idle' | 'select-two' | 'rename' | 'select-one' | 'update-color' | 'deselect'
 
 export function ManageAnimation() {
-  const { ref, visible } = useVisible();
+  const { ref, visible } = useVisible()
   const c = useTokenColors({
-    primary500: "var(--color-b1-500)",
-    primary600: "var(--color-b1-600)",
-    primary200: "var(--color-b1-200)",
-    secondary500: "var(--color-b2-500)",
-  });
+    primary500: 'var(--color-b1-500)',
+    primary600: 'var(--color-b1-600)',
+    primary200: 'var(--color-b1-200)',
+    secondary500: 'var(--color-b2-500)',
+  })
 
   const tokens = useMemo(
     () => [
       {
-        id: "t1",
+        id: 't1',
         y: 90,
-        baseName: "color.primary.muted",
-        updatedName: "color.brand.muted",
+        baseName: 'color.primary.muted',
+        updatedName: 'color.brand.muted',
         baseColorHex: c.primary600,
         updatedColorHex: c.secondary500,
       },
       {
-        id: "t2",
+        id: 't2',
         y: 135,
-        baseName: "color.primary.base",
-        updatedName: "color.brand.base",
+        baseName: 'color.primary.base',
+        updatedName: 'color.brand.base',
         baseColorHex: c.primary500,
         updatedColorHex: c.primary500,
       },
       {
-        id: "t3",
+        id: 't3',
         y: 180,
-        baseName: "color.primary.light",
-        updatedName: "color.brand.light",
+        baseName: 'color.primary.light',
+        updatedName: 'color.brand.light',
         baseColorHex: c.primary200,
         updatedColorHex: c.primary200,
       },
     ],
     [c]
-  );
-  const [phase, setPhase] = useState<Phase>("idle");
+  )
+  const [phase, setPhase] = useState<Phase>('idle')
 
   useEffect(() => {
-    let mounted = true;
-    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    let mounted = true
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
     const run = async () => {
       while (mounted) {
-        await sleep(1400);
+        await sleep(1400)
         if (!mounted) {
-          break;
+          break
         }
-        setPhase("select-two");
-        await sleep(1000);
+        setPhase('select-two')
+        await sleep(1000)
         if (!mounted) {
-          break;
+          break
         }
-        setPhase("rename");
-        await sleep(1400);
+        setPhase('rename')
+        await sleep(1400)
         if (!mounted) {
-          break;
+          break
         }
-        setPhase("select-one");
-        await sleep(800);
+        setPhase('select-one')
+        await sleep(800)
         if (!mounted) {
-          break;
+          break
         }
-        setPhase("update-color");
-        await sleep(1400);
+        setPhase('update-color')
+        await sleep(1400)
         if (!mounted) {
-          break;
+          break
         }
-        setPhase("deselect");
-        await sleep(1000);
+        setPhase('deselect')
+        await sleep(1000)
         if (!mounted) {
-          break;
+          break
         }
-        setPhase("idle");
+        setPhase('idle')
       }
-    };
+    }
 
     if (visible) {
-      run();
+      run()
     }
     return () => {
-      mounted = false;
-    };
-  }, [visible]);
+      mounted = false
+    }
+  }, [visible])
 
-  const isT1Selected = [
-    "select-two",
-    "rename",
-    "select-one",
-    "update-color",
-  ].includes(phase);
-  const isT2Selected = ["select-two", "rename"].includes(phase);
-  const isRenamed = [
-    "rename",
-    "select-one",
-    "update-color",
-    "deselect",
-  ].includes(phase);
-  const isColorUpdated = ["update-color", "deselect"].includes(phase);
-  const actionCount = isT2Selected ? 2 : isT1Selected ? 1 : 0;
-  const showActionBar = actionCount > 0;
+  const isT1Selected = ['select-two', 'rename', 'select-one', 'update-color'].includes(phase)
+  const isT2Selected = ['select-two', 'rename'].includes(phase)
+  const isRenamed = ['rename', 'select-one', 'update-color', 'deselect'].includes(phase)
+  const isColorUpdated = ['update-color', 'deselect'].includes(phase)
+  const actionCount = isT2Selected ? 2 : isT1Selected ? 1 : 0
+  const showActionBar = actionCount > 0
 
   return (
     <div className="relative size-full overflow-hidden" ref={ref}>
       <div
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{
-          backgroundImage:
-            "radial-gradient(var(--border) 1px, transparent 1px)",
-          backgroundSize: "16px 16px",
-          backgroundPosition: "center",
+          backgroundImage: 'radial-gradient(var(--border) 1px, transparent 1px)',
+          backgroundSize: '16px 16px',
+          backgroundPosition: 'center',
         }}
       />
 
-      <svg className="relative z-10 h-auto w-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 400 240">
+      <svg
+        className="relative z-10 h-auto w-full"
+        preserveAspectRatio="xMidYMid meet"
+        viewBox="0 0 400 240"
+      >
         {/* Window */}
         <rect
           fill="var(--card)"
@@ -141,27 +128,17 @@ export function ManageAnimation() {
         />
 
         {/* Header */}
-        <text
-          fill="var(--foreground)"
-          fontSize="13"
-          fontWeight="600"
-          x="40"
-          y="52"
-        >
+        <text fill="var(--foreground)" fontSize="13" fontWeight="600" x="40" y="52">
           Variables
         </text>
 
         {/* Token rows */}
         {tokens.map((token, index) => {
-          const rowSelected =
-            (index === 0 && isT1Selected) || (index === 1 && isT2Selected);
-          const nameText =
-            isRenamed && index < 2 ? token.updatedName : token.baseName;
-          const colorUpdated = isColorUpdated && index === 0;
-          const colorHex = colorUpdated
-            ? token.updatedColorHex
-            : token.baseColorHex;
-          const primaryHex = c.primary500;
+          const rowSelected = (index === 0 && isT1Selected) || (index === 1 && isT2Selected)
+          const nameText = isRenamed && index < 2 ? token.updatedName : token.baseName
+          const colorUpdated = isColorUpdated && index === 0
+          const colorHex = colorUpdated ? token.updatedColorHex : token.baseColorHex
+          const primaryHex = c.primary500
 
           return (
             <motion.g
@@ -173,10 +150,10 @@ export function ManageAnimation() {
               {/* Row highlight */}
               <motion.rect
                 animate={{
-                  fill: rowSelected ? "rgba(235, 135, 0, 0.08)" : "transparent",
+                  fill: rowSelected ? 'rgba(235, 135, 0, 0.08)' : 'transparent',
                 }}
                 height="36"
-                initial={{ fill: "transparent" }}
+                initial={{ fill: 'transparent' }}
                 rx="8"
                 transition={{ duration: 0.3 }}
                 width="340"
@@ -189,7 +166,7 @@ export function ManageAnimation() {
                 fill="var(--secondary)"
                 height="14"
                 rx="4"
-                stroke={rowSelected ? primaryHex : "var(--border)"}
+                stroke={rowSelected ? primaryHex : 'var(--border)'}
                 strokeWidth="1.5"
                 width="14"
                 x="40"
@@ -215,7 +192,7 @@ export function ManageAnimation() {
                 animate={{ fill: colorHex }}
                 height="18"
                 rx="5"
-                transition={{ duration: 0.6, ease: "easeInOut" }}
+                transition={{ duration: 0.6, ease: 'easeInOut' }}
                 width="18"
                 x="70"
                 y="-9"
@@ -225,9 +202,9 @@ export function ManageAnimation() {
               <motion.text
                 animate={{
                   fill:
-                    isRenamed && index < 2 && phase === "rename"
-                      ? [primaryHex, "var(--foreground)"]
-                      : "var(--foreground)",
+                    isRenamed && index < 2 && phase === 'rename'
+                      ? [primaryHex, 'var(--foreground)']
+                      : 'var(--foreground)',
                 }}
                 fontFamily="var(--font-family-mono)"
                 fontSize="12"
@@ -241,7 +218,7 @@ export function ManageAnimation() {
               {/* Token value */}
               <motion.text
                 animate={{
-                  fill: colorUpdated ? primaryHex : "var(--muted-foreground)",
+                  fill: colorUpdated ? primaryHex : 'var(--muted-foreground)',
                 }}
                 fontFamily="var(--font-family-mono)"
                 fontSize="11"
@@ -253,7 +230,7 @@ export function ManageAnimation() {
                 {colorHex}
               </motion.text>
             </motion.g>
-          );
+          )
         })}
 
         {/* Floating action bar */}
@@ -263,7 +240,7 @@ export function ManageAnimation() {
             opacity: showActionBar ? 1 : 0,
           }}
           initial={{ y: 250, opacity: 0 }}
-          transition={{ duration: 0.5, type: "spring", bounce: 0.2 }}
+          transition={{ duration: 0.5, type: 'spring', bounce: 0.2 }}
         >
           <rect
             fill="var(--secondary)"
@@ -300,13 +277,7 @@ export function ManageAnimation() {
           >
             {actionCount}
           </motion.text>
-          <text
-            fill="var(--foreground)"
-            fontSize="11"
-            fontWeight="500"
-            x="158"
-            y="22"
-          >
+          <text fill="var(--foreground)" fontSize="11" fontWeight="500" x="158" y="22">
             Selected
           </text>
 
@@ -334,9 +305,8 @@ export function ManageAnimation() {
           {/* Action pulse */}
           <motion.circle
             animate={{
-              scale: phase === "rename" || phase === "update-color" ? 1.5 : 0.8,
-              opacity:
-                phase === "rename" || phase === "update-color" ? [0, 1, 0] : 0,
+              scale: phase === 'rename' || phase === 'update-color' ? 1.5 : 0.8,
+              opacity: phase === 'rename' || phase === 'update-color' ? [0, 1, 0] : 0,
             }}
             cx="260"
             cy="18"
@@ -349,5 +319,5 @@ export function ManageAnimation() {
         </motion.g>
       </svg>
     </div>
-  );
+  )
 }

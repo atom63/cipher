@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { PersonalizeToggle } from "@/components/common/theme/personalize-toggle";
 import { ThemeToggle } from "@/components/common/theme/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AnimatedLogo } from "../icon/cipher/app-logo";
 import Container from "./container";
@@ -21,9 +22,14 @@ export default function WebHeader({ className }: WebHeaderProps) {
             <AnimatedLogo colored height={24} />
           </Link>
 
-          <div className="flex items-center gap-0.5">
-            <PersonalizeToggle size="icon-sm" />
-            <ThemeToggle size="icon-sm" />
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/preview">Preview UI</Link>
+            </Button>
+            <div className="flex items-center gap-0.5">
+              <PersonalizeToggle size="icon-sm" />
+              <ThemeToggle size="icon-sm" />
+            </div>
           </div>
         </div>
       </Container>

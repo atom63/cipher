@@ -1,17 +1,12 @@
-import { cn } from "@/lib/utils";
-import {
-  SYMBOL_L_SVG,
-  SYMBOL_R_SVG,
-  SYMBOL_SVG,
-  WORDMARK_SVG,
-} from "./primitives";
+import { cn } from '@/lib/utils'
+import { SYMBOL_L_SVG, SYMBOL_R_SVG, SYMBOL_SVG, WORDMARK_SVG } from './primitives'
 
 function LogoSymbol() {
   return (
     <g>
       <path d={SYMBOL_SVG.path} fill="currentColor" />
     </g>
-  );
+  )
 }
 
 function LogoWordmark() {
@@ -19,24 +14,20 @@ function LogoWordmark() {
     <g>
       <path d={WORDMARK_SVG.path} fill="currentColor" />
     </g>
-  );
+  )
 }
 
 interface AnimatedSymbolProps {
-  className?: string;
-  colored?: boolean;
-  height?: number;
+  className?: string
+  colored?: boolean
+  height?: number
 }
 
-export function AnimatedSymbol({
-  height = 80,
-  colored = false,
-  className,
-}: AnimatedSymbolProps) {
-  const symbolColor = colored ? "text-primary" : undefined;
-  const halfWidth = height * (43 / 80);
-  const gap = height * (4 / 80);
-  const shift = halfWidth + gap;
+export function AnimatedSymbol({ height = 80, colored = false, className }: AnimatedSymbolProps) {
+  const symbolColor = colored ? 'text-primary' : undefined
+  const halfWidth = height * (43 / 80)
+  const gap = height * (4 / 80)
+  const shift = halfWidth + gap
 
   return (
     <>
@@ -58,8 +49,8 @@ export function AnimatedSymbol({
         }
       `}</style>
       <div
-        className={cn("group inline-flex items-center", symbolColor, className)}
-        style={{ gap, "--symbol-shift": `${shift}px` } as React.CSSProperties}
+        className={cn('group inline-flex items-center', symbolColor, className)}
+        style={{ gap, '--symbol-shift': `${shift}px` } as React.CSSProperties}
       >
         <div
           className="inline-flex items-center group-hover:animate-[cipher-spin_1.5s_linear_forwards]"
@@ -90,26 +81,22 @@ export function AnimatedSymbol({
         </div>
       </div>
     </>
-  );
+  )
 }
 
 interface AnimatedLogoProps {
-  className?: string;
-  colored?: boolean;
-  height?: number;
+  className?: string
+  colored?: boolean
+  height?: number
 }
 
-export function AnimatedLogo({
-  height = 32,
-  colored = false,
-  className,
-}: AnimatedLogoProps) {
-  const symbolColor = colored ? "text-primary" : undefined;
-  const halfWidth = height * (43 / 80);
-  const symbolGap = height * (4 / 80);
-  const shift = halfWidth + symbolGap;
-  const wordmarkHeight = height * (80 / 120);
-  const logoGap = height / 3;
+export function AnimatedLogo({ height = 32, colored = false, className }: AnimatedLogoProps) {
+  const symbolColor = colored ? 'text-primary' : undefined
+  const halfWidth = height * (43 / 80)
+  const symbolGap = height * (4 / 80)
+  const shift = halfWidth + symbolGap
+  const wordmarkHeight = height * (80 / 120)
+  const logoGap = height / 3
 
   return (
     <>
@@ -131,11 +118,11 @@ export function AnimatedLogo({
         }
       `}</style>
       <div
-        className={cn("group inline-flex items-center", className)}
+        className={cn('group inline-flex items-center', className)}
         style={
           {
             gap: logoGap,
-            "--symbol-shift": `${shift}px`,
+            '--symbol-shift': `${shift}px`,
           } as React.CSSProperties
         }
       >
@@ -144,10 +131,7 @@ export function AnimatedLogo({
           style={{ gap: symbolGap }}
         >
           <svg
-            className={cn(
-              symbolColor,
-              "group-hover:animate-[cipher-l_1.5s_linear_forwards]"
-            )}
+            className={cn(symbolColor, 'group-hover:animate-[cipher-l_1.5s_linear_forwards]')}
             fill="none"
             height={height}
             viewBox={SYMBOL_L_SVG.viewBox}
@@ -158,10 +142,7 @@ export function AnimatedLogo({
             <path d={SYMBOL_L_SVG.path} fill="currentColor" />
           </svg>
           <svg
-            className={cn(
-              symbolColor,
-              "group-hover:animate-[cipher-r_1.5s_linear_forwards]"
-            )}
+            className={cn(symbolColor, 'group-hover:animate-[cipher-r_1.5s_linear_forwards]')}
             fill="none"
             height={height}
             viewBox={SYMBOL_R_SVG.viewBox}
@@ -183,33 +164,30 @@ export function AnimatedLogo({
         </svg>
       </div>
     </>
-  );
+  )
 }
 
 interface AppLogoProps {
-  className?: string;
+  className?: string
   /** Apply --primary color to the symbol mark */
-  colored?: boolean;
-  height?: number;
-  variant?: "horizontal" | "vertical" | "symbol" | "wordmark";
+  colored?: boolean
+  height?: number
+  variant?: 'horizontal' | 'vertical' | 'symbol' | 'wordmark'
 }
 
 export function AppLogo({
-  variant = "horizontal",
+  variant = 'horizontal',
   height = 32,
   colored = false,
   className,
 }: AppLogoProps) {
-  const symbolColor = colored ? "text-primary" : undefined;
+  const symbolColor = colored ? 'text-primary' : undefined
   switch (variant) {
-    case "horizontal": {
-      const wordmarkHeight = height * (80 / 120);
-      const gap = height / 3;
+    case 'horizontal': {
+      const wordmarkHeight = height * (80 / 120)
+      const gap = height / 3
       return (
-        <div
-          className={cn("inline-flex items-center", className)}
-          style={{ gap }}
-        >
+        <div className={cn('inline-flex items-center', className)} style={{ gap }}>
           <svg
             className={symbolColor}
             fill="none"
@@ -230,17 +208,14 @@ export function AppLogo({
             <LogoWordmark />
           </svg>
         </div>
-      );
+      )
     }
 
-    case "vertical": {
-      const wordmarkHeight = height * 0.35;
-      const gap = height * 0.3;
+    case 'vertical': {
+      const wordmarkHeight = height * 0.35
+      const gap = height * 0.3
       return (
-        <div
-          className={cn("inline-flex flex-col items-center", className)}
-          style={{ gap }}
-        >
+        <div className={cn('inline-flex flex-col items-center', className)} style={{ gap }}>
           <svg
             className={symbolColor}
             fill="none"
@@ -261,10 +236,10 @@ export function AppLogo({
             <LogoWordmark />
           </svg>
         </div>
-      );
+      )
     }
 
-    case "symbol":
+    case 'symbol':
       return (
         <svg
           className={cn(symbolColor, className)}
@@ -276,9 +251,9 @@ export function AppLogo({
           <title>Symbol</title>
           <LogoSymbol />
         </svg>
-      );
+      )
 
-    case "wordmark":
+    case 'wordmark':
       return (
         <svg
           className={className}
@@ -290,9 +265,9 @@ export function AppLogo({
           <title>Wordmark</title>
           <LogoWordmark />
         </svg>
-      );
+      )
 
     default:
-      return null;
+      return null
   }
 }

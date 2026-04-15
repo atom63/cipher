@@ -1,43 +1,43 @@
-import type { Ref, VideoHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import type { Ref, VideoHTMLAttributes } from 'react'
+import { cn } from '@/lib/utils'
 
 // Video file extensions regex for auto-detection
-const VIDEO_FILE_REGEX = /\.(mp4|webm|ogg|mov|avi)$/i;
+const VIDEO_FILE_REGEX = /\.(mp4|webm|ogg|mov|avi)$/i
 
 // Helper function to auto-detect video MIME type
 function detectVideoType(src: string): string {
-  const extension = src.split(".").pop()?.toLowerCase();
+  const extension = src.split('.').pop()?.toLowerCase()
   switch (extension) {
-    case "webm":
-      return "video/webm";
-    case "ogg":
-    case "ogv":
-      return "video/ogg";
-    case "mov":
-      return "video/quicktime";
-    case "avi":
-      return "video/x-msvideo";
+    case 'webm':
+      return 'video/webm'
+    case 'ogg':
+    case 'ogv':
+      return 'video/ogg'
+    case 'mov':
+      return 'video/quicktime'
+    case 'avi':
+      return 'video/x-msvideo'
     default:
-      return "video/mp4";
+      return 'video/mp4'
   }
 }
 
 interface VideoProps extends VideoHTMLAttributes<HTMLVideoElement> {
   /** When true, displays as thumbnail with autoplay, muted, loop, no controls */
-  asThumbnail?: boolean;
-  className?: string;
-  fallbackText?: string;
-  ref?: Ref<HTMLVideoElement>;
+  asThumbnail?: boolean
+  className?: string
+  fallbackText?: string
+  ref?: Ref<HTMLVideoElement>
   sources: Array<{
-    src: string;
-    type?: string; // Make type optional, will auto-detect if not provided
-  }>;
+    src: string
+    type?: string // Make type optional, will auto-detect if not provided
+  }>
 }
 
 function Video({
   className,
   sources,
-  fallbackText = "Your browser does not support the video tag.",
+  fallbackText = 'Your browser does not support the video tag.',
   asThumbnail = false,
   autoPlay = true,
   muted = true,
@@ -45,10 +45,10 @@ function Video({
   ...props
 }: VideoProps) {
   // Auto-detect if we should use thumbnail mode based on video file extensions
-  const firstSource = sources[0];
+  const firstSource = sources[0]
   const isVideoFile =
-    sources.length === 1 && firstSource != null && VIDEO_FILE_REGEX.test(firstSource.src);
-  const useThumbnailMode = asThumbnail || isVideoFile;
+    sources.length === 1 && firstSource != null && VIDEO_FILE_REGEX.test(firstSource.src)
+  const useThumbnailMode = asThumbnail || isVideoFile
 
   const thumbnailProps = useThumbnailMode
     ? {
@@ -56,12 +56,12 @@ function Video({
         controls: false,
         playsInline: true, // Prevents fullscreen on mobile
       }
-    : {};
+    : {}
 
   return (
     <video
       autoPlay={autoPlay}
-      className={cn("h-auto w-full", className)}
+      className={cn('h-auto w-full', className)}
       muted={muted}
       ref={ref}
       {...thumbnailProps}
@@ -76,7 +76,7 @@ function Video({
       ))}
       <p className="p-4 text-center text-muted-foreground">{fallbackText}</p>
     </video>
-  );
+  )
 }
 
-export { Video, type VideoProps };
+export { Video, type VideoProps }

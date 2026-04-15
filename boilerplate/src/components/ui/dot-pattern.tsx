@@ -1,7 +1,7 @@
-import React, { useEffect, useId, useRef, useState } from "react"
-import { motion } from "motion/react"
+import { motion } from 'motion/react'
+import React, { useEffect, useId, useRef, useState } from 'react'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 
 /**
  *  DotPattern Component Props
@@ -17,15 +17,15 @@ import { cn } from "@/lib/utils"
  * @param {boolean} [glow=false] - Whether dots should have a glowing animation effect
  */
 interface DotPatternProps extends React.SVGProps<SVGSVGElement> {
-  width?: number
-  height?: number
-  x?: number
-  y?: number
+  className?: string
+  cr?: number
   cx?: number
   cy?: number
-  cr?: number
-  className?: string
   glow?: boolean
+  height?: number
+  width?: number
+  x?: number
+  y?: number
   [key: string]: unknown
 }
 
@@ -84,15 +84,13 @@ export function DotPattern({
     }
 
     updateDimensions()
-    window.addEventListener("resize", updateDimensions)
-    return () => window.removeEventListener("resize", updateDimensions)
+    window.addEventListener('resize', updateDimensions)
+    return () => window.removeEventListener('resize', updateDimensions)
   }, [])
 
   const dots = Array.from(
     {
-      length:
-        Math.ceil(dimensions.width / width) *
-        Math.ceil(dimensions.height / height),
+      length: Math.ceil(dimensions.width / width) * Math.ceil(dimensions.height / height),
     },
     (_, i) => {
       const col = i % Math.ceil(dimensions.width / width)
@@ -108,12 +106,12 @@ export function DotPattern({
 
   return (
     <svg
-      ref={containerRef}
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-0 h-full w-full text-neutral-400/80",
+        'pointer-events-none absolute inset-0 h-full w-full text-neutral-400/80',
         className
       )}
+      ref={containerRef}
       {...props}
     >
       <defs>
@@ -122,14 +120,8 @@ export function DotPattern({
           <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
         </radialGradient>
       </defs>
-      {dots.map((dot, index) => (
+      {dots.map(dot => (
         <motion.circle
-          key={`${dot.x}-${dot.y}`}
-          cx={dot.x}
-          cy={dot.y}
-          r={cr}
-          fill={glow ? `url(#${id}-gradient)` : "currentColor"}
-          initial={glow ? { opacity: 0.4, scale: 1 } : {}}
           animate={
             glow
               ? {
@@ -138,14 +130,20 @@ export function DotPattern({
                 }
               : {}
           }
+          cx={dot.x}
+          cy={dot.y}
+          fill={glow ? `url(#${id}-gradient)` : 'currentColor'}
+          initial={glow ? { opacity: 0.4, scale: 1 } : {}}
+          key={`${dot.x}-${dot.y}`}
+          r={cr}
           transition={
             glow
               ? {
                   duration: dot.duration,
                   repeat: Infinity,
-                  repeatType: "reverse",
+                  repeatType: 'reverse',
                   delay: dot.delay,
-                  ease: "easeInOut",
+                  ease: 'easeInOut',
                 }
               : {}
           }

@@ -11,7 +11,7 @@ const linkClass =
 
 export function WebFooter({ className }: FooterProps) {
   const currentYear = new Date().getFullYear();
-  const github = socialsByName.github;
+  const website = socialsByName.website;
   const githubRepo = socialsByName["github repo"];
   const email = socialsByName.email;
 
@@ -23,11 +23,11 @@ export function WebFooter({ className }: FooterProps) {
             © {currentYear} Cipher · Made by{" "}
             <a
               className={linkClass}
-              href={github?.url}
+              href={website?.url}
               rel="noopener noreferrer"
               target="_blank"
             >
-              {github?.handle?.toUpperCase()}
+              You Zhang
             </a>
           </span>
           <nav className="flex items-center gap-4">

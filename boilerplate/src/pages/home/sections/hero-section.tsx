@@ -1,9 +1,10 @@
-import { ArrowRight } from "lucide-react";
-import { RichButton } from "@/components/common/custom/rich-button";
-import Container from "@/components/common/layout/container";
-import Section from "@/components/common/layout/section";
-import { Badge } from "@/components/ui/badge";
-import { FadeIn, FadeUp } from "./animation";
+import { ArrowRight } from 'lucide-react'
+import { RichButton } from '@/components/common/custom/rich-button'
+import Container from '@/components/common/layout/container'
+import Section from '@/components/common/layout/section'
+import { SectionHeader } from '@/components/common/layout/section-header'
+import { Badge } from '@/components/ui/badge'
+import { FadeUp } from './animation'
 
 export function HeroSection() {
   return (
@@ -24,23 +25,21 @@ export function HeroSection() {
           </FadeUp>
 
           <FadeUp delay={0.05}>
-            <h1 className="mt-6 max-w-4xl text-balance font-extrabold text-7xl leading-none tracking-tight">
-              A token system that aligns{" "}
-              <span className="text-primary">design</span> and{" "}
-              <span className="text-primary">code</span>
-            </h1>
-          </FadeUp>
-
-          <FadeUp delay={0.1}>
-            <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-xl leading-relaxed text-balance">
-              Cipher helps you generate, update, manage, and round-trip
-              structured tokens through an opinionated workflow built to keep
-              design decisions and code implementation aligned.
-            </p>
+            <SectionHeader
+              align="center"
+              description="Cipher helps you generate, update, manage, and round-trip structured tokens through an opinionated workflow built to keep design decisions and code implementation aligned."
+              title={
+                <>
+                  A token system that aligns <span className="text-primary">design</span> and{' '}
+                  <span className="text-primary">code</span>
+                </>
+              }
+              variant="display"
+            />
           </FadeUp>
 
           <FadeUp delay={0.2}>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-muted-foreground/60 text-xs uppercase tracking-wide">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-muted-foreground/60 text-xs uppercase tracking-wide">
               <span>Local-only</span>
               <span className="text-border">·</span>
               <span>No telemetry</span>
@@ -57,7 +56,7 @@ export function HeroSection() {
                 target="_blank"
               >
                 <RichButton size="lg">
-                  Install plugin
+                  Try plugin
                   <ArrowRight className="size-4" />
                 </RichButton>
               </a>
@@ -66,5 +65,5 @@ export function HeroSection() {
         </div>
       </Container>
     </Section>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import { siteConfig } from "./site";
+import { siteConfig } from './site'
 
 export const metadataConfig = {
   title: {
@@ -15,8 +15,8 @@ export const metadataConfig = {
   ],
   creator: siteConfig.author.name,
   openGraph: {
-    type: "website",
-    locale: "en_US",
+    type: 'website',
+    locale: 'en_US',
     url: siteConfig.url,
     title: siteConfig.name,
     description: siteConfig.description,
@@ -31,7 +31,7 @@ export const metadataConfig = {
     ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: 'summary_large_image',
     title: siteConfig.name,
     description: siteConfig.description,
     images: [siteConfig.ogImage],
@@ -40,31 +40,31 @@ export const metadataConfig = {
   },
   icons: {
     icon: [
-      { url: "/favicons/favicon.ico", sizes: "any" },
-      { url: "/favicons/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicons/favicon.png", type: "image/png" },
-      { url: "/favicons/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: '/favicons/favicon.ico', sizes: 'any' },
+      { url: '/favicons/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicons/favicon.png', type: 'image/png' },
+      { url: '/favicons/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
       {
-        url: "/favicons/web-app-manifest-192x192.png",
-        sizes: "192x192",
-        type: "image/png",
+        url: '/favicons/web-app-manifest-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
       },
       {
-        url: "/favicons/web-app-manifest-512x512.png",
-        sizes: "512x512",
-        type: "image/png",
+        url: '/favicons/web-app-manifest-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
       },
     ],
-    shortcut: "/favicons/favicon.ico",
-    apple: "/favicons/apple-touch-icon.png",
+    shortcut: '/favicons/favicon.ico',
+    apple: '/favicons/apple-touch-icon.png',
   },
-  manifest: "/favicons/site.webmanifest",
+  manifest: '/favicons/site.webmanifest',
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+    { media: '(prefers-color-scheme: dark)', color: 'black' },
   ],
   viewport: {
-    width: "device-width",
+    width: 'device-width',
     initialScale: 1,
     maximumScale: 1,
   },
@@ -74,41 +74,37 @@ export const metadataConfig = {
     googleBot: {
       index: true,
       follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
     },
   },
-} as const;
+} as const
 
 export const structuredData = {
   organization: {
-    "@context": "https://schema.org",
-    "@type": "Organization",
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
     name: siteConfig.name,
     url: siteConfig.url,
     description: siteConfig.description,
     logo: `${siteConfig.url}/og.jpg`,
-    sameAs: [
-      siteConfig.links.twitter,
-      siteConfig.links.github,
-      siteConfig.links.linkedin,
-    ],
+    sameAs: [siteConfig.links.twitter, siteConfig.links.github, siteConfig.links.linkedin],
     contactPoint: {
-      "@type": "ContactPoint",
+      '@type': 'ContactPoint',
       email: siteConfig.author.email,
-      contactType: "customer service",
+      contactType: 'customer service',
     },
   },
   website: {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
     name: siteConfig.name,
     url: siteConfig.url,
     description: siteConfig.description,
     publisher: {
-      "@type": "Organization",
+      '@type': 'Organization',
       name: siteConfig.name,
     },
   },
-} as const;
+} as const

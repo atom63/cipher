@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react'
 
 /**
  * Returns a ref and a boolean indicating whether the element is visible
@@ -6,22 +6,22 @@ import { useEffect, useRef, useState } from "react";
  * avoiding unnecessary state updates and re-renders.
  */
 export function useVisible<T extends HTMLElement = HTMLDivElement>() {
-  const ref = useRef<T>(null);
-  const [visible, setVisible] = useState(false);
+  const ref = useRef<T>(null)
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    const el = ref.current;
+    const el = ref.current
     if (!el) {
-      return;
+      return
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => setVisible(entry?.isIntersecting ?? false),
       { threshold: 0 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
-  return { ref, visible };
+  return { ref, visible }
 }

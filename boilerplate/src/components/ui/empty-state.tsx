@@ -1,13 +1,13 @@
-import type React from "react";
-import { cn } from "@/lib/utils";
+import type React from 'react'
+import { cn } from '@/lib/utils'
 
 interface EmptyStateProps {
-  action?: React.ReactNode;
-  children?: React.ReactNode;
-  className?: string;
-  description?: string;
-  icon?: React.ReactNode;
-  title?: string;
+  action?: React.ReactNode
+  children?: React.ReactNode
+  className?: string
+  description?: string
+  icon?: React.ReactNode
+  title?: string
 }
 
 export function EmptyState({
@@ -21,8 +21,8 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border px-6 py-14 text-center",
-        className,
+        'flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border px-6 py-14 text-center',
+        className
       )}
     >
       {icon && (
@@ -30,14 +30,12 @@ export function EmptyState({
           {icon}
         </div>
       )}
-      {title && (
-        <h3 className="text-balance font-medium text-sm text-foreground">{title}</h3>
-      )}
+      {title && <h3 className="text-balance font-medium text-sm text-foreground">{title}</h3>}
       {description && (
         <p className="max-w-xs text-pretty text-sm text-muted-foreground">{description}</p>
       )}
       {action && <div className="mt-1">{action}</div>}
       {children}
     </div>
-  );
+  )
 }

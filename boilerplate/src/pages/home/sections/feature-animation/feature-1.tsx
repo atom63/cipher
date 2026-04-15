@@ -1,138 +1,141 @@
-import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
-import { useTokenColors } from "./use-token-color";
-import { useVisible } from "./use-visible";
+import { motion } from 'motion/react'
+import { useEffect, useMemo, useState } from 'react'
+import { useTokenColors } from './use-token-color'
+import { useVisible } from './use-visible'
 
-type FlowState = "idle" | "in" | "processing" | "out";
+type FlowState = 'idle' | 'in' | 'processing' | 'out'
 
 const THEME_DEFS = [
   {
-    id: "primary" as const,
-    colorVar: "var(--color-b1-500)",
-    surface: "var(--color-b1-100)",
-    status: "var(--color-success-500)",
+    id: 'primary' as const,
+    colorVar: 'var(--color-b1-500)',
+    surface: 'var(--color-b1-100)',
+    status: 'var(--color-success-500)',
     radius: 8,
   },
   {
-    id: "secondary" as const,
-    colorVar: "var(--color-b2-500)",
-    surface: "var(--color-b2-100)",
-    status: "var(--color-warning-500)",
+    id: 'secondary' as const,
+    colorVar: 'var(--color-b2-500)',
+    surface: 'var(--color-b2-100)',
+    status: 'var(--color-warning-500)',
     radius: 24,
   },
   {
-    id: "success" as const,
-    colorVar: "var(--color-success-500)",
-    surface: "var(--color-b3-100)",
-    status: "var(--color-danger-500)",
+    id: 'success' as const,
+    colorVar: 'var(--color-success-500)',
+    surface: 'var(--color-b3-100)',
+    status: 'var(--color-danger-500)',
     radius: 0,
   },
-];
+]
 
 const PATHS_IN = [
-  "M 70 70 C 120 70, 140 120, 180 120",
-  "M 70 120 L 180 120",
-  "M 70 170 C 120 170, 140 120, 180 120",
-];
+  'M 70 70 C 120 70, 140 120, 180 120',
+  'M 70 120 L 180 120',
+  'M 70 170 C 120 170, 140 120, 180 120',
+]
 const PATHS_OUT = [
-  "M 220 120 C 260 120, 270 65, 310 65",
-  "M 220 120 L 310 120",
-  "M 220 120 C 260 120, 270 175, 310 175",
-];
+  'M 220 120 C 260 120, 270 65, 310 65',
+  'M 220 120 L 310 120',
+  'M 220 120 C 260 120, 270 175, 310 175',
+]
 
 export function GenerateAnimation() {
-  const { ref, visible } = useVisible();
+  const { ref, visible } = useVisible()
   const colors = useTokenColors({
-    primary: "var(--color-b1-500)",
-    secondary: "var(--color-b2-500)",
-    success: "var(--color-success-500)",
-  });
+    primary: 'var(--color-b1-500)',
+    secondary: 'var(--color-b2-500)',
+    success: 'var(--color-success-500)',
+  })
 
   const resolvedThemes = useMemo(
     () =>
-      THEME_DEFS.map((t) => ({
+      THEME_DEFS.map(t => ({
         ...t,
         colorHex: colors[t.id] ?? t.colorVar,
       })),
     [colors]
-  );
+  )
 
-  const [inputIdx, setInputIdx] = useState(0);
-  const [outputIdx, setOutputIdx] = useState(0);
-  const [flow, setFlow] = useState<FlowState>("idle");
+  const [inputIdx, setInputIdx] = useState(0)
+  const [outputIdx, setOutputIdx] = useState(0)
+  const [flow, setFlow] = useState<FlowState>('idle')
 
   useEffect(() => {
-    let mounted = true;
-    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    let mounted = true
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
     const run = async () => {
       while (mounted) {
-        await sleep(2500);
+        await sleep(2500)
         if (!mounted) {
-          break;
+          break
         }
-        setInputIdx((p) => (p + 1) % THEME_DEFS.length);
-        await sleep(600);
+        setInputIdx(p => (p + 1) % THEME_DEFS.length)
+        await sleep(600)
         if (!mounted) {
-          break;
+          break
         }
-        setFlow("in");
-        await sleep(600);
+        setFlow('in')
+        await sleep(600)
         if (!mounted) {
-          break;
+          break
         }
-        setFlow("processing");
-        await sleep(1000);
+        setFlow('processing')
+        await sleep(1000)
         if (!mounted) {
-          break;
+          break
         }
-        setFlow("out");
-        await sleep(400);
+        setFlow('out')
+        await sleep(400)
         if (!mounted) {
-          break;
+          break
         }
-        setOutputIdx((p) => (p + 1) % THEME_DEFS.length);
-        await sleep(900);
+        setOutputIdx(p => (p + 1) % THEME_DEFS.length)
+        await sleep(900)
         if (!mounted) {
-          break;
+          break
         }
-        setFlow("idle");
+        setFlow('idle')
       }
-    };
+    }
 
     if (visible) {
-      run();
+      run()
     }
     return () => {
-      mounted = false;
-    };
-  }, [visible]);
+      mounted = false
+    }
+  }, [visible])
 
-  const input = resolvedThemes[inputIdx]!;
-  const output = resolvedThemes[outputIdx]!;
+  const input = resolvedThemes[inputIdx]!
+  const output = resolvedThemes[outputIdx]!
 
   const inAnim =
-    flow === "in" || flow === "processing"
+    flow === 'in' || flow === 'processing'
       ? { pathLength: 1, opacity: 1, stroke: input.colorHex }
-      : { pathLength: 1, opacity: 0.15, stroke: "var(--border)" };
+      : { pathLength: 1, opacity: 0.15, stroke: 'var(--border)' }
 
   const outAnim =
-    flow === "out"
+    flow === 'out'
       ? { pathLength: 1, opacity: 1, stroke: input.colorHex }
-      : { pathLength: 1, opacity: 0.15, stroke: "var(--border)" };
+      : { pathLength: 1, opacity: 0.15, stroke: 'var(--border)' }
 
   return (
     <div className="relative size-full overflow-hidden" ref={ref}>
       <div
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{
-          backgroundImage:
-            "radial-gradient(var(--border) 1px, transparent 1px)",
-          backgroundSize: "16px 16px",
+          backgroundImage: 'radial-gradient(var(--border) 1px, transparent 1px)',
+          backgroundSize: '16px 16px',
         }}
       />
 
-      <svg className="relative z-10 h-auto w-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 400 240">
+      <svg
+        className="relative z-10 h-auto w-full"
+        preserveAspectRatio="xMidYMid meet"
+        viewBox="0 0 400 240"
+      >
         {[...PATHS_IN, ...PATHS_OUT].map((d, i) => (
           <path
             d={d}
@@ -154,7 +157,7 @@ export function GenerateAnimation() {
             key={`in-${i}`}
             strokeLinecap="round"
             strokeWidth="2.5"
-            transition={{ duration: 0.6, ease: "easeInOut" }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
           />
         ))}
 
@@ -167,7 +170,7 @@ export function GenerateAnimation() {
             key={`out-${i}`}
             strokeLinecap="round"
             strokeWidth="2.5"
-            transition={{ duration: 0.5, ease: "easeInOut" }}
+            transition={{ duration: 0.5, ease: 'easeInOut' }}
           />
         ))}
 
@@ -243,8 +246,8 @@ export function GenerateAnimation() {
         <g transform="translate(200, 120)">
           <motion.circle
             animate={{
-              scale: flow === "processing" ? 1.6 : 1,
-              opacity: flow === "processing" ? [0, 0.5, 0] : 0,
+              scale: flow === 'processing' ? 1.6 : 1,
+              opacity: flow === 'processing' ? [0, 0.5, 0] : 0,
             }}
             cx="0"
             cy="0"
@@ -256,30 +259,27 @@ export function GenerateAnimation() {
           />
           <motion.rect
             animate={{
-              stroke: flow === "processing" ? input.colorHex : "var(--border)",
-              rotate: flow === "processing" ? 180 : 0,
+              stroke: flow === 'processing' ? input.colorHex : 'var(--border)',
+              rotate: flow === 'processing' ? 180 : 0,
             }}
             fill="var(--card)"
             height="32"
             rx="6"
             strokeWidth="2"
-            transition={{ duration: 0.8, ease: "anticipate" }}
+            transition={{ duration: 0.8, ease: 'anticipate' }}
             width="32"
             x="-16"
             y="-16"
           />
           <motion.path
             animate={{
-              stroke:
-                flow === "processing"
-                  ? input.colorHex
-                  : "var(--muted-foreground)",
-              rotate: flow === "processing" ? -90 : 0,
+              stroke: flow === 'processing' ? input.colorHex : 'var(--muted-foreground)',
+              rotate: flow === 'processing' ? -90 : 0,
             }}
             d="M0 -8 L0 8 M-8 0 L8 0"
             strokeLinecap="round"
             strokeWidth="2"
-            transition={{ duration: 0.8, ease: "anticipate" }}
+            transition={{ duration: 0.8, ease: 'anticipate' }}
           />
         </g>
 
@@ -328,25 +328,13 @@ export function GenerateAnimation() {
             x="-15"
             y="-12"
           />
-          <text
-            fill="var(--foreground)"
-            fontSize="14"
-            fontWeight="bold"
-            x="-6"
-            y="5"
-          >
+          <text fill="var(--foreground)" fontSize="14" fontWeight="bold" x="-6" y="5">
             Aa
           </text>
           <text fill="var(--muted-foreground)" fontSize="10" x="16" y="5">
             Aa
           </text>
-          <text
-            fill="var(--muted-foreground)"
-            fontSize="8"
-            opacity="0.5"
-            x="35"
-            y="5"
-          >
+          <text fill="var(--muted-foreground)" fontSize="8" opacity="0.5" x="35" y="5">
             Aa
           </text>
         </g>
@@ -369,24 +357,17 @@ export function GenerateAnimation() {
               ry: Math.min(output.radius * 0.5, 8),
             }}
             height="16"
-            initial={{ rx: 4, ry: 4, fill: "var(--color-b1-500)" }}
+            initial={{ rx: 4, ry: 4, fill: 'var(--color-b1-500)' }}
             transition={{ duration: 0.4 }}
             width="62"
             x="-11"
             y="-8"
           />
-          <text
-            fill="white"
-            fontSize="8"
-            fontWeight="bold"
-            textAnchor="middle"
-            x="20"
-            y="3"
-          >
+          <text fill="white" fontSize="8" fontWeight="bold" textAnchor="middle" x="20" y="3">
             Button
           </text>
         </g>
       </svg>
     </div>
-  );
+  )
 }

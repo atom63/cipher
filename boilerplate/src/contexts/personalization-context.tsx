@@ -30,19 +30,24 @@ const STORAGE_KEY = "personalization";
 const CSS_DEFAULTS = {
   brand: "b1" as BrandId,
   surfaceLight: "n1" as SurfaceId,
-  surfaceDark: "n3" as SurfaceId,
+  surfaceDark: "n1" as SurfaceId,
 };
 
 function loadState(): PersonalizationState {
-  if (typeof window === "undefined") return { brand: null, surfaceLight: null, surfaceDark: null };
+  if (typeof window === "undefined")
+    return { brand: null, surfaceLight: null, surfaceDark: null };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { brand: null, surfaceLight: null, surfaceDark: null };
     const parsed = JSON.parse(raw);
     return {
       brand: BRAND_OPTIONS.includes(parsed.brand) ? parsed.brand : null,
-      surfaceLight: SURFACE_OPTIONS.includes(parsed.surfaceLight) ? parsed.surfaceLight : null,
-      surfaceDark: SURFACE_OPTIONS.includes(parsed.surfaceDark) ? parsed.surfaceDark : null,
+      surfaceLight: SURFACE_OPTIONS.includes(parsed.surfaceLight)
+        ? parsed.surfaceLight
+        : null,
+      surfaceDark: SURFACE_OPTIONS.includes(parsed.surfaceDark)
+        ? parsed.surfaceDark
+        : null,
     };
   } catch {
     return { brand: null, surfaceLight: null, surfaceDark: null };
@@ -62,21 +67,33 @@ function applyToDOM(state: PersonalizationState) {
   // Surfaces: only override if user has selected
   for (let i = 1; i <= 12; i++) {
     if (state.surfaceLight) {
-      root.style.setProperty(`--surface-light-${i}`, `var(--color-${state.surfaceLight}-light-${i})`);
+      root.style.setProperty(
+        `--surface-light-${i}`,
+        `var(--color-${state.surfaceLight}-light-${i})`,
+      );
     } else {
       root.style.removeProperty(`--surface-light-${i}`);
     }
     if (state.surfaceDark) {
-      root.style.setProperty(`--surface-dark-${i}`, `var(--color-${state.surfaceDark}-dark-${i})`);
+      root.style.setProperty(
+        `--surface-dark-${i}`,
+        `var(--color-${state.surfaceDark}-dark-${i})`,
+      );
     } else {
       root.style.removeProperty(`--surface-dark-${i}`);
     }
   }
 }
 
-const PersonalizationContext = createContext<PersonalizationContextType | undefined>(undefined);
+const PersonalizationContext = createContext<
+  PersonalizationContextType | undefined
+>(undefined);
 
-export function PersonalizationProvider({ children }: { children: React.ReactNode }) {
+export function PersonalizationProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [state, setState] = useState<PersonalizationState>(loadState);
 
   useEffect(() => {
@@ -91,9 +108,12 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
   const dirty = !!(state.brand || state.surfaceLight || state.surfaceDark);
 
   const setBrand = (brand: BrandId) => setState((s) => ({ ...s, brand }));
-  const setSurfaceLight = (surfaceLight: SurfaceId) => setState((s) => ({ ...s, surfaceLight }));
-  const setSurfaceDark = (surfaceDark: SurfaceId) => setState((s) => ({ ...s, surfaceDark }));
-  const reset = () => setState({ brand: null, surfaceLight: null, surfaceDark: null });
+  const setSurfaceLight = (surfaceLight: SurfaceId) =>
+    setState((s) => ({ ...s, surfaceLight }));
+  const setSurfaceDark = (surfaceDark: SurfaceId) =>
+    setState((s) => ({ ...s, surfaceDark }));
+  const reset = () =>
+    setState({ brand: null, surfaceLight: null, surfaceDark: null });
 
   return (
     <PersonalizationContext.Provider
@@ -115,6 +135,9 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
 
 export function usePersonalization() {
   const context = useContext(PersonalizationContext);
-  if (!context) throw new Error("usePersonalization must be used within PersonalizationProvider");
+  if (!context)
+    throw new Error(
+      "usePersonalization must be used within PersonalizationProvider",
+    );
   return context;
 }
