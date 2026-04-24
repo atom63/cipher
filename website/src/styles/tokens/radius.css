@@ -22,4 +22,10 @@
 :root {
   --corner-radius: 10px;
   --radius-multiplier: 1;
+
+  /* Personalization presets */
+  --corner-radius-none: 0px;
+  --corner-radius-sm: 4px;
+  --corner-radius-md: 10px;
+  --corner-radius-lg: 18px;
 }
