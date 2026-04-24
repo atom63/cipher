@@ -4,8 +4,10 @@
 	"scripts": {
 		"dev": "pnpm --filter plugin dev",
 		"dev:web": "pnpm --filter @cipher/website dev",
+		"dev:boilerplate": "pnpm --dir boilerplate dev",
 		"build": "pnpm --filter plugin build",
 		"build:web": "pnpm --filter @cipher/website build",
+		"build:boilerplate": "pnpm --dir boilerplate build",
 		"test": "pnpm --filter plugin test",
 		"lint": "pnpm --filter plugin lint",
 		"check": "pnpm --filter plugin check"
