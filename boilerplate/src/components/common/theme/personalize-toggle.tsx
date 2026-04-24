@@ -1,9 +1,17 @@
 import { Dices, Palette, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   BRAND_OPTIONS,
   type BrandId,
+  FONT_OPTIONS,
+  type FontId,
+  RADIUS_OPTIONS,
+  type RadiusId,
+  SCALE_OPTIONS,
+  type ScaleId,
   SURFACE_OPTIONS,
   type SurfaceId,
   usePersonalization,
@@ -11,12 +19,10 @@ import {
 import { useTheme } from '@/contexts/theme-context'
 import { cn } from '@/lib/utils'
 
-/** Brand ramp preview: `primitives.css` `--color-b{1–6}-500` */
 function brandPrimitiveVar(brandId: BrandId): `--color-${BrandId}-500` {
   return `--color-${brandId}-500`
 }
 
-/** Neutral surface preview: `--color-n{1–6}-light-6` / `-dark-6` */
 function surfacePrimitiveVar(
   surfaceId: SurfaceId,
   mode: 'light' | 'dark'
@@ -24,6 +30,7 @@ function surfacePrimitiveVar(
   return `--color-${surfaceId}-${mode}-6`
 }
 
+// Custom — shows actual color, no DS equivalent
 function Swatch({
   active,
   cssVar,
@@ -39,13 +46,12 @@ function Swatch({
     <button
       aria-label={label}
       aria-pressed={active}
-      className="group relative size-7 shrink-0 cursor-pointer rounded-full border-2 transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group relative size-7 shrink-0 cursor-pointer rounded-full border-2 transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
       onClick={onClick}
       style={{
         backgroundColor: `var(${cssVar})`,
         borderColor: active ? 'var(--foreground)' : 'transparent',
       }}
-      title={label}
       type="button"
     >
       {active && (
@@ -55,6 +61,40 @@ function Swatch({
       )}
     </button>
   )
+}
+
+// Custom — the button's own border-radius is the visual preview
+function RadiusSwatch({
+  active,
+  label,
+  onClick,
+  value,
+}: {
+  active: boolean
+  label: string
+  onClick: () => void
+  value: string
+}) {
+  return (
+    <button
+      aria-label={label}
+      aria-pressed={active}
+      className={cn(
+        'size-7 shrink-0 cursor-pointer border bg-transparent shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        active ? 'border-transparent bg-accent text-accent-foreground' : 'border-input'
+      )}
+      onClick={onClick}
+      style={{ borderRadius: value }}
+      type="button"
+    />
+  )
+}
+
+const SCALE_TEXT_CLASS: Record<ScaleId, string> = {
+  sm: 'text-xs',
+  normal: 'text-sm',
+  lg: 'text-base',
+  xl: 'text-lg',
 }
 
 interface PersonalizeToggleProps {
@@ -79,11 +119,17 @@ export function PersonalizeToggle({
 }: PersonalizeToggleProps) {
   const {
     brand,
+    font,
+    radius,
+    scale,
     surfaceLight,
     surfaceDark,
     dirty,
     reset,
     setBrand,
+    setFont,
+    setRadius,
+    setScale,
     setSurfaceLight,
     setSurfaceDark,
   } = usePersonalization()
@@ -93,6 +139,9 @@ export function PersonalizeToggle({
     setBrand(pickRandom(BRAND_OPTIONS, brand))
     setSurfaceLight(pickRandom(SURFACE_OPTIONS, surfaceLight))
     setSurfaceDark(pickRandom(SURFACE_OPTIONS, surfaceDark))
+    setRadius(pickRandom(RADIUS_OPTIONS.map(r => r.id) as RadiusId[], radius))
+    setScale(pickRandom(SCALE_OPTIONS.map(s => s.id) as ScaleId[], scale))
+    setFont(pickRandom(FONT_OPTIONS.map(f => f.id) as FontId[], font))
   }
 
   return (
@@ -105,11 +154,13 @@ export function PersonalizeToggle({
 
       <PopoverContent
         align="end"
-        className={cn('w-56 space-y-4 p-3', popoverClassName)}
+        className={cn('flex max-h-[min(360px,60vh)] w-60 flex-col p-0', popoverClassName)}
         container={popoverContainer ?? undefined}
         side="top"
         sideOffset={8}
       >
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="space-y-4 p-3">
         {/* Brand color */}
         <div className="space-y-1.5">
           <span className="font-medium text-muted-foreground text-xs">Primary</span>
@@ -126,7 +177,7 @@ export function PersonalizeToggle({
           </div>
         </div>
 
-        {/* Surface — show the active mode, control both */}
+        {/* Surface */}
         <div className="space-y-1.5">
           <span className="font-medium text-muted-foreground text-xs">
             Surface {isDark ? '(dark)' : '(light)'}
@@ -143,15 +194,79 @@ export function PersonalizeToggle({
             ))}
           </div>
         </div>
-        {/* Actions */}
-        <div className="flex gap-2">
+
+        {/* Radius */}
+        <div className="space-y-1.5">
+          <span className="font-medium text-muted-foreground text-xs">Radius</span>
+          <div className="flex gap-1.5">
+            {RADIUS_OPTIONS.map(opt => (
+              <RadiusSwatch
+                active={radius === opt.id}
+                key={opt.id}
+                label={opt.label}
+                onClick={() => setRadius(opt.id)}
+                value={opt.value}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Type size */}
+        <div className="space-y-1.5">
+          <span className="font-medium text-muted-foreground text-xs">Type size</span>
+          <ToggleGroup
+            spacing={0}
+            type="single"
+            value={scale}
+            variant="outline"
+            onValueChange={v => v && setScale(v as ScaleId)}
+          >
+            {SCALE_OPTIONS.map(opt => (
+              <ToggleGroupItem
+                key={opt.id}
+                aria-label={opt.label}
+                className={cn('size-7 px-0', SCALE_TEXT_CLASS[opt.id])}
+                value={opt.id}
+              >
+                Aa
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
+
+        {/* Font */}
+        <div className="space-y-1.5">
+          <span className="font-medium text-muted-foreground text-xs">Font</span>
+          <div className="flex flex-col gap-0.5">
+            {FONT_OPTIONS.map(opt => (
+              <button
+                key={opt.id}
+                aria-pressed={font === opt.id}
+                className={cn(
+                  'cursor-pointer rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+                  font === opt.id ? 'bg-accent font-medium text-accent-foreground' : ''
+                )}
+                style={{ fontFamily: opt.family }}
+                type="button"
+                onClick={() => setFont(opt.id)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+          </div>
+        </div>
+
+        <div className="flex gap-2 border-t p-3 pt-2.5">
           {dirty && (
-            <Button className="flex-1" onClick={reset} size="sm" variant="ghost">
+            <Button className="flex-1" size="sm" variant="ghost" onClick={reset}>
               <RotateCcw className="size-3.5" />
               Reset
             </Button>
           )}
-          <Button className="flex-1" onClick={shuffle} size="sm" variant="outline">
+          <Button className="flex-1" size="sm" variant="outline" onClick={shuffle}>
             <Dices className="size-3.5" />
             Shuffle
           </Button>
