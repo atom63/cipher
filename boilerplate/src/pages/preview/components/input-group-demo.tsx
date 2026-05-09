@@ -34,11 +34,13 @@ export function InputGroupDemo() {
         </InputGroupAddon>
         <InputGroupAddon align="inline-end">
           <Tooltip>
-            <TooltipTrigger asChild>
-              <InputGroupButton aria-label="Info" className="rounded-full" size="icon-xs">
-                <Info />
-              </InputGroupButton>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <InputGroupButton aria-label="Info" className="rounded-full" size="icon-xs">
+                  <Info />
+                </InputGroupButton>
+              }
+            />
             <TooltipContent>This is content in a tooltip.</TooltipContent>
           </Tooltip>
         </InputGroupAddon>
@@ -55,9 +57,9 @@ export function InputGroupDemo() {
             <Plus />
           </InputGroupButton>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <InputGroupButton variant="ghost">Auto</InputGroupButton>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={<InputGroupButton variant="ghost">Auto</InputGroupButton>}
+            />
             <DropdownMenuContent align="start" side="top">
               <DropdownMenuItem>Auto</DropdownMenuItem>
               <DropdownMenuItem>Agent</DropdownMenuItem>

@@ -24,18 +24,23 @@ export function ItemDemo() {
           <Button size="sm">Enable</Button>
         </ItemActions>
       </Item>
-      <Item asChild size="sm" variant="outline">
-        <a href="/preview">
-          <ItemMedia>
-            <BadgeCheckIcon className="size-5" />
-          </ItemMedia>
-          <ItemContent>
-            <ItemTitle>Your profile has been verified.</ItemTitle>
-          </ItemContent>
-          <ItemActions>
-            <ChevronRightIcon className="size-4" />
-          </ItemActions>
-        </a>
+      <Item
+        render={
+          // biome-ignore lint/a11y/useAnchorContent: children injected by Base UI render prop
+          <a href="/preview" />
+        }
+        size="sm"
+        variant="outline"
+      >
+        <ItemMedia>
+          <BadgeCheckIcon className="size-5" />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle>Your profile has been verified.</ItemTitle>
+        </ItemContent>
+        <ItemActions>
+          <ChevronRightIcon className="size-4" />
+        </ItemActions>
       </Item>
     </div>
   )

@@ -180,17 +180,22 @@ export function NotionPromptForm() {
           <InputGroupAddon align="block-start" className="pt-3">
             <Popover onOpenChange={setMentionPopoverOpen} open={mentionPopoverOpen}>
               <Tooltip>
-                <TooltipTrigger asChild onFocusCapture={e => e.stopPropagation()}>
-                  <PopoverTrigger asChild>
-                    <InputGroupButton
-                      className="transition-transform"
-                      size={!hasMentions ? 'sm' : 'icon-sm'}
-                      variant="outline"
+                <PopoverTrigger
+                  render={
+                    <TooltipTrigger
+                      onFocusCapture={e => e.stopPropagation()}
+                      render={
+                        <InputGroupButton
+                          className="transition-transform"
+                          size={!hasMentions ? 'sm' : 'icon-sm'}
+                          variant="outline"
+                        />
+                      }
                     >
                       <AtSign /> {!hasMentions && 'Add context'}
-                    </InputGroupButton>
-                  </PopoverTrigger>
-                </TooltipTrigger>
+                    </TooltipTrigger>
+                  }
+                />
                 <TooltipContent>Mention a person, page, or date</TooltipContent>
               </Tooltip>
               <PopoverContent align="start" className="p-0">
@@ -248,22 +253,30 @@ export function NotionPromptForm() {
           </InputGroupAddon>
           <InputGroupAddon align="block-end" className="gap-1">
             <Tooltip>
-              <TooltipTrigger asChild>
-                <InputGroupButton aria-label="Attach file" className="rounded-full" size="icon-sm">
-                  <Paperclip />
-                </InputGroupButton>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <InputGroupButton
+                    aria-label="Attach file"
+                    className="rounded-full"
+                    size="icon-sm"
+                  >
+                    <Paperclip />
+                  </InputGroupButton>
+                }
+              />
               <TooltipContent>Attach file</TooltipContent>
             </Tooltip>
             <DropdownMenu onOpenChange={setModelPopoverOpen} open={modelPopoverOpen}>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
-                    <InputGroupButton className="rounded-full" size="sm">
+                <DropdownMenuTrigger
+                  render={
+                    <TooltipTrigger
+                      render={<InputGroupButton className="rounded-full" size="sm" />}
+                    >
                       {selectedModel.name}
-                    </InputGroupButton>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
+                    </TooltipTrigger>
+                  }
+                />
                 <TooltipContent>Select AI model</TooltipContent>
               </Tooltip>
               <DropdownMenuContent align="start" className="min-w-48" side="top">
@@ -297,27 +310,37 @@ export function NotionPromptForm() {
               </DropdownMenuContent>
             </DropdownMenu>
             <DropdownMenu onOpenChange={setScopeMenuOpen} open={scopeMenuOpen}>
-              <DropdownMenuTrigger asChild>
-                <InputGroupButton className="rounded-full" size="sm">
-                  <Globe /> All Sources
-                </InputGroupButton>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <InputGroupButton className="rounded-full" size="sm">
+                    <Globe /> All Sources
+                  </InputGroupButton>
+                }
+              />
               <DropdownMenuContent align="end" className="w-72" side="top">
                 <DropdownMenuGroup>
-                  <DropdownMenuItem asChild onSelect={e => e.preventDefault()}>
-                    <label htmlFor="web-search">
-                      <Globe /> Web Search{' '}
-                      <Switch className="ml-auto" defaultChecked id="web-search" />
-                    </label>
+                  <DropdownMenuItem
+                    onSelect={e => e.preventDefault()}
+                    render={
+                      // biome-ignore lint/a11y/noLabelWithoutControl: associated via htmlFor, control is a sibling rendered by Base UI
+                      <label htmlFor="web-search" />
+                    }
+                  >
+                    <Globe /> Web Search{' '}
+                    <Switch className="ml-auto" defaultChecked id="web-search" />
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem asChild onSelect={e => e.preventDefault()}>
-                    <label htmlFor="apps">
-                      <LayoutGrid /> Apps and Integrations
-                      <Switch className="ml-auto" defaultChecked id="apps" />
-                    </label>
+                  <DropdownMenuItem
+                    onSelect={e => e.preventDefault()}
+                    render={
+                      // biome-ignore lint/a11y/noLabelWithoutControl: associated via htmlFor, control is a sibling rendered by Base UI
+                      <label htmlFor="apps" />
+                    }
+                  >
+                    <LayoutGrid /> Apps and Integrations
+                    <Switch className="ml-auto" defaultChecked id="apps" />
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <CirclePlus /> All Sources I can access

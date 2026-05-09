@@ -13,11 +13,13 @@ export function ButtonGroupPopover() {
         <BotIcon /> Copilot
       </Button>
       <Popover>
-        <PopoverTrigger asChild>
-          <Button aria-label="Open Popover" size="icon-sm" variant="outline">
-            <ChevronDownIcon />
-          </Button>
-        </PopoverTrigger>
+        <PopoverTrigger
+          render={
+            <Button aria-label="Open Popover" size="icon-sm" variant="outline">
+              <ChevronDownIcon />
+            </Button>
+          }
+        />
         <PopoverContent align="end" className="gap-0 rounded-xl p-0 text-sm">
           <div className="px-4 py-3">
             <div className="font-medium text-sm">Agent Tasks</div>

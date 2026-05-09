@@ -228,6 +228,7 @@ export function CodeSection({ reduced }: { reduced: boolean }) {
                       }
 
                       if (!trimmed) {
+                        // biome-ignore lint/suspicious/noArrayIndexKey: static code lines never reorder
                         return <div key={`${activeFile}-${i}`}>{'\u00A0'}</div>
                       }
 

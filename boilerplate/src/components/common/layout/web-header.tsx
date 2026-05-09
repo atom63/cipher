@@ -47,14 +47,25 @@ export default function WebHeader({ className }: WebHeaderProps) {
             <div className="mr-1.5 hidden items-center gap-0.5 sm:flex">
               {NAV_LINKS.map(link =>
                 link.external ? (
-                  <Button asChild key={link.label} size="sm" variant="ghost">
-                    <a href={link.href} rel="noopener noreferrer" target="_blank">
-                      {link.label}
-                    </a>
+                  <Button
+                    key={link.label}
+                    render={
+                      // biome-ignore lint/a11y/useAnchorContent: children injected by Base UI render prop
+                      <a href={link.href} rel="noopener noreferrer" target="_blank" />
+                    }
+                    size="sm"
+                    variant="ghost"
+                  >
+                    {link.label}
                   </Button>
                 ) : (
-                  <Button asChild key={link.label} size="sm" variant="ghost">
-                    <Link to={link.href}>{link.label}</Link>
+                  <Button
+                    key={link.label}
+                    render={<Link to={link.href} />}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    {link.label}
                   </Button>
                 )
               )}
@@ -65,27 +76,33 @@ export default function WebHeader({ className }: WebHeaderProps) {
 
             {/* Mobile menu */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  aria-label="Open menu"
-                  className="sm:hidden"
-                  size="icon-sm"
-                  variant="ghost"
-                >
-                  <Menu />
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    aria-label="Open menu"
+                    className="sm:hidden"
+                    size="icon-sm"
+                    variant="ghost"
+                  >
+                    <Menu />
+                  </Button>
+                }
+              />
               <DropdownMenuContent align="end">
                 {NAV_LINKS.map(link =>
                   link.external ? (
-                    <DropdownMenuItem asChild key={link.label}>
-                      <a href={link.href} rel="noopener noreferrer" target="_blank">
-                        {link.label}
-                      </a>
+                    <DropdownMenuItem
+                      key={link.label}
+                      render={
+                        // biome-ignore lint/a11y/useAnchorContent: children injected by Base UI render prop
+                        <a href={link.href} rel="noopener noreferrer" target="_blank" />
+                      }
+                    >
+                      {link.label}
                     </DropdownMenuItem>
                   ) : (
-                    <DropdownMenuItem asChild key={link.label}>
-                      <Link to={link.href}>{link.label}</Link>
+                    <DropdownMenuItem key={link.label} render={<Link to={link.href} />}>
+                      {link.label}
                     </DropdownMenuItem>
                   )
                 )}

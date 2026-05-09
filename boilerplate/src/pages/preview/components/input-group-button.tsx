@@ -21,13 +21,15 @@ export function InputGroupButtonExample() {
       <InputGroup className="[--radius:9999px]">
         <InputGroupInput className="pl-0.5!" id="input-secure-19" />
         <Popover>
-          <PopoverTrigger asChild>
-            <InputGroupAddon>
-              <InputGroupButton aria-label="Info" size="icon-xs" variant="secondary">
-                <Info />
-              </InputGroupButton>
-            </InputGroupAddon>
-          </PopoverTrigger>
+          <PopoverTrigger
+            render={
+              <InputGroupAddon>
+                <InputGroupButton aria-label="Info" size="icon-xs" variant="secondary">
+                  <Info />
+                </InputGroupButton>
+              </InputGroupAddon>
+            }
+          />
           <PopoverContent
             align="start"
             alignOffset={10}

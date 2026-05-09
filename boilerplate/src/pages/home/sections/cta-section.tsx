@@ -14,25 +14,34 @@ export function CtaSection() {
             <SectionHeader
               actions={
                 <>
-                  <Button asChild size="lg">
-                    <a
-                      href="https://www.figma.com/community/plugin/1613643367110247078"
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      Try plugin
-                      <ArrowRight className="size-4" />
-                    </a>
+                  <Button
+                    render={
+                      // biome-ignore lint/a11y/useAnchorContent: children injected by Base UI render prop
+                      <a
+                        href="https://www.figma.com/community/plugin/1613643367110247078"
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      />
+                    }
+                    size="lg"
+                  >
+                    Try plugin
+                    <ArrowRight className="size-4" />
                   </Button>
-                  <Button asChild size="lg" variant="outline">
-                    <a
-                      href="https://github.com/atom63/cipher-boilerplate"
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      Get boilerplate
-                      <ArrowRight className="size-4" />
-                    </a>
+                  <Button
+                    render={
+                      // biome-ignore lint/a11y/useAnchorContent: children injected by Base UI render prop
+                      <a
+                        href="https://github.com/atom63/cipher-boilerplate"
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      />
+                    }
+                    size="lg"
+                    variant="outline"
+                  >
+                    Get boilerplate
+                    <ArrowRight className="size-4" />
                   </Button>
                 </>
               }

@@ -66,12 +66,7 @@ export default function WebHeader({ className }: WebHeaderProps) {
             {/* Mobile menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  aria-label="Open menu"
-                  className="sm:hidden"
-                  size="icon-sm"
-                  variant="ghost"
-                >
+                <Button aria-label="Open menu" className="sm:hidden" size="icon-sm" variant="ghost">
                   <Menu />
                 </Button>
               </DropdownMenuTrigger>

@@ -19,8 +19,16 @@ export const SCALE_OPTIONS = [
 export const FONT_OPTIONS = [
   { id: 'inter', label: 'Inter', family: '"Inter", ui-sans-serif, system-ui, sans-serif' },
   { id: 'geist', label: 'Geist', family: '"Geist", ui-sans-serif, system-ui, sans-serif' },
-  { id: 'instrument', label: 'Instrument Sans', family: '"Instrument Sans", ui-sans-serif, system-ui, sans-serif' },
-  { id: 'space', label: 'Space Grotesk', family: '"Space Grotesk", ui-sans-serif, system-ui, sans-serif' },
+  {
+    id: 'instrument',
+    label: 'Instrument Sans',
+    family: '"Instrument Sans", ui-sans-serif, system-ui, sans-serif',
+  },
+  {
+    id: 'space',
+    label: 'Space Grotesk',
+    family: '"Space Grotesk", ui-sans-serif, system-ui, sans-serif',
+  },
   { id: 'nunito', label: 'Nunito', family: '"Nunito", ui-sans-serif, system-ui, sans-serif' },
 ] as const
 
@@ -32,11 +40,11 @@ export type FontId = (typeof FONT_OPTIONS)[number]['id']
 
 interface PersonalizationState {
   brand: BrandId | null
-  surfaceDark: SurfaceId | null
-  surfaceLight: SurfaceId | null
+  font: FontId | null
   radius: RadiusId | null
   scale: ScaleId | null
-  font: FontId | null
+  surfaceDark: SurfaceId | null
+  surfaceLight: SurfaceId | null
 }
 
 interface PersonalizationContextType {
@@ -73,11 +81,25 @@ const FONT_IDS = FONT_OPTIONS.map(f => f.id) as readonly string[]
 
 function loadState(): PersonalizationState {
   if (typeof window === 'undefined')
-    return { brand: null, surfaceLight: null, surfaceDark: null, radius: null, scale: null, font: null }
+    return {
+      brand: null,
+      surfaceLight: null,
+      surfaceDark: null,
+      radius: null,
+      scale: null,
+      font: null,
+    }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw)
-      return { brand: null, surfaceLight: null, surfaceDark: null, radius: null, scale: null, font: null }
+      return {
+        brand: null,
+        surfaceLight: null,
+        surfaceDark: null,
+        radius: null,
+        scale: null,
+        font: null,
+      }
     const parsed = JSON.parse(raw)
     return {
       brand: BRAND_OPTIONS.includes(parsed.brand) ? parsed.brand : null,
@@ -88,7 +110,14 @@ function loadState(): PersonalizationState {
       font: FONT_IDS.includes(parsed.font) ? parsed.font : null,
     }
   } catch {
-    return { brand: null, surfaceLight: null, surfaceDark: null, radius: null, scale: null, font: null }
+    return {
+      brand: null,
+      surfaceLight: null,
+      surfaceDark: null,
+      radius: null,
+      scale: null,
+      font: null,
+    }
   }
 }
 
@@ -145,14 +174,28 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
 
   useEffect(() => {
     applyToDOM(state)
-    if (state.brand || state.surfaceLight || state.surfaceDark || state.radius || state.scale || state.font) {
+    if (
+      state.brand ||
+      state.surfaceLight ||
+      state.surfaceDark ||
+      state.radius ||
+      state.scale ||
+      state.font
+    ) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     } else {
       localStorage.removeItem(STORAGE_KEY)
     }
   }, [state])
 
-  const dirty = !!(state.brand || state.surfaceLight || state.surfaceDark || state.radius || state.scale || state.font)
+  const dirty = !!(
+    state.brand ||
+    state.surfaceLight ||
+    state.surfaceDark ||
+    state.radius ||
+    state.scale ||
+    state.font
+  )
 
   const setBrand = (brand: BrandId) => setState(s => ({ ...s, brand }))
   const setSurfaceLight = (surfaceLight: SurfaceId) => setState(s => ({ ...s, surfaceLight }))
@@ -164,7 +207,14 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
   const setFont = (font: FontId) =>
     setState(s => ({ ...s, font: font === CSS_DEFAULTS.font ? null : font }))
   const reset = () =>
-    setState({ brand: null, surfaceLight: null, surfaceDark: null, radius: null, scale: null, font: null })
+    setState({
+      brand: null,
+      surfaceLight: null,
+      surfaceDark: null,
+      radius: null,
+      scale: null,
+      font: null,
+    })
 
   return (
     <PersonalizationContext.Provider

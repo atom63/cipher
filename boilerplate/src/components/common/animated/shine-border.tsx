@@ -1,4 +1,4 @@
-import * as React from 'react'
+import type * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -36,7 +36,7 @@ export function ShineBorder({
   return (
     <div
       className={cn(
-        'motion-safe:animate-shine pointer-events-none absolute inset-0 size-full rounded-[inherit] will-change-[background-position]',
+        'pointer-events-none absolute inset-0 size-full rounded-[inherit] will-change-[background-position] motion-safe:animate-shine',
         className
       )}
       style={
@@ -47,8 +47,8 @@ export function ShineBorder({
             Array.isArray(shineColor) ? shineColor.join(',') : shineColor
           },transparent,transparent)`,
           backgroundSize: '300% 300%',
-          mask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
-          WebkitMask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
+          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
           WebkitMaskComposite: 'xor',
           maskComposite: 'exclude',
           padding: 'var(--border-width)',

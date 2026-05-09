@@ -50,11 +50,13 @@ export function ButtonGroupDemo() {
           Snooze
         </Button>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button aria-label="More Options" size="icon-sm" variant="outline">
-              <MoreHorizontalIcon />
-            </Button>
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger
+            render={
+              <Button aria-label="More Options" size="icon-sm" variant="outline">
+                <MoreHorizontalIcon />
+              </Button>
+            }
+          />
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuGroup>
               <DropdownMenuItem>

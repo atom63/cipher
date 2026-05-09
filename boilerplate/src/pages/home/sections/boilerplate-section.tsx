@@ -44,15 +44,19 @@ export function BoilerplateSection() {
           <FadeUp delay={0.05}>
             <SectionHeader
               actions={
-                <Button asChild size="lg">
-                  <a
-                    href="https://github.com/atom63/cipher-boilerplate"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    View on GitHub
-                    <ArrowRight className="size-4" />
-                  </a>
+                <Button
+                  render={
+                    // biome-ignore lint/a11y/useAnchorContent: children injected by Base UI render prop
+                    <a
+                      href="https://github.com/atom63/cipher-boilerplate"
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    />
+                  }
+                  size="lg"
+                >
+                  View on GitHub
+                  <ArrowRight className="size-4" />
                 </Button>
               }
               align="center"

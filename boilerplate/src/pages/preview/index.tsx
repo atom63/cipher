@@ -21,19 +21,26 @@ export default function Preview() {
           <SectionHeader
             actions={
               <>
-                <Button asChild>
-                  <a
-                    href="https://www.figma.com/community/plugin/1613643367110247078"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    Try Cipher
-                  </a>
+                <Button
+                  render={
+                    // biome-ignore lint/a11y/useAnchorContent: children injected by Base UI render prop
+                    <a
+                      href="https://www.figma.com/community/plugin/1613643367110247078"
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    />
+                  }
+                >
+                  Try Cipher
                 </Button>
-                <Button asChild variant="outline">
-                  <a href="https://ui.shadcn.com/" rel="noopener noreferrer" target="_blank">
-                    shadcn/ui docs
-                  </a>
+                <Button
+                  render={
+                    // biome-ignore lint/a11y/useAnchorContent: children injected by Base UI render prop
+                    <a href="https://ui.shadcn.com/" rel="noopener noreferrer" target="_blank" />
+                  }
+                  variant="outline"
+                >
+                  shadcn/ui docs
                 </Button>
               </>
             }

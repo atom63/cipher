@@ -25,38 +25,40 @@ export function ThemeToggle({ size = 'icon', className }: ThemeToggleProps) {
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          className={cn('relative', className)}
-          onClick={toggleTheme}
-          size={size}
-          variant="ghost"
+      <TooltipTrigger
+        render={
+          <Button
+            className={cn('relative', className)}
+            onClick={toggleTheme}
+            size={size}
+            variant="ghost"
+          />
+        }
+      >
+        <motion.span
+          animate={{
+            opacity: isDark ? 1 : 0,
+            scale: isDark ? 1 : 0.5,
+            rotate: isDark ? 0 : -90,
+          }}
+          className="absolute"
+          initial={false}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         >
-          <motion.span
-            animate={{
-              opacity: isDark ? 1 : 0,
-              scale: isDark ? 1 : 0.5,
-              rotate: isDark ? 0 : -90,
-            }}
-            className="absolute"
-            initial={false}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-          >
-            <Sun className="size-4" />
-          </motion.span>
-          <motion.span
-            animate={{
-              opacity: isDark ? 0 : 1,
-              scale: isDark ? 0.5 : 1,
-              rotate: isDark ? 90 : 0,
-            }}
-            className="absolute"
-            initial={false}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-          >
-            <Moon className="size-4" />
-          </motion.span>
-        </Button>
+          <Sun className="size-4" />
+        </motion.span>
+        <motion.span
+          animate={{
+            opacity: isDark ? 0 : 1,
+            scale: isDark ? 0.5 : 1,
+            rotate: isDark ? 90 : 0,
+          }}
+          className="absolute"
+          initial={false}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
+          <Moon className="size-4" />
+        </motion.span>
       </TooltipTrigger>
       <TooltipContent side="right">{isDark ? 'Light mode' : 'Dark mode'}</TooltipContent>
     </Tooltip>

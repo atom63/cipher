@@ -43,7 +43,7 @@ export function FaqSection() {
             title="Questions you might have"
             variant="muted"
           />
-          <Accordion defaultValue="0" type="single">
+          <Accordion defaultValue={['0']}>
             {FAQ_ITEMS.map((item, i) => (
               <AccordionItem key={item.q} value={String(i)}>
                 <AccordionTrigger className="text-lg">{item.q}</AccordionTrigger>
